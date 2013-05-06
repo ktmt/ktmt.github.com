@@ -4,7 +4,7 @@
   <title><![CDATA[Category: javascript | Blog kỹ thuật máy tính]]></title>
   <link href="http://ktmt.github.com/blog/categories/javascript/atom.xml" rel="self"/>
   <link href="http://ktmt.github.com/"/>
-  <updated>2013-04-30T21:36:02+09:00</updated>
+  <updated>2013-05-06T18:48:43+09:00</updated>
   <id>http://ktmt.github.com/</id>
   <author>
     <name><![CDATA[kỹ thuật máy tính]]></name>
@@ -12,6 +12,94 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[chú ý khi dùng autoexecute function của javascript]]></title>
+    <link href="http://ktmt.github.com/blog/2013/05/05/chu-y-khi-dung-autoexecute-function-cua-javascript/"/>
+    <updated>2013-05-05T01:02:00+09:00</updated>
+    <id>http://ktmt.github.com/blog/2013/05/05/chu-y-khi-dung-autoexecute-function-cua-javascript</id>
+    <content type="html"><![CDATA[<h3>Loading order problem</h3>
+
+<p>Khi viết javascript cho một website thì web-developer thường hay dùng autoexecute function của javascript để tạo ra một closure cho đỡ poison global environment ( vì khi không nằm trong closure mà viết thẳng luôn dưới dạng global thì các biến/function được tạo mới dưới dạng (var x) sẽ thành window.x và có khả năng nào đó sẽ conflict với các bién/hàm có sẵn hoặc của các library khác).</p>
+
+<p>Autoexecute function thường hay được viết như sau:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>autoexecute.js </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">//do all the thing&lt;br/&gt;</span>
+</span><span class='line'><span class="p">})();</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>tuy nhiên thì khi viết thế này thì có một đặc điểm là cái (//do all the thing) sẽ <strong>được execute trước khi dom được load lên</strong>.
+Chính vì thế nếu bạn gọi trong đó một hàm có thao tác với dom như</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>autoexecute.js </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s2">&quot;xxx&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="p">})();</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+thì cái x đấy khả năng null sẽ cao vì khi đấy dom chưa được gắn (render) cái element xxx vào.</p>
+
+<p>Để giải quyết vấn đề này thì bạn chỉ cần gom cái (//all the thing) vào trong hàm callback của window.onload là ok:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>autoexecute.js </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nb">window</span><span class="p">.</span><span class="nx">onload</span> <span class="o">=</span> <span class="nx">init</span><span class="p">;</span>
+</span><span class='line'>  <span class="kd">function</span> <span class="nx">init</span><span class="p">()</span> <span class="p">{</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">pre</span><span class="o">&gt;&lt;</span><span class="nx">code</span><span class="o">&gt;</span><span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s2">&quot;xxx&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="o">&lt;</span><span class="err">/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="p">}</span>
+</span><span class='line'><span class="p">})();</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h3>Callback scope problem</h3>
+
+<p>Gần đây mình có gặp một lỗi rất lạ là, với callback function được gọi từ phía ngoài scope của autoexecute function, ví dụ như sau:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>autoexecute.js </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">xxx</span><span class="p">;</span>
+</span><span class='line'>  <span class="nx">xxx</span><span class="p">.</span><span class="nx">callback</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">pre</span><span class="o">&gt;&lt;</span><span class="nx">code</span><span class="o">&gt;</span><span class="c1">//do yyy</span>
+</span><span class='line'><span class="o">&lt;</span><span class="err">/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="p">}</span>
+</span><span class='line'><span class="p">})();</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Khi xxx.callback được gọi bởi một hàm <strong> ở ngoài</strong> scope của closure, thì lúc đầu <strong>xxx.callback</strong> vẫn được gọi, nhưng sau một lúc,
+khi mà cái closure (function(){})() đã được execute xong, đồng nghĩa với việc xxx cũng bị dọn dẹp rồi thì cái callback này đương
+nhiên cũng bị mất đi, và tất nhiên sẽ không chui vào được nữa. Một lỗi rất cơ bản nhưng mình cũng mất một lúc mới phát hiện ra nguyên
+nhân.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[giới thiệu về script loader trong js]]></title>
