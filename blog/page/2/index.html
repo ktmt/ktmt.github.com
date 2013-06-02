@@ -7,7 +7,7 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="May 15th, 2013 rails, ssl, tips, tutorials Comments Sử Dụng Ssl Trên Rubyonrails HTTPS trên rails Là RoR developer, khi phải làm việc với một số &hellip;">
+	<meta name="description" content="May 28th, 2013 unittest Comments Sử Dụng Unittest để Refactoring Code Ở bài viết trước tôi đã đề cập đến cách sử dụng mock để viết unittest. &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -84,30 +84,27 @@
   
 
 
-<time datetime="2013-05-15T23:03:00+09:00" data-updated="true" itemprop="datePublished">May 15<span>th</span>, 2013</time></div>
+<time datetime="2013-05-28T16:53:00+09:00" data-updated="true" itemprop="datePublished">May 28<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/rails/'>rails</a>, <a class='category' href='/blog/categories/ssl/'>ssl</a>, <a class='category' href='/blog/categories/tips/'>tips</a>, <a class='category' href='/blog/categories/tutorials/'>tutorials</a>
+	<a class='category' href='/blog/categories/unittest/'>unittest</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/05/15/su-dung-ssl-voi-rails-va-mot-so-chu-y/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/05/28/thiet-ke-huong-test/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/05/15/su-dung-ssl-voi-rails-va-mot-so-chu-y/" itemprop="url">Sử Dụng Ssl Trên Rubyonrails</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/05/28/thiet-ke-huong-test/" itemprop="url">Sử Dụng Unittest để Refactoring Code</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h1>HTTPS trên rails</h1>
+		<p>Ở bài viết trước tôi đã đề cập đến <a href="http://ktmt.github.io/blog/2013/05/09/mock-with-unittest-in-python/">cách sử dụng mock để viết unittest</a>. Unittest có tác dụng không chỉ trong việc đảm bảo các đoạn code mới được viết thêm không phá vỡ các yêu cầu logic trước đó, trong bài viết này, tôi sẽ chia sẽ các kinh nghiệm sử dụng unittest để refactoring các đoạn code</p>
 
-<p>Là RoR developer, khi phải làm việc với một số thông tin quan trọng như: thông tin cá nhân user, thông tin về thanh toán trực tuyến thì thường bạn phải dùng kết nối có bảo mật (secure connection), và điển hình ở đây là sử dụng HTTPS. Để setup HTTPS trên rails, thì trước hết mình phải nhắc lại là các web server phổ biến trên rails như là webrick, unicorn hay thin đều không hỗ trợ HTTPS từ đầu.  Để sử dụng SSL thì có 2 cách:</p>
+<p>Một trong những vấn đề khi viết các hàm đó là các hàm thường quá phức tạp. <a href="http://en.wikipedia.org/wiki/Robert_Cecil_Martin">Robert Martin</a> trong cuốn sách &#8220;Clean code - a handbook of Agile Software Craftmenship&#8221; đã nói về nói về các quy tắc khi thiết kế hàm: Quy tắc đầu tiên của function đó là chúng nên nhỏ, quy tắc thứ hai là chúng nên nhỏ hơn thế nữa&#8221; (The first rule ò functions is that they should be small. The second rule of functions is that they should be smaller than that). Function càng ngắn thì càng dễ hiểu, function càng ngắn thì nó càng tách biệt so với các hàm khác. Và hơn thế nữa hàm càng ngắn, thì test càng đơn giản. Vậy làm thế nào để biết function bạn viết là đủ ngắn hay chưa? Nếu để test 1 hàm cần tới hơn 20 dòng code, theo bản thân tôi, hàm đó nên được viết lại.</p>
 
-<ol>
-<li>Add thêm plugin: ví dụ như với webrick thì bạn sử dụng &#8220;webrick/https&#8221;, nhưng cách này có một bất lợi là bạn phải setting từ đầu, và server đó sẽ luôn và chỉ phục vụ các request ssl:</li>
-</ol>
+<p>Hãy xét một ví dụ sau</p>
 
-
-<figure class='code'><figcaption><span>webrickssl.rb </span></figcaption>
+<figure class='code'><figcaption><span>models.py </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -129,92 +126,42 @@
 <span class='line-number'>19</span>
 <span class='line-number'>20</span>
 <span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'><span class="k">module</span> <span class="nn">Rails</span>
-</span><span class='line'>  <span class="k">class</span> <span class="nc">Server</span> <span class="o">&lt;</span> <span class="o">::</span><span class="ss">Rack</span><span class="p">:</span><span class="ss">:Server</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">default_options</span>
-</span><span class='line'>      <span class="k">super</span><span class="o">.</span><span class="n">merge</span><span class="p">({</span>
-</span><span class='line'>        <span class="ss">:Port</span> <span class="o">=&gt;</span> <span class="mi">3000</span><span class="p">,</span>
-</span><span class='line'>        <span class="ss">:environment</span> <span class="o">=&gt;</span> <span class="p">(</span><span class="no">ENV</span><span class="o">[</span><span class="s1">&#39;RAILS_ENV&#39;</span><span class="o">]</span> <span class="o">||</span> <span class="s2">&quot;development&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">dup</span><span class="p">,</span>
-</span><span class='line'>        <span class="ss">:daemonize</span> <span class="o">=&gt;</span> <span class="kp">false</span><span class="p">,</span>
-</span><span class='line'>        <span class="ss">:debugger</span> <span class="o">=&gt;</span> <span class="kp">false</span><span class="p">,</span>
-</span><span class='line'>        <span class="ss">:pid</span> <span class="o">=&gt;</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="s2">&quot;tmp/pids/server.pid&quot;</span><span class="p">),</span>
-</span><span class='line'>        <span class="ss">:config</span> <span class="o">=&gt;</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="s2">&quot;config.ru&quot;</span><span class="p">),</span>
-</span><span class='line'>        <span class="ss">:SSLEnable</span> <span class="o">=&gt;</span> <span class="kp">true</span><span class="p">,</span>
-</span><span class='line'>        <span class="ss">:SSLVerifyClient</span> <span class="o">=&gt;</span> <span class="ss">OpenSSL</span><span class="p">:</span><span class="ss">:SSL</span><span class="o">::</span><span class="no">VERIFY_NONE</span><span class="p">,</span>
-</span><span class='line'>        <span class="ss">:SSLPrivateKey</span> <span class="o">=&gt;</span> <span class="ss">OpenSSL</span><span class="p">:</span><span class="ss">:PKey</span><span class="o">::</span><span class="no">RSA</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
-</span><span class='line'>        <span class="no">IO</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="s2">&quot;vendor/ssl/gs.key&quot;</span><span class="p">))),</span>
-</span><span class='line'>        <span class="ss">:SSLCertificate</span> <span class="o">=&gt;</span> <span class="ss">OpenSSL</span><span class="p">:</span><span class="ss">:X509</span><span class="o">::</span><span class="no">Certificate</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
-</span><span class='line'>        <span class="no">IO</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="s2">&quot;vendor/ssl/gs.crt&quot;</span><span class="p">))),</span>
-</span><span class='line'>        <span class="ss">:SSLCertName</span> <span class="o">=&gt;</span> <span class="o">[[</span><span class="s2">&quot;CN&quot;</span><span class="p">,</span> <span class="ss">WEBrick</span><span class="p">:</span><span class="ss">:Utils</span><span class="o">::</span><span class="n">getservername</span><span class="o">]]</span>
-</span><span class='line'>      <span class="p">})</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Order</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+</span><span class='line'>    <span class="c"># define fields in here</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">create_final_pdf_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_order_id</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">front_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">create_frontcover_image</span><span class="p">()</span>
+</span><span class='line'>        <span class="n">back_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">create_backcover_image</span><span class="p">(</span><span class="n">client_order_id</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_type</span> <span class="o">==</span> <span class="n">Order</span><span class="o">.</span><span class="n">SOFT_COVER</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">frontcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
+</span><span class='line'>                <span class="p">[</span><span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">front_image</span><span class="p">),</span> <span class="bp">None</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_size</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">backcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
+</span><span class='line'>                <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">back_image</span><span class="p">)],</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_size</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">frontcover_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached_pdf_file</span><span class="p">,</span> <span class="n">backcover_file</span><span class="p">]</span>
+</span><span class='line'>        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_type</span> <span class="o">==</span> <span class="n">Order</span><span class="o">.</span><span class="n">HARD_COVER</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">hardcover_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_hardcover_image</span><span class="p">(</span><span class="n">back_image</span><span class="p">,</span> <span class="n">front_image</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">hardcover_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PDF_SIZES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">size_type</span><span class="p">]</span>
+</span><span class='line'>            <span class="n">hardcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
+</span><span class='line'>                <span class="p">[</span><span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">hardcover_image</span><span class="p">)],</span> <span class="n">hardcover_size</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">hardcover_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached_pdf_file</span><span class="p">]</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">new_path</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">merge_pdf_files</span><span class="p">(</span><span class="n">input_files</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">new_path</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Để switch được giữa ssl và non-ssl thì thường bạn sẽ phải chạy song song 2 bản webrick, một bản hỗ trợ ssl và một bản không</p>
+<p>Hàm <code>create_final_pdf_file</code> nhận tham số là một <code>client_order_id</code>, tạo ra một pdf file tương ứng <code>client_order_id</code>, và trả về đường dẫn của pdf file đó. Hàm này tạo ra một ảnh cover trước, và ảnh cover sau, sau đó ghép với một file pdf có sẵn để tạo nên <code>final_pdf</code>.</p>
 
-<ol>
-<li>Bạn sử dụng <strong>Nginx</strong> như một ssl proxy, sau khi xử lý ssl request thì Nginx sẽ forward lại request cho rails-server. Ở bài viết này mình sẽ nói về thiết lập môi trường ssl ở dưới môi trường development sử dụng <strong>Pow</strong> và <strong>Nginx</strong></li>
-</ol>
+<p>Tuy nhiên tuỳ theo giá trị của <code>self.order_type</code> mà cách tạo các ảnh trước và ảnh sau là khác nhau.</p>
 
+<p>Sau đây là code để test hàm</p>
 
-<h1>Pow + Nginx</h1>
-
-<p>Tại sao lại sử dụng Pow? Pow là một rails-server rất hay được sử dụng trong công đoạn <strong>development</strong>. Lý do vì: dễ cài đặt, không phải config, và pow cho mỗi webapp của chúng ta một cái domain đẹp đẽ trên local. Để cài đặt pow thì vô cùng đơn giản:</p>
-
-<figure class='code'><figcaption><span>install.sh </span></figcaption>
+<figure class='code'><figcaption><span>test_models.py </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$curl</span> get.pow.cx | sh
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Pow không đi kèm một bộ tool dòng lệnh tốt lắm (command line tool), tuy nhiên rất may đã có người làm hộ chúng ta 1 cái gem tên là <strong>powder</strong>, có nó thì chúng ta sẽ sử dụng pow dễ dàng hơn:</p>
-
-<figure class='code'><figcaption><span>install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$sudo</span> gem install powder
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Sau khi install xong powder, chúng ta đi đến folder chứa rails app và chỉ cần [powder link appname] là đã xong phần cài đặt</p>
-
-<figure class='code'><figcaption><span>install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">cd</span> ~/yourapp
-</span><span class='line'><span class="nv">$powder</span> link app-name
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Sau khi làm thao tác này thì một symlink với tên là app-name sẽ được tạo ra ở trong thư mục <strong>~/.pow</strong>
-Kết thúc thao tác này, powder đã tự động được khởi động, và chúng ta chỉ cần truy cập vào url [app-name.dev] là đã sử dụng được như bình thường :)</p>
-
-<p>OK vậy là xong pow, giờ đến lượt nginx, để cài đặt nginx thì khá đơn giản trên mac, mình sử dụng brew:</p>
-
-<figure class='code'><figcaption><span>install.sh</span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>brew install nginx
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Thường thì nginx sau khi được cài đặt xong sẽ nằm ở :[/usr/local/etc/nginx]</p>
-
-<p>Bạn đang muốn sử dụng HTTPS, nên công đoạn tiếp theo sẽ là setup để nginx nhận request HTTPS và forward lại cho pow. Đầu tiên là phải generate ra một cặp <strong>private key</strong> và <strong>certificate sign</strong>, tại sao lại cần cặp này thì các bạn có thể tự tìm hiểu về giao thức HTTPS.</p>
-
-<figure class='code'><figcaption><span>install.sh</span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$openssl</span> req -new -nodes -keyout server.key -out server.csr
-</span><span class='line'><span class="nv">$openssl</span> x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Sau khi có cặp key và sign, rồi bạn copy cặp đó vào thư mục [/usr/local/etc/nginx/ssl] cho dễ config. Tiếp đến bạn mở config của nginx ra và config lại như dưới đây</p>
-
-<figure class='code'><figcaption><span>nginx </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -260,71 +207,72 @@ Kết thúc thao tác này, powder đã tự động được khởi động, v�
 <span class='line-number'>44</span>
 <span class='line-number'>45</span>
 <span class='line-number'>46</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>worker_processes  1;
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">TestModel</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">tree</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">()</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="n">Order</span><span class="p">(</span><span class="n">tree</span><span class="o">=</span><span class="n">tree</span><span class="p">)</span>
 </span><span class='line'>
-</span><span class='line'>events {
-</span><span class='line'>      worker_connections  1024;
-</span><span class='line'>}
+</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.image_helper.save_image&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.generator.pdf.merge_pdf_files&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.generator.pdf.create_pdf_from_images&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">test_create_final_pdf_file_soft_cover</span><span class="p">(</span>
+</span><span class='line'>            <span class="bp">self</span><span class="p">,</span> <span class="n">mock_create_pdf</span><span class="p">,</span> <span class="n">mock_merge_pdf</span><span class="p">,</span> <span class="n">mock_save_image</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">order_type</span> <span class="o">=</span> <span class="n">Order</span><span class="o">.</span><span class="n">SOFT_COVER</span>
 </span><span class='line'>
+</span><span class='line'>        <span class="n">mock_cached_pdf</span> <span class="o">=</span> <span class="n">PropertyMock</span><span class="p">(</span>
+</span><span class='line'>            <span class="n">return_value</span><span class="o">=</span><span class="s">&#39;StoryTree/tests/fixtures/1.pdf&#39;</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_backcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_frontcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
 </span><span class='line'>
-</span><span class='line'>http {
-</span><span class='line'>      include       mime.types;
-</span><span class='line'>      default_type  application/octet-stream;
+</span><span class='line'>        <span class="k">with</span> <span class="n">nested</span><span class="p">(</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="s">&#39;cached_pdf_file&#39;</span><span class="p">,</span> <span class="n">mock_cached_pdf</span><span class="p">),</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="s">&#39;create_backcover_image&#39;</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="p">),</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="s">&#39;create_frontcover_image&#39;</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="p">)):</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">create_final_pdf_file</span><span class="p">(</span><span class="s">&#39;STORYTREE01111&#39;</span><span class="p">)</span>
 </span><span class='line'>
-</span><span class='line'>      sendfile        on;
-</span><span class='line'>      keepalive_timeout  65;
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">mock_create_pdf</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">first_args</span> <span class="o">=</span> <span class="n">mock_create_pdf</span><span class="o">.</span><span class="n">call_args_list</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">first_args</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">)</span>
 </span><span class='line'>
-</span><span class='line'>      server {
-</span><span class='line'>        ### server port and name ###
-</span><span class='line'>        listen          443 ssl;
-</span><span class='line'>        server_name     app-name.dev;
+</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.image_helper.save_image&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.generator.pdf.merge_pdf_files&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.generator.pdf.create_pdf_from_images&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">test_create_final_pdf_file_hard_cover</span><span class="p">(</span>
+</span><span class='line'>            <span class="bp">self</span><span class="p">,</span> <span class="n">mock_create_pdf</span><span class="p">,</span> <span class="n">mock_merge_pdf</span><span class="p">,</span> <span class="n">mock_save_image</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">order_type</span> <span class="o">=</span> <span class="n">Order</span><span class="o">.</span><span class="n">HARD_COVER</span>
 </span><span class='line'>
-</span><span class='line'>        ### SSL log files ###
-</span><span class='line'>        access_log      logs/ssl-access.log;
-</span><span class='line'>        error_log       logs/ssl-error.log;
+</span><span class='line'>        <span class="n">mock_cached_pdf</span> <span class="o">=</span> <span class="n">PropertyMock</span><span class="p">(</span>
+</span><span class='line'>            <span class="n">return_value</span><span class="o">=</span><span class="s">&#39;StoryTree/tests/fixtures/1.pdf&#39;</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_backcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_frontcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_hardcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
 </span><span class='line'>
-</span><span class='line'>        ### SSL cert files ###
-</span><span class='line'>        ssl_certificate      ssl/app-name.crt;
-</span><span class='line'>        ssl_certificate_key  ssl/app-name.key;
-</span><span class='line'>        ### Add SSL specific settings here ###
-</span><span class='line'>        keepalive_timeout    60;
-</span><span class='line'>        ### We want full access to SSL via backend ###
-</span><span class='line'>        location / {
-</span><span class='line'>          proxy_pass  http://app-name.dev/;
-</span><span class='line'>          ### force timeouts if one of backend is died ##
-</span><span class='line'>          proxy_next_upstream error timeout invalid_header http_500 http_502 http_503;
-</span><span class='line'>
-</span><span class='line'>          ### Set headers ####
-</span><span class='line'>          proxy_set_header Host $host;
-</span><span class='line'>          proxy_set_header X-Real-IP $remote_addr;
-</span><span class='line'>          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-</span><span class='line'>
-</span><span class='line'>          ### Most PHP, Python, Rails, Java App can use this header ###
-</span><span class='line'>          proxy_set_header X-Forwarded-Proto https;
-</span><span class='line'>          ### By default we don't want to redirect it ####
-</span><span class='line'>          proxy_redirect     off;
-</span><span class='line'>        }
-</span><span class='line'>     }
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Công việc cuối cùng chỉ là chạy nginx, bạn khởi động nginx với option -t để test config file có đúng và không có warning nào không:</p>
-
-<figure class='code'><figcaption><span>runnginx.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$ </span>sudo nginx -t
-</span><span class='line'>nginx: the configuration file /usr/local/etc/nginx/nginx.conf syntax is ok
-</span><span class='line'>nginx: configuration file /usr/local/etc/nginx/nginx.conf <span class="nb">test </span>is successful
+</span><span class='line'>        <span class="k">with</span> <span class="n">nested</span><span class="p">(</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="s">&#39;create_backcover_image&#39;</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="p">),</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="s">&#39;create_frontcover_image&#39;</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="p">),</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="s">&#39;cached_pdf_file&#39;</span><span class="p">,</span> <span class="n">mock_cached_pdf</span><span class="p">),</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="s">&#39;create_hardcover_image&#39;</span><span class="p">,</span> <span class="n">mock_hardcover</span><span class="p">)):</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">create_final_pdf_file</span><span class="p">(</span><span class="s">&#39;STORYTREE01111&#39;</span><span class="p">)</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_hardcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_create_pdf</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Như vậy là mọi thứ đã OK, giờ chỉ việc dev thôi :D</p>
+<p>Chúng ta muốn test cả hai trường hợp nên cần phải viết 2 test case. Tuy nhiên, 2 test case này lại duplicate rất nhiều, vì chúng chỉ khác nhau ở logic ở trong đoạn if-else?</p>
 
-<p>Để switch một cách đơn giản nhất giữa HTTPS và HTTP thì mình tạo 2 hàm sau trong application_controller:</p>
+<p>Vậy đoạn code để tạo final pdf ở trên đã thực sự tốt? Một hàm tốt, là một hàm chỉ nên làm một việc. Đoạn code if-else xử lý 2 logic khác nhau, chúng nên được tách ra thành một hàm khác.</p>
 
-<figure class='code'><figcaption><span>switch.rb </span></figcaption>
+<figure class='code'><figcaption><span>models.py </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -340,525 +288,43 @@ Kết thúc thao tác này, powder đã tự động được khởi động, v�
 <span class='line-number'>13</span>
 <span class='line-number'>14</span>
 <span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'><span class="k">def</span> <span class="nf">redirect_to_https</span>
-</span><span class='line'>  <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">protocol</span> <span class="o">==</span> <span class="s1">&#39;http://&#39;</span>
-</span><span class='line'>    <span class="n">redirect_to</span> <span class="ss">action</span><span class="p">:</span> <span class="n">action_name</span><span class="p">,</span>
-</span><span class='line'>      <span class="ss">params</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">query_parameters</span><span class="p">,</span>
-</span><span class='line'>      <span class="ss">protocol</span><span class="p">:</span> <span class="s1">&#39;https://&#39;</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Order</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
 </span><span class='line'>
-</span><span class='line'><span class="k">def</span> <span class="nf">redirect_to_http</span>
-</span><span class='line'>  <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">protocol</span> <span class="o">==</span> <span class="s1">&#39;https://&#39;</span>
-</span><span class='line'>    <span class="n">redirect_to</span> <span class="ss">action</span><span class="p">:</span> <span class="n">action_name</span><span class="p">,</span>
-</span><span class='line'>      <span class="ss">params</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">query_parameters</span><span class="p">,</span>
-</span><span class='line'>      <span class="ss">protocol</span><span class="p">:</span> <span class="s1">&#39;http://&#39;</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Và với nhứng method nào cần sử dụng https thì mình chỉ cần gọi đến hàm redirect_to_https là ok :D.</p>
-
-<p>Các bạn có thể thấy bộ đôi pow và nginx rất dễ sử dụng đúng không.
-Gần đây mình có gặp phải một problem với bộ đôi này là mình sử dụng oauth2 để login với google account. Và google api <strong>không chấp nhận callback uri có domain có đuôi là .dev nhưng lại chấp nhận domain là localhost</strong>. Khi cài đặt powder thì default cái 127.0.0.1 sẽ không được trỏ đến app-name.dev của bạn, để làm việc này thì bạn chỉ cần vào ~/.pow, tạo một symlink với tên là <strong>default</strong> trỏ đến rails app của bạn là OK :D.</p>
-
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-05-13T04:52:00+09:00" data-updated="true" itemprop="datePublished">May 13<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/concurrency/'>concurrency</a>, <a class='category' href='/blog/categories/database/'>database</a>, <a class='category' href='/blog/categories/storage/'>storage</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/05/13/exclusivelock-sharedlock/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/05/13/exclusivelock-sharedlock/" itemprop="url">Exclusive Lock - Shared Lock</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h2>1. Mở đầu</h2>
-
-<p>Nhân tiện trả lời thắc mắc của bạn kiennt về <em>shared lock</em> và <em>exclusive lock</em> được nhắc đến trong bài viết <a href="http://ktmt.github.io/blog/2013/05/07/storageenginemysql/">Giới Thiệu Một Số Storage Engine Của Mysql</a>, mình viết bài này để giải thích khái niệm và ý nghĩa của exclusive lock, shared lock, MVCC cũng như làm rõ một số điểm chưa rõ ràng trong bài viết trên.</p>
-
-<h2>2. Cơ chế và ý nghĩa của Lock và MVCC</h2>
-
-<h3>2.1 Khái niệm và ý nghĩa của lock</h3>
-
-<p><a href="http://en.wikipedia.org/wiki/Lock_%28computer_science%29">Lock</a> (khóa) là <em>cơ chế đồng bộ</em> và <em>giới hạn truy cập</em> đến <em>tài nguyên đươc chia sẻ</em> trong một môi trường có <em>nhiều luồng xử lý cùng truy cập</em>.</p>
-
-<p>Nói một cách hình tượng, lock giống một cái cờ tuyên bố chủ quyền đối với tài nguyên máy tính. Mỗi luồng xử lý (thread) khi truy cập tài nguyên dùng chung nào đó sẽ phải &#8220;dựng cờ lên&#8221; để báo cho các luồng xử lý khác biết tài nguyên đó đang được xử dụng và &#8220;hạ cờ xuống&#8221; khi hoàn thành xử lý trên tài nguyên đó. Các luồng xử lý khác bằng việc quan sát trạng thái của cờ này mà sẽ chiếm tài nguyên cho xử lý của mình, hay chờ đợi cho đến khi luồng xử lý khác kết thúc. Có thể nói lock là một phương tiện khẳng định quyền sở hữu đối với 1 loại tài nguyên. Nhờ cơ chế lock này mà tại mỗi thời điểm chỉ có duy nhất 1 luồng xử lý truy cập tài nguyên dùng chung..</p>
-
-<p><em>Shared lock</em>, hay còn gọi là read-only lock (khóa chỉ đọc) là lock mà một luồng xử lý phải chiếm hữu khi muốn đọc từ một vùng nhớ được chia sẻ.</p>
-
-<p><em>Exclusive lock</em>, hay còn gọi là read-write lock (khóa đọc ghi) là lock mà một luồng xử lý phải chiếm hữu khi muốn cập nhật một vùng nhớ được chia sẻ.</p>
-
-<h3>2.2 Tại sao phải cần lock</h3>
-
-<h4>a. Tác dụng của exclusive lock</h4>
-
-<p>Xét bài toán ta có 2 luồng xử lý A, B cùng thao tác trên 2 biến a, b.
-Giá trị hiện tại của các biến</p>
-
-<ul>
-<li>a = 0</li>
-<li>b = 0</li>
-</ul>
-
-
-<p>Nhiệm vụ của 2 luồng xử lý:</p>
-
-<ul>
-<li>Luồng xử lý A đọc giá trị 2 biến, tăng giá trị của a lên 1, và cập nhật giá trị cả 2 biến vào bộ nhớ.</li>
-<li>Luồng xử lý B đọc giá trị 2 biến, tăng giá trị của b lên 1, và cập nhật giá trị cả 2 biến vào bộ nhớ.</li>
-</ul>
-
-
-<p>Giả sử A thực hiện trước, đọc giá trị của a và b (a=0, b=0) và tăng a lên 1. Lúc này giá trị của a đang là 1, của b là 0. Tuy nhiên, chính tại thời điểm này, hệ điều hành quyết định dừng A, và thực hiện B. B đọc giá trị 2 biến a và b và tăng b lên 1 rồi cập nhật cả 2 biến vào bộ nhớ. Do A chưa cập nhật giá trị 2 biến, giá trị của a lúc này vẫn là 0, của b là 1 (a=0,b=1 do A chưa hoàn thành). Vì vậy, tại thời điểm B kết thúc a = 0, b = 1. Đến đây hệ điều hành thực hiện chạy A ở bước cuối cùng, cập nhật giá trị 2 biến (a = 1, b = 0) vào bộ nhớ, ghi đè giá trị b = 1 được cập nhật bởi B. Kết quả cuối cùng (a = 1, b = 0) sai so với kết quả mong đợi (a = 1, b = 1).</p>
-
-<pre><code>    Luồng A            |  Luồng B
-    -------------------|-------------------------
-    Đọc a, b (a=0, b=0)| 
-    a = 1, b = 0       |
-                       |  Đọc a, b (a=0, b=0)
-                       |  a = 0, b = 1
-                       |  Ghi a, b (a = 0, b = 1)
-    Ghi a, b (a=1, b=0)|
-
-
-Trạng thái cuối cùng (a=1, b=0)
-Kết quả mong chờ: (a=1, b=1)
-</code></pre>
-
-<p>Để giải quyết bài toán này, người ta dùng một exclusive lock. Luồng A, B muốn cập nhật giá trị a, b phải trước tiên chiếm lock, rồi mới thực hiện xử lý của mình. Các bước thực hiện giờ sẽ như sau:</p>
-
-<ul>
-<li>Chiếm lock. Nếu như chiếm được lock thì tiến hành xử lý tiếp theo. Nếu không, chờ đến khi chiếm được lock</li>
-<li>Đọc a, b</li>
-<li>Cập nhật a (hoặc b)</li>
-<li>Ghi a, b</li>
-<li>Thôi chiếm lock</li>
-</ul>
-
-
-<p>Quy trình bây giờ tăng 2 bước (chiếm lock hoặc chờ đến khi nào chiếm được lock và nhả lock). Các bước chạy ở  trên giờ sẽ như sau:
-A chiếm lock thành công (do chưa có luồn nào chiếm lock) và tiến hành đọc và cập nhật a (a=1, b=0). Tại thời điểm A bị dùng, B được chạy và thử chiếm lock nhưng do A đang nắm giữ lock nên B sẽ <em>phải</em> chờ. Lúc này A thực hiện nốt bước cuối cùng ghi giá trị vào bộ nhớ (a=1, b=0) và nhả lock. B lúc này thấy lock bị nhả và nắm giữ lock, đọc giá trị từ bộ nhớ (a=1, b=0!!), cập nhật b (a=1, b=1) và ghi dữ liệu vào bộ nhớ (a=1, b=1) đồng thời nhả lock. Kết quả cuối cùng như mong đợi (a=1, b=1)</p>
-
-<pre><code>    Luồng A             | Luồng B
-    --------------------|--------------------------------
-    Chiếm lock          |
-    Đọc a, b            |    
-    a = 1, b = 0        |
-                        | Chiếm lock (không thành công)
-    Ghi a, b (a=1, b=0) |
-    Nhả lock            |
-                        | Chiếm lock (thành công)
-                        | Đọc a, b (a=1, b=0)
-                        | a = 1, b = 1
-                        | Ghi a, b (a = 1, b = 1)
-                        | Nhả lock
-
-Trạng thái cuối cùng (a=1, b=1)
-Kết quả mong chờ: (a=1, b=1)!!!!
-</code></pre>
-
-<p>Ta có thể thấy nhờ có lock, mà tại mỗi thời điểm chỉ có 1 luồng xử lý truy cập a, b. Các luồng khác khi không chiếm được lock sẽ phải chờ đến lượt.</p>
-
-<p><em>Kết luận</em>: exclusive lock được sử dụng để đồng bộ 2 xử lý ghi đồng thời.</p>
-
-<h4>b. Tác dụng của shared lock</h4>
-
-<p>Để hiểu ý nghĩa shared lock, ta xét bài toán tương tự như ở trên. Lần này, thay vì 2 luồng cùng cập nhật vùng nhớ chung, 1 luồng sẽ đọc, còn một luồng sẽ cập nhật. Giả sử A đọc và B cập nhật, và giá trị ban đầu là a=0, b=0.</p>
-
-<p>A tiến hành đọc a (a=0) và bị hệ điều hành <em>cho nghỉ</em> để B thực hiện. B đọc a, b (a=0, b=0) và thực hiện cập nhật b (a=0, b=1) và ghi kết quả lên bộ nhớ. A đọc nốt giá trị còn lại b (b=1).</p>
-
-<p>Kết quả cuối cùng đối với A rõ ràng không như mong đợi (Mong chờ: a=0, b=0 nhưng nhận về a=0, b=1).</p>
-
-<pre><code>    Luồng A     | Luồng B
-    ------------|-------------------------
-    Đọc a (a=0) |
-                | Đọc a, b (a=0, b=0)
-                | a = 0, b = 1
-                | Ghi a, b (a = 0, b = 1)
-    Đọc b (b=0) |
-
-Kết quả cuối cùng (a=0, b=1)
-Kết quả mong chờ: (a=0, b=0)
-</code></pre>
-
-<p>Để giải quyết bài toán này, ta dùng shared-lock. Luồng A muốn đọc sẽ cần phải chiếm shared-lock. Luồng B muốn ghi sẽ phải nhìn xem shared-lock có bị chiếm hay không. Nếu shared-lock đang bị chiếm. B phải đợi cho đến khi tất cả shared-lock được giải phóng mới tiến hành cập nhật. Luồng chạy sau bây giờ sẽ như sau:</p>
-
-<p>A chiếm shared-lock và tiến hành đọc a (a=0). A được <em>cho nghỉ</em> và B được <em>đưa vào sân</em>. Do A đang chiếm shared lock nên B không được quyền cập nhật và được <em>cho nghỉ</em>. A thực hiện nốt việc đọc b (b=0) và nhả shared-lock. B không thấy shared-lock và tiến hành cập nhật b (b=1) như bình thường.</p>
-
-<pre><code>    Luồng A           | Luồng B
-    ------------------|-----------------------------
-    Chiếm shared-lock |
-    Đọc a (a=0)       |
-                      | Nhìn thấy shared-lock. Nghỉ
-    Đọc b (b=0)       |
-    Nhả shared-lock   |
-                      | Chiếm exclusive lock
-                      | Đọc a, b (a=0, b=0)
-                      | a = 0, b = 1
-                      | Ghi a, b (a = 0, b = 1)
-                      | Nhả exclusive lock.
-
-Kết quả cuối cùng (a=0, b=0)
-Kết quả mong chờ: (a=0, b=0)
-</code></pre>
-
-<p><em>Kết luận</em>: shared-lock được sử dụng để đồng bộ 2 xử lý đọc ghi đồng thời.</p>
-
-<h4>c. Tại sao cần chiếm shared lock khi đọc dữ liệu</h4>
-
-<p>Đến đây ta có thể dễ dàng trả lời câu hỏi thứ nhất của kiennt! Khi tiến hành đọc dữ liệu, nếu không chiếm shared-lock, dữ liệu đó có thể bị cập nhật bởi 1 thread khác, dẫn tới giá trị đọc được bị thay đổi một phần, không bảo đảm tính toàn vẹn.</p>
-
-<p>Tuy vậy có một điểm trong bài viết cần được làm rõ như sau: Trong câu nói &#8220;MyISAM lock toàn bộ table. User (MySQL server) chiếm shared-lock khi đọc và chiếm exclusive-lock khi ghi. Tuy vậy, việc đọc ghi có thể diễn ra đồng thời!&#8221;, thì câu nói: &#8220;Tuy vậy, việc đọc ghi có thể diễn ra đồng thời!&#8221; là không đúng.</p>
-
-<p>Nói một cách chính xác hơn: việc <em>đọc và cập nhật (SELECT và UPDATE)</em> không được tiến hành đồng thời (Do tại thời điểm chiếm exclusive lock, không shared-lock nào được phép tồn tại). Tuy nhiên, việc <em>ghi mới</em> dữ liệu có thể được tiến hành mà không gây ảnh hưởng gì đến tính toàn vẹn của dữ liệu được đọc (vì chúng khác nhau!). Nói cách khác việc <em>đọc và ghi mới (SELECT và INSERT)</em> có thể được tiến hành đồng thời, và thực tế đây cũng là một tính năng của MyISAM.</p>
-
-<h3>2.2 MVCC (Multiversion concurrency control)</h3>
-
-<p>MVCC được đặt ra để giải quyết vấn đề đọc và ghi đồng thời. Rõ ràng ở giải pháp shared-lock trình bày ở trên, việc A phải chiếm shared lock là rất mất thời gian; B phải chờ đợi A hoàn thành xử lý đọc mới được cập nhật cũng hoàn toàn không hiệu quả. MVCC giải quyết sự không hiệu quả này bằng nhận xét: <em>Thao tác đọc không cập nhật dữ liệu</em> vì vậy nếu ta duy trì 2 version của dữ liệu (1 cũ - 1 mới) và chỉ tiến hành ghi đè dữ liệu mới vào cũ khi A hoàn thành việc đọc, thì ta không cần shared-lock. B sẽ cập nhật và <em>version mới</em> thay vì phải chờ A hoàn thành việc đọc.</p>
-
-<p>MVCC lưu timestamp và transaction ID để duy trì tính tính nhất quán của dữ liệu.</p>
-
-<p>Để hiểu cách MVCC hoạt động, ta xét ví dụ sau (Copy từ Wikipedia :D)</p>
-
-<pre><code>    Thời gian       | Object 1      | Object 2
-    ----------------|---------------|------------
-    0               | Foo           | Bar
-    1               | Hello (T1)    | 
-</code></pre>
-
-<p>Tại thời điểm 0, Object 1 có giá trị Foo, Object 2 có giá trị Bar. Tại thời điểm 1, thread T1 cập nhật giá trị Object 1 thành Hello. Như vậy trước khi T1 commit dữ liệu, bất cứ xử lý đọc nào cũng cho kết quả Object 1 và 2 tại thời điểm 0 (Foo-Bar). Khi T1 commit dữ liệu, xử lý đọc sẽ trả về giá trị Hello-Bar.</p>
-
-<p>Giả sử tại thời điểm T1 chưa commit, T2 lại cập nhật Object 2 như sau:</p>
-
-<pre><code>    Thời gian       | Object 1      | Object 2
-    ----------------|---------------|------------
-    0               | Foo           | Bar
-    1               | Hello (T1)    | 
-    2               |               | World (T2)
-</code></pre>
-
-<p>Lúc này, mọi thao tác đọc sẽ vẫn trả về Foo-Bar. Khi T2 commit, dữ liệu đọc tiếp theo sẽ là Hello-Bar. Và khi T2 commit, dữ liệu đọc sẽ là Hello-World. Nói cách khác, tại mỗi thời điểm ta nhìn thấy 1 phiên bản dữ liệu, các cập nhật bởi thread khác sẽ được lưu tại một version khác.</p>
-
-<p>Chính nhờ cách quản lý nhiều version dữ liệu này, mà việc đọc không cần lock shared-lock vẫn đảm bảo được tính toàn vẹn của dữ liệu được đọc.</p>
-
-<h2>3. Tổng kết</h2>
-
-<p>Bài viết đã giải thích phần nào hiểu hơn ý nghĩa của exclusive lock và shared-lock cũng như tác dụng và sự cần thiết của chúng. Đồng thời, bài viết cũng làm rõ những điểm được nói đến trong viết trong bài <a href="http://ktmt.github.io/blog/2013/05/07/storageenginemysql/">Giới Thiệu Một Số Storage Engine Của Mysql</a> cũng như giải đáp những thắc mắc của bạn kiennt.</p>
-
-<h2>4. Tham khảo:</h2>
-
-<ol>
-<li><a href="http://en.wikipedia.org/wiki/Multiversion_concurrency_control">MVCC</a></li>
-<li><a href="http://en.wikipedia.org/wiki/Lock_%28computer_science%29">Lock</a></li>
-<li><a href="http://stackoverflow.com/questions/11837428/whats-the-difference-between-an-exclusive-lock-and-a-shared-lock">Exclusive lock &amp; shared lock</a></li>
-<li><a href="http://www.amazon.com/High-Performance-MySQL-Optimization-Replication/dp/1449314287">High performance MySQL</a></li>
-</ol>
-
-
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-05-12T00:15:00+09:00" data-updated="true" itemprop="datePublished">May 12<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/javascript/'>javascript</a>, <a class='category' href='/blog/categories/programming/'>programming</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/05/12/closure-va-scope-cua-javascript/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/05/12/closure-va-scope-cua-javascript/" itemprop="url">Closure và Scope Trong Javascript</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h1>Scope và closure là gì?</h1>
-
-<p>Scope và closure là 2 khái niệm cơ bản mà một programmer nên biết, vì hiểu rõ 2 khái niệm này vừa giúp cho programmer tránh được một số lỗi hay gặp, vừa giúp thiết kế chương trình tốt hơn. Đầu tiên chúng ta sẽ remind lại 2 khái niệm này một cách ngắn gọn.
-Đầu tiên là khái niệm về scope, khái niệm này quá cơ bản chắc hẳn mọi người đều biết, nhưng thôi mình cứ quote lại từ wikipedia đề phòng có người quên:</p>
-
-<blockquote><p>[Scope refers to where variables and functions are accessible, and in what context it is being executed]</p></blockquote>
-
-<p> => Dịch ra đại thể là scope là nơi mà <em>biến</em> hoặc <em>hàm</em> có thể truy cập vào và sử dụng/ tham chiếu được qua tên trực tiếp. Và ở ngoài scope đó thì <em>biến</em> hoặc <em>hàm</em> đó sẽ không thể <strong>nhìn</strong> được một cách trực tiếp nữa. (hơi khó hình dung nhỉ). Để phân loại scope thì có rất nhiều cách tùy thuộc vào từng góc nhìn , nhưng mình sẽ không đi sâu vào vấn đề này. Mỗi ngôn ngữ lại có đặc trưng về scope khác nhau. Trong bài viết này chúng ta sẽ chỉ tập trung vào javascript.</p>
-
-<p> Khái niệm tiếp theo là về closure, khái niệm này thì không phải ai cũng biết, vì không phải ai cũng cần đến và từng động đến. Một số ngôn ngữ mainstream như C++ , java cũng không hỗ trợ closure, càng làm ít người để ý đến nó (java 8 expected sẽ cho closure vào). Hãy xem wiki nói về closure thế nào:</p>
-
-<blockquote><p>[a closure (also lexical closure or function closure) is a function or reference to a function together with a <strong>referencing environment</strong>]</p></blockquote>
-
-<p> => Dịch ra đại thể là closure là một hàm hoặc một tham chiếu (hay còn gọi là một cái <strong>bao đóng</strong>) đi kèm với cái môi trường mà nó tham chiếu đến (khá là xoắn). Cái cần nhấn mạnh ở đây là cái <strong>referencing environment</strong> (môi trường tham chiếu) mà các bạn sẽ hiểu hơn ở các ví dụ dưới đây.</p>
-
-<h1>Scope và closure trong javascript</h1>
-
-<p>Javascript là một ngôn ngữ phổ biến hiện nay. Người biết về js thì nhiều, nhưng người hiểu rõ một số corner của js thì chắc không nhiều đến thế :D. Một trong các corner đấy chính là <strong>scope và closure</strong>. Js là một ngôn ngữ khá đặc biệt, đặc biệt ở chỗ js mang hơi hướng của lập trình hàm (functional programming), khi mà <strong>function ở js cũng là một first-class object</strong>, tức là function có thể được tạo mới (construct new) tại run-time, được lưu dưới dạng một cấu trúc dữ liệu (data structure), được truyền qua parameter, được dùng như một giá trị trả về (return value). Chính vì đặc điểm đấy khiến cho scope và closure của js không giống như các ngôn ngữ phổ biến khác.</p>
-
-<p>Đầu tiên chúng ta sẽ nói về scope</p>
-
-<h2>1. <strong><em><u>Scope</u></em></strong></h2>
-
-<p>Như chúng ta vừa nói ở trên, scope là khái niệm qui định &#8220;visibility&#8221; và &#8220;lifetime&#8221; của variable. Thông thường, ví dụ như C thì scope sẽ là <strong>block scope</strong>, tức là những biến <strong>tạo ra</strong> trong block sẽ chỉ được nhìn thấy trong block đấy thôi, và khi ra ngoài block đấy thì những variable nằm trong block sẽ được giải phóng ( như trong C là các biến tạo ra trong stack sẽ được free khi ra khỏi block), và không nhìn thấy được nữa.</p>
-
-<p>Tuy nhiên rất buồn là javascript của chúng ta lại không có cái scope dễ hiểu đến thế, mà nó lại là <strong>function block</strong>.Function block ở đây là gì: tức là những gì bạn tạo ra trong một function sẽ available ở trong function đó. Vì javascript cũng là block syntax, nên sẽ hơi dễ confusing, chúng ta sẽ dùng ví dụ dễ hiểu này:</p>
-
-<figure class='code'><figcaption><span>function.js </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">scope</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="kc">true</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">test</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  <span class="nx">alert</span><span class="p">(</span><span class="nx">test</span><span class="p">);</span> <span class="err">#</span><span class="o">=&gt;</span> <span class="mi">1</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="nx">scope</span><span class="p">();</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Nói đến đây chắc chắn có bạn sẽ nghĩ đến điều gì xảy ra khi chúng ta có <strong>nested function</strong>. Let&#8217;s try</p>
-
-<figure class='code'><figcaption><span>function.js </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">outer</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">outer_var</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
-</span><span class='line'>  <span class="kd">function</span> <span class="nx">inner</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">alert</span><span class="p">(</span><span class="nx">outer_var</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  <span class="nx">inner</span><span class="p">();</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="nx">outer</span><span class="p">();</span> <span class="err">#</span><span class="o">=&gt;</span> <span class="mi">2</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Từ ví dụ trên ta có thể dễ dàng thấy là inner function có thể access được outer function variable. Từ ví dụ này chúng ta có thể thấy là <strong>inner function có thể inherit biến của outer function</strong>, hay nói cách khác, inner function <strong>chứa(contain)</strong> scope của outer function. Chính nhờ điều đặc biệt này mà chúng ta có cái gọi là <strong>Closure</strong> mà mình sắp sửa nói đến ngay dưới đây. Một điều chú ý là đối với nhiều ngôn ngữ thì các bạn hay được khuyên là declare biến muộn nhất có thể để tránh overhead, tuy nhiên với javascript là ngôn ngữ với <strong>function scope</strong> thì best practice lại là <strong>declare biến sớm nhất có thể </strong> để tránh nguy cơ xảy ra một số lỗi không mong muốn.</p>
-
-<h2>2. <strong><em><u>Closure</u></em></strong></h2>
-
-<p> Quote lại cái định nghĩa cho đỡ quên:</p>
-
-<blockquote><p>A closure is an expression (typically a function) that can have free variables <strong>together with an environment that binds those variables (that &#8220;closes&#8221; the expression).</strong></p></blockquote>
-
-<p>Chắc có bạn sẽ thắc mắc, <strong>environment</strong> ở đây là gì. Để hình dung một cách dễ hiểu, thì environment ở đây trong phần lớn các trường hợp chính là cái outer function mà chung ta vừa thử ở ví dụ về scope ở trên. Một đặc điểm rất hay của closure là <strong>closure sẽ giữ tham chiếu đến các biến nằm bên trong nó, hoặc được gọi đến bên trong nó</strong>. Điều này dẫn đến việc gì? Chắc sẽ có bạn nghĩ đến một trường hợp rất đặc biệt là khi bạn muốn context của một function được giữ lại sau khi hàm đó đã được execute xong :D. Hãy bắt đầu bằng một ví dụ:</p>
-
-<figure class='code'><figcaption><span>closure.js </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">outside</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">function</span> <span class="nx">inside</span><span class="p">(</span><span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="nx">x</span> <span class="o">+</span> <span class="nx">y</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  <span class="k">return</span> <span class="nx">inside</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="nx">fn_inside</span> <span class="o">=</span> <span class="nx">outside</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
-</span><span class='line'><span class="nx">result</span> <span class="o">=</span> <span class="nx">fn_inside</span><span class="p">(</span><span class="mi">5</span><span class="p">);</span> <span class="c1">// #=&gt; 8</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">create_input_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">front_image</span><span class="p">,</span> <span class="n">back_image</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_type</span> <span class="o">==</span> <span class="n">Order</span><span class="o">.</span><span class="n">SOFT_COVER</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">frontcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
+</span><span class='line'>                <span class="p">[</span><span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">front_image</span><span class="p">),</span> <span class="bp">None</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_size</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">backcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
+</span><span class='line'>                <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">back_image</span><span class="p">)],</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_size</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">frontcover_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached_pdf_file</span><span class="p">,</span> <span class="n">backcover_file</span><span class="p">]</span>
+</span><span class='line'>        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_type</span> <span class="o">==</span> <span class="n">Order</span><span class="o">.</span><span class="n">HARD_COVER</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">hardcover_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_hardcover_image</span><span class="p">(</span><span class="n">back_image</span><span class="p">,</span> <span class="n">front_image</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">hardcover_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PDF_SIZES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">size_type</span><span class="p">]</span>
+</span><span class='line'>            <span class="n">hardcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
+</span><span class='line'>                <span class="p">[</span><span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">hardcover_image</span><span class="p">)],</span> <span class="n">hardcover_size</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">hardcover_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached_pdf_file</span><span class="p">]</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">input_files</span>
 </span><span class='line'>
-</span><span class='line'><span class="nx">result1</span> <span class="o">=</span> <span class="nx">outside</span><span class="p">(</span><span class="mi">3</span><span class="p">)(</span><span class="mi">5</span><span class="p">);</span> <span class="c1">// #=&gt; 8</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">create_final_pdf_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_order_id</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">front_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">create_frontcover_image</span><span class="p">()</span>
+</span><span class='line'>        <span class="n">back_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">create_backcover_image</span><span class="p">(</span><span class="n">client_order_id</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">input_files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_input_files</span><span class="p">(</span><span class="n">front_image</span><span class="p">,</span> <span class="n">back_image</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">new_path</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">merge_pdf_files</span><span class="p">(</span><span class="n">input_files</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">new_path</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Bạn có nhận thấy điều gì đặc biệt ở trên? Điều đặc biệt nằm ở hàm <strong>fn_inside</strong> : hàm fn_inside được tạo ra bởi kết quả trả về của hàm outside() với parameter là 3, và bạn có thể nhận thấy hàm fn_inside vẫn giữ tham chiếu đến cái parameter 3 đó <strong>ngay cả khi hàm outside() đã được execute xong</strong>. Chắc các bạn sẽ thấy mâu thuẫn với cái lý thuyết về function scope chúng ta đã nói đến ở trên, khi mà <em>mọi thứ được tạo ra trong function của js chỉ nhìn thấy và sử dụng được ở trong đó, và sẽ được giải phóng hoặc không nhìn thấy khi ra ngoài function đó</em>.
-Thực tế là không hề mâu thuẫn chút nào cả, chính vì cái gọi là closure của js :D. Nói một cách cụ thể hơn: <strong>fn_inside khi được tạo ra đã đồng thời cũng tạo ra một cái closure (bao đóng), trong cái bao đó, giá trị 3 được truyền vào, và cái bao của fn_inside sẽ vẫn giữ cái giá trị 3 đó cho dù outside() function có execute xong</strong>. Các bạn cứ hình dung trực quan closure như một cái bao chứa rất nhiều thứ trong nó là sẽ thấy dễ hiểu hơn:</p>
+<p>Code test</p>
 
-<p><img src="/images/closurejs/closure.png"></p>
-
-<p>Như vậy chúng ta có thể tóm gọn lại đoạn code ở trên như sau:</p>
-
-<ol>
-<li>Khi outside() được gọi, outside trả về một function</li>
-<li>function được outside trả lại (fn_inside) đó đóng lại cái context hiện tại và cái context đó <strong>chứa biến x tại thời điểm outside() được gọi</strong></li>
-<li>Khi fn_inside được gọi, nó vẫn nhớ x có giá trị là 3</li>
-<li>Khi invoke fn_inside(5) thì nó sẽ lấy giá trị biến y=5 + giá trị biến x=3 và kết quả sẽ là 8</li>
-</ol>
-
-
-<p>Như vậy chúng ta có thể rút ra một đặc điểm của closure là:</p>
-
-<blockquote><p> <strong><em>A closure must preserve the arguments and variables in all scopes it references</em></strong></p></blockquote>
-
-<ul>
-<li><p>Một câu hỏi được đặt ra là: Khi nào cái biến x được giải phóng?? Câu trả lời là khi mà cái context mà biến x được reference đến ( ở đây là fn_inside ) không còn accessible được nữa ( refer đến scope của js, chúng ta có thể hiểu là khi mà function chứa fn_inside được execute xong và không còn bất kì tham chiếu nào đến fn_inside nữa ).</p></li>
-<li><p>Một câu hỏi khác được đặt ra là với multi-nested function thì điều gì sẽ xảy ra?? Let&#8217;s give a try:</p></li>
-</ul>
-
-
-<figure class='code'><figcaption><span>multinested.js </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">A</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">function</span> <span class="nx">B</span><span class="p">(</span><span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kd">function</span> <span class="nx">C</span><span class="p">(</span><span class="nx">z</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nx">alert</span><span class="p">(</span><span class="nx">x</span> <span class="o">+</span> <span class="nx">y</span> <span class="o">+</span> <span class="nx">z</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="nx">C</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  <span class="nx">B</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="nx">A</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span> <span class="err">#</span><span class="o">=&gt;</span> <span class="mi">6</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Ở đoạn code trên thì điều gì đã xảy ra?</p>
-
-<ol>
-<li>B tạo ra một cái closure chữa context của A, do đó B có thể access vào A&#8217;s variable, ở đây là x</li>
-<li>C tạo ra một cái closure chứa context của B</li>
-<li>Vì B chứa context của A nên C cũng sẽ chứa context của A, tức là C cũng access được vào biến x của A, và cả biến y của B.</li>
-</ol>
-
-
-<p>Do đó kết quả sẽ là 1+2+3=6, khá là obvious nhỉ. Đoạn code ở trên giúp chúng ta có thêm một khái niệm mới gọi là <strong><em>scope chaining</em></strong>. Tại sao gọi là chaining, vì khi context được include từ outer function vào inner function, thì chúng ta sẽ hiểu một cách đơn giản là context của inner function và context của outer function được nối với nhau, một cách có chiều (<strong>directed</strong>). Và độ ưu tiên khi access biến là từ trong ra ngoài.</p>
-
-<p><img src="/images/closurejs/closure2.png"></p>
-
-<p>Do cái scope chaining là directed nên ở phía ngược lại, A lại không thể access được C, vì C nằm trong context của B, và chỉ visible <strong>inside B</strong>, hay nói cách khác là C sẽ là private của B, và không nhìn được từ A.</p>
-
-<ul>
-<li>Lại có một bạn nghĩ là khi outer function có biến tên là x, mà ta cũng truyền 1 biến tên là x vào inner function, tức là khi có name-conflict thì chuyện gì sẽ xảy ra. Let&#8217;s take an example</li>
-</ul>
-
-
-<figure class='code'><figcaption><span>nameconflict.js </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">outside</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
-</span><span class='line'>  <span class="kd">function</span> <span class="nx">inside</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="nx">x</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  <span class="k">return</span> <span class="nx">inside</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="nx">result</span> <span class="o">=</span> <span class="nx">outside</span><span class="p">()(</span><span class="mi">20</span><span class="p">);</span> <span class="err">#</span><span class="o">=&gt;</span> <span class="mi">20</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Bạn có thể thấy kết quả trả về biến x được trực tiếp truyền vào inner function thay vì biến x của outer function. Sử dụng khái niệm scope chaining ở trên thì chúng ta có thể thấy độ ưu tiên của context inside là cao hon context outside khi intepreter tìm giá trị của x, nên giá trị của x ở inside (ở đây là 20) sẽ được sử dụng.</p>
-
-<p>Hy vọng là với 3 ví dụ trên các bạn đã có cái nhìn rõ ràng hơn về closure.</p>
-
-<h2>3. <strong><em><u>Closure pitfalls</u></em></strong></h2>
-
-<p>Closure là một khái niệm khá dễ nhầm lẫn và khó nắm rõ với những người người ít quan tâm đến javascript. Một trong những ví dụ hay được dùng để minh họa cái sự dễ nhầm này được gọi là <strong>The Infamous Loop Problem</strong>. Ví dụ này được minh họa bằng đoạn code dưới đây:</p>
-
-<figure class='code'><figcaption><span>closurepitfall.js </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">add_the_handlers</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">nodes</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">i</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">for</span> <span class="p">(</span><span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">nodes</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">nodes</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">onclick</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nx">alert</span><span class="p">(</span><span class="nx">i</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">};</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">};</span>
-</span><span class='line'><span class="nx">nodes</span> <span class="o">=</span> <span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s2">&quot;click&quot;</span><span class="p">);</span>
-</span><span class='line'><span class="nx">add_the_handlers</span><span class="p">(</span><span class="nx">nodes</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Đoan code ở trên làm một việc là tìm tất cả các node có id là &#8220;click&#8221;, add vào node đó một cái sự kiện là khi click vào node đó sẽ alert lên thứ tự của node đó. Giả sử bạn có một file html như sau:</p>
-
-<figure class='code'><figcaption><span>closurepitfall.html </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;li</span> <span class="na">id=</span><span class="s">&quot;click&quot;</span><span class="nt">&gt;</span>link 1 <span class="nt">&lt;/li&gt;</span>
-</span><span class='line'><span class="nt">&lt;li</span> <span class="na">id=</span><span class="s">&quot;click&quot;</span><span class="nt">&gt;</span>link 2 <span class="nt">&lt;/li&gt;</span>
-</span><span class='line'><span class="nt">&lt;li</span> <span class="na">id=</span><span class="s">&quot;click&quot;</span><span class="nt">&gt;</span>link 3 <span class="nt">&lt;/li&gt;</span>
-</span><span class='line'><span class="nt">&lt;li</span> <span class="na">id=</span><span class="s">&quot;click&quot;</span><span class="nt">&gt;</span>link 4 <span class="nt">&lt;/li&gt;</span>
-</span><span class='line'><span class="nt">&lt;li</span> <span class="na">id=</span><span class="s">&quot;click&quot;</span><span class="nt">&gt;</span>link 5 <span class="nt">&lt;/li&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Bạn hy vọng là khi click vào link 1 sẽ alert 1, click vào link 2 sẽ alert ra 2&#8230;. đúng không. Tuy nhiên thực tế là <strong>bạn click vào link nào nó cũng alert ra 5 cả</strong>. Kì lạ nhỉ? Để giải thích cho hiện tượng này thì chúng ta hãy xem lại khái niệm về closure nào. Biến i được sử dụng trong anonymous function được gán cho onclick, được <strong>kế thừa từ context của add_the_handlers function</strong>. Tại thời điểm mà bạn gọi onclick, for loop đã được execute xong, và biến i <strong>của context của add_the_handlers</strong> lúc này có giá trị là 5. Do đó bạn có click vào link nào thì giá trị được alert ra cũng là 5 cả. Điểm chú ý của việc này chính là do bạn đang nhầm lẫn, hay chính xác là có sự khác biệt giữa <strong>scope/context của for-loop</strong> với <strong>scope/context của outer function là add_the_handlers </strong>.</p>
-
-<p>Để giải quyết vấn đề này thì bạn có thể làm như dưới đây:</p>
-
-<figure class='code'><figcaption><span>pitfall.js </span></figcaption>
+<figure class='code'><figcaption><span>test_models.py </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -870,34 +336,376 @@ Thực tế là không hề mâu thuẫn chút nào cả, chính vì cái gọi 
 <span class='line-number'>9</span>
 <span class='line-number'>10</span>
 <span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">add_the_handlers</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">nodes</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">helper</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">i</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nx">alert</span><span class="p">(</span><span class="nx">i</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">};</span>
-</span><span class='line'>  <span class="p">};</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">i</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">for</span> <span class="p">(</span><span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">nodes</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">modes</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">onclick</span> <span class="o">=</span> <span class="nx">helper</span><span class="p">(</span><span class="nx">i</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">};</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">TestModel</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="n">Order</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.generator.pdf.merge_pdf_files&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">test_create_final_pdf_file</span><span class="p">(</span>
+</span><span class='line'>            <span class="bp">self</span><span class="p">,</span> <span class="n">mock_merge_pdf</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">order_type</span> <span class="o">=</span> <span class="n">Order</span><span class="o">.</span><span class="n">SOFT_COVER</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">mock_cached_pdf</span> <span class="o">=</span> <span class="n">PropertyMock</span><span class="p">(</span>
+</span><span class='line'>            <span class="n">return_value</span><span class="o">=</span><span class="s">&#39;StoryTree/tests/fixtures/1.pdf&#39;</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_backcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_frontcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_input_files</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_values</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;&#39;</span><span class="p">])</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">with</span> <span class="n">nested</span><span class="p">(</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="s">&#39;create_input_files&#39;</span><span class="p">,</span> <span class="n">mock_input_files</span><span class="p">)</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="s">&#39;cached_pdf_file&#39;</span><span class="p">,</span> <span class="n">mock_cached_pdf</span><span class="p">),</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="s">&#39;create_backcover_image&#39;</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="p">),</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="s">&#39;create_frontcover_image&#39;</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="p">)):</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">create_final_pdf_file</span><span class="p">(</span><span class="s">&#39;STORYTREE01111&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEquals</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_input_files</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Point của cách làm này chính là việc truyền được giá trị của (i) tại thời điểm hiện tại vào closure của function được bind (gán) vào onclick. Giúp cho hàm helper() luôn tham chiếu đến giá trị i đúng. Một best practice để tránh những sai lầm như thế này là</p>
+<p>Việc tách logic của đoạn code tạo 2 input files ra thành một hàm <code>create_input_files</code>, làm cho hàm <code>create_final_pdf</code> dễ hiểu hơn, nói cách khác, nó che giấu thông tin không cần thiết cho lập trình viên khi đọc tới đoạn code của <code>create_final_pdf</code>.Hàm <code>create_final_test</code> giờ đây không làm gì khác ngoại việc gọi tới các hàm khác. Không có bất cứ logic nào được đặt trong hàm này. Trên thực tế rất nhiều lập trình viên sẽ không viết test cho những hàm như <code>create_final_pdf</code> nữa. Họ chỉ cần viết test cho 4 hàm <code>create_input_files</code>, <code>create_backcover_image</code>, <code>create_frontcover_image</code>, và <code>cached_pdf_file</code> là đủ.</p>
 
-<blockquote><p>Avoid creating functions within a loop. It can be wasteful computationally,and it can cause confusion (tránh tạo mới function trong vòng loop, vì nó vừa làm tốn tài nguyên cpu, vừa dễ gây nhầm lẫn)</p></blockquote>
+		
+		
+	</div>
 
-<h1>Kết luận</h1>
+</article>
 
-<p>Như vậy qua bài viết này chúng ta đã nắm được khái niệm về function scope và closure trong javascript, và một số best practices trong việc sử dụng closure và scope. Closure trong javascript hay sử dụng để tạo ra một cái bao mà các thứ trong đấy không được nhìn thấy bởi bên ngoài nhưng vẫn truy cập được từ bên trong, và thường được áp dụng cho một số design pattern trong js (tiêu biểu nhất là module pattern).Chi tiết hơn các bạn có thể tham khảo ở các tài liệu sau:</p>
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-05-21T21:50:00+09:00" data-updated="true" itemprop="datePublished">May 21<span>st</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/c-plus-plus/'>c++</a>, <a class='category' href='/blog/categories/programming/'>programming</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/05/21/quy-tac-xoan-oc/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/05/21/quy-tac-xoan-oc/" itemprop="url">Quy Tắc Xoắn ốc</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h3>Quy tắc xoắn ốc</h3>
+
+<p>Có một quy tắc gọi là &#8220;quy tắc xoắn ốc&#8221; cho phép lập trình viên C/C++ phân tích trong đầu bất cứ khai báo nào. Quy tắc này rất đơn giản như sau:</p>
 
 <ul>
-<li><a href="http://www.amazon.com/JavaScript-Good-Parts-Douglas-Crockford/dp/0596517742/ref=sr_1_1?ie=UTF8&amp;qid=1368334060&amp;sr=8-1&amp;keywords=javascript+the+good+part">Javascript the good part (by Douglas Crockford)</a></li>
-<li><a href="http://www.ecma-international.org/publications/standards/Ecma-262.htm">Ecma-262 standard</a></li>
-<li><a href="http://robertnyman.com/2008/10/09/explaining-javascript-scope-and-closures/">http://robertnyman.com/2008/10/09/explaining-javascript-scope-and-closures/</a></li>
-<li><a href="https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Functions_and_function_scope">https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Functions_and_function_scope</a></li>
+<li>Bắt đầu bằng tên biến và di chuyển <strong>xoắn ốc</strong> theo chiều kim đồng hồ.</li>
+<li>Nếu gặp từ khóa const thì đối tượng nằm trên đường xoắn ốc trước const không đổi.</li>
+<li>Nếu gập ký tự * thì đối tượng trước khi đến * là một con trỏ.</li>
+<li>Nếu gặp [] thì đối tượng trước [] là một mảng.</li>
+<li>Nếu gặp (kiểu dữ liệu 1, kiểu dữ liệu 2), đối tượng trước đó là một function.</li>
 </ul>
+
+
+<h3>Áp dụng</h3>
+
+<p>Ta tử áp dụng quy tắc trên để phân tích thử 1 số khai báo.</p>
+
+<h4>1. Khai báo đơn giản</h4>
+
+<pre><code>                 +-------+
+                 | +-+   |
+                 | ^ |   |
+            char *str[10];
+             ^   ^   |   |
+             |   +---+   |
+             +-----------+
+</code></pre>
+
+<p><strong>Ý nghĩa</strong>: str là một mảng (10 ký tự) con trỏ có kiểu dữ liệu ký tự (char).</p>
+
+<h4>2. Con trỏ hàm</h4>
+
+<pre><code>          +--------------------+
+          | +---+              |
+          | |+-+|              |                    
+          | |^ ||              |
+     char *(*fp)( int, float *);
+      ^   ^ ^  ||              |
+      |   | +--+|              |
+      |   +-----+              |
+      +------------------------+
+</code></pre>
+
+<p><strong>Ý nghĩa</strong>: fp là 1 con trỏ, trỏ đến 1 function (nhận 2 đối số là int, và con trỏ kiểu float), trả về 1 con trỏ  có kiểu dữ liệu ký tự (char).</p>
+
+<h4>3. Const</h4>
+
+<ul>
+<li><p>Ví dụ 1</p>
+
+<pre><code>  char greeting[] = "Hello";
+         +-----------------+
+         |   +-----------+ |
+         |   | +-------+ | |
+         |   ^ ^       v | | 
+  const char * p = greeting;
+     ^   ^   ^         | | |
+     |   |   |         | | |
+     |   |   +---------+ | |
+     |   +---------------+ |   
+     +---------------------+
+</code></pre></li>
+</ul>
+
+
+<p><strong>Ý nghĩa</strong>: p có giá trị giống greeting, và là 1 con trỏ, trỏ đến dữ liệu kiểu char, giá trị này là hằng số (không thay đổi).</p>
+
+<ul>
+<li><p>Ví dụ 2</p>
+
+<pre><code>  char greeting[] = "Hello";
+           +------------------------+   
+           | +-------------------+  |
+           | |     +-----------+ |  |
+           | |     | +-------+ | |  |
+           | |     ^ ^       v | |  |
+  const char * const p = greeting;  |
+     ^     ^ ^     ^         | | |  |
+     |     | |     |         | | |  |
+     |     | |     +---------+ | |  |
+     |     | +-----------------+ |  |
+     |     +---------------------+  |
+     +------------------------------+
+</code></pre></li>
+</ul>
+
+
+<p><strong>Ý nghĩa</strong>: p có giá trị giống greeting, giá trị của p không đổi, và nó là 1 con trỏ, trỏ đến dữ liệu kiểu chả, và dữ liệu của là hằng số.</p>
+
+<h3>Cuối cùng</h3>
+
+<p>Quy tắc <strong>xoắc ốc</strong> giúp ta hiểu ý nghĩa khai báo C/C++ một cách dễ dàng. Bây giờ với quy tắc này, bạn chắc chắn khai báo dưới đây dễ hiểu như ăn kẹo rồi phải không?</p>
+
+<pre><code>void (*signal(int, void (*fp)(int)))(int);
+</code></pre>
+
+		
+		
+	</div>
+
+</article>
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-05-21T09:37:00+09:00" data-updated="true" itemprop="datePublished">May 21<span>st</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/arduino/'>arduino</a>, <a class='category' href='/blog/categories/embedded/'>embedded</a>, <a class='category' href='/blog/categories/physical-computing/'>physical computing</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/05/21/co-ban-ve-arduino-platform-for-physical-computing/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/05/21/co-ban-ve-arduino-platform-for-physical-computing/" itemprop="url">Cơ Bản về Arduino - Platform for Physical Computing</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1>Giới thiệu về Arduino và Physical Computing</h1>
+
+<p>Có thể bạn đã quen lập trình trên PC, với những ngôn ngữ như C, C++, C#, Java, Python, Ruby&#8230;</p>
+
+<p>Nhưng bạn có biết là phần mềm trên PC chỉ chiếm khoảng 10% sản lượng phần mềm trên thị trường. 90% còn lại là code điều khiển tivi, máy giặt, điều hòa, tủ lạnh&#8230; tóm lại là tất cả các thiết bị điện tử xung quanh bạn. Đây cũng là một mảng theo tôi là khá thú vị. Lập trình theo hướng này được gọi là embedded computing, hay physical computing, tức là lập trình để con người tương tác với các thiết bị thực.</p>
+
+<p>Để người thiết kế có thể nhanh chóng đưa ra được mẫu thể hiện ý tưởng của mình, rất cần phải có những platform để dễ dàng prototyping. Và một trong những platform đang được sử dụng rất nhiều trong prototyping là Arduino.</p>
+
+<p>Vậy Arduino là gì và vì sao nó được sử dụng rộng rãi như vậy?</p>
+
+<p>Arduino là một bo mạch xử lý được dùng để lập trình tương tác với các thiết bị phần cứng như cảm biến, động cơ,&#8230; Điểm hấp dẫn ở Arduino với anh em lập trình là ngôn ngữ cực kì dễ học (giống C/C++), các ngoại vi trên bo mạch đều đã được chuẩn hóa, nên không cần biết nhiều về điện tử, chúng ta cũng có thể lập trình được những ứng dụng thú vị. Thêm nữa, vì Arduino là một platform đã được chuẩn hóa, nên đã có rất nhiều các bo mạch mở rộng (gọi là shield) để cắm chồng lên bo mạch Arduino, có thể hình dung nôm na là &#8220;library&#8221; của các ngôn ngữ lập trình. Ví dụ, muốn kết nối Internet thì có Ethernet shield, muốn điều khiển động cơ thì có Motor shield, muốn kết nối nhận tin nhắn thì có GSM shield,&#8230; Rất đơn giản, và ta chỉ phải tập trung vào việc &#8220;lắp ghép&#8221; các thành phần này và sáng tạo ra các ứng dụng cần thiết :)</p>
+
+<p>Có thể kể ở đây một số ứng dụng hay ho của Arduino:</p>
+
+<ul>
+<li><p>Robot: Arduino được dùng để làm bộ xử lý trung tâm của rất nhiều loại robot. Đó là nhờ vào khả năng đọc các thiết bị cảm biến, điều khiển động cơ,&#8230; của Arduino.</p></li>
+<li><p>Game tương tác: chúng ta có thể dùng Arduino để tương tác với Joystick, màn hình,&#8230; để chơi các trò như Tetrix, phá gach, Mario&#8230; Còn nhiều game rất sáng tạo nữa, ví dụ bạn có thể tham khảo ở đây:
+<a href="http://wn.com/arduino_game">http://wn.com/arduino_game</a></p></li>
+<li><p>Máy bay không người lái</p></li>
+<li><p>Mô phỏng Ipod :D (ví dụ ở đây: <a href="http://www.youtube.com/watch?v=5gy7w6R091M">http://www.youtube.com/watch?v=5gy7w6R091M</a>)</p></li>
+<li><p>và nhiều nhiều ứng dụng khác nữa &#8230;</p></li>
+</ul>
+
+
+<h1>Để lập trình Arduino cần những gì?</h1>
+
+<p>Như vậy, bạn đã biết là tuy là một bo mạch nhỏ như thế, Arduino có thể dùng vào rất nhiều ứng dụng thú vị khác nhau. Vậy để phát triển ứng dụng dựa trên Arduino, ta cần những gì?
+Rất đơn giản, bạn chỉ cần IDE phát triển (download ở <a href="http://arduino.cc/">đây</a>), một dây kết nối USB loại A-B, và một bo mạch Arduino là bạn có thể bắt đầu được rồi.</p>
+
+<p>Ngôn ngữ lập trình của Arduino dựa trên ngôn ngữ lập trình Wiring cho phần cứng. Chắc bạn đã quá quen thuộc với ngôn ngữ C/C++, như vậy việc viết code Wiring là rất dễ dàng. Cộng thêm, trên <a href="http://arduino.cc/">website</a>, có khá nhiều các library viết sẵn để điều khiển ngoại vi: LCD, sensor, motor&#8230; nên việc bạn cần làm chỉ là kết hợp chúng với nhau để tạo ứng dụng cho riêng bạn.</p>
+
+<h1>Cận cảnh phần cứng của Arduino</h1>
+
+<p><img src="/images/arduino-intro/arduino-overview.gif" title="" ></p>
+
+<p>Hình trên là cận cảnh con Arduino Uno. Đối với chúng ta lập trình cho Arduino thì trước tiên quan tâm những thành phần được đánh số ở trên:</p>
+
+<ol>
+<li><p>Cổng USB (loại B): đây là cổng giao tiếp để ta upload code từ PC lên vi điểu khiển. Đồng thời nó cũng là giao tiếp serial để truyền dữ liệu giữa vi điểu khiển với máy tính.</p></li>
+<li><p>Jack nguồn: để chạy Arduino thì có thể lấy nguồn từ cổng USB ở trên, nhưng không phải lúc nào cũng có thể cắm với máy tính được. Lúc đó, ta cần một nguồn 9V đến 12V.</p></li>
+<li><p>Hàng Header: đánh số từ 0 đến 12 là hàng digital pin, nhận vào hoặc xuất ra các tín hiệu số. Ngoài ra có một pin đất (GND) và pin điện áp tham chiếu (AREF).</p></li>
+<li><p>Hàng header thứ hai: chủ yếu liên quan đến điện áp đất, nguồn.</p></li>
+<li><p>Hàng header thứ ba: các chân để nhận vào hoặc xuất ra các tín hiệu analog. Ví dụ như đọc thông tin của các thiết bị cảm biến.</p></li>
+<li><p>Vi điều khiển AVR: đây là bộ xử lý trung tâm của toàn bo mạch. Với mỗi mẫu Arduino khác nhau thì con chip này khác nhau. Ở con Arduino Uno này thì sử dụng ATMega328.</p></li>
+</ol>
+
+
+<h1>&#8220;Hello World&#8221; trên nền Arduino</h1>
+
+<p>Với việc học bất cứ một ngôn ngữ nào, thường người ta hay bắt đầu bằng ví dụ &#8220;Hello World&#8221;, tức là bắt máy tính bắn ra màn hình dòng chữ &#8220;Hello, World!&#8221;. Với các bạn có kinh nghiệm lập trình, việc này có lẽ quá dễ dàng, chỉ vài dòng code là được, ngôn ngữ nào cũng vậy (C, C++, Java, Python, Ruby&#8230;).</p>
+
+<p>Nhưng với lập trình trên Arduino thì sao? Việc bắt cái bo mạch Arduino đưa ra một thông tin báo hiệu nào đó cho ta là nó đang chạy, phải thực hiện thế nào? Nói cách khác, output của Arduino sẽ là như thế nào đây:</p>
+
+<ol>
+<li><p>Nháy LED</p></li>
+<li><p>Kết nối với PC qua đường UART, bắn lên dòng chữ Hello World cho ta ngắm.</p></li>
+<li><p>Kết nối với một cái màn LCD, cũng bắt nó bắn lên Hello World cho ta nhìn.</p></li>
+</ol>
+
+
+<p>&#8230; vài cách nữa</p>
+
+<p>Trong bài mở đầu này, tôi chọn cách dễ nhất là Nháy LED. Nháy LED cũng được coi là Hello World của lập trình nhúng, với mỗi con chip mới, điều đầu tiên nên làm là nháy LED, để kiểm tra xem mình đã kiểm soát được đầu vào đầu ra cho con chip chưa :)</p>
+
+<p>Đầu tiên là đoạn code nháy LED:</p>
+
+<figure class='code'><figcaption><span>blink_series.c </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cm">/* </span>
+</span><span class='line'><span class="cm">  Multiple blink </span>
+</span><span class='line'><span class="cm">  Turns on and off a LED series, using Arduino pin 4,5,6,7</span>
+</span><span class='line'><span class="cm">  </span>
+</span><span class='line'><span class="cm">  written by Viet Nguyen</span>
+</span><span class='line'><span class="cm"> */</span>
+</span><span class='line'>
+</span><span class='line'> <span class="kt">int</span> <span class="n">led</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'> <span class="c1">//the setup routine runs once when you reset the Arduino</span>
+</span><span class='line'> <span class="kt">void</span> <span class="nf">setup</span><span class="p">()</span>
+</span><span class='line'> <span class="p">{</span>
+</span><span class='line'>   <span class="c1">//initialize the digital pin as an output</span>
+</span><span class='line'>   <span class="k">for</span><span class="p">(</span><span class="n">led</span> <span class="o">=</span> <span class="mi">4</span><span class="p">;</span> <span class="n">led</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">;</span> <span class="n">led</span> <span class="o">++</span><span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>     <span class="n">pinMode</span><span class="p">(</span><span class="n">led</span><span class="p">,</span> <span class="n">OUTPUT</span><span class="p">);</span> <span class="c1">//init the digital pin as output.</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'> <span class="c1">// the loop routine runs over and over again</span>
+</span><span class='line'> <span class="kt">void</span> <span class="nf">loop</span><span class="p">()</span>
+</span><span class='line'> <span class="p">{</span>
+</span><span class='line'>   <span class="k">for</span><span class="p">(</span><span class="n">led</span> <span class="o">=</span> <span class="mi">4</span><span class="p">;</span> <span class="n">led</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">;</span> <span class="n">led</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>     <span class="n">digitalWrite</span><span class="p">(</span><span class="n">led</span><span class="p">,</span> <span class="n">HIGH</span><span class="p">);</span>  <span class="c1">//turn the LED on (HIGH is the voltage level)</span>
+</span><span class='line'>     <span class="n">delay</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>      <span class="c1">//100 ms</span>
+</span><span class='line'>     <span class="n">digitalWrite</span><span class="p">(</span><span class="n">led</span><span class="p">,</span> <span class="n">LOW</span><span class="p">);</span>  <span class="c1">//turn the LED off by making the volage LOW</span>
+</span><span class='line'>     <span class="n">delay</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>      <span class="c1">//100 ms</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Bạn thấy đó, đoạn code trên rất đơn giản và mang phong cách giống C/C++. Một chương trình như trên được gọi là sketch, sẽ được upload lên bo mạch Arduino qua cổng USB.</p>
+
+<p>Phân tích chương trình: có 2 method quan trọng nhất là setup() và loop().</p>
+
+<ul>
+<li><p>setup() làm nhiệm vụ khởi tạo mode cho các ngoại vi của Arduino. Hàm này sẽ được chạy một lần khi bo mạch Arduino được reset. Ở chương trình này, setup() chỉ làm nhiệm vụ đặt các chân 4,5,6,7 của Arduino sang mode output.</p></li>
+<li><p>loop() là chương trình chính của Arduino. Đoạn code trong loop() sẽ được Arduino chạy vô hạn. Trong chương trình này, có hàm digitalWrite() để đặt các chân (pin) ở mức điện áp cao (HIGH) hay thấp (LOW). Hàm tiếp theo là delay(), nhận đối số là một số nguyên, thẻ hiện số mili giây ta muốn chương trình tạm ngưng.</p></li>
+</ul>
+
+
+<p>Đó là tất cả về phần code chạy, còn nối dây như thế nào? Dưới đây là sơ đồ nối dây:</p>
+
+<p><img src="/images/arduino-intro/arduino_led.png"></p>
+
+<p>Giải thích một chút, đoạn code trên sẽ lần lượt xuất điện áp 5V ra các pin 4,5,6,7 rồi tắt. Để kiểm nghiệm, nối LED với một con trở giữa các pin đó với đất, ta sẽ thấy các đèn LED bật tắt nhịp nhàng :)</p>
+
+<p>Sau đây là video demo :P</p>
+
+<iframe width="560" height="315" src="http://www.youtube.com/embed/4EOGnKN2RiE" frameborder="0" allowfullscreen></iframe>
+
+
+<h1>Kết luận#</h1>
+
+<p>Bài này đã giới thiệu những kiến thức mở đầu về Arduino, cách lập trình trên platform này và demo bài &#8220;Hello World&#8221; của Arduino. Với cộng đồng chia sẻ rất lớn, nhiều ứng dụng, Arduino rất đáng để học, cũng là một cách để bạn tiếp cận dễ dàng hơn với electronics :D</p>
+
+<h1>Tham khảo</h1>
+
+<ol>
+<li><a href="http://arduino.cc/en/">http://arduino.cc/en/</a></li>
+</ol>
 
 
 		
@@ -946,6 +754,18 @@ Thực tế là không hề mâu thuẫn chút nào cả, chính vì cái gọi 
 </script>
 
 
+
+	<script type="text/javascript">
+		var _gaq = _gaq || [];
+		_gaq.push(['_setAccount', 'UA-41231691-1']);
+		_gaq.push(['_trackPageview']);
+
+		(function() {
+			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+		})();
+	</script>
 
 
 
