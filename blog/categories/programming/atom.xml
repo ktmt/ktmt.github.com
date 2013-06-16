@@ -4,7 +4,7 @@
   <title><![CDATA[Category: programming | Blog kỹ thuật máy tính]]></title>
   <link href="http://ktmt.github.com/blog/categories/programming/atom.xml" rel="self"/>
   <link href="http://ktmt.github.com/"/>
-  <updated>2013-06-03T01:31:43+09:00</updated>
+  <updated>2013-06-16T23:46:42+09:00</updated>
   <id>http://ktmt.github.com/</id>
   <author>
     <name><![CDATA[kỹ thuật máy tính]]></name>
@@ -14,15 +14,247 @@
 
   
   <entry>
+    <title type="html"><![CDATA[Giới thiệu một số phương pháp sinh 64 bit unique ID]]></title>
+    <link href="http://ktmt.github.com/blog/2013/06/09/xay-dung-he-thong-sinh-64bit-unique-id/"/>
+    <updated>2013-06-09T21:15:00+09:00</updated>
+    <id>http://ktmt.github.com/blog/2013/06/09/xay-dung-he-thong-sinh-64bit-unique-id</id>
+    <content type="html"><![CDATA[<h1>Bài toán sinh unique ID</h1>
+
+<p>Unique ID được sử dụng để phân biệt các đối tượng khác nhau.
+Ví dụ primary key là một unique key đặc biệt dùng để phân biệt các row trong table.</p>
+
+<p>Bài viết giới thiệu một số phương pháp sinh 64 bit unique ID.</p>
+
+<h1>Một số giải pháp sinh unique ID</h1>
+
+<ul>
+<li>Nếu số lượng dữ liệu nhỏ, ta có thể sử dụng ID kiểu Integer và set cho nó thuộc tính auto increment.</li>
+</ul>
+
+
+<p> Ưu điểm: đơn giản, dễ làm.</p>
+
+<p> Nhược điểm: số lượng ID bị giới hạn (2 ^ 32 = 4294967296) và đặc biệt cách làm này không scale. Để đảm bảo tính duy nhất, tại một thời điểm, chỉ có thể sinh ra đúng một ID mà thôi.</p>
+
+<ul>
+<li>Sử dụng <a href="http://en.wikipedia.org/wiki/Uuid">UUID</a> - UUID là một giá trị 128bit, tuỳ vào thuật toán xây dựng UUID, có thể dựa trên Mac Address của máy.</li>
+</ul>
+
+
+<p> Ưu điểm: scalable, distributed. Tại một thời điểm có thể sinh ra nhiều ID khác nhau, thậm chí client cũng có thể sinh ID mà vẫn đảm bảo không bị trùng lặp với server</p>
+
+<p> Nhược điểm: sử dụng 128 bit, một số hệ thống phải lưu trữ dưới dạng char, tốn tài nguyên và index</p>
+
+<p> 64 bit unique ID trùng hoà giữa 2 cách trên, đảm bảo số lượng ID sinh ra là đủ lớn, đồng thời có thể lưu trữ dưới dạng dạng Big Int</p>
+
+<h1>Một số phương pháp sinh 64 bit unique ID</h1>
+
+<ol>
+<li>Twitter <a href="https://github.com/twitter/snowflake/">snowflake</a>
+Snowflake là thrift service sử dụng Apache ZooKeeper để liên kết các node và sinh ra 64bit unique ID.
+Mỗi node là một worker, các worker được đánh số khác nhau</li>
+</ol>
+
+
+<p> ID được sinh ra theo công thức</p>
+
+<ul>
+<li> time - 42bit (được tính bằng epoch)</li>
+<li> worker id - 10 bit (số worker có thể lên đến 1024)</li>
+<li> sequence number - 12 bit (number được tăng liên tiếp, đảm bảo tại một thời điểm, mỗi worker có thể sinh được 4096 ID)</li>
+</ul>
+
+
+<p> Ở phần tiếp theo, chúng ta sẽ implement thuật một service sử dụng thuật toán trên để sinh ID</p>
+
+<ol>
+<li><a href="http://instagram-engineering.tumblr.com/post/10853187575/sharding-ids-at-instagram">Instagram 64bt ID</a></li>
+</ol>
+
+
+<p> Instagram sinh ID dựa vào posgresql schema. Thuật toán sinh ID tương tự như snowflake, mỗi ID 64 bit bao gồm</p>
+
+<ul>
+<li> time - 41 bit (time epoch)</li>
+<li> shard_id - 13 bit (so shard id lên tới 8192)</li>
+<li> sequence number - 10 bit</li>
+</ul>
+
+
+<h1>Implement thuật toán sinh 64 bit uniqueID của snowflake bằng python</h1>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>flake.py </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kn">import</span> <span class="nn">simplejson</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">sys</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">tornado.httpserver</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">tornado.ioloop</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">tornado.options</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">tornado.web</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">tornado.options</span> <span class="kn">import</span> <span class="n">define</span><span class="p">,</span> <span class="n">options</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">define</span><span class="p">(</span><span class="s">&quot;port&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">8888</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;run on the given port&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+</span><span class='line'><span class="n">define</span><span class="p">(</span><span class="s">&quot;worker_id&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;globally unique worker_id between 0 and 1023&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">class</span> <span class="nc">IDHandler</span><span class="p">(</span><span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">RequestHandler</span><span class="p">):</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">max_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="p">()</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
+</span><span class='line'><span class="n">sequence</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'><span class="n">worker_id</span> <span class="o">=</span> <span class="bp">False</span>
+</span><span class='line'><span class="n">epoch</span> <span class="o">=</span> <span class="mi">137079712900000</span> <span class="c"># 2013-06-09</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">curr_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="p">()</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="n">curr_time</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">max_time</span><span class="p">:</span>
+</span><span class='line'>        <span class="c"># stop handling requests til we&#39;ve caught back up</span>
+</span><span class='line'>        <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="s">&#39;Clock went backwards! </span><span class="si">%d</span><span class="s"> &amp;lt; </span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">curr_time</span><span class="p">,</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">max_time</span><span class="p">))</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="n">curr_time</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">max_time</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>        <span class="n">IDHandler</span><span class="o">.</span><span class="n">max_time</span> <span class="o">=</span> <span class="n">curr_time</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">4095</span><span class="p">:</span>
+</span><span class='line'>        <span class="c"># Sequence overflow, bail out</span>
+</span><span class='line'>        <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="s">&#39;Sequence Overflow: </span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">generated_id</span> <span class="o">=</span> <span class="p">((</span><span class="n">curr_time</span> <span class="o">-</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">epoch</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">22</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">IDHandler</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">12</span><span class="p">)</span> <span class="o">+</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">set_header</span><span class="p">(</span><span class="s">&quot;Content-Type&quot;</span><span class="p">,</span> <span class="s">&quot;text/plain&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">generated_id</span><span class="p">))</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span> <span class="c"># avoid ETag, etc generation</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">def</span> <span class="nf">main</span><span class="p">():</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">tornado</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">parse_command_line</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="s">&#39;worker_id&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
+</span><span class='line'>    <span class="k">print</span> <span class="s">&#39;missing --worker_id argument, see </span><span class="si">%s</span><span class="s"> --help&#39;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span class='line'>    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">1024</span><span class="p">:</span>
+</span><span class='line'>    <span class="k">print</span> <span class="s">&#39;invalid worker id, must be between 0 and 1023&#39;</span>
+</span><span class='line'>    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">IDHandler</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">worker_id</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">application</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">Application</span><span class="p">([</span>
+</span><span class='line'>    <span class="p">(</span><span class="s">r&quot;/&quot;</span><span class="p">,</span> <span class="n">IDHandler</span><span class="p">),</span>
+</span><span class='line'><span class="p">],</span> <span class="n">static_path</span><span class="o">=</span><span class="s">&quot;./static&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="n">http_server</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">httpserver</span><span class="o">.</span><span class="n">HTTPServer</span><span class="p">(</span><span class="n">application</span><span class="p">)</span>
+</span><span class='line'><span class="n">http_server</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">port</span><span class="p">)</span>
+</span><span class='line'><span class="n">tornado</span><span class="o">.</span><span class="n">ioloop</span><span class="o">.</span><span class="n">IOLoop</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span> <span class="o">&lt;</span><span class="n">strong</span><span class="o">&gt;</span><span class="n">name</span><span class="o">&lt;/</span><span class="n">strong</span><span class="o">&gt;</span> <span class="o">==</span> <span class="s">&quot;&lt;strong&gt;main&lt;/strong&gt;&quot;</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">main</span><span class="p">()</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Đoạn code trên được trích từ repository <a href="https://github.com/formspring/flake/blob/master/flake.py">flake</a>
+Sử dụng <a href="http://www.tornadoweb.org/en/stable/">tornado</a> - Python web framework and asynchronous networking library, ở một thời điểm (độ chính xác tới millisecond), một node có thể handle được nhiều request, mỗi một request sẽ được trả về một số là ID được sinh ra. Số lượng ID được sinh ra bởi một node, tại một thời điểm bị giới hạn bởi 4096, nếu lớn hơn, request sẽ bị báo lỗi</p>
+
+<h1>Kết luận</h1>
+
+<p>Bài viết trình bày một số phương pháp sinh ID 64 bit, kèm code minh hoạ. Tuỳ vào hệ thống của bạn, bạn có thể sử dụng ID 64 bit cho những mục đích khác nhau. Ví dụ như đánh số tất cả các đối tượng trong database (giống như FB làm với graph API), hoặc sử dụng 64 bit ID như một bước đệm và áp dụng thêm một bước mã hoá để sinh ID cho một loại đối tượng (giống như youtube đánh số các video).</p>
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[WeakHashMap và Weak reference trong Java]]></title>
     <link href="http://ktmt.github.com/blog/2013/06/02/weakhashmap-va-weak-reference-trong-java/"/>
     <updated>2013-06-02T08:06:00+09:00</updated>
     <id>http://ktmt.github.com/blog/2013/06/02/weakhashmap-va-weak-reference-trong-java</id>
-    <content type="html"><![CDATA[<h1>Mở đầu</h1>
+    <content type="html"><![CDATA[<h1>Giới thiệu</h1>
+
+<p>Trong thư viện Collection của Java, có một lớp đặc biệt: <strong>WeakHashMap</strong>. Về hoạt động nói chung nó rất giống với <strong>HashMap</strong>, đều có chức năng quản lý key, value như thêm, bớt, truy xuất value theo key... Vậy khác biệt của <strong>WeakHashMap</strong> so với <strong>HashMap</strong> là gì? Đó chính là khả năng phối hợp của <strong>WeakHashMap</strong> với garbage collector nhằm loại bỏ khả năng leak memory có thể xảy ra với <strong>HashMap</strong>. Trong bài viết này, chúng ta sẽ tìm hiểu <strong>WeakHashMap</strong> là gì, cách hoạt động của nó như thế nào, và cách nó xóa bỏ những entry không dùng đến ra sao.</p>
+
+<h1>Mở đầu</h1>
 
 <p>Thử tưởng tượng một tình huống như thế này: bạn muốn sử dụng một class nào đó, nhưng không thể extend được nó (ví dụ trường hợp đơn giản nhất là class đó được chỉ định là <strong>final</strong>). Vậy bạn làm gì khi muốn thêm property cho object thuộc class đó?</p>
 
-<p>Ví dụ, ta muốn sử dụng một class <strong>Product</strong> mà không thể extend được. Bây giờ muốn thêm <strong>serialNumber</strong> cho product đó, có một cách là sử dụng HashMap, tạo một cặp <strong>key</strong> là Product object, <strong>value</strong> là serialNumber:</p>
+<p>Ví dụ, bạn muốn sử dụng một class <strong>Product</strong> mà không thể extend được. Bây giờ muốn thêm <strong>serialNumber</strong> cho product đó, ứng cử viên hàng đầu là HashMap, bạn có thể tạo một cặp <strong>key</strong> là Product object, <strong>value</strong> là serialNumber:</p>
 
 <p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>product.java </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
@@ -33,15 +265,15 @@
 <span class='line-number'>6</span>
 </pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">import</span> <span class="nn">java.util.HashMap</span><span class="o">;</span>
 </span><span class='line'><span class="o">...</span>
-</span><span class='line'><span class="n">Map</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">Product</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">productMap</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Map</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">Product</span><span class="o">,</span><span class="n">String</span><span class="o">&gt;();</span>
+</span><span class='line'><span class="n">Map</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">Product</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">productMap</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">Product</span><span class="o">,</span><span class="n">String</span><span class="o">&gt;();</span>
 </span><span class='line'><span class="o">...</span>
 </span><span class='line'><span class="n">productMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">product</span><span class="o">,</span> <span class="n">serialNo</span><span class="o">);</span>
 </span><span class='line'><span class="o">...</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div></p>
 
-<p>Đoạn code trên có vẻ đã hoàn thành mục tiêu thêm thuộc tính cho Product object, nhưng có vấn đề gì ở đây không? Cách giải quyết này gặp phải vấn đề liên quan đến việc giải phóng bộ nhớ. Vì <strong>HashMap</strong> sử dụng <strong>strong reference</strong> để trỏ đến Product object, nên khi trong chương trình không còn reference nào đến Product object nữa, <strong>garbage collector</strong> nhận thấy vẫn còn strong reference ở trong <strong>HashMap</strong>, nên nó không giải phóng object này nữa. Lâu dần, sẽ xuất hiện hiện tượng <strong>Leak Memory</strong>: ta không thể giải phóng được cặp key, value nằm trong <strong>HashMap</strong>, khi mà <strong>HashMap</strong> còn được sử dụng.</p>
+<p>Đoạn code trên có vẻ đã hoàn thành mục tiêu thêm thuộc tính cho Product object, nhưng có vấn đề gì ở đây không? Cách giải quyết này gặp phải vấn đề liên quan đến việc giải phóng bộ nhớ. Vì <strong>HashMap</strong> sử dụng <strong>strong reference</strong> để trỏ đến Product object, nên khi trong chương trình không còn reference nào đến Product object nữa, <strong>garbage collector</strong> nhận thấy vẫn còn strong reference ở trong <strong>HashMap</strong>, nên nó không giải phóng object này nữa. Lâu dần, sẽ xuất hiện hiện tượng <strong>Leak Memory</strong>: ta không thể giải phóng được cặp key, value nằm trong <strong>HashMap</strong>, khi mà <strong>HashMap</strong> còn được sử dụng (để hiểu rõ hơn, bạn có thể xem ví dụ demo ở cuối bài).</p>
 
-<p>Nhân đây, giải thích về <strong>Strong reference</strong>: là Java reference bình thường mà ta thường sử dụng. Như ví dụ sau:
+<p>Nhân đây, xin giải thích thêm về <strong>Strong reference</strong>. Đây là Java reference bình thường mà ta thường sử dụng. Như ví dụ sau:
 <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>strong.java </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">String</span> <span class="n">serialNo</span> <span class="o">=</span> <span class="k">new</span> <span class="n">String</span><span class="o">();</span>
@@ -51,14 +283,14 @@
 
 <h1>WeakHashMap</h1>
 
-<p>Trái ngược lại với <strong>strong reference</strong> là <strong>weak reference</strong>. Đây là loại reference mà không đủ mạnh để bắt một object phải ở trong memory. Khai báo như sau:</p>
+<p>Trái ngược lại với <strong>strong reference</strong> là <strong>weak reference</strong>. *Weak reference** sẽ không thể cản trở garbage collector giải phóng object khỏi memory. Khai báo như sau:</p>
 
 <p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>weak.java </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">WeakReference</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">&gt;</span> <span class="n">weakProduct</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WeakReference</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">&gt;(</span><span class="n">product</span><span class="o">);</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div></p>
 
-<p>Sau đó, ta có thể gọi weakProduct.get() để lấy Product object. Vì weak reference không đủ mạnh để chặn quá trình garbage collection, nên bạn sẽ thấy weakProduct.get() đột nhiên trả về null.</p>
+<p>Sau đó, ta có thể truy cập đến Product object thông qua việc gọi method weakProduct.get(). Tuy nhiên, ta cần phải chú ý khi gọi method này. Vì weak reference không đủ khả năng chặn quá trình garbage collection, nên đến một cycle nào đó, garbage collector sẽ giải phóng Product object (khi không còn strong reference nào đến nó) , và bạn sẽ thấy weakProduct.get() đột nhiên trả về null.</p>
 
 <p>Quay trở lại với ví dụ Product ở trên, ta giải quyết vấn đề đã nêu bằng cách sử dụng <strong>WeakHashMap</strong> class.  <strong>WeakHashMap</strong> hoạt động y hệt như <strong>HashMap</strong>, chỉ khác là key được refer đến bằng <strong>weak reference</strong>. Lúc này, khi một object chỉ reachable bởi <strong>WeakReference</strong>, garbage collector sẽ giải phóng object, đồng thời sẽ đặt <strong>weak reference</strong> trỏ đến object kia vào một queue. WeakHashMap sẽ định kì kiểm tra queue này xem có weak reference nào mới đến không. Nếu thấy một weak reference trong queue, nghĩa là key đã không được ai sử dụng nữa và nó đã bị garbage collector "tịch thu". Lúc đó, WeakHashMap sẽ bỏ entry liên quan đi. No more memory leak ! :)</p>
 
@@ -189,7 +421,7 @@
 
 <p>Bạn đã thấy điểm khác biệt? Sau một khoảng thời gian, <strong>WeakHashMap</strong> sẽ bỏ đi entry tương ứng với weak reference. Còn <strong>HashMap</strong>, vì là strong reference, trong map sẽ luôn chứa cặp phần tử (someDataObject, value) mặc dù bên ngoài someDataObject đã set là null.</p>
 
-<h1>Kết luận#</h1>
+<h1>Kết luận</h1>
 
 <p>Bài viết này đã trình bày tác dụng của một lớp trong Collection của Java: <strong>WeakHashSet</strong>. Đồng thời, bài viết cũng giới thiệu <strong>weak reference</strong> và <strong>strong reference</strong> và mối quan hệ của chúng với Java garbage collector.</p>
 
@@ -913,301 +1145,6 @@ developer khác chạy nó mỗi lần họ commit code.</p>
 
 <p>Bằng cách sử dụng mock, bạn có thể isolate các unittest, đảm bảo mỗi một đoạn code
 chỉ cần test duy nhất một lần, qua đó tăng tốc độ của unittest lên rất nhiều.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Memoization and Decorator]]></title>
-    <link href="http://ktmt.github.com/blog/2013/05/06/memoization-and-decorator/"/>
-    <updated>2013-05-06T16:44:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/05/06/memoization-and-decorator</id>
-    <content type="html"><![CDATA[<h2>What is memoization</h2>
-
-<p>Trước hết chúng ta làm quen với khái niệm memoization. Ngôn ngữ ở đây là Python, bài toán là viết hàm tính giai thừa (n!)</p>
-
-<p>Hàm giai thừa thông thường sẽ được viết đệ quy như sau:
-<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>python.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">def</span> <span class="nf">fac</span><span class="p">(</span><span class="n">n</span><span class="p">):</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">if</span> <span class="n">n</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">2</span><span class="p">:</span> <span class="k">return</span> <span class="mi">1</span>
-</span><span class='line'><span class="k">return</span> <span class="n">n</span> <span class="o">*</span> <span class="n">fac</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>Có gì không ổn ở đoạn code này ? Cách giải quyết hoàn toàn không có vấn đề, nhưng nếu tinh ý bạn sẽ nhận thấy có 1 khối lượng tính toán bị lặp lại khá nhiều khi chạy nhiều hàm fac(n). VD, nếu tính fac(3), fac(4) và fac(10) lần lượt sẽ đòi hỏi 3 flow tính toán riêng rẽ mà không có reuse: fac(3) sẽ tính đệ quy từ fac(2) xuống fac(1), fac(4) tính đệ quy từ fac(3) xuống fac(1) và fac(10) tính đệ quy từ fac(9) xuống fac(1) !</p>
-
-<p>Áp dụng memoization dưới dạng dict, ta có thể viết hàm fac_m như sau:</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>python.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="n">memo</span> <span class="o">=</span> <span class="p">{}</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">fac_m</span><span class="p">(</span><span class="n">n</span><span class="p">):</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">if</span> <span class="n">n</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="mi">2</span><span class="p">:</span> <span class="k">return</span> <span class="mi">1</span>
-</span><span class='line'><span class="k">if</span> <span class="n">n</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">memo</span><span class="p">:</span>
-</span><span class='line'>    <span class="n">memo</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span> <span class="o">*</span> <span class="n">fac_m</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'><span class="k">return</span> <span class="n">memo</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>Ở đây memo đóng vài trò như 1 cache. fac(3) sẽ generate ra 3 record in cache, và fac(4) sẽ hit cache khi chạy đệ quy được 1 lần. Tương tự fac(10) sẽ hit cache khi đệ quy xuống đến fac(4)</p>
-
-<p>Như vậy memoization đơn giản chỉ là tìm cách nhớ những phần tử để giảm khối lượng tính toán</p>
-
-<p>Memoization có thể implement dưới dạng function...</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>python.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">def</span> <span class="nf">memoize</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">memo</span> <span class="o">=</span> <span class="p">{}</span>
-</span><span class='line'><span class="k">if</span> <span class="n">arg</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">memo</span><span class="p">:</span>
-</span><span class='line'>    <span class="n">memo</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
-</span><span class='line'><span class="k">return</span> <span class="n">memo</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">def</span> <span class="nf">fac_m_f</span><span class="p">(</span><span class="n">n</span><span class="p">):</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">return</span> <span class="n">memoize</span><span class="p">(</span><span class="n">fac</span><span class="p">,</span><span class="n">n</span><span class="p">)</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>...hoặc class</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>python.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Memoize</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
-</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="n">f</span>
-</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">memo</span> <span class="o">=</span> <span class="p">{}</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">memo</span><span class="p">:</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">memo</span><span class="p">[</span><span class="n">args</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">memo</span><span class="p">[</span><span class="n">args</span><span class="p">]</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">fac</span><span class="o">=</span> <span class="n">Memoize</span><span class="p">(</span><span class="n">fac</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>Thêm 1 step nữa, thay vì "fac=Memoize(fac)" như ở trên, bạn có thể viết hàm mới theo kiểu decorator</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>python.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="nd">@Memoize</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">fac_m_d</span><span class="p">(</span><span class="n">n</span><span class="p">):</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">if</span> <span class="n">n</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="mi">2</span><span class="p">:</span> <span class="k">return</span> <span class="mi">1</span>
-</span><span class='line'><span class="k">return</span> <span class="n">n</span> <span class="o">*</span> <span class="n">fac_m_d</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>Decorator ở đây là từ khoá "@Memoize" trước định nghĩa của hàm fac_m_d</p>
-
-<p>Vậy decorator trong Python là gì và cách dùng ra sao ?</p>
-
-<h2>Python decorator</h2>
-
-<p>Trong số các design pattern, có 1 design pattern gọi là "decorator design pattern". Python decorator chỉ là 1 cách implement của decorator design pattern. 2 khái niệm này không hoàn toàn giống nhau. Một điểm nữa cần nhớ là, memoization ở trên chỉ là 1 trong các ứng dụng của python decorator, python decorator còn có nhiều ứng dựng khác.</p>
-
-<p>Mọi function trong python đều là object, cho phép ta có thể assign funtion cho variable hoặc defince function trong chính 1 function khác. Dựa vào đó, decorator có thể dưới dạng decorator function như ví dụ dưới đây:</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>python.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">def</span> <span class="nf">gotham</span><span class="p">(</span><span class="n">f</span><span class="p">):</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">def</span> <span class="nf">inside_gotham</span><span class="p">():</span>
-</span><span class='line'>    <span class="k">print</span> <span class="s">&quot;Gotham needs Batman&quot;</span>
-</span><span class='line'>    <span class="n">f</span><span class="p">()</span>
-</span><span class='line'><span class="k">return</span> <span class="n">inside_gotham</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="nd">@gotham</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">batman</span><span class="p">():</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">print</span> <span class="s">&quot;Batman Here! Gotham is saved! &quot;</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">batman</span><span class="p">()</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>Đoạn code sẽ cho output:</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>Gotham needs Batman
-</span><span class='line'>Batman Here! Gotham is saved!</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>Cơ chế của decorator có thể hiểu đơn giản là, khi intepreter đọc đến đoạn code đefine function với decorator, interpreter sẽ evaluate function 1 cách bình thường và pass function object kết quả thẳng cho decorator(dưới dạng function hoặc class). Decorator(function hoăc class) lấy agrument là 1 function object và return kết quả là 1 function object khác.</p>
-
-<p>Function object kết quả nói trên gồm function object ban đầu đã được gói lại và "thêm thắt", và từ nay về sau sẽ được gọi thay cho function object ban đầu mỗi khi có lệnh call.</p>
-
-<p>Ngoài memoization bên trên, bạn có thể dễ thấy rất nhiều ứng dụng của decorator trong các task liên quan đến wrap VD như:</p>
-
-<p>Timing, benchmark tính toán thời gian run code</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>python.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">def</span> <span class="nf">time_cal</span><span class="p">(</span><span class="n">func</span><span class="p">):</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">arg</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-</span><span class='line'>    <span class="n">res</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">arg</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">print</span> <span class="n">func</span><span class="o">.</span><span class="n">func_name</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">res</span>
-</span><span class='line'><span class="k">return</span> <span class="n">wrapper</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="nd">@time_cal</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">fac</span><span class="p">(</span><span class="n">n</span><span class="p">):</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">if</span> <span class="n">n</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">2</span><span class="p">:</span> <span class="k">return</span> <span class="mi">1</span>
-</span><span class='line'><span class="k">return</span> <span class="n">n</span> <span class="o">*</span> <span class="n">fac</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>hay trong web application, nếu bạn đã dùng Flaskr, bạn có thể thấy đoạn code sau</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>python.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="nd">@mod.route</span><span class="p">(</span><span class="s">&#39;/me/&#39;</span><span class="p">)</span>
-</span><span class='line'><span class="nd">@requires_login</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">home</span><span class="p">():</span>
-</span><span class='line'><span class="o">...</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>Ở đây trang web của bạn ở sublink ".../me" sẽ được đảm bảo chỉ viewable với user đã login. Decorator "@requires_login" có thể viết ở 1 file độc lập và mọi hàm cần tính đảm bảo như trên chỉ cần thêm "@requires_login" đằng trước.</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>python.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">requires_login</span><span class="p">(</span><span class="n">f</span><span class="p">):</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nd">@wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">decorated_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">g</span><span class="o">.</span><span class="n">user</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-</span><span class='line'>        <span class="n">flash</span><span class="p">(</span><span class="s">u&#39;You need to be signed in for this page.&#39;</span><span class="p">)</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s">&#39;users.login&#39;</span><span class="p">,</span> <span class="nb">next</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</span><span class='line'><span class="k">return</span> <span class="n">decorated_function</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<h2>Kết luận</h2>
-
-<ul>
-<li>Memoization: pattern dùng để nhớ các tính toán nhằm làm giảm workload khi gặp các bài toán đệ quy</li>
-<li>Decorator pattern: decorator design pattern</li>
-<li>Python Decorator: Python tools để implement decorator pattern</li>
-</ul>
-
 ]]></content>
   </entry>
   

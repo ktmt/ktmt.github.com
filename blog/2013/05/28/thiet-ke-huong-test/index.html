@@ -128,7 +128,7 @@
 
 <p>Tuy nhiên tuỳ theo giá trị của <code>self.order_type</code> mà cách tạo các ảnh trước và ảnh sau là khác nhau.</p>
 
-<p>Sau đây là code để test hàm</p>
+<p>Nếu chỉ dừng ở đây, bản thân tôi, thấy khá hài lòng với hàm  <code>create_final_pdf_file</code>. Hàm dài vừa đủ, không quá dài (19 lines), chỉ có một input đầu vào, và 1 output đầu ra. Tuy nhiên, nếu viết testcase cho hàm này, chúng ta sẽ thấy có vấn đề</p>
 
 <figure class='code'><figcaption><span>test_models.py </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
@@ -238,9 +238,9 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Chúng ta muốn test cả hai trường hợp nên cần phải viết 2 test case. Tuy nhiên, 2 test case này lại duplicate rất nhiều, vì chúng chỉ khác nhau ở logic ở trong đoạn if-else?</p>
+<p>Đoạn code test trên có vấn đề gì? Để test hàm <code>create_final_pdf_file</code>, chúng ta cần viết 2 test case, cho 2 trường hợp trong đoạn code if-else. Và 2 đoạn code test bị lặp lại khá nhiều, đặc biệt là ở việc mock các objects. Chúng ta có thể viết lại test case gọn hơn bằng cách viết một function chung, hoặc một function tạo ra các mock object và gọi nó trong từng hàm test. Nhưng liệu có phải đó là vấn đề chính.</p>
 
-<p>Vậy đoạn code để tạo final pdf ở trên đã thực sự tốt? Một hàm tốt, là một hàm chỉ nên làm một việc. Đoạn code if-else xử lý 2 logic khác nhau, chúng nên được tách ra thành một hàm khác.</p>
+<p>Điều tôi muốn nói ở đây là: Code smell trong test code có nguyên nhân từ test code, hay từ bản thân đoạn code chúng ta muốn test. Hãy xem lại hàm <code>create_final_pdf_file</code>. Hàm nãy đã thực sự tốt? Một hàm tốt, là một hàm chỉ nên làm một việc. Hàm <code>create_final_pdf_file</code> ở đây, ngoài việc gọi các hàm khác, còn thêm vào nó đoạn xử lý logic xét kiểu của <code>order</code>. Đoạn code if-else xử lý 2 logic khác nhau, chúng nên được tách ra thành một hàm khác.</p>
 
 <figure class='code'><figcaption><span>models.py </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
@@ -292,7 +292,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Code test</p>
+<p>Hàm <code>create_final_pdf_file</code> sau khi được refactoring, đã trở nên đơn giản và dễ đọc hơn, thay vì phải lướt qua 19 lines, và đọc hiểu logic của đoạn code if-else, giờ đây bạn có thể hiểu nó chỉ bằng <code>create_input_files</code>. Và code test mới cho hàm <code>create_final_pdf_file</code> như sau</p>
 
 <figure class='code'><figcaption><span>test_models.py </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
@@ -317,18 +317,12 @@
 <span class='line-number'>20</span>
 <span class='line-number'>21</span>
 <span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
 </pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">TestModel</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
 </span><span class='line'>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 </span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="n">Order</span><span class="p">()</span>
 </span><span class='line'>
 </span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.generator.pdf.merge_pdf_files&#39;</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">test_create_final_pdf_file</span><span class="p">(</span>
-</span><span class='line'>            <span class="bp">self</span><span class="p">,</span> <span class="n">mock_merge_pdf</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">order_type</span> <span class="o">=</span> <span class="n">Order</span><span class="o">.</span><span class="n">SOFT_COVER</span>
-</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">test_create_final_pdf_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_merge_pdf</span><span class="p">):</span>
 </span><span class='line'>        <span class="n">mock_cached_pdf</span> <span class="o">=</span> <span class="n">PropertyMock</span><span class="p">(</span>
 </span><span class='line'>            <span class="n">return_value</span><span class="o">=</span><span class="s">&#39;StoryTree/tests/fixtures/1.pdf&#39;</span><span class="p">)</span>
 </span><span class='line'>        <span class="n">mock_backcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
@@ -348,7 +342,11 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Việc tách logic của đoạn code tạo 2 input files ra thành một hàm <code>create_input_files</code>, làm cho hàm <code>create_final_pdf</code> dễ hiểu hơn, nói cách khác, nó che giấu thông tin không cần thiết cho lập trình viên khi đọc tới đoạn code của <code>create_final_pdf</code>.Hàm <code>create_final_test</code> giờ đây không làm gì khác ngoại việc gọi tới các hàm khác. Không có bất cứ logic nào được đặt trong hàm này. Trên thực tế rất nhiều lập trình viên sẽ không viết test cho những hàm như <code>create_final_pdf</code> nữa. Họ chỉ cần viết test cho 4 hàm <code>create_input_files</code>, <code>create_backcover_image</code>, <code>create_frontcover_image</code>, và <code>cached_pdf_file</code> là đủ.</p>
+<p>Việc tách logic của đoạn code tạo 2 input files ra thành một hàm <code>create_input_files</code>, làm cho hàm <code>create_final_pdf</code> dễ hiểu hơn, nói cách khác, nó che giấu thông tin không cần thiết cho lập trình viên khi đọc tới đoạn code của <code>create_final_pdf</code>.
+Hàm <code>create_final_test</code> giờ đây không làm gì khác ngoại việc gọi tới các hàm khác.
+Không có bất cứ logic nào được đặt trong hàm này. Trên thực tế rất nhiều lập trình viên sẽ không viết test cho những hàm như <code>create_final_pdf</code> nữa. Họ chỉ cần viết test cho 4 hàm <code>create_input_files</code>, <code>create_backcover_image</code>, <code>create_frontcover_image</code>, và <code>cached_pdf_file</code> là đủ.</p>
+
+<p>Tóm lại, bạn có thể tìm kiếm code smell trong unittest, và refactoring hàm mà unittest đó muốn test</p>
 </div>
 
 </article>

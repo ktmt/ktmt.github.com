@@ -7,7 +7,7 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Apr 30th, 2013 github, tips, tutorial Comments Blogging With Github and Octpress 1. Tạo blog trên github Hẳn là một github user, hẳn bạn biết github &hellip;">
+	<meta name="description" content="May 9th, 2013 programming, refactor, testing Comments Sử Dụng Mock Với Unittest Trong Python Unittest là gì Unit tes là các test dùng để test kiến &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -84,441 +84,48 @@
   
 
 
-<time datetime="2013-04-30T23:20:00+09:00" data-updated="true" itemprop="datePublished">Apr 30<span>th</span>, 2013</time></div>
+<time datetime="2013-05-09T09:44:00+09:00" data-updated="true" itemprop="datePublished">May 9<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/github/'>github</a>, <a class='category' href='/blog/categories/tips/'>tips</a>, <a class='category' href='/blog/categories/tutorial/'>tutorial</a>
+	<a class='category' href='/blog/categories/programming/'>programming</a>, <a class='category' href='/blog/categories/refactor/'>refactor</a>, <a class='category' href='/blog/categories/testing/'>testing</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/04/30/huong-dan-su-dung-octopress-cho-blog-tren-github/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/05/09/mock-with-unittest-in-python/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/04/30/huong-dan-su-dung-octopress-cho-blog-tren-github/" itemprop="url">Blogging With Github and Octpress</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/05/09/mock-with-unittest-in-python/" itemprop="url">Sử Dụng Mock Với Unittest Trong Python</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h3>1. Tạo blog trên github</h3>
+		<h1>Unittest là gì</h1>
 
-<p>Hẳn là một github user, hẳn bạn biết github hỗ trợ cho user tạo một static blog trên domain của github (xxx.github.io).
-Để tạo blog cá nhân thì bạn có thể tham khảo chi tiết ở <a href="http://pages.github.com/">đây</a>. Hiện tại thì để tạo github page
-thì đã có giao diện rất dễ sử dụng nên mình sẽ không nói thêm ở đây. Về mặt bản chất thì github page chỉ là một <strong>repo</strong>
-trên github, trong đấy có chứa các static file, và được trỏ đến domain xxx.github.io.</p>
+<p>Unit tes là các test dùng để test kiến trúc nội tại của chương trình, unit test gắn liền với
+thiết kế chương trình. Khi viết unit test, tôi thường kiểm tra xem các hàm có
+được gọi và gọi đúng với parameter cần thiết hay không. Mỗi một unit test chỉ
+nên test 1 thứ.</p>
 
-<h3>2. Jekyll và github page</h3>
+<p>Đặc điểm của unit test là rất ngắn, một test case chỉ nên được
+viết dưới 10 dòng. Nếu bạn cần viết hơn, hãy suy nghĩ lại về thiết kế của mình.
+Các developer nên viết unit test cho các phần code mình viết. Tôi thường setup
+môi trường phát triển, để bất cứ khi nào bạn commit một đoạn code, chương trình
+quản lý mã nguồn sẽ chạy test tự động liên quan đến đoạn code đó. Điều này giúp
+tôi kiểm tra ngay được code mình viết có gây ảnh hưởng tới các phần khác hay không.</p>
 
-<p>Khi bạn push bất kì thứ gì lên repo của github page, github sẽ chạy site generator sử dụng jekyll.
-Tại sao phải sử dụng site generator? Vì github không chỉ hỗ trợ html mà còn hộ trợ markdown, một markup language khá đơn giản và dễ sử dụng (
-bạn có thể tham khảo thêm ở [đây][http://en.wikipedia.org/wiki/Markdown]. Vậy bạn có thể đoán ra jekyll là gì: jekyll là
-một sản phẩm của Tom Preston-Werner, ceo của github. Jekyll sẽ nhận input là một template directory, chạy qua một cái converter
-engine để convert từ (Textile | Markdown | Liquid) sang html, tạo ra một static website.
-Như vậy bạn đã có thể hình dung ra cách để tạo ra một github page:</p>
+<p>Chính vì thế, unit test cần được chạy rất nhanh. Mỗi một đoạn code chỉ nên được
+test một lần. Nếu bạn có 2 method A và B, B gọi đến A, code A đã được viết test,
+ thì code test cho B không nên test lại A lần nữa</p>
 
-<p><img src="/images/OctopressGuide/octopress1.png"></p>
+<p>Unit test không nhất thiết phải cover hết code của bạn. Nếu cover được đầy đủ thì
+rất tốt, nhưng công sức bỏ ra sẽ rất lớn. Hãy viết unit test đủ để bạn thấy tự tin
+khi deploy code của mình.</p>
 
-<h3>3. Sử dụng octopress để gen blog trên github page</h3>
+<h1>Sử dụng mock với unittest</h1>
 
-<p>Octopress là một framework design cho jekyll. Gọi là framework nghe hơi lớn, nhưng nói một cách ngắn gọn, octopress là một bộ template/tools/
-plugin giúp cho việc generate static site đơn giản hơn. Những tính năng chính của octopress bao gồm:</p>
+<p>Tôi có một class sinh ra empty image với kích thước có sẵn, kèm theo barcode image
+ở vị trí đã được định trước</p>
 
-<ul>
-<li>Responsive design template (gồm css, js, html)</li>
-<li>Build-in 3rd supports cho một số mạng xã hội (như like button của facebook, tweet button của twitter), và đặc biệt có comment của disqus khá tiện</li>
-<li>Build-in web server để review sau khi generate qua jekyll</li>
-<li>Hệ thống theming rất tốt với Compass và Sass</li>
-</ul>
-
-
-<p>Nói lý thuyết nhiều quá, giờ vào cụ thể về cách cài đặt và sử dụng:</p>
-
-<p>Prerequisite: máy bạn phải install git và ruby, cách install các bạn có thể google :D
-Sau đấy bạn clone octopress về máy, install bundler rồi install các dependencies như sau:</p>
-
-<figure class='code'><figcaption><span>install install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>git clone git://github.com/imathis/octopress.git octopress
-</span><span class='line'><span class="nb">cd </span>octopress
-</span><span class='line'>gem install bundler
-</span><span class='line'>bundle install
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Ok, như vậy bạn đã có một môi trường đẹp đẽ để chuẩn bị viết blog rồi. Về mặt trình tự thì để có 1 blog trên github page bạn sẽ phải:
-Viết blog (dùng markdown/..) => generate qua jekyll => deploy lên github page</p>
-
-<p><img src="/images/OctopressGuide/octopress2.png"></p>
-
-<p>Octopress đã chuẩn bị sẵn cho bạn một Rakefile (bạn có thể tìm hiểu về rake ở [đây][http://rake.rubyforge.org/doc/rakefile_rdoc.html])
-.Trong đấy có rất nhiều task octopress đã chuẩn bị sẵn cho bạn để giúp cho việc cài theme, deploy lên github page trở nên đơn giản
-hơn bao giờ hết.</p>
-
-<p>Đầu tiên bạn sử dụng</p>
-
-<figure class='code'><figcaption><span>theme theme.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>rake install
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>để instal theme.</p>
-
-<p>Sau khi đã install xong theme, chúng ta sẽ viết blog. Bước đầu tiên là setup repository để cho việc deploy lên github pages thuận tiện hơn:</p>
-
-<figure class='code'><figcaption><span>theme theme.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>rake setup_github_pages
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Khi làm bước này thì octopress sẽ prompt ra một cái để hỏi về repo của github pages của bạn (repo của cái xxx.github.io mà mình đã nói ở trên)</p>
-
-<p><img src="/images/OctopressGuide/octopress3.png"></p>
-
-<p>Như hướng dẫn đã ghi, bạn sẽ phải điền repo của bạn với format git@github:your_username/your_username.github.com
-Ví dụ như trong trường hợp blog ktmt thì sẽ là git@github:ktmt/ktmt.github.com.git
-Bạn điền vào, press OK, như vậy là đã xong bước setup.
-Sau bước này thì thì octopress sẽ tạo ra một cái git repo trong octopress/<em>deploy/.git/ link đến git@github:ktmt/ktmt.github.com.git.
-Như vậy bạn có thể hình dung là sau này khi deploy thì octopress sẽ gen ra file vào trong </em>deploy và git push lên git@github:ktmt/ktmt.github.com.git
-.<br/>
-Một chú ý nữa là sau bước này octopress sẽ:
-*  Đổi tên remote branch hiện tại của bạn từ &#8216;origin&#8217; sang &#8216;octopress&#8217;
-*  Add git@github:your_username/your_username.github.com vào remote branch và đổi thành &#8216;origin&#8217;</p>
-
-<p><img src="/images/OctopressGuide/octopress4.png"></p>
-
-<p>Note là octopress branch của mình đang không phải là git://github.com/imathis/octopress.git như các bạn mà đang là https://github.com/ktmt/ktmtblog-octopress.git. Thực ra cái ktmtblog-octopress chỉ là một bản được fork về của octopress, và được tạo nên để giữ các bài viết trên github của bọn mình thôi.</p>
-
-<p>Vậy là setup xong, tiếp theo là việc quan trọng nhất, viết blog.
-Để viết blog thì đầu tiên bạn sẽ phải generate ra file markdown thông qua</p>
-
-<figure class='code'><figcaption><span>theme theme.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>rake new_post<span class="o">[</span><span class="s2">&quot;post_title&quot;</span><span class="o">]</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Kết quả là một file markdown đã được tạo ra ở thư mục <em>source/</em>post</p>
-
-<p><img src="/images/OctopressGuide/octopress5.png"></p>
-
-<p>Sau khi đã hoàn thành việc viết blog, việc tiếp theo bạn phải làm là generate cái file markdown đó + đống template thành static page thông qua jekyll. Octopress đã chuẩn bị sẵn cho bạn một rake task là generate, nên việc bạn phải làm chỉ là</p>
-
-<figure class='code'><figcaption><span>theme theme.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>rake generate
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Kết quả là</p>
-
-<p><img src="/images/OctopressGuide/octopress6.png"></p>
-
-<p>Để preview thành quả của mình, octopress cung cấp cho bạn cả httpserver để preview, bạn gõ</p>
-
-<figure class='code'><figcaption><span>theme theme.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>rake preview
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Và truy cập vào localhost:4000 thông qua browser là đã có thể preview thành quả của mình rồi.</p>
-
-<p>Cuối cùng, bạn sẽ deploy lên github page thông qua</p>
-
-<figure class='code'><figcaption><span>theme theme.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>rake deploy
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Và như thế là bạn đã deploy thành công blog của bạn lên github page (với điều kiện là bạn không viết sai syntax markdown :D).
-Chú ý là khi bạn rake deploy thì octopress sẽ copy đè &#8220;toàn bộ&#8221; cái repo your_username/your_username.github.com của bạn thay bằng cái thư mục _deploy của nó, <strong>kể cả commit tree</strong>. Vậy nên để lưu giữ các bài viết của cá nhân thì các bạn nên làm như mình là: fork octopress về thành một repo cá nhân, và mỗi lần viết xong thì bạn push ngược lại vào <strong>octopress repo</strong> đó. Lưu ý là octopress repo nhé:</p>
-
-<figure class='code'><figcaption><span>theme theme.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>git push octopress master
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Cá nhân mình thì mình viết thêm 1 cái task vào Rakefile để cho đỡ bị nhầm lẫn repo:</p>
-
-<figure class='code'><figcaption><span>rake Rakefile.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'><span class="n">desc</span> <span class="s2">&quot;push to octopress also&quot;</span>
-</span><span class='line'><span class="n">task</span> <span class="ss">:push_octopress</span> <span class="k">do</span>
-</span><span class='line'>  <span class="nb">puts</span> <span class="s2">&quot;pushing to octopress repo&quot;</span>
-</span><span class='line'>  <span class="nb">system</span> <span class="s2">&quot;git checkout master&quot;</span>
-</span><span class='line'>  <span class="nb">system</span> <span class="s2">&quot;git pull octopress master&quot;</span>
-</span><span class='line'>  <span class="nb">system</span> <span class="s2">&quot;git add .&quot;</span>
-</span><span class='line'>  <span class="nb">system</span> <span class="s2">&quot;git commit -m ¥&quot;</span><span class="no">Octopress</span> <span class="n">push</span> <span class="kp">new</span> <span class="n">post</span><span class="err">¥</span><span class="s2">&quot;&quot;</span>
-</span><span class='line'>  <span class="nb">system</span> <span class="s2">&quot;git push octopress master&quot;</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Và như vậy sau mỗi lần deploy bạn chỉ cần</p>
-
-<figure class='code'><figcaption><span>theme theme.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>rake push_octopress
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Là đã synchronize thành công.</p>
-
-<h3>Kết luận:</h3>
-
-<p>Như vậy sau lần đầu setting có vẻ loằng ngoằng, từ bây giờ khi muốn viet blog bạn chỉ cần:</p>
-
-<p><img src="/images/OctopressGuide/octopress7.png"></p>
-
-<p>Rất đơn giản đúng không :D. Happy blogging.</p>
-
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-04-29T00:00:00+09:00" data-updated="true" itemprop="datePublished">Apr 29<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/programming/'>programming</a>, <a class='category' href='/blog/categories/python/'>python</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/04/29/python-object-model/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/04/29/python-object-model/" itemprop="url">Python Object Model</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h3>1. old-style và new-style class trong Python</h3>
-
-<p>Bạn đã nghe ở đâu đó &#8220;In python everything is object&#8221;.</p>
-
-<p>Điều đó có nghĩa là gì? Liệu nó có giống các ngôn ngữ lập trình khác,
-mọi thứ trong Python đều là instance của BaseClass? Tôi đã nghe về <strong>object</strong>
-class trong Python, liệu đó có phải là Base Class của Python</p>
-
-<p>Python có hai mô hình <strong>old-style</strong> và <strong>new-style</strong>. Thực tế trong các phiên bản cũ của Python, không có một class cụ thể nào cho mọi object cả. Nhưng từ Python 2.2, với sự giới thiệu của <strong>new-style</strong> class, chúng ta có thể biến mọi object là instance của <strong>object</strong></p>
-
-<p>Từ Python 2.1 trở về trước, <strong>old-style</strong> class là lựa chọn duy nhất cho các lập trình viên. Khái niệm <strong>old-style</strong> class là không liên quan tới khái niệm kiểu. Nếu x là một instance của old-style class, x.<strong>class</strong> sẽ trỏ tới class của x, nhưng type(x) thì không.</p>
-
-<figure class='code'><figcaption><span>python.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="c"># old-style class was define by statement:</span>
-</span><span class='line'><span class="c">#   class &lt;class-name&gt;: &lt;class definition body&gt;</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">A</span><span class="p">:</span>
-</span><span class='line'>        <span class="k">pass</span>
-</span><span class='line'><span class="c"># type of class A is &#39;type&#39; because &#39;type&#39; is base-class in Python</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="nb">type</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">type</span> <span class="s">&#39;type&#39;</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="c"># make an instance of A</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="n">A</span><span class="p">()</span>
-</span><span class='line'><span class="c"># a.__class__ reference to class A</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span><span class="o">.</span><span class="n">__class__</span>
-</span><span class='line'><span class="o">&lt;</span><span class="k">class</span> <span class="nc">__main__</span><span class="o">.</span><span class="n">A</span> <span class="n">at</span> <span class="mh">0x10aea6ce8</span><span class="o">&gt;</span>
-</span><span class='line'><span class="c"># bute type of a is not A but &#39;instance&#39;</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">type</span> <span class="s">&#39;instance&#39;</span><span class="o">&gt;</span>
-</span><span class='line'><span class="c"># &#39;instance&#39; still is &#39;type&#39; class</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="nb">type</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">type</span> <span class="s">&#39;type&#39;</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><strong>new-style</strong> class được giới thiệu với động lực tạo ra một mô hình object thống nhất cho Python. Mọi đối tượng sẽ được kế thừa từ <strong>object</strong></p>
-
-<figure class='code'><figcaption><span>python.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="nb">object</span><span class="o">.</span><span class="n">__class__</span>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">type</span> <span class="s">&#39;type&#39;</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="nb">type</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">type</span> <span class="s">&#39;type&#39;</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><strong>new-style</strong> class được định nghĩa bằng cách kế thừa từ <strong>object</strong> class.
-Khác với <strong>old-style</strong> class, nếu x là một instance của <strong>new-style</strong> class, cả x.<strong>class</strong> và type(x) đều trỏ về class của x</p>
-
-<figure class='code'><figcaption><span>python.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">A</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span> <span class="k">pass</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">A</span><span class="o">.</span><span class="n">__class__</span>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">type</span> <span class="s">&#39;type&#39;</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span> <span class="o">=</span> <span class="n">A</span><span class="p">()</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span><span class="o">.</span><span class="n">__class__</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">type</span> <span class="s">&#39;A&#39;</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Để tương thích với các phiên bản của của Python, class mặc định vẫn được để ở <strong>old-style</strong>.
-Nếu chúng ta muốn sử dụng <strong>new-style</strong>, chúng ta bắt buộc phải định nghĩa class là subclass của <strong>object</strong></p>
-
-<h3>2. Điểm khác biệt giữa <strong>old-style</strong> và <strong>new-style</strong> class</h3>
-
-<p>Điểm khác biệt rõ nhất được nhìn thấy trong hệ thống kiểu.
-Hãy xem làm thế nào <strong>old-style</strong> class và <strong>new-style</strong> class thực hiện việc đa kế thừa. &#8220;Đa kế thừa&#8221; là khả năng một class có thể kế thừa từ nhiều class khác nhau. Nếu A kế thừa từ B, A là subclass(child class, derived class) của B, còn B là superclass (base class, parent class của A)</p>
-
-<p>Đa kế thừa cho phép một class A có thể có nhiều cha (theo tôi, đa kế thừa không thực sự tốt. có nhiều cách để giải quyết vấn đề đa kế thừa, hãy xem Ruby với mixins hay Java với interface thực hiện điều đó. tôi thực sự rất thích mô hình mixins của Ruby)</p>
-
-<p>Trong mô hình object của Python, mọi class đều có thuộc tình <strong><strong>bases</strong></strong> để lưu lại tất cả các class cha của nó, theo thứ tự xuất hiện của việc thừa kế.</p>
-
-<figure class='code'><figcaption><span>python.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">A</span><span class="p">:</span> <span class="k">pass</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">B</span><span class="p">:</span> <span class="k">pass</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">C</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">):</span> <span class="k">pass</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">C</span><span class="o">.</span><span class="n">__bases__</span>
-</span><span class='line'><span class="p">(</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">__main__</span><span class="o">.</span><span class="n">A</span> <span class="n">at</span> <span class="mh">0x10aea6ce8</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="k">class</span> <span class="nc">__main__</span><span class="o">.</span><span class="n">B</span> <span class="n">at</span> <span class="mh">0x10af8de20</span><span class="o">&gt;</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Vấn đề của đa kế thừa đó là thự tự của các superclass.</p>
-
-<p>Khi một instance của một subclass truy cập vào một thuộc tính (hoặc một method),</p>
-
-<pre><code>đầu tiên, nó sẽ tìm kiếm các thuộc tính được định nghĩa trong không gian của nó.
-Nếu thuộc tình (hoặc method) không được tìm thấy, nó sẽ tìm đến không gian
-của class (thuộc tính của class, hàm của class). Nếu vẫn không tìm thấy, nó
-sẽ tìm kiếm tiếp trong không gian của các super class. Khi một class có nhiều
-super class, thứ tự của các super class chính là thứ tự khi tìm kiếm
-</code></pre>
-
-<p>Trong <strong>old-style</strong> class, thứ tự của các superclass là depth-first, left-to-right
-theo thứ tự xuất hiện trong bases list</p>
-
-<figure class='code'><figcaption><span>python.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">A</span><span class="p">:</span>
-</span><span class='line'>      <span class="k">def</span> <span class="nf">test</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">print</span> <span class="s">&quot;A&quot;</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">B</span><span class="p">(</span><span class="n">A</span><span class="p">):</span>
-</span><span class='line'>      <span class="k">def</span> <span class="nf">test</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">print</span> <span class="s">&quot;B&quot;</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">C</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
-</span><span class='line'>      <span class="k">def</span> <span class="nf">test</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">print</span> <span class="s">&quot;C&quot;</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">D</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">C</span><span class="p">):</span> <span class="k">pass</span>
-</span><span class='line'><span class="c"># order of D.__bases__ is (B, C) so D.test =&gt; B.test</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">D</span><span class="p">()</span><span class="o">.</span><span class="n">test</span><span class="p">()</span>
-</span><span class='line'><span class="s">&quot;B&quot;</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">E</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="n">B</span><span class="p">):</span> <span class="k">pass</span>
-</span><span class='line'><span class="c"># order of E.__bases__ is (C, B) so E.test =&gt; C.test</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">E</span><span class="p">()</span><span class="o">.</span><span class="n">test</span><span class="p">()</span>
-</span><span class='line'><span class="s">&quot;C&quot;</span>
-</span><span class='line'>
-</span><span class='line'><span class="c"># so what if we make an class is inherited from D, E</span>
-</span><span class='line'><span class="c"># note that, D and E are inherited from 2 class B, C with reverse order</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">F</span><span class="p">(</span><span class="n">D</span><span class="p">,</span> <span class="n">E</span><span class="p">):</span> <span class="k">pass</span>
-</span><span class='line'><span class="c"># in old-style class, it does not matter, the searching method</span>
-</span><span class='line'><span class="c"># only care about order of superclass in __bases__</span>
-</span><span class='line'><span class="c"># so now F.test =&gt; D.test =&gt; B.test</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">F</span><span class="p">()</span><span class="o">.</span><span class="n">test</span><span class="p">()</span>
-</span><span class='line'><span class="s">&quot;B&quot;</span>
-</span><span class='line'>
-</span><span class='line'><span class="c"># even if we make an class is inherited from A, D, E</span>
-</span><span class='line'><span class="c"># it still works and test() method will be test() method of A</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">G</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">E</span><span class="p">):</span> <span class="k">pass</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">G</span><span class="p">()</span><span class="o">.</span><span class="n">test</span><span class="p">()</span>
-</span><span class='line'><span class="s">&quot;A&quot;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Cách phân giải method của <strong>old-style</strong> khá đơn giản và dễ hiểu. Nhưng nếu chúng
-ta áp dụng quy luật này, đôi khi chúng ta sẽ phạm phải sai lầm khi kế thừa.
-Giả sử, một class G được kế thừa từ A, D và E, trong khi A là parent class của D và E.
-Rõ ràng, một lỗi nên được Python ném ra trong trường hợp này để bảo về việc kế thừa vòng tròn như vậy</p>
-
-<p><strong>new-stlye</strong> giải quyết vấn đề này. <strong>new-style</strong> sử dụng MRO (Method Resolution Order) được giới thiệu từ Python 2.3</p>
-
-<figure class='code'><figcaption><span>python.py </span></figcaption>
+<figure class='code'><figcaption><span>generator/images.py </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -549,135 +156,189 @@ Rõ ràng, một lỗi nên được Python ném ra trong trường hợp này �
 <span class='line-number'>28</span>
 <span class='line-number'>29</span>
 <span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-<span class='line-number'>64</span>
-<span class='line-number'>65</span>
-<span class='line-number'>66</span>
-<span class='line-number'>67</span>
-<span class='line-number'>68</span>
-<span class='line-number'>69</span>
-<span class='line-number'>70</span>
-<span class='line-number'>71</span>
-<span class='line-number'>72</span>
-<span class='line-number'>73</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">def</span> <span class="nf">mro</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
-</span><span class='line'>    <span class="sd">&quot;&quot;&quot;</span>
-</span><span class='line'><span class="sd">    Return ordering of superclass of cls</span>
-</span><span class='line'><span class="sd">    This ordering was used when we want to access class instance atrribute</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">BackCoverImage</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 </span><span class='line'>
-</span><span class='line'><span class="sd">    `cls`: class type we want to resolve</span>
+</span><span class='line'>    <span class="n">BACK_COVER_IMAGE_PATH</span> <span class="o">=</span> <span class="s">&#39;assets/images/empty-barcode-image.jpg&#39;</span>
+</span><span class='line'>    <span class="n">BARCODE_IMAGE_SIZE</span> <span class="o">=</span> <span class="p">(</span><span class="mi">650</span><span class="p">,</span> <span class="mi">195</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">BARCODE_IMAGE_POSITION</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1925</span><span class="p">,</span> <span class="mi">2300</span><span class="p">)</span>
 </span><span class='line'>
-</span><span class='line'><span class="sd">    @raise `TypeError` if cannot resolution superclass order</span>
-</span><span class='line'><span class="sd">    @return `list` of class</span>
-</span><span class='line'><span class="sd">    &quot;&quot;&quot;</span>
-</span><span class='line'>    <span class="n">bases_cls</span> <span class="o">=</span> <span class="n">cls</span><span class="o">.</span><span class="n">__bases__</span>
-</span><span class='line'>    <span class="n">mro_base_lists</span> <span class="o">=</span> <span class="p">[</span><span class="n">mro</span><span class="p">(</span><span class="n">base_cls</span><span class="p">)</span> <span class="k">for</span> <span class="n">base_cls</span> <span class="ow">in</span> <span class="n">bases_cls</span><span class="p">]</span>
-</span><span class='line'>    <span class="n">mro_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">cls</span><span class="p">]</span>
-</span><span class='line'>    <span class="k">while</span> <span class="n">mro_base_lists</span><span class="p">:</span>
-</span><span class='line'>        <span class="c"># find the good head</span>
-</span><span class='line'>        <span class="c"># good head is head of a list which is not is tail of any list in mro_base_lists</span>
-</span><span class='line'>        <span class="n">list_head</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">mro_base_lists</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">set_tails</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-</span><span class='line'>        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">mro_base_lists</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">set_tails</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">barcode</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">barcode</span> <span class="o">=</span> <span class="n">barcode</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;_&#39;</span><span class="p">,</span> <span class="s">&#39;-&#39;</span><span class="p">)</span>
 </span><span class='line'>
-</span><span class='line'>        <span class="n">good_head</span> <span class="o">=</span> <span class="bp">None</span>
-</span><span class='line'>        <span class="k">for</span> <span class="n">head</span> <span class="ow">in</span> <span class="n">list_head</span><span class="p">:</span>
-</span><span class='line'>            <span class="k">if</span> <span class="n">head</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">set_tails</span><span class="p">:</span>
-</span><span class='line'>                <span class="n">good_head</span> <span class="o">=</span> <span class="n">head</span>
-</span><span class='line'>                <span class="k">break</span>
+</span><span class='line'>    <span class="nd">@lazy</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">barcode_image</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">params</span> <span class="o">=</span> <span class="p">(</span>
+</span><span class='line'>            <span class="p">(</span><span class="s">&#39;cpaint_function&#39;</span><span class="p">,</span> <span class="s">&#39;BuildBarcode&#39;</span><span class="p">),</span>
+</span><span class='line'>            <span class="p">(</span><span class="s">&#39;cpaint_argument[]&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">barcode</span><span class="p">),</span>
+</span><span class='line'>            <span class="p">(</span><span class="s">&#39;cpaint_argument[]&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+</span><span class='line'>            <span class="p">(</span><span class="s">&#39;cpaint_argument[]&#39;</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+</span><span class='line'>            <span class="p">(</span><span class="s">&#39;cpaint_response_type&#39;</span><span class="p">,</span> <span class="s">&#39;TEXT&#39;</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">)</span>
 </span><span class='line'>
-</span><span class='line'>        <span class="c"># if cannot find good_head, raise TypeError</span>
-</span><span class='line'>        <span class="k">if</span> <span class="ow">not</span> <span class="n">good_head</span><span class="p">:</span>
-</span><span class='line'>            <span class="k">raise</span> <span class="ne">TypeError</span>
-</span><span class='line'>        <span class="k">else</span><span class="p">:</span>
-</span><span class='line'>            <span class="c"># add to mro_list</span>
-</span><span class='line'>            <span class="n">mro_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">good_head</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">BARCODE_GENERATE_SITE</span> <span class="o">=</span> <span class="s">&#39;http://www.barcoding.com&#39;</span>
+</span><span class='line'>        <span class="n">BARCODE_GENERATE_URL</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">/upc/buildbarcode.asp&#39;</span> <span class="o">%</span> <span class="n">BARCODE_GENERATE_SITE</span>
+</span><span class='line'>        <span class="n">url</span> <span class="o">=</span> <span class="n">BARCODE_GENERATE_URL</span> <span class="o">+</span> <span class="s">&quot;?&quot;</span> <span class="o">+</span> <span class="s">&quot;&amp;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">=</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">params</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">res</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">image</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_image_from_url</span><span class="p">(</span><span class="n">BARCODE_GENERATE_SITE</span> <span class="o">+</span> <span class="n">res</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">image</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">BARCODE_IMAGE_SIZE</span><span class="p">,</span> <span class="n">Image</span><span class="o">.</span><span class="n">ANTIALIAS</span><span class="p">)</span>
 </span><span class='line'>
-</span><span class='line'>            <span class="c"># remove good_head in all list and add to mro_list</span>
-</span><span class='line'>            <span class="k">for</span> <span class="n">alist</span> <span class="ow">in</span> <span class="n">mro_base_lists</span><span class="p">:</span>
-</span><span class='line'>                <span class="k">try</span><span class="p">:</span>
-</span><span class='line'>                    <span class="n">alist</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">good_head</span><span class="p">)</span>
-</span><span class='line'>                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-</span><span class='line'>                    <span class="k">pass</span>
-</span><span class='line'>            <span class="n">mro_base_lists</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">mro_base_lists</span> <span class="k">if</span> <span class="n">x</span><span class="p">]</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">mro_list</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">A</span><span class="p">:</span> <span class="k">pass</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">B</span><span class="p">(</span><span class="n">A</span><span class="p">):</span> <span class="k">pass</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">C</span><span class="p">(</span><span class="n">A</span><span class="p">):</span> <span class="k">pass</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">D</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">C</span><span class="p">):</span> <span class="k">pass</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">E</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="n">B</span><span class="p">):</span> <span class="k">pass</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">F</span><span class="p">(</span><span class="n">D</span><span class="p">,</span> <span class="n">E</span><span class="p">):</span> <span class="k">pass</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">def</span> <span class="nf">test_mro</span><span class="p">():</span>
-</span><span class='line'>    <span class="k">assert</span> <span class="n">mro</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span><span class="n">A</span><span class="p">]</span>
-</span><span class='line'>    <span class="k">print</span> <span class="s">&quot;Test1 passed&quot;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">assert</span> <span class="n">mro</span><span class="p">(</span><span class="n">B</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span><span class="n">B</span><span class="p">,</span> <span class="n">A</span><span class="p">]</span>
-</span><span class='line'>    <span class="k">print</span> <span class="s">&quot;Test2 passed&quot;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">assert</span> <span class="n">mro</span><span class="p">(</span><span class="n">C</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span><span class="n">C</span><span class="p">,</span> <span class="n">A</span><span class="p">]</span>
-</span><span class='line'>    <span class="k">print</span> <span class="s">&quot;Test 3 passed&quot;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">assert</span> <span class="n">mro</span><span class="p">(</span><span class="n">D</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span><span class="n">D</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">A</span><span class="p">]</span>
-</span><span class='line'>    <span class="k">print</span> <span class="s">&quot;Test 4 passed&quot;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">assert</span> <span class="n">mro</span><span class="p">(</span><span class="n">E</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span><span class="n">E</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">A</span><span class="p">]</span>
-</span><span class='line'>    <span class="k">print</span> <span class="s">&quot;Test 5 passed&quot;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">try</span><span class="p">:</span>
-</span><span class='line'>        <span class="n">mro</span><span class="p">(</span><span class="n">F</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-</span><span class='line'>        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span>
-</span><span class='line'>        <span class="k">print</span> <span class="s">&quot;Test 6 passed&quot;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">test_mro</span><span class="p">()</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">image</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">BACK_COVER_IMAGE_PATH</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">image</span><span class="o">.</span><span class="n">paste</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">barcode_image</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">BARCODE_IMAGE_POSITION</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">image</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Ý tướng của MRO là sắp xếp các super class với điều kiện:</p>
+<p>Để sinh ra barcode, tôi connect tới một webservice và lấy dữ liệu về. Hàm <code>utils.get_image_from_url</code> trả về Image object từ content của một URL.</p>
 
-<pre><code>+ Nếu B là cha của C, B luôn luôn đứng trước C trong list.
-</code></pre>
+<p>decorator <code>@lazy</code> biến một method của class thành property của class đó, và cached lại result, do đó nếu bạn gọi tới property lần thứ hai, bạn sẽ sự dụng lại giá trị từ trong cached</p>
 
-<p>Với điều kiện đó, Python sẽ ném ra một lỗi nếu chúng ta cố gắng định nghĩa class
-D kế thừa từ (B, C), E kế thừa từ (C, B) và F kế thừa từ (D, E)</p>
+<p>Đây là code test cho class trên</p>
 
-<p>Tham khảo
-<a href="http://www.python.org/download/releases/2.3/mro/">explaination in python docs</a></p>
+<figure class='code'><figcaption><span>test_back_cover_image.py </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="kn">import</span> <span class="nn">hashlib</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">generator</span> <span class="kn">import</span> <span class="n">images</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">TestBackCoverImage</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">test_generate_image</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">generator</span> <span class="o">=</span> <span class="n">images</span><span class="o">.</span><span class="n">BackCoverImage</span><span class="p">(</span><span class="s">&#39;124124&#39;</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">image</span> <span class="o">=</span> <span class="n">generator</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</span><span class='line'>        <span class="n">checksum</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">tostring</span><span class="p">())</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEquals</span><span class="p">(</span><span class="s">&#39;efeae3cb498bbd57325991c2ac5346ad&#39;</span><span class="p">,</span> <span class="n">checksum</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Đoạn code trên generate BackCoverImage với một barcode xác định trước, và so sánh check sum của image được sinh ra, với image mà tôi đã sinh ra từ trước</p>
+
+<p>Tuy nhiên, có vấn đề ở đây. Đó là mỗi lần tôi chạy code test, tôi sẽ phải connect tới service của <code>http://www.barcoding.com</code>. Tức là tốc độ của code test sẽ bị ảnh hưởng bởi network, hơn nữa hàm <code>run()</code> của class BackCoverImage gọi tới <code>barcode_image</code>, nếu chúng ta test như trên, thì code test không phải là một unit test, mà là một integration test. Để giải quyết vấn đề này, chúng ta sử dụng thư viện <code>mock</code></p>
+
+<figure class='code'><figcaption><span>test_back_cover_image.py </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="kn">import</span> <span class="nn">mock</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">generator</span> <span class="kn">import</span> <span class="n">images</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">PropertyMock</span><span class="p">(</span><span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">owner</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">return</span> <span class="bp">self</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">TestBackCoverImage</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">test_generate_image</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">mock_barcode</span> <span class="o">=</span> <span class="n">PropertyMock</span><span class="p">()</span>
+</span><span class='line'>        <span class="n">barcode_image</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s">&#39;StoryTree/assets/images/barcode_image.png&#39;</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_barcode</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="n">barcode_image</span>
+</span><span class='line'>        <span class="k">with</span> <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">images</span><span class="o">.</span><span class="n">BackCoverImage</span><span class="p">,</span> <span class="s">&#39;barcode_image&#39;</span><span class="p">,</span> <span class="n">mock_barcode</span><span class="p">):</span>
+</span><span class='line'>            <span class="n">generator</span> <span class="o">=</span> <span class="n">images</span><span class="o">.</span><span class="n">BackCoverImage</span><span class="p">(</span><span class="s">&#39;storytree_124124&#39;</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">image</span> <span class="o">=</span> <span class="n">generator</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</span><span class='line'>            <span class="n">checksum</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">tostring</span><span class="p">())</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEquals</span><span class="p">(</span><span class="s">&#39;efeae3cb498bbd57325991c2ac5346ad&#39;</span><span class="p">,</span> <span class="n">checksum</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Tôi đã mock thuộc tính barcode_image của class BackCoverImage với <code>PropertyMock</code>.
+Tốc độ của test được cải thiện đáng kể, từ 3-4s khi test không có mock, xuống &lt; 0.3s</p>
+
+<p>Xét tiếp ví dụ tiếp theo, tôi có một class Order, mỗi khi muốn order, tôi cần
+sinh ra một pdf file cho class Order. Pdf file này cần có một page được sinh ra từ class <code>BackCoverImage</code></p>
+
+<figure class='code'><figcaption><span>order.py </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">generator</span> <span class="kn">import</span> <span class="n">images</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">Order</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">key</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">AutoField</span><span class="p">(</span><span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</span><span class='line'>    <span class="o">...</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">create_pdf_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">back_image</span> <span class="o">=</span> <span class="n">images</span><span class="o">.</span><span class="n">BackCoverImage</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</span><span class='line'>        <span class="o">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Để test hàm <code>create_pdf_file</code>, chúng ta sẽ mock <code>BackCoverImage.run</code> với một Image
+và kiểm tra xem hàm đó có được gọi hay không?</p>
+
+<figure class='code'><figcaption><span>test_order.py </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="kn">import</span> <span class="nn">mock</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">generator</span> <span class="kn">import</span> <span class="n">images</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">order</span> <span class="kn">import</span> <span class="n">Order</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">TestBackCoverImage</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">test_generate_image</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">image</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s">&#39;StoryTree/assets/images/barcode_image.png&#39;</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_backcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">with</span> <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">images</span><span class="o">.</span><span class="n">BackCoverImage</span><span class="p">,</span> <span class="s">&#39;run&#39;</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="p">):</span>
+</span><span class='line'>            <span class="n">order</span> <span class="o">=</span> <span class="n">Order</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="mi">212</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">order</span><span class="o">.</span><span class="n">create_pdf_file</span><span class="p">()</span>
+</span><span class='line'>            <span class="n">mock_backcover</span><span class="o">.</span><span class="n">assert_called_once_with</span><span class="p">(</span><span class="mi">212</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>Kết luận</h1>
+
+<p>Bằng việc có một bộ test để đảm bảo hệ thống đang hoạt động đúng, bạn giúp các
+lập trình viên khác trong đội của bạn, hay chính bản thân bạn (sau một thời gian)
+tự tin khi viết thêm/thay đổi code, mà không sợ ảnh hướng tới logic của những
+chức năng khác. Điều này đặc biệt hữu ích khi bạn muốn refactor code.</p>
+
+<p>Tuy nhiên để làm điều đó, bộ test của bạn cần chạy trong một thời gian ngắn.
+Nếu bộ test của bọn tốn vài phút mới thực hiện xong, thì thật khó để yêu cầu các
+developer khác chạy nó mỗi lần họ commit code.</p>
+
+<p>Bằng cách sử dụng mock, bạn có thể isolate các unittest, đảm bảo mỗi một đoạn code
+chỉ cần test duy nhất một lần, qua đó tăng tốc độ của unittest lên rất nhiều.</p>
 
 		
 		
@@ -700,72 +361,445 @@ D kế thừa từ (B, C), E kế thừa từ (C, B) và F kế thừa từ (D, 
   
 
 
-<time datetime="2013-04-28T00:06:00+09:00" data-updated="true" itemprop="datePublished">Apr 28<span>th</span>, 2013</time></div>
+<time datetime="2013-05-07T16:53:00+09:00" data-updated="true" itemprop="datePublished">May 7<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/linux-tips-tutorial/'>linux, tips, tutorial</a>
+	<a class='category' href='/blog/categories/database/'>database</a>, <a class='category' href='/blog/categories/engine/'>engine</a>, <a class='category' href='/blog/categories/mysql/'>mysql</a>, <a class='category' href='/blog/categories/storage/'>storage</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/04/28/make-fun-with-unix-command-prompt/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/05/07/storageenginemysql/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/04/28/make-fun-with-unix-command-prompt/" itemprop="url">Fun With Unix Command Prompt</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/05/07/storageenginemysql/" itemprop="url">Giới Thiệu Một Số Storage Engine Của Mysql</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<p><img src="/images/UnixCommandPrompt/unix.png"></p>
+		<h1>Giới thiệu</h1>
 
-<p>Chắc hẳn là một unix user (có thể mac os hay linux), lại là một programmer, bạn sẽ phải hàng ngày sử dụng terminal cho việc lập trình, quản lý source, monitoring hệ thống&#8230;. Và đã là người sử dụng terminal hàng ngày thì cái bạn phải nhìn thấy nhiều nhất chính là cái gọi là &#8220;Command prompt&#8221;</p>
+<p>MySQL là một trong những hệ thống cơ sở dữ liệu quan hệ phổ biến số một thế giới, được sử dụng bởi hầu hết các website lớn. Do vậy, việc nắm vững MySQL là yêu cầu không thể thiếu đối với một webmaster.</p>
 
-<p><img src="/images/UnixCommandPrompt/unix-terminal.png"></p>
+<p>Kiến trúc logic của MySQL nhìn tổng quan có thể được mô tả như hình dưới đây</p>
 
-<p>Cái command prompt này thì tùy thuộc vào shell bạn đang dùng (bash hay zsh..) mà sẽ có những cách tùy chỉnh khác nhau. Mình thì đang dùng bash (chắc một ngày gần đây sẽ chuyển qua zsh), nên bài viết này sẽ áp dụng chủ yếu ở trên bash. Command prompt ở trên bash thì gồm có 4 biến môi trường (environment variable) chính: PS1, PS2, PS3, PS4 (Ngoài ra còn có COMMAND_PROMPT nữa nhưng thằng này na ná PS1 nên mình không đề cập đến). Để sử dụng các biến môi trường này thì bạn chỉ cần:</p>
+<p><img src="/images/logical_mysql_architecture.jpeg"></p>
 
-<figure class='code'><figcaption><span>export export.sh </span></figcaption>
+<p>Ta có thể thấy MySQL có các component cơ bản như ở dưới đây</p>
+
+<ul>
+<li>Connection/thread handling</li>
+<li>Query cache</li>
+<li>Parser</li>
+<li>Optimizer</li>
+<li>Storage engine</li>
+</ul>
+
+
+<p>Việc nắm rõ từng chức năng và nhiệm vụ của từng thành phần là điều không thể thiếu trong việc sử dụng MySQL một cách hiệu quả. Bài viết sẽ tập trung giới thiệu về thành phần dưới cùng trong mô hình trên: Storage engine (Máy lưu trữ)</p>
+
+<h1>Storage Engine (Máy lưu trữ)</h1>
+
+<p>Storage Engine thực chất là cách MySQL lưu trữ dữ liệu trên đĩa cứng. MySQL lưu mỗi database như là một thư mục con nằm dưới thư mục data. Khi một table được tạo ra, MySQL sẽ lưu định nghĩa bảng ở file đuôi .frm và tên trùng với tên của bảng được tạo. Việc quản lý định nghĩa bảng là nhiệm vụ của MySQL server, dù rằng mỗi storage engine sẽ lưu trữ và đánh chỉ mục (index) dữ liệu khác nhau.</p>
+
+<p>Ví dụ: mình chỉ định &#8211;datadir là /usr/local/mysql/data và định nghĩa bảng users trong database tên là test như sau</p>
+
+<div>
+  <pre><code class='bash'>create table users (
+    id int not null auto_increment, 
+    name varchar(30), 
+    password varchar(20), 
+    primary key(id)
+);</code></pre>
+</div>
+
+
+<p>thì trong thư mục /usr/local/mysql/data sẽ có thư mục con là test, và dưới test sẽ có các file</p>
+
+<div>
+  <pre><code class='bash'>-rw-rw----  1 _mysql  wheel   8624  5  7 17:35 users.frm
+-rw-rw----  1 _mysql  wheel  98304  5  7 17:35 users.ibd</code></pre>
+</div>
+
+
+<p>Để xem loại storage engine của bảng hiện tại, bạn có thể dùng câu lệnh <em>SHOW DATABASE STATUS</em></p>
+
+<div>
+  <pre><code class='bash'>mysql&gt; show table status like 'users' \G
+*************************** 1. row ***************************
+           Name: users
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 2
+ Avg_row_length: 8192
+    Data_length: 16384
+Max_data_length: 0
+   Index_length: 0
+      Data_free: 0
+ Auto_increment: 3
+    Create_time: 2013-05-07 17:35:09
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+1 row in set (0.01 sec)</code></pre>
+</div>
+
+
+<p>Cụ thể trong trường hợp này:</p>
+
+<pre><code>storage engine          : innodb
+loại row                : compact
+Số lượng row dữ liệu    : 2
+giá trị auto increment tiếp theo: 3
+...
+</code></pre>
+
+<h2>Tổng quan các engine</h2>
+
+<h3>1. MyISAM engine</h3>
+
+<h5>Đặc điểm</h5>
+
+<ul>
+<li>full-text indexing</li>
+<li>compression.</li>
+<li>spatial functions (GIS)</li>
+<li>Không hỗ trợ transactions</li>
+<li>Không hỗ trợ row-level lock.</li>
+</ul>
+
+
+<h5>Lưu trữ</h5>
+
+<p>MyISAM lưu mỗi bảng dữ liệu trên 2 file: .MYD cho dữ liệu và .MYI cho chỉ mục. Row có 2 loại: dynamic và static (tuỳ thuộc bạn có dữ liệu thay đổi độ dài hay không). Số lượng row tối đa có thể lưu trữ bị giới hạn bởi hệ điều hành, dung lượng đĩa cứng. MyISAM mặc định sử dụng con trỏ độ dài 6 bytes để trỏ tới bản ghi dữ liệu, do vậy giới hạn kích thước dữ liệu xuống 256TB.</p>
+
+<h5>Tính năng:</h5>
+
+<ul>
+<li>MyISAM lock toàn bộ table. User (MySQL server) chiếm shared-lock khi đọc và chiếm exclusive-lock khi ghi. Tuy vậy, việc đọc ghi có thể diễn ra đồng thời!</li>
+<li>MyISAM có khả năng tự sửa chữa và phục hồi dữ liệu sau khi hệ thống crashed.</li>
+<li>Dùng command check table / repair table để kiểm tra lỗi và phục hồi sau khi bị lỗi.</li>
+<li>MyISAM có thể đánh chỉ mục full-text, hỗ trợ tìm kiếm full-text.</li>
+<li>MyISAM không ghi dữ liệu ngay vào ổ đĩa cứng, mà ghi vào 1 buffer trên memory (và chỉ ghi vào đĩa cứng sau 1 khoảng thời gian), do đó tăng tốc độ ghi. Tuy vậy, sau khi server crash, ta cần phải phục hồi dữ liệu bị hư hỏng bằng myisamchk.</li>
+<li>MyISAM hỗ trợ nén dữ liệu, hỗ trợ tăng tốc độ đọc dữ liệu. Mặc dù vậy dữ liệu sau khi nén không thể cập nhật được.</li>
+</ul>
+
+
+<h3>2. InnoDB engine</h3>
+
+<h5>Đặc điểm</h5>
+
+<ul>
+<li>Là engine phức tạp nhất trong các engine của MySQL</li>
+<li>Hỗ trợ transactions</li>
+<li>Hỗ trợ phục hồi, sửa chữa tốt</li>
+</ul>
+
+
+<h5>Lưu trữ</h5>
+
+<p>InnoDB lưu dữ liệu trên 1 file (thuật ngữ gọi là tablespace).</p>
+
+<h5>Tính năng:</h5>
+
+<ul>
+<li>InnoDB hỗ trợ MVCC (Multiversion Concurrency Control) để cải thiện việc truy cập đồng thời và hỗ trợ chiến thuật next-key locking.</li>
+<li>InnoDB được xây dựng dựa trên clustered index, do đó việc tìm kiếm theo primary key có hiệu năng rất cao. InnoDB không hỗ trợ sắp xếp index do vậy việc thay đổi cấu trúc bảng sẽ dẫn tới toàn bộ dữ liệu phải được đánh chỉ mục từ đầu (CHẬM với những bảng lớn).</li>
+</ul>
+
+
+<h3>3. Memory engine</h3>
+
+<h5>Đặc điểm</h5>
+
+<ul>
+<li>Còn được gọi là HEAP tables.</li>
+</ul>
+
+
+<h5>Lưu trữ</h5>
+
+<p>Tất cả dữ liệu đều nằm trên memory.</p>
+
+<h5>Tính năng:</h5>
+
+<ul>
+<li>Sau khi server restart, cấu trúc bảng được bảo toàn, dữ liệu bị mất hết.</li>
+<li>Memory engine sử dụng HASH index nên rất nhanh cho query lookup.</li>
+<li>Memory engine dùng table-level locking do vậy tính concurrency không cao.</li>
+</ul>
+
+
+<h3>4. Archive engine</h3>
+
+<h5>Đặc điểm</h5>
+
+<ul>
+<li>Chỉ hỗ trợ Insert và Select.</li>
+<li>Không đánh chỉ mục</li>
+<li>Dữ liệu được buffer và nén bằng zlib nên tốn ít I/O, tốc độ ghi do đó cao.</li>
+</ul>
+
+
+<h5>Tính năng:</h5>
+
+<ul>
+<li>Tốc độ ghi cao, phù hợp cho ứng dụng log.</li>
+</ul>
+
+
+<h3>5. CSV engine</h3>
+
+<h5>Đặc điểm</h5>
+
+<ul>
+<li>Coi file CSV như là 1 table.</li>
+<li>Không hỗ trợ đánh chỉ mục</li>
+</ul>
+
+
+<h5>Tính năng:</h5>
+
+<ul>
+<li>Nếu bài toán là trích xuất thông tin từ file CSV và ghi vào cơ sở dữ liệu, đồng thời cần kết quả CSV ngay từ DB, engine này có vẻ thích hợp.</li>
+</ul>
+
+
+<h3>6. Falcon engine</h3>
+
+<h5>Đặc điểm</h5>
+
+<ul>
+<li>Được thiết kế cho phần cứng hiện đại: server 64 bit, bộ nhớ &#8220;thênh thang&#8221;</li>
+<li>Vẫn còn khá mới, chưa có nhiều usercase</li>
+</ul>
+
+
+<h3>7. Maria engine (Cơ sở dữ liệu liên quan: <a href="https://mariadb.org/">MariaDB</a>)</h3>
+
+<h5>Đặc điểm</h5>
+
+<ul>
+<li>Được thiết kế bởi những chiến tướng dày dạn kinh nghiêm của MySQL, với mục đích thay thế MyISAM</li>
+<li>Hỗ trợ transactions theo lựa chọn</li>
+<li>Khôi phục lỗi</li>
+<li>Row-level locking và MVCC</li>
+<li>Hỗ trợ BLOB tốt hơn.</li>
+</ul>
+
+
+<h2>Tiêu chí lựa chọn engine</h2>
+
+<ul>
+<li>Transactions: Nếu ứng dụng yêu cầu transactions, InnoDB là lựa chọn duy nhất. Nếu không yêu cầu transactions, MyISAM là lựa chọn tốt.</li>
+<li>Concurrency: Nếu yêu cầu chịu tải cao và không cần thiết transactions, MyISAM là lựa chọn số 1.</li>
+<li>Sao lưu: Các engine đều phần nào hỗ trợ sao lưu. Ngoài ra ta cần hỗ trợ sao lưu trên cả quan điểm thiết kế hệ thống. Ví dụ: bạn thiết kế database server gồm master và slave, master yêu cần transaction nên dùng innodb, slave cần sao lưu và đọc nên có thể dùng MyISAM. Cơ chế đồng bộ master-slave sẽ giúp bạn quản lý sự khác nhau giữa các engine nhưng đảm bảo tính sao lưu. Tiêu chí này có trọng số nhỏ.</li>
+<li>Phục hồi sau crash: MyISAM có khả năng phục hồi sau crash kém hơn InnoDB.</li>
+<li>Tính năng theo yêu cầu hệ thống: Nếu yêu cầu là logging, MyISAM hoặc Archive là lựa chọn hợp lý. Nếu cần lưu trực tiếp CSV, CSV engine là lựa chọn đáng cân nhắc. Nếu ứng dụng không thay đổi dữ liệu mấy (ví dụ cơ sở dữ liệu sách), MyISAM và tính năng nén là lựa chọn phù hợp.</li>
+</ul>
+
+
+<h1>Kết luận</h1>
+
+<p>Bài viết này đã giới thiệu tổng quan về storage engine, một thành phần quan trọng của hệ thống cơ sở dữ liệu. Một số engine tiêu biểu và tính năng đặc điểm cũng được đưa ra. Tiêu chí chọn lựa mỗi loại engine cũng được giới thiệu.</p>
+
+<p>Hy vọng qua bài viết, bạn có cái nhìn tổng quan về database storate engine nói chung, và MySQL storage engine nói riêng, đồng thời hiểu được tầm quan trọng của việc chọn lựa storage engine.</p>
+
+<h1>Tham khảo</h1>
+
+<ol>
+<li><a href="http://shop.oreilly.com/product/9780596101718.do">High performance MySQL, 2ed</a></li>
+<li><a href="http://dev.mysql.com/doc/refman/5.7/en/storage-engines.html">Storage Engines</a></li>
+<li><a href="http://www.linux.org/article/view/an-introduction-to-mysql-storage-engines">Storage Engine Introduction</a></li>
+</ol>
+
+
+		
+		
+	</div>
+
+</article>
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-05-06T16:44:00+09:00" data-updated="true" itemprop="datePublished">May 6<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/programming/'>programming</a>, <a class='category' href='/blog/categories/python/'>python</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/05/06/memoization-and-decorator/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/05/06/memoization-and-decorator/" itemprop="url">Memoization and Decorator</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h2>What is memoization</h2>
+
+<p>Trước hết chúng ta làm quen với khái niệm memoization. Ngôn ngữ ở đây là Python, bài toán là viết hàm tính giai thừa (n!)</p>
+
+<p>Hàm giai thừa thông thường sẽ được viết đệ quy như sau:</p>
+
+<figure class='code'><figcaption><span>python.py </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">export </span><span class="nv">PS1</span> <span class="o">=</span> <span class="s2">&quot;abcxyz&quot;</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">def</span> <span class="nf">fac</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span> <span class="k">return</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">n</span> <span class="o">*</span> <span class="n">fac</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>hoặc đặt đoạn code đó vào ~/.bash_profile hoặc ~/.bashrc rồi</p>
+<p>Có gì không ổn ở đoạn code này ? Cách giải quyết hoàn toàn không có vấn đề, nhưng nếu tinh ý bạn sẽ nhận thấy có 1 khối lượng tính toán bị lặp lại khá nhiều khi chạy nhiều hàm fac(n). VD, nếu tính fac(3), fac(4) và fac(10) lần lượt sẽ đòi hỏi 3 flow tính toán riêng rẽ mà không có reuse: fac(3) sẽ tính đệ quy từ fac(2) xuống fac(1), fac(4) tính đệ quy từ fac(3) xuống fac(1) và fac(10) tính đệ quy từ fac(9) xuống fac(1) !</p>
 
-<figure class='code'><figcaption><span>export export.sh </span></figcaption>
+<p>Áp dụng memoization dưới dạng dict, ta có thể viết hàm fac_m như sau:</p>
+
+<figure class='code'><figcaption><span>python.py </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">source</span> ~/.bash_profile
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="n">memo</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">fac_m</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">n</span><span class="o">&lt;</span><span class="mi">2</span><span class="p">:</span> <span class="k">return</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">n</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">memo</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">memo</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span> <span class="o">*</span> <span class="n">fac_m</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">memo</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>để shell load lại các setting trong file tương ứng là biến môi trường đã được set.</p>
+<p>Ở đây memo đóng vài trò như 1 cache. fac(3) sẽ generate ra 3 record in cache, và fac(4) sẽ hit cache khi chạy đệ quy được 1 lần. Tương tự fac(10) sẽ hit cache khi đệ quy xuống đến fac(4)</p>
 
-<p>Dưới đây mình sẽ nói về việc sử dụng các biến môi trường này để biến cái command prompt của bạn trở nên <strong>màu mè</strong> và <strong>thân thiện</strong> hơn. Về thứ tự thì mình sẽ nói về cái có độ tùy biến thấp đến cao</p>
+<p>Như vậy memoization đơn giản chỉ là tìm cách nhớ những phần tử để giảm khối lượng tính toán</p>
 
-<h2>PS2</h2>
+<p>Memoization có thể implement dưới dạng function&#8230;</p>
 
-<p>Trong 5 biến mình nói ở trên thì biến PS2 là thằng nhàm chán nhất. PS2 gọi là Continuation interactive prompt. Tại sao lại gọi như vậy thì: khi một câu lệnh unix quá dài thì bạn thường dùng kí hiệu &#8220;&#92;&#8221; ở cuối dòng để làm cho câu lệnh đấy thành multiple-line (gõ được ở nhiều dòng). Và PS2 là biến quyết định <strong>cái gì được in ở đầu mỗi dòng đó</strong></p>
-
-<p><img src="/images/UnixCommandPrompt/PS2-1.png"></p>
-
-<p>Cách sử dụng thì vô cùng đơn giản:</p>
-
-<figure class='code'><figcaption><span>export export.sh </span></figcaption>
+<figure class='code'><figcaption><span>python.py </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">export </span><span class="nv">PS2</span><span class="o">=</span><span class="s2">&quot;continue here -&gt; &quot;</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">def</span> <span class="nf">memoize</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">memo</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">arg</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">memo</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">memo</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">memo</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">fac_m_f</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">memoize</span><span class="p">(</span><span class="n">fac</span><span class="p">,</span><span class="n">n</span><span class="p">)</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Và kết quả là:</p>
+<p>&#8230;hoặc class</p>
 
-<p><img src="/images/UnixCommandPrompt/PS2-2.png"></p>
+<figure class='code'><figcaption><span>python.py </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Memoize</span><span class="p">:</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="n">f</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">memo</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">memo</span><span class="p">:</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">memo</span><span class="p">[</span><span class="n">args</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">memo</span><span class="p">[</span><span class="n">args</span><span class="p">]</span>
+</span><span class='line'><span class="n">fac</span><span class="o">=</span> <span class="n">Memoize</span><span class="p">(</span><span class="n">fac</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>Chắc bạn cũng đã hình dung ra cách dùng PS2 thế nào rồi nhỉ, và hẳn bạn đang nghĩ, biến này chả có gì thú vị lắm nhỉ, mình cũng nghĩ thế :D. Thế nên chúng ta qua thằng tiếp theo nhé: PS3</p>
 
-<h2>PS3</h2>
+<p>Thêm 1 step nữa, thay vì &#8220;fac=Memoize(fac)&#8221; như ở trên, bạn có thể viết hàm mới theo kiểu decorator</p>
 
-<p>PS3 gọi là biến dùng cho việc &#8220;select inside shell script&#8221;
-Giả sử bạn phải viết một đoạn script cho lựa chọn (ví dụ như bạn làm infra, phải viết script kiểu như: hãy chọn giữa install rvm hay rbenv chẳng hạn).Thì chắc đoạn script đó sẽ trông như sau:</p>
+<figure class='code'><figcaption><span>python.py </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="nd">@Memoize</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">fac_m_d</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">n</span><span class="o">&lt;</span><span class="mi">2</span><span class="p">:</span> <span class="k">return</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">n</span> <span class="o">*</span> <span class="n">fac_m_d</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<figure class='code'><figcaption><span>select select.sh </span></figcaption>
+
+<p>Decorator ở đây là từ khoá &#8220;@Memoize&#8221; trước định nghĩa của hàm fac_m_d</p>
+
+<p>Vậy decorator trong Python là gì và cách dùng ra sao ?</p>
+
+<h2>Python decorator</h2>
+
+<p>Trong số các design pattern, có 1 design pattern gọi là &#8220;decorator design pattern&#8221;. Python decorator chỉ là 1 cách implement của decorator design pattern. 2 khái niệm này không hoàn toàn giống nhau. Một điểm nữa cần nhớ là, memoization ở trên chỉ là 1 trong các ứng dụng của python decorator, python decorator còn có nhiều ứng dựng khác.</p>
+
+<p>Mọi function trong python đều là object, cho phép ta có thể assign funtion cho variable hoặc defince function trong chính 1 function khác. Dựa vào đó, decorator có thể dưới dạng decorator function như ví dụ dưới đây:</p>
+
+<figure class='code'><figcaption><span>python.py </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">def</span> <span class="nf">gotham</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">inside_gotham</span><span class="p">():</span>
+</span><span class='line'>        <span class="k">print</span> <span class="s">&quot;Gotham needs Batman&quot;</span>
+</span><span class='line'>        <span class="n">f</span><span class="p">()</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">inside_gotham</span>
+</span><span class='line'>
+</span><span class='line'><span class="nd">@gotham</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">batman</span><span class="p">():</span>
+</span><span class='line'>    <span class="k">print</span> <span class="s">&quot;Batman Here! Gotham is saved! &quot;</span>
+</span><span class='line'><span class="n">batman</span><span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Đoạn code sẽ cho output:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>Gotham needs Batman
+</span><span class='line'>Batman Here! Gotham is saved!</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Cơ chế của decorator có thể hiểu đơn giản là, khi intepreter đọc đến đoạn code đefine function với decorator, interpreter sẽ evaluate function 1 cách bình thường và pass function object kết quả thẳng cho decorator(dưới dạng function hoặc class). Decorator(function hoăc class) lấy agrument là 1 function object và return kết quả là 1 function object khác.</p>
+
+<p>Function object kết quả nói trên gồm function object ban đầu đã được gói lại và &#8220;thêm thắt&#8221;, và từ nay về sau sẽ được gọi thay cho function object ban đầu mỗi khi có lệnh call.</p>
+
+<p>Ngoài memoization bên trên, bạn có thể dễ thấy rất nhiều ứng dụng của decorator trong các task liên quan đến wrap VD như:</p>
+
+<p>Timing, benchmark tính toán thời gian run code</p>
+
+<figure class='code'><figcaption><span>python.py </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -778,39 +812,38 @@ Giả sử bạn phải viết một đoạn script cho lựa chọn (ví dụ n
 <span class='line-number'>10</span>
 <span class='line-number'>11</span>
 <span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="o">==</span>&gt; code
-</span><span class='line'><span class="nb">echo</span> <span class="s2">&quot;Select your option:&quot;</span>
-</span><span class='line'><span class="k">select </span>i in 1<span class="o">)</span> 2<span class="o">)</span> 3<span class="o">)</span>
-</span><span class='line'><span class="k">do</span>
-</span><span class='line'><span class="k">  case</span> <span class="nv">$i</span> in
-</span><span class='line'>    x<span class="o">)</span>....
-</span><span class='line'>    y<span class="o">)</span>....
-</span><span class='line'>    z<span class="o">)</span>....
-</span><span class='line'>  <span class="k">esac</span>
-</span><span class='line'><span class="k">done</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">def</span> <span class="nf">time_cal</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">arg</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+</span><span class='line'>        <span class="n">res</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">arg</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">print</span> <span class="n">func</span><span class="o">.</span><span class="n">func_name</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">res</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">wrapper</span>
 </span><span class='line'>
-</span><span class='line'><span class="o">==</span>&gt; run
-</span><span class='line'><span class="c"># /.select.sh</span>
-</span><span class='line'>x<span class="o">)</span>....
-</span><span class='line'>y<span class="o">)</span>....
-</span><span class='line'>z<span class="o">)</span>....
-</span><span class='line'>
-</span><span class='line'><span class="c">#? 1</span>
-</span><span class='line'>x<span class="o">)</span>
+</span><span class='line'><span class="nd">@time_cal</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">fac</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span> <span class="k">return</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">n</span> <span class="o">*</span> <span class="n">fac</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Như các bạn thấy, prompt để lựa chọn khi không có setting gì sẽ là <strong>không hiện gì</strong>, quite boring
-Giờ nếu chúng ta chỉ cần setting PS3 cho đoạn code đó như sau</p>
+<p>hay trong web application, nếu bạn đã dùng Flaskr, bạn có thể thấy đoạn code sau</p>
 
-<figure class='code'><figcaption><span>select select.sh </span></figcaption>
+<figure class='code'><figcaption><span>python.py </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="nd">@mod.route</span><span class="p">(</span><span class="s">&#39;/me/&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="nd">@requires_login</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">home</span><span class="p">():</span>
+</span><span class='line'><span class="o">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Ở đây trang web của bạn ở sublink &#8220;&#8230;/me&#8221; sẽ được đảm bảo chỉ viewable với user đã login. Decorator &#8220;@requires_login&#8221; có thể viết ở 1 file độc lập và mọi hàm cần tính đảm bảo như trên chỉ cần thêm &#8220;@requires_login&#8221; đằng trước.</p>
+
+<figure class='code'><figcaption><span>python.py </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -821,221 +854,27 @@ Giờ nếu chúng ta chỉ cần setting PS3 cho đoạn code đó như sau</p>
 <span class='line-number'>8</span>
 <span class='line-number'>9</span>
 <span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="o">==</span>&gt; code
-</span><span class='line'><span class="nv">PS3</span><span class="o">=</span><span class="s2">&quot;Select an option of installer (1-3): &quot;</span>
-</span><span class='line'><span class="k">select </span>i in 1<span class="o">)</span> 2<span class="o">)</span> 3<span class="o">)</span>
-</span><span class='line'><span class="k">do</span>
-</span><span class='line'><span class="k">  case</span> <span class="nv">$i</span> in
-</span><span class='line'>    x<span class="o">)</span>....
-</span><span class='line'>    y<span class="o">)</span>....
-</span><span class='line'>    z<span class="o">)</span>....
-</span><span class='line'>  <span class="k">esac</span>
-</span><span class='line'><span class="k">done</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">==</span>&gt; run
-</span><span class='line'><span class="c"># /.select.sh</span>
-</span><span class='line'>x<span class="o">)</span>....
-</span><span class='line'>y<span class="o">)</span>....
-</span><span class='line'>z<span class="o">)</span>....
-</span><span class='line'>
-</span><span class='line'><span class="c">#? Select an option of installer (1-3): 1</span>
-</span><span class='line'>x<span class="o">)</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">requires_login</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+</span><span class='line'>    <span class="nd">@wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">decorated_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">if</span> <span class="n">g</span><span class="o">.</span><span class="n">user</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">flash</span><span class="p">(</span><span class="s">u&#39;You need to be signed in for this page.&#39;</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s">&#39;users.login&#39;</span><span class="p">,</span> <span class="nb">next</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">decorated_function</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Như vậy là chúng ta sẽ có một cái prompt <strong>có hiện gì</strong>, use case để dùng thì chắc trong phần lớn các trường hợp sẽ là để cung cấp thông tin cho user về các option lựa chọn phía dưới. PS3 có vẻ khá useful trong một số case nhất định đúng không :D, tiếp theo chúng ta sẽ đến với PS4</p>
-
-<h2>PS4</h2>
-
-<p>Khi execute một đoạn script mà bạn muốn tracking output (để debug chẳng hạn), bạn sẽ dùng {set -x} để làm việc đó. ví dụ như đoạn code ở dưới đây:</p>
-
-<figure class='code'><figcaption><span>tracking tracking.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="o">==</span>&gt; code tracking.sh
-</span><span class='line'><span class="nb">set</span> -x
-</span><span class='line'>ls -all -lrt | grep xyz
-</span><span class='line'><span class="nb">pwd</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">==</span>&gt; run
-</span><span class='line'>++ ls -all -lrt
-</span><span class='line'>++ grep xyz
-</span><span class='line'>drwxr-xr-x   2 doxuanhuy  staff   68 Apr 28 11:45 xyz
-</span><span class='line'>++ <span class="nb">pwd</span>
-</span><span class='line'>/Users/doxuanhuy/cur-project/android-globalit
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Như các bạn thấy, {set -x} sẽ output ra các câu lệnh được execute và prefix bằng cái &#8220;++&#8221;. 2 kí tự này có vè không thể hiện được gì nhỉ, và với PS4, bạn có thể thêm thông tin hữu ích cho việc debug như line number thông qua biến $LINENO, hay function name thông qua biến $FUNCNAME, hay script name thông qua biến $0</p>
-
-<figure class='code'><figcaption><span>tracking tracking.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="o">==</span>&gt; code tracking.sh
-</span><span class='line'><span class="nb">export </span><span class="nv">PS4</span><span class="o">=</span><span class="s1">&#39;$0.$FUNCNAME $LINENO &#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="nb">set</span> -x
-</span><span class='line'>somefunction<span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>    ls -all -lrt | grep xyz
-</span><span class='line'>      <span class="nb">pwd</span>
-</span><span class='line'><span class="o">}</span>
-</span><span class='line'><span class="nv">somefunction</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">==</span>&gt; run
-</span><span class='line'>../test.sh. 8 somefunction
-</span><span class='line'>../test.sh.somefunction 5 ls -all -lrt
-</span><span class='line'>../test.sh.somefunction 5 grep xyz
-</span><span class='line'>drwxr-xr-x   2 doxuanhuy  staff   68 Apr 28 11:45 xyz
-</span><span class='line'>../test.sh.somefunction 6 <span class="nb">pwd</span>
-</span><span class='line'>/Users/doxuanhuy/cur-project/android-globalit
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Như vậy chúng ta đã có những thông tin khá hữu ích để debug đúng không.
-Và tiếp theo chúng ta sẽ đi đến bộ đôi thú vị nhất trong ngày: PS1 và COMMAND_PROMPT</p>
-
-<h2>PS1</h2>
-
-<p>Đây chính là biến quyết định cái gì sẽ hiện lên ở command prompt, và là biến có nhiều cái để hack nhất trong các loại PSx</p>
-
-<p><img src="/images/UnixCommandPrompt/PS1-1.png"></p>
-
-<p>Đầu tiên chúng ta sẽ nói về PS1
-Giả sử chúng ta muốn command prompt hiện lên Username, Hostname và full-path đến directory hiện tại, đơn giản chúng ta chỉ cần</p>
-
-<figure class='code'><figcaption><span>PS1 PS1.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">export </span><span class="nv">PS1</span><span class="o">=</span><span class="s2">&quot;\u@\h \w&gt; &quot;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Ở đây \u là Username, \h là Hostname và \w là full path của current dir.
-Như vậy chúng ta sẽ có 1 cái prompt như dưới đây</p>
-
-<figure class='code'><figcaption><span>PS1 PS1.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>doxuanhuy@xxx ~/cur-project/android-globalit&gt;
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Quite easy phải không :D
-Hay hơn chút nữa, bạn muốn hiện thêm current time, lên prompt, rất đơn giản:</p>
-
-<figure class='code'><figcaption><span>PS1 PS1.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">export </span><span class="nv">PS1</span><span class="o">=</span><span class="s2">&quot;\$(date +%k:%M:%S) \w&gt; &quot;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Ở đây (date +%k:%M:%S) là để format date và biến nó thành variable thông qua $</p>
-
-<p>Và kết quả là</p>
-
-<figure class='code'><figcaption><span>PS1 PS1.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>12:23:59 ~/cur-project/android-globalit&gt;
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Ngoài ra còn rất nhiều cái bạn có thể cho vào command prompt để biến nó thêm phần phong phú như:</p>
+<h2>Kết luận</h2>
 
 <ul>
-<li>!: The history number of the command</li>
-<li>$kernel_version: The output of the uname -r command from $kernel_version variable</li>
-<li>\$?: Status of the last command</li>
+<li>Memoization: pattern dùng để nhớ các tính toán nhằm làm giảm workload khi gặp các bài toán đệ quy</li>
+<li>Decorator pattern: decorator design pattern</li>
+<li>Python Decorator: Python tools để implement decorator pattern</li>
 </ul>
 
-
-<p>Hacking thêm chút nữa, bạn có thể thay đổi màu của từng phần trên command prompt thông qua 3 metacharacter sau:</p>
-
-<ul>
-<li>\e[ - Indicates the beginning of color prompt ( giống như cái &#8221;<sup>&#8221;</sup> của regex vậy)</li>
-<li>x;ym - Indicates color code. Use the color code values mentioned below ( bạn đặt x;ym ở trước node nào thì node đó sẽ được colorize theo màu đó)</li>
-<li>\e[m - indicates the end of color prompt (giống như cái &#8220;$&#8221; của regex)</li>
-</ul>
-
-
-<p>Một ví dụ đơn giản:</p>
-
-<figure class='code'><figcaption><span>PS1 PS1.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">export </span><span class="nv">PS1</span><span class="o">=</span><span class="s2">&quot;\e[0;34m\u@\h \w&gt; \e[m&quot;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Đoạn code trên có nghĩa là gì:</p>
-
-<p><img src="/images/UnixCommandPrompt/PS1-2.png"></p>
-
-<p>Hacking thêm một chút nữa, bạn hiện là một developer đang sử dụng git với rất nhiều repo, rất nhiều branch. Mỗi lần vào một repo nào đấy bạn lại phải {git branch} để xem bạn đang ở branch nào, bất tiện vô cùng. Bạn muốn prompt của bạn sẽ hiện branch name mỗi khi bạn vào folder của một repo nào đấy? Thật đơn giản, với backquote để execute bash command và sự trợ giúp của sed, bạn làm điều đó thật đơn giản:</p>
-
-<figure class='code'><figcaption><span>PS1 PS1.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">export </span><span class="nv">PS1</span><span class="o">=</span><span class="s1">&#39;\e[0;36m\u⌘ \e[0;35m\W \e[0;33m`git branch 2&gt; /dev/null | grep -e ^* | sed -E  s/^\*\ \(.+\)$/\(\1\)\ /`\e[m\]&#39;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Trông có vẻ đáng sợ, nhưng thực ra lại rất đơn giản :D, Chúng ta sẽ đi từng phần nhé:</p>
-
-<ul>
-<li>\e[ : start của command prompt</li>
-<li>[0;36m\u⌘ : bạn tô màu phần user (\u) bởi 0;36m (màu xanh dương) và thêm vào đằng sau cái kí tự ⌘ (cho cool thôi :D)</li>
-<li>\e[0;35m\W : bạn tô màu phần directory hiện tại (\W) bởi 0;35m (màu hồng)</li>
-<li>\e[0;33m : tô màu <strong>toàn bộ phần đằng sau</strong> bởi màu 0;33m (màu vàng)</li>
-<li>git branch 2> /dev/null | grep -e ^* | sed -E  s/<sup>&#92;*\</sup> (.+)$/(&#92;\1)\ /: nguyên văn đoạn này sẽ như sau: đầu tiên bạn dùng &#8220;git branch&#8221; để lấy branch hiện tại. Trong trường hợp không ở trong git repo nào thì sẽ có lỗi ra stderr, bạn redirect cái lỗi này vào dev/null thông qua &#8220;2> /dev/null&#8221; để nó không hiện ra prompt (2 là stderr). Sau đấy bạn tìm line nào có * ở đầu (current git branch) thông qua việc pipe vào grep. Tìm được line đó rồi thì bạn sẽ tách phần đằng sau dấu * ra thông qua sed , và output phần đó ra ngoài với format (branch) thông qua $/(\1). Tất cả đoạn code này được để vào backquote để được execute trực tiếp mỗi khi PS1 được gọi. Và kết quả thật bất ngờ:</li>
-</ul>
-
-
-<p><img src="/images/UnixCommandPrompt/PS1-3.png"></p>
-
-<p>Looks so cool!!
-Ngoài ra bạn còn có rất nhiều thứ có thể hacking với PS1 như:</p>
-
-<ul>
-<li>\j the number of jobs currently managed by the shell</li>
-<li># the command number of this command</li>
-<li>\l the basename of the shell&#8217;s terminal device name
-&#8230;..
-mà bạn có thể tham khảo ở đây: http://www.thegeekstuff.com/2008/09/bash-shell-ps1-10-examples-to-make-your-linux-prompt-like-angelina-jolie/</li>
-</ul>
-
-
-<h2>Ending</h2>
-
-<p>Như vậy với PS[1-4], bạn đã có thể customize command prompt của bạn trở nên đẹp đẽ hơn, cool hơn và useful hơn. Trong các bài viết sắp tới mình sẽ nói về việc sử dụng các công cụ rất mạnh của unix family os như grep, sed, wc để giúp cho công việc development của bạn trở nên thú vị hơn :D. Happy hacking!</p>
 
 		
 		
