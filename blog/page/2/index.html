@@ -7,7 +7,7 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jun 3rd, 2013 unix Comments Unix Tools Phần 2 Giới thiệu Hàng ngày chúng ta gặp phải rất nhiều bài toán thống kê khác nhau. Bài toán thống kê số &hellip;">
+	<meta name="description" content="Jun 25th, 2013 git Comments Giới Thiệu về Githook và Client Side Hook Githook là gì Giống như các hệ thống quản lý version khác, Git cung cấp một &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -84,140 +84,71 @@
   
 
 
-<time datetime="2013-06-03T22:15:00+09:00" data-updated="true" itemprop="datePublished">Jun 3<span>rd</span>, 2013</time></div>
+<time datetime="2013-06-25T21:07:00+09:00" data-updated="true" itemprop="datePublished">Jun 25<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/unix/'>unix</a>
+	<a class='category' href='/blog/categories/git/'>git</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/06/03/unix-tools-2/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/06/25/using-githook-to-automatically-test-your-app/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/03/unix-tools-2/" itemprop="url">Unix Tools Phần 2</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/06/25/using-githook-to-automatically-test-your-app/" itemprop="url">Giới Thiệu về Githook và Client Side Hook</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h3>Giới thiệu</h3>
+		<h1>Githook là gì</h1>
 
-<p>Hàng ngày chúng ta gặp phải rất nhiều bài toán thống kê khác nhau. Bài toán thống kê số liệu cũng có thể xuất hiện dưới nhiều dạng khác nhau như: bằng việc kiểm apache acccess log thống kê xem có tổng số truy cập vào 1 API trong 1 phút, hay 1 API cụ thể được truy cập từ những địa điểm nào và cụ thể là bao nhiều lần. Xử lý số liệu là một bài toán khó, và việc bóc tách dữ liệu nhiều khi cũng không hể đơn giản. Tuy vậy, bằng việc sử dụng thành thạo các công cụ command line của linux, nhiều khi ta có thể giải quyết những bài toán trên một cách nhanh chóng chỉ bằng 1, 2 dòng lệnh. Bài viết này sẽ đưa ra 1 bài toán cụ thể và cách sử dụng các unix command line tool để giải quyết các bài toán đó.</p>
+<p>Giống như các hệ thống quản lý version khác, Git cung cấp một cách để gọi những custom script khi một hành động đặc biệt được thực hiện trong git. Có 2 nhóm hook trong git: hook cho client, và hook cho server. Client hook là dành cho những hoạt động xảy ra ở client như commit và merge. Server hook là dành cho những hoạt động xảy ra ở Git server như nhận được một commit push lên từ client. Bài viết này giới thiệu một số cách sử dụng hook cả client side hook</p>
 
-<h3>Khái lược các tool dùng trong bài</h3>
+<h1>Install hook</h1>
 
-<ul>
-<li>Grep: Cho phép tìm một chuỗi bất kỳ trong một file. Chuỗi có thể được mô tả bằng regular expression.</li>
-<li>uniq: công cụ giúp loại bỏ</li>
-<li>sort: sắp xếp các record trong 1 file</li>
-<li>wc: đếm từ và dòng trong 1 file</li>
-<li>awk: công cụ để in các cột dữ liệu, cũng như xử lý dữ liệu trên từng cột</li>
-</ul>
+<p>Các hooks được lưu trong thư mục <code>hooks</code> của <code>.git</code> folder. Trong phần lớn các project, nó là <code>.git/hooks</code>. Ở chế độ mặc định, Git cung cấp một loạt các examples cho các hooks, các ví dụ này đưa ra khá nhiều chỉ dẫn về inputs của mỗi hook. Tất cả các examples được viết bằng shell script, với một vài mã lệnh Perl, tuy nhiên bạn có thể viết các script này bằng bất cứ ngôn ngữ nào (ví dụ như Python, Ruby). Tất cả các examples đều có tên kết thúc bằng <code>.sample</code>, bạn cần đổi tên các script trước khi chạy</p>
 
+<p>Để enable các hook script, đặt một file trong thư mục <code>hooks</code> với tên tương ứng với tên của hook, và set quyền cho script đó là executable.</p>
 
-<h3>Bài toán</h3>
+<h1>Client side hooks</h1>
 
-<p>Để dễ hình dung cũng như dễ kiểm tra tính đúng đắn, ta giả sử 1 bài toán tưởng tượng như sau:</p>
+<p>Có rất nhiều loại client side hooks, chúng ta chia chúng theo work flow</p>
 
-<p>Có log file:</p>
+<h2>Committing-Workflow Hooks</h2>
 
-<pre><code>    IP1 2 20:00:01 Get /A 
-    IP2 2 20:00:02 Get /B
-    IP2 3 20:00:03 Get /C
-    IP4 2 20:02:01 Get /A 
-    IP5 2 20:03:01 Get /B
-    IP2 3 20:03:02 Get /A
-    IP3 2 20:03:04 Get /B 
-    IP2 2 20:04:01 Get /B
-    IP1 3 20:05:12 Get /C
-    IP6 2 20:05:31 Get /C 
-    IP5 2 20:06:02 Get /B
-    IP4 3 20:07:03 Get /A
-</code></pre>
+<p><code>pre-commit</code> hook được gọi đầu tiên, trước khi bạn gõ nội dung của một commit message. Hook này được sử dụng để kiểm tra nội dụng các files được commit. Bạn có thể viết script để kiểm tra coding convetion, hoặc để run test, để chạy static analysis trước khi commit. Nếu script trả về kết quả khác 0, commit sẽ bị loại bỏ. Tuy nhiên bạn có thể bỏ qua chạy hook này khi commit với lệnh <code>git commit --no-verify</code></p>
 
-<p>Bài toán: Hãy đếm xem trong 1 phút có bao nhiêu requests và thử đếm xem có bao nhiêu request đến A, B.</p>
+<p><code>prepare-commit-msg</code> là hook được chạy trước khi trình soạn thảo commit message được gọi đế và sau khi message mặc định được tạo ra. Hook này giúp bạn thay đổi default message trước khi commit author thấy nó. Hook này về cơ bản là ít khi hữu dụng, chỉ trừ khi các commit message được sinh ra tự động.</p>
 
-<h3>Phương pháp giải quyết</h3>
+<p><code>commit-msg</code> hook nhận duy nhất một input là đường dẫn của file chứa commit message. Nếu script này trả về kết quả khác 0, commit sẽ bị loại bỏ. Hook này có tác dụng giúp bạn chuẩn hoá mesage trước khi commit</p>
 
-<p>Theo đề bài, ta có 2 bài toán
-* Thống kê requests theo từng phút.
-* Thống kê requests đến A, B.</p>
+<p>Sau khi toàn bộ quá trình commit được hoàn tất, <code>post-commit</code> hook sẽ chạy. hook này không nhận tham số đầu vào, nhưng bạn có thể dễ dàng lầy last commit bằng cách gọi <code>git log -1 HEAD</code>. Thông thường, hook này dụng để notification.</p>
 
-<p>Ta sẽ lần lượt giải từng bài toán 1.</p>
+<p>Committing-workflow client side scripts được sử dụng và setup bới chính các developer tại máy local của họ. Các developers phải tự maintain chúng, tuy nhiên họ có thể thay đổi chúng bất cứ lúc nào</p>
 
-<h4>Thống kê requests đến A, B</h4>
+<h2>Email workflow hooks</h2>
 
-<p>Bài toán này thực chất khá dễ và ta có thể giải quyết bằng grep và wc. Để ý rằng mỗi dòng là 1 requests đến A, B hoặc C vì vậy bài toán có thể chuyển về là: đếm số dòng có ký tự A và ký tự B. Để lọc ký tự ta có thể dùng grep, để đếm số dòng ta có thể dùng wc. Như vậy bài toán có thể được giải quyết bằng cách pipe kết quả grep sang wc.</p>
+<p>Bạn có thể set up 3 client side hooks cho email workflow. Tất cả các hooks này đều liên quan đến <code>git am</code> command. Nếu bạn không sử dụng câu lệnh này trong workflow của bạn, bạn có thể bỏ qua phần này. Nếu bạn nhận patch qua email được chuẩn bị bới lệnh <code>git format-patch</code>, thì có thể những hook này sẽ có ích với bạn</p>
 
-<p>Lời giải:</p>
+<p>Hook đầu tiên là <code>applypatch-msg</code>. Nó nhận một tham số: tên của file tạm chứ nội dụng của commit message. Git sẽ bỏ qua patch nếu hook này trả về giá trị khác 0. Bạn có thể sử dụng hook này để đảm bảo commit message là đúng chuẩn.</p>
 
-<div>
-  <pre><code class='bash'>grep A data.dat | wc -l
-4
-grep B data.dat | wc -l
-5</code></pre>
-</div>
+<p>Hook tiếp theo khi apply patches thông qua <code>git am</code> là <code>pre-applypatch</code>. Hook không nhận giá trị đầu vào và được chay sau khi patch được applied. Vì thế bạn có thể sử dụng hook này để kiểm tra toàn bộ mã nguồn trước khi make commit. VD: chạy test, chạy static analysis, kiểm tra style (hook này tương đối giống <code>pre-commit</code> trong phần trước)</p>
 
+<p>Hook cuối cùng được chạy trong process của <code>git am</code> là <code>post-applypatch</code>. Bạn có thể sử dụng nó để notify cho một group hoặc một author về patch này.</p>
 
-<p>Như vậy có 4 requests đến A và 5 requests đến B trong log file.
-Bằng 1 câu lệnh, ta có thể đưa ngay ra được kết quả. Dễ như ăn kẹo!</p>
+<h2>Một vài client hooks khác</h2>
 
-<h4>Đếm số request trong 1 phút.</h4>
+<p><code>pre-rebase</code> hooks run trước khi bạn rebase bất cứ commit nào, và sẽ cả process lại nếu hook trả về giái trị khác 0.</p>
 
-<p>Bài toán này khó hơn 1 chút do ta chỉ có trong log các request theo từng giây, trong khi ta cần thống kê theo phút. Liệu có cách nào biến bài toán về bài toán đếm số dòng như ở trên không? Nếu như ta có thể nhóm các dòng dữ liệu theo phút, bài toán có thể được giải quyết tương tự như bài toán trên.</p>
+<p><code>post-checkout</code> được gọi sau khi bạn chạy lệnh <code>git checkout</code> thành công. Bạn có thể sử dụng nó để setup environment, hoặc tự động sinh document sau khi checkout</p>
 
-<p>Trước tiên, làm thế nào để nhóm dòng theo phút? Muốn nhóm dòng theo phút ta phải tách được phần phút ra. Để ý giờ:phút là trường thứ 3 trong file. Do vậy nếu tách được cột thứ 3 và lấy 5 ký tự đầu tiên, ta có thể lấy phút của từng request. Tách cột là việc của awk!</p>
+<p><code>post-merge</code> hook được chạy sau khi bạn chạy lệnh <code>git merge</code>. Bạn có thể sử dụng để phục hồi lại dữ liệu trong thư mục làm việc mà Git không thể kiểm tra ví dụ như dữ liệu liên quan đến permission.</p>
 
-<div>
-  <pre><code class='bash'>awk '{print substr($3, 1, 5)}' data.dat
-20:00
-20:00
-20:00
-20:02
-20:03
-20:03
-20:03
-20:04
-20:05
-20:05
-20:06
-20:07</code></pre>
-</div>
+<h1>Kết luận</h1>
 
+<p>Bài viết giới thiệu về githooks và một số client hooks thường dùng. Hy vọng bạn tìm thấy một vài thông tin hữu ích giúp bạn tự động hoá một số công việc hàng ngày khi làm việc với git.</p>
 
-<p>Ồ, ta đã tiến được 1 bước! Bước tiếp theo, nếu như ta có thể nhóm các phần tử giống nhau và đếm các phần tử đó, ta sẽ có kết quả mong muốn. Nhóm các giá trị giống nhau là nhiệm vụ của uniq!</p>
+<h1>Tham khảo</h1>
 
-<div>
-  <pre><code class='bash'>awk '{print substr($3, 1, 5)}' data.dat | uniq -c
-3 20:00
-2 20:02
-3 20:03
-1 20:04
-2 20:05
-1 20:06
-1 20:07</code></pre>
-</div>
-
-
-<p>Tuyệt! Như vậy bằng 1 dòng lệnh, ta đã nhóm được các API trong cùng 1 phút, cũng như số lượng API trong thời điểm đấy. Nếu số lượng request nhiều, số dòng kết quả lớn và ta chỉ muốn biết thời điểm có truy cập lớn nhất, ta có thể sắp xếp theo số lượng truy cập. Sắp xếp các dòng theo giá trị cột là công việc của sort! Bằng câu lệnh sort ta có kết quả như dưới đây:</p>
-
-<div>
-  <pre><code class='bash'>awk '{print substr($3, 1, 5)}' data.dat | uniq -c | sort -nk1 -r
-3 20:03
-3 20:00
-2 20:05
-1 20:07
-1 20:06
-1 20:04
-1 20:02</code></pre>
-</div>
-
-
-<p>Bài toán đầu tiên cũng đã được giải quyết chỉ với 1 dòng lệnh!</p>
-
-<h3>Kết luận</h3>
-
-<p>Bài viết đã giới thiệu qua các công cụ commandline của unix cũng như cách áp dụng công cụ đó vào bài toán cụ thể. Hy vọng qua bài viết bạn đã thấy được phần nào tầm quan trọng cũng như sức mạng của các chương trình tiện ích như awk, wc, grep, uniq, sort. Và để hiểu rõ công cụ thì không cách nào khác là áp dụng thật sáng tạo chúng vào công việc hàng ngày, do vậy bạn hãy thử áp dụng các công cụ trên vào bài toán sau nhé:</p>
-
-<p><strong>Với log file trên, đếm xem có bao nhiêu nguồn truy cập, và nguồn truy cập nào có số lượng truy cập lớn nhất</strong> ;)</p>
+<p><a href="http://git-scm.com/book/en/Customizing-Git-Git-Hooks">Githook documentation</a></p>
 
 		
 		
@@ -240,281 +171,37 @@ Bằng 1 câu lệnh, ta có thể đưa ngay ra được kết quả. Dễ như
   
 
 
-<time datetime="2013-06-02T19:47:00+09:00" data-updated="true" itemprop="datePublished">Jun 2<span>nd</span>, 2013</time></div>
+<time datetime="2013-06-21T23:07:00+09:00" data-updated="true" itemprop="datePublished">Jun 21<span>st</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/code-golf/'>Code golf</a>, <a class='category' href='/blog/categories/php/'>PHP</a>, <a class='category' href='/blog/categories/web-programming/'>Web programming</a>
+	<a class='category' href='/blog/categories/html5/'>html5</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/06/02/99-bottles-of-beer/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/06/21/playing-with-web-audio-api-part-2/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/02/99-bottles-of-beer/" itemprop="url">99-bottles-of-beer</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/06/21/playing-with-web-audio-api-part-2/" itemprop="url">Playing With Web Audio Api (Part 2)</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h2>The song, and the home page</h2>
+		<h3>Playing audio with multisource and precise timing</h3>
 
-<p>Đầu tiên có thể độc giả sẽ tự hỏi ý nghĩa của tiêu đề bài viết là gì ? Vậy trước hết mời bạn ghé qua <a href="http://99-bottles-of-beer.net">home page</a> và enjoy the <a href="http://www.youtube.com/watch?v=qVjCag8XoHQ">song</a></p>
+<p>Để làm game một game hay trên html5 thì âm thanh là một thứ không thể thiếu. Đầu tiên hãy đến với một game rất nổi tiếng:
+<a href="http://chrome.angrybirds.com/">Angry bird chrome</a></p>
 
-<p>99-bottles-of-beer cũng từng là đề bài của code golf và phpgolf. Mission của chúng ta là code 1 đoạn PHP snippet print <a href="http://99-bottles-of-beer.net/lyrics.html">lyric</a> của bài hát mà dung lượng đoạn code là nhỏ nhất.
-Logic thật đơn giản phải không :D</p>
+<p>Các bạn có thể để ý khi play một màn game bất kì nào đấy thì sẽ thấy rất nhiều âm thanh với các lớp (layer) khác nhau,
+được play vào các thời điểm khác nhau một cách hợp lý. Nếu chỉ đơn thuần dùng audio tag thì việc control các layer âm
+thanh khác nhau được play vào thời điểm nào sẽ rất khó.</p>
 
-<figure class='code'><figcaption><span>lyric</span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>99 bottles of beer on the wall, 99 bottles of beer.
-</span><span class='line'>Take one down and pass it around, 98 bottles of beer on the wall.
-</span><span class='line'>
-</span><span class='line'>98 bottles of beer on the wall, 98 bottles of beer.
-</span><span class='line'>Take one down and pass it around, 97 bottles of beer on the wall.
-</span><span class='line'>
-</span><span class='line'>97 bottles of beer on the wall, 97 bottles of beer.
-</span><span class='line'>Take one down and pass it around, 96 bottles of beer on the wall.
-</span><span class='line'>
-</span><span class='line'>...
-</span><span class='line'>
-</span><span class='line'>1 bottle of beer on the wall, 1 bottle of beer.
-</span><span class='line'>Go to the store and buy some more, 99 bottles of beer on the wall.</span></code></pre></td></tr></table></div></figure>
+<p>Nhờ có web audio api mà việc này trở nên dễ dàng hơn rất nhiều.</p>
 
+<p>Như mình đã nói ở bài trước, web audio api xoay quanh audio context. Điều đặc biệt là <strong>một context có thể load cùng một lúc
+nhiều audio source</strong>, và <strong>play mỗi audio source tại các thời điểm khác nhau</strong>, với một interface rất dễ hiểu.
+Đầu tiên là việc load nhiều audio source vào cùng một context. Dưới đây là module <strong><em>BufferLoader</em></strong> có nhiệm vụ load các file audio từ
+nhiều source khác nhau và quản lý thông qua bufferList.</p>
 
-<p>Với mục tiêu dùng ít code nhất có thể, tôi sẽ không dùng cấu trúc rẽ nhánh if-else, thay vào đó là ternary operator của PHP
-( có nghĩa là bạn có thể viết &#8220;(condition)?true-action:false-action&#8221; thay vì &#8220;if (condition) {true-action} else {false-action}&#8221;  )</p>
-
-<p>Đoạn code đầu tiên tôi nghĩ ra trong đầu như sau:</p>
-
-<figure class='code'><figcaption><span>sol1.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'>  <span class="nv">$a</span><span class="o">=</span><span class="s2">&quot;beer on the wall&quot;</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="nv">$i</span><span class="o">=</span><span class="mi">99</span><span class="p">;</span><span class="nv">$i</span><span class="o">&gt;=</span><span class="mi">1</span><span class="p">;</span><span class="nv">$i</span><span class="o">--</span><span class="p">){</span>
-</span><span class='line'>    <span class="nv">$x</span><span class="o">=</span><span class="p">(</span><span class="nv">$i</span><span class="o">==</span><span class="mi">1</span><span class="p">)</span><span class="o">?</span><span class="s2">&quot;bottle&quot;</span><span class="o">:</span><span class="s2">&quot;bottles&quot;</span><span class="p">;</span>
-</span><span class='line'>    <span class="nv">$b</span><span class="o">=</span><span class="s2">&quot;&lt;p&gt;</span><span class="si">$i</span><span class="s2"> </span><span class="si">$x</span><span class="s2"> of </span><span class="si">$a</span><span class="s2">, </span><span class="si">$i</span><span class="s2"> </span><span class="si">$x</span><span class="s2"> of beer.&lt;br&gt;&quot;</span><span class="p">;</span>
-</span><span class='line'>    <span class="nv">$b</span><span class="o">.=</span><span class="p">(</span><span class="nv">$i</span><span class="o">==</span><span class="mi">1</span><span class="p">)</span><span class="o">?</span><span class="s2">&quot;Go to the store and buy some more, 99 bottles of </span><span class="si">$a</span><span class="s2">.&quot;</span><span class="o">:</span><span class="s2">&quot;Take one down and pass it around, &quot;</span><span class="o">.</span><span class="p">(</span><span class="nv">$i</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="s2">&quot; </span><span class="si">$x</span><span class="s2"> of </span><span class="si">$a</span><span class="s2">.&lt;/p&gt;&quot;</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">print</span> <span class="nv">$b</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>Optimize</h2>
-
-<p>Bạn thử ls -l sẽ thấy đoạn code trên có dung lượng 288 bytes!</p>
-
-<p>Để rút ngắn đoạn code trên, đầu tiên tôi nhớ lại những kiến thức cơ bản về PHP: dấu space hoàn toàn không cần thiết, và ký tự &#8220;?>&#8221; ở cuối cũng có thể bỏ đi
-PHP long tag ở đầu có thể thay = PHP short tag</p>
-
-<figure class='code'><figcaption><span>sol2.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?</span>
-</span><span class='line'><span class="nv">$a</span><span class="o">=</span><span class="s2">&quot;beer on the wall&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="k">for</span><span class="p">(</span><span class="nv">$i</span><span class="o">=</span><span class="mi">99</span><span class="p">;</span><span class="nv">$i</span><span class="o">&gt;=</span><span class="mi">1</span><span class="p">;</span><span class="nv">$i</span><span class="o">--</span><span class="p">){</span>
-</span><span class='line'><span class="nv">$x</span><span class="o">=</span><span class="p">(</span><span class="nv">$i</span><span class="o">==</span><span class="mi">1</span><span class="p">)</span><span class="o">?</span><span class="s2">&quot;bottle&quot;</span><span class="o">:</span><span class="s2">&quot;bottles&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="nv">$b</span><span class="o">=</span><span class="s2">&quot;&lt;p&gt;</span><span class="si">$i</span><span class="s2"> </span><span class="si">$x</span><span class="s2"> of </span><span class="si">$a</span><span class="s2">, </span><span class="si">$i</span><span class="s2"> </span><span class="si">$x</span><span class="s2"> of beer.&lt;br&gt;&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="nv">$b</span><span class="o">.=</span><span class="p">(</span><span class="nv">$i</span><span class="o">==</span><span class="mi">1</span><span class="p">)</span><span class="o">?</span><span class="s2">&quot;Go to the store and buy some more, 99 bottles of </span><span class="si">$a</span><span class="s2">.&quot;</span><span class="o">:</span><span class="s2">&quot;Take one down and pass it around, &quot;</span><span class="o">.</span><span class="p">(</span><span class="nv">$i</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="s2">&quot; </span><span class="si">$x</span><span class="s2"> of </span><span class="si">$a</span><span class="s2">.&lt;/p&gt;&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="k">print</span> <span class="nv">$b</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>263 bytes!</p>
-
-<p>Làm thế nào để rút ngắn hơn nữa ? Nếu để ý vào những chi tiết nhỏ hơn, bạn sẽ thấy:</p>
-
-<ul>
-<li>trong điều kiện vòng lặp, thay &#8220;$i>=1&#8221; bằng &#8220;$i>0&#8221;</li>
-<li>&#8221;($i==1)?&#8221; là quá dài. Ta có thể bỏ đi 2 dấu ngoặc &#8220;$i==1?&#8221;</li>
-<li>print có thể thay bằng echo. ( Thực tế trong PHP bạn còn có thể thay rtrim -> chop, explode -> split, implode -> join, preg_split -> split (trong 1 vài trường hợp) và preg_replace -> preg_filter trong hầu hết các TH  )</li>
-<li>&#8220;$x=($i==1)?&#8221;bottle&#8221;:&#8221;bottles&#8221;;&#8221; có thể được viết lại : &#8220;$x=&#8217;bottle&#8217;;$i==1?:$x.=&#8217;s&#8217;;&#8221;</li>
-<li>Mỗi lần sử dụng biến $a ta đều có &#8220;of&#8221; ở đăng trước. Vậy có thể đơn giản cho word &#8220;of&#8221; vào trong biến a</li>
-<li>&#8220;99 bottles of $a&#8221; có thể rewrite tiếp lại thành &#8220;99{$x}s of $a&#8221;</li>
-<li>Chúng ta có thể xoá &#8220;$i&#8211;&#8221; trong vòng lặp for, vì thế thêm &#8211; vào trước &#8220;$i==1&#8221; ở dòng gần cuối thành &#8220;$i&#8211;==1&#8221; và vì thế bỏ luôn đoạn ($i-1) ở sau đó</li>
-</ul>
-
-
-<p>Như vậy solution tiếp theo của chúng ta sẽ là</p>
-
-<figure class='code'><figcaption><span>sol2.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?</span>
-</span><span class='line'><span class="nv">$a</span><span class="o">=</span><span class="s2">&quot; of beer on the wall&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="k">for</span><span class="p">(</span><span class="nv">$i</span><span class="o">=</span><span class="mi">99</span><span class="p">;</span><span class="nv">$i</span><span class="o">&gt;=</span><span class="mi">1</span><span class="p">;){</span>
-</span><span class='line'><span class="nv">$x</span><span class="o">=</span><span class="s1">&#39;bottle&#39;</span><span class="p">;</span><span class="nv">$i</span><span class="o">==</span><span class="mi">1</span><span class="o">?:</span><span class="nv">$x</span><span class="o">.=</span><span class="s1">&#39;s&#39;</span><span class="p">;</span>
-</span><span class='line'><span class="nv">$b</span><span class="o">=</span><span class="s2">&quot;&lt;p&gt;</span><span class="si">$i</span><span class="s2"> </span><span class="si">$x$a</span><span class="s2">, </span><span class="si">$i</span><span class="s2"> </span><span class="si">$x</span><span class="s2"> of beer.&lt;br&gt;&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="nv">$b</span><span class="o">.=</span><span class="nv">$i</span><span class="o">--==</span><span class="mi">1</span><span class="o">?</span><span class="s2">&quot;Go to the store and buy some more, 99 </span><span class="si">{</span><span class="nv">$x</span><span class="si">}</span><span class="s2">s</span><span class="si">$a</span><span class="s2">.&quot;</span><span class="o">:</span><span class="s2">&quot;Take one down and pass it around, &quot;</span><span class="o">.</span><span class="nv">$i</span><span class="o">.</span><span class="s2">&quot; </span><span class="si">$x$a</span><span class="s2">.&lt;/p&gt;&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="k">echo</span> <span class="nv">$b</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>241 bytes!</p>
-
-<h2>The trick</h2>
-
-<p>Bạn có nghĩ đã hết cách để rút gọn đoạn code ?</p>
-
-<p>Bạn có quên điều gì không ? Bỏ đi tất cả các ký tự line-feed (line break), cho code thành 1 dòng, chúng ra sẽ có kết quả tốt hơn.</p>
-
-<figure class='code'><figcaption><span>sol4.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?</span><span class="nv">$a</span><span class="o">=</span><span class="s2">&quot; of beer on the wall&quot;</span><span class="p">;</span><span class="k">for</span><span class="p">(</span><span class="nv">$i</span><span class="o">=</span><span class="mi">99</span><span class="p">;</span><span class="nv">$i</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">;){</span><span class="nv">$x</span><span class="o">=</span><span class="s1">&#39;bottle&#39;</span><span class="p">;</span><span class="nv">$i</span><span class="o">^</span><span class="mi">1</span><span class="o">?</span><span class="nv">$x</span><span class="o">.=</span><span class="s1">&#39;s&#39;</span><span class="o">:</span><span class="mi">0</span><span class="p">;</span><span class="nv">$b</span><span class="o">=</span><span class="s2">&quot;&lt;p&gt;</span><span class="si">$i</span><span class="s2"> </span><span class="si">$x$a</span><span class="s2">, </span><span class="si">$i</span><span class="s2"> </span><span class="si">$x</span><span class="s2"> of beer.&lt;br&gt;&quot;</span><span class="p">;</span><span class="nv">$b</span><span class="o">.=</span><span class="err">$</span>
-</span><span class='line'><span class="nx">i</span><span class="o">--==</span><span class="mi">1</span><span class="o">?</span><span class="s2">&quot;Go to the store and buy some more, 99 </span><span class="si">{</span><span class="nv">$x</span><span class="si">}</span><span class="s2">s</span><span class="si">$a</span><span class="s2">.&quot;</span><span class="o">:</span><span class="s2">&quot;Take one down and pass it around, &quot;</span><span class="o">.</span><span class="nv">$i</span><span class="o">.</span><span class="s2">&quot; </span><span class="si">$x$a</span><span class="s2">.&lt;/p&gt;&quot;</span><span class="p">;</span><span class="k">echo</span>
-</span><span class='line'> <span class="nv">$b</span><span class="p">;}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>233 bytes!</p>
-
-<p>Bạn có tin có 1 đoạn code sẽ cho kết quả tương tự với &#8230; 30 bytes ???</p>
-
-<p>!!</p>
-
-<figure class='code'><figcaption><span>trick.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?</span><span class="k">include</span><span class="p">(</span><span class="s1">&#39;http://bit.ly/xxxx&#39;</span><span class="p">);</span> <span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>PHP là 1 ngôn ngữ web! Với allow_url_fopen và allow_url_include turn on có thể dễ dàng load 1 link kết quả có sẵn đi kèm 1 dịch vụ như bitly !</p>
-
-<p>Stay hungry, stay foolish :D</p>
-
-<h2>Tham khảo</h2>
-
-<ol>
-<li><a href="http://www.phpgolf.org/tips">phpgolf tips and tricks</a></li>
-<li><a href="http://stackoverflow.com/questions/3801097/solve-this-php-puzzle-in-as-few-bytes-as-possible">Question on StackOverFlow</a></li>
-</ol>
-
-
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-06-02T08:06:00+09:00" data-updated="true" itemprop="datePublished">Jun 2<span>nd</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/garbage-collector/'>garbage collector</a>, <a class='category' href='/blog/categories/java/'>java</a>, <a class='category' href='/blog/categories/programming/'>programming</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/06/02/weakhashmap-va-weak-reference-trong-java/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/02/weakhashmap-va-weak-reference-trong-java/" itemprop="url">WeakHashMap và Weak Reference Trong Java</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h1>Giới thiệu</h1>
-
-<p>Trong thư viện Collection của Java, có một lớp đặc biệt: <strong>WeakHashMap</strong>. Về hoạt động nói chung nó rất giống với <strong>HashMap</strong>, đều có chức năng quản lý key, value như thêm, bớt, truy xuất value theo key&#8230; Vậy khác biệt của <strong>WeakHashMap</strong> so với <strong>HashMap</strong> là gì? Đó chính là khả năng phối hợp của <strong>WeakHashMap</strong> với garbage collector nhằm loại bỏ khả năng leak memory có thể xảy ra với <strong>HashMap</strong>. Trong bài viết này, chúng ta sẽ tìm hiểu <strong>WeakHashMap</strong> là gì, cách hoạt động của nó như thế nào, và cách nó xóa bỏ những entry không dùng đến ra sao.</p>
-
-<h1>Mở đầu</h1>
-
-<p>Thử tưởng tượng một tình huống như thế này: bạn muốn sử dụng một class nào đó, nhưng không thể extend được nó (ví dụ trường hợp đơn giản nhất là class đó được chỉ định là <strong>final</strong>). Vậy bạn làm gì khi muốn thêm property cho object thuộc class đó?</p>
-
-<p>Ví dụ, bạn muốn sử dụng một class <strong>Product</strong> mà không thể extend được. Bây giờ muốn thêm <strong>serialNumber</strong> cho product đó, ứng cử viên hàng đầu là HashMap, bạn có thể tạo một cặp <strong>key</strong> là Product object, <strong>value</strong> là serialNumber:</p>
-
-<figure class='code'><figcaption><span>product.java </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">import</span> <span class="nn">java.util.HashMap</span><span class="o">;</span>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'><span class="n">Map</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">productMap</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">,</span><span class="n">String</span><span class="o">&gt;();</span>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'><span class="n">productMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">product</span><span class="o">,</span> <span class="n">serialNo</span><span class="o">);</span>
-</span><span class='line'><span class="o">...</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Đoạn code trên có vẻ đã hoàn thành mục tiêu thêm thuộc tính cho Product object, nhưng có vấn đề gì ở đây không? Cách giải quyết này gặp phải vấn đề liên quan đến việc giải phóng bộ nhớ. Vì <strong>HashMap</strong> sử dụng <strong>strong reference</strong> để trỏ đến Product object, nên khi trong chương trình không còn reference nào đến Product object nữa, <strong>garbage collector</strong> nhận thấy vẫn còn strong reference ở trong <strong>HashMap</strong>, nên nó không giải phóng object này nữa. Lâu dần, sẽ xuất hiện hiện tượng <strong>Leak Memory</strong>: ta không thể giải phóng được cặp key, value nằm trong <strong>HashMap</strong>, khi mà <strong>HashMap</strong> còn được sử dụng (để hiểu rõ hơn, bạn có thể xem ví dụ demo ở cuối bài).</p>
-
-<p>Nhân đây, xin giải thích thêm về <strong>Strong reference</strong>. Đây là Java reference bình thường mà ta thường sử dụng. Như ví dụ sau:</p>
-
-<figure class='code'><figcaption><span>strong.java </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">String</span> <span class="n">serialNo</span> <span class="o">=</span> <span class="k">new</span> <span class="n">String</span><span class="o">();</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>sẽ tạo một object String và lưu một strong reference đến nó vào biến serialNo. Ta cần phải để ý mới quan hệ giữa strong reference và garbage collector như sau: Nếu một object được trỏ đến qua một số strong references, object đó sẽ không được garbage collector để ý đến.</p>
-
-<h1>WeakHashMap</h1>
-
-<p>Trái ngược lại với <strong>strong reference</strong> là <strong>weak reference</strong>. *Weak reference** sẽ không thể cản trở garbage collector giải phóng object khỏi memory. Khai báo như sau:</p>
-
-<figure class='code'><figcaption><span>weak.java </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">WeakReference</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">&gt;</span> <span class="n">weakProduct</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WeakReference</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">&gt;(</span><span class="n">product</span><span class="o">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Sau đó, ta có thể truy cập đến Product object thông qua việc gọi method weakProduct.get(). Tuy nhiên, ta cần phải chú ý khi gọi method này. Vì weak reference không đủ khả năng chặn quá trình garbage collection, nên đến một cycle nào đó, garbage collector sẽ giải phóng Product object (khi không còn strong reference nào đến nó) , và bạn sẽ thấy weakProduct.get() đột nhiên trả về null.</p>
-
-<p>Quay trở lại với ví dụ Product ở trên, ta giải quyết vấn đề đã nêu bằng cách sử dụng <strong>WeakHashMap</strong> class.  <strong>WeakHashMap</strong> hoạt động y hệt như <strong>HashMap</strong>, chỉ khác là key được refer đến bằng <strong>weak reference</strong>. Lúc này, khi một object chỉ reachable bởi <strong>WeakReference</strong>, garbage collector sẽ giải phóng object, đồng thời sẽ đặt <strong>weak reference</strong> trỏ đến object kia vào một queue. WeakHashMap sẽ định kì kiểm tra queue này xem có weak reference nào mới đến không. Nếu thấy một weak reference trong queue, nghĩa là key đã không được ai sử dụng nữa và nó đã bị garbage collector &#8220;tịch thu&#8221;. Lúc đó, WeakHashMap sẽ bỏ entry liên quan đi. No more memory leak ! :)</p>
-
-<h1>Demo</h1>
-
-<p>Lý thuyết là vậy. Để dễ hiểu hơn, quan sát đoạn demo WeakHashMap sau:</p>
-
-<figure class='code'><figcaption><span>WeakHashMapDemo.java </span></figcaption>
+<figure class='code'><figcaption><span>loadfile.js </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -554,95 +241,302 @@ PHP long tag ở đầu có thể thay = PHP short tag</p>
 <span class='line-number'>37</span>
 <span class='line-number'>38</span>
 <span class='line-number'>39</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">package</span> <span class="n">corejava</span><span class="o">.</span><span class="na">collection</span><span class="o">;</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">BufferLoader</span><span class="p">(</span><span class="nx">context</span><span class="p">,</span> <span class="nx">urlList</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">context</span> <span class="o">=</span> <span class="nx">context</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">urlList</span> <span class="o">=</span> <span class="nx">urlList</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">onload</span> <span class="o">=</span> <span class="nx">callback</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">bufferList</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">();</span>
+</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">loadCount</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'><span class="kn">import</span> <span class="nn">java.util.Map</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">java.util.WeakHashMap</span><span class="o">;</span>
+</span><span class='line'><span class="nx">BufferLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadBuffer</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">url</span><span class="p">,</span> <span class="nx">index</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">// Load buffer asynchronously</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">request</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">XMLHttpRequest</span><span class="p">();</span>
+</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">open</span><span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="nx">url</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">responseType</span> <span class="o">=</span> <span class="s2">&quot;arraybuffer&quot;</span><span class="p">;</span>
 </span><span class='line'>
-</span><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">WeakHashMapTest</span> <span class="o">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">loader</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
 </span><span class='line'>
-</span><span class='line'>  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="c1">//add one element to the map...</span>
-</span><span class='line'>      <span class="n">Map</span><span class="o">&lt;</span><span class="n">Data</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">map</span>  <span class="o">=</span> <span class="k">new</span> <span class="n">WeakHashMap</span><span class="o">&lt;</span><span class="n">Data</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;();</span>
-</span><span class='line'>      <span class="n">Data</span> <span class="n">someDataObject</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Data</span><span class="o">(</span><span class="s">&quot;test&quot;</span><span class="o">);</span>
-</span><span class='line'>      <span class="n">map</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">someDataObject</span><span class="o">,</span> <span class="n">someDataObject</span><span class="o">.</span><span class="na">value</span><span class="o">);</span>
-</span><span class='line'>      <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;map contains someDataObject ? &quot;</span> <span class="o">+</span> <span class="n">map</span><span class="o">.</span><span class="na">containsKey</span><span class="o">(</span><span class="n">someDataObject</span><span class="o">));</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="c1">//now make someDataObject eligible for garbage collection...</span>
-</span><span class='line'>      <span class="n">someDataObject</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">1000000</span><span class="o">;</span> <span class="n">i</span><span class="o">++){</span>
-</span><span class='line'>          <span class="k">if</span><span class="o">(</span><span class="n">map</span><span class="o">.</span><span class="na">size</span><span class="o">()!=</span><span class="mi">0</span><span class="o">)</span>
-</span><span class='line'>          <span class="o">{</span>
-</span><span class='line'>              <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;At iteration &quot;</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s">&quot; the map still holds the reference on someDataObject&quot;</span><span class="o">);</span>
-</span><span class='line'>          <span class="o">}</span>
-</span><span class='line'>          <span class="k">else</span>
-</span><span class='line'>          <span class="o">{</span>
-</span><span class='line'>              <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;someDataObject has finally been garbage collected at iteration &quot;</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s">&quot;, so the map is now empty&quot;</span><span class="o">);</span>
-</span><span class='line'>              <span class="k">break</span><span class="o">;</span>
-</span><span class='line'>          <span class="o">}</span>
-</span><span class='line'>          
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">onload</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Asynchronously decode the audio file data in request.response</span>
+</span><span class='line'>    <span class="nx">loader</span><span class="p">.</span><span class="nx">context</span><span class="p">.</span><span class="nx">decodeAudioData</span><span class="p">(</span>
+</span><span class='line'>      <span class="nx">request</span><span class="p">.</span><span class="nx">response</span><span class="p">,</span>
+</span><span class='line'>      <span class="kd">function</span><span class="p">(</span><span class="nx">buffer</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">buffer</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;error decoding file data: &#39;</span> <span class="o">+</span> <span class="nx">url</span><span class="p">);</span>
+</span><span class='line'>          <span class="k">return</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>        <span class="nx">loader</span><span class="p">.</span><span class="nx">bufferList</span><span class="p">[</span><span class="nx">index</span><span class="p">]</span> <span class="o">=</span> <span class="nx">buffer</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="o">++</span><span class="nx">loader</span><span class="p">.</span><span class="nx">loadCount</span> <span class="o">==</span> <span class="nx">loader</span><span class="p">.</span><span class="nx">urlList</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span>
+</span><span class='line'>          <span class="nx">loader</span><span class="p">.</span><span class="nx">onload</span><span class="p">(</span><span class="nx">loader</span><span class="p">.</span><span class="nx">bufferList</span><span class="p">);</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="kd">function</span><span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;decodeAudioData error&#39;</span><span class="p">,</span> <span class="nx">error</span><span class="p">);</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>    <span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'>  <span class="kd">static</span> <span class="kd">class</span> <span class="nc">Data</span><span class="o">{</span>
-</span><span class='line'>      <span class="n">String</span> <span class="n">value</span><span class="o">;</span>
-</span><span class='line'>      <span class="n">Data</span><span class="o">(</span><span class="n">String</span> <span class="n">value</span><span class="o">){</span>
-</span><span class='line'>          <span class="k">this</span><span class="o">.</span><span class="na">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">;</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'><span class="o">}</span>
+</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">onerror</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;BufferLoader: XHR error&#39;</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">send</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">BufferLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">load</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">urlList</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="o">++</span><span class="nx">i</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="nx">loadBuffer</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">urlList</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span> <span class="nx">i</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Chạy đoạn code trên: kết quả như sau:</p>
+<p>Giải thích đoạn code trên một chút, module BufferLoader sẽ có properties là <strong>urllist</strong> chứa một list url của các audio source,
+BufferList là một <strong>array các buffer</strong> tương ứng với từng source đã load.</p>
 
-<figure class='code'><figcaption><span>output </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>map contains someDataObject ? true
-</span><span class='line'>At iteration 0 the map still holds the reference on someDataObject
-</span><span class='line'>At iteration 1 the map still holds the reference on someDataObject
-</span><span class='line'>...
-</span><span class='line'>At iteration 29574 the map still holds the reference on someDataObject
-</span><span class='line'>someDataObject has finally been garbage collected at iteration 29575, hence the map is now empty</span></code></pre></td></tr></table></div></figure>
+<p>Hàm <strong>load</strong> sẽ chạy từng file trong urllist, gọi hàm <strong><em>loadBuffer</em></strong> để load từng file thông qua <strong>XHR</strong>, sau khi load được qua XHR
+thì buffer được tạo ra và cho vào <strong>bufferList</strong>
+Như vậy là chúng ta đã có thể control multiple audio source thông qua <strong><em>BufferLoader</em></strong></p>
 
+<p>Giờ đến việc play theo precise timing, như bài lần trước chúng ta đã biết để play thì chúng ta sẽ dùng hàm noteOn(t), để play từ đầu
+thì t = 0, thế nên để play tại một thời điểm bất kì thì chúng ta sẽ chỉ cần set t(với đơn vị là second và relative theo thời điêm bắt đầu
+của audio).</p>
 
-<p> thay <strong>WeakHashMap</strong> bằng <strong>HashMap</strong>, kết quả sẽ như thế nào?</p>
+<p>Hãy thử bằng một ví dụ đơn giản :D, bạn muốn làm 1 game bắn súng, trong đấy có một khẩu súng rất cool, giả sử là m4a1 đi :D. Chắc hẳn bạn
+nào đã chơi counter strike rồi thì sẽ biết là m4a1 thì phải bắt phát một được, hoặc bắn 3 viên một, hoặc bắn liên thanh. Cơ mà bạn chỉ có
+1 file âm thanh chứa ngắn chứa một tiếng súng, vậy bạn phải làm sao? Rất đơn giản, bạn chỉ cần timing để playback lại cái source của bạn là ok
+. Hãy tham khảo đoạn code dưới đây:</p>
 
-<figure class='code'><figcaption><span>output </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>loadfile.js </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
 <span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>map contains someDataObject ? true
-</span><span class='line'>At iteration 0 the map still holds the reference on someDataObject
-</span><span class='line'>At iteration 1 the map still holds the reference on someDataObject
-</span><span class='line'>...
-</span><span class='line'>At iteration 999997 the map still holds the reference on someDataObject
-</span><span class='line'>At iteration 999998 the map still holds the reference on someDataObject
-</span><span class='line'>At iteration 999999 the map still holds the reference on someDataObject</span></code></pre></td></tr></table></div></figure>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">MachineGun</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">shootRound</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">type</span><span class="p">,</span> <span class="nx">rounds</span><span class="p">,</span> <span class="nx">interval</span><span class="p">,</span> <span class="nx">random</span><span class="p">,</span> <span class="nx">random2</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="k">typeof</span> <span class="nx">random</span> <span class="o">==</span> <span class="s1">&#39;undefined&#39;</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">random</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">time</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">currentTime</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">rounds</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="kd">var</span> <span class="nx">source</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">makeSource</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">buffers</span><span class="p">[</span><span class="nx">type</span><span class="p">]);</span>
+</span><span class='line'>        <span class="nx">source</span><span class="p">.</span><span class="nx">playbackRate</span><span class="p">.</span><span class="nx">value</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="nx">random2</span><span class="p">;</span>
+</span><span class='line'>        <span class="nx">source</span><span class="p">.</span><span class="nx">noteOn</span><span class="p">(</span><span class="nx">time</span> <span class="o">+</span> <span class="nx">i</span> <span class="o">*</span> <span class="nx">interval</span> <span class="o">+</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="nx">random</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">MachineGun</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">makeSource</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">buffer</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">source</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">createBufferSource</span><span class="p">();</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">compressor</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">createDynamicsCompressor</span><span class="p">();</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">gain</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">createGainNode</span><span class="p">();</span>
+</span><span class='line'>    <span class="nx">gain</span><span class="p">.</span><span class="nx">gain</span><span class="p">.</span><span class="nx">value</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">;</span>
+</span><span class='line'>    <span class="nx">source</span><span class="p">.</span><span class="nx">buffer</span> <span class="o">=</span> <span class="nx">buffer</span><span class="p">;</span>
+</span><span class='line'>    <span class="nx">source</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">gain</span><span class="p">);</span>
+</span><span class='line'>    <span class="nx">gain</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">compressor</span><span class="p">);</span>
+</span><span class='line'>    <span class="nx">compressor</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">destination</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nx">source</span><span class="p">;</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
-<p>Bạn đã thấy điểm khác biệt? Sau một khoảng thời gian, <strong>WeakHashMap</strong> sẽ bỏ đi entry tương ứng với weak reference. Còn <strong>HashMap</strong>, vì là strong reference, trong map sẽ luôn chứa cặp phần tử (someDataObject, value) mặc dù bên ngoài someDataObject đã set là null.</p>
+<p>Đoạn code trên có 2 hàm là <strong>shootRound</strong> và <strong>makeSource</strong>.
+Hàm <strong>makeSource</strong> nhận đầu vào là buffer , chỉnh lại âm thanh cho nhỏ đi một chút thông qua việc set gain = 0.2, sử dụng compressor Node
+để smoothing data đi một chút trước khi kết nối với destination node.
+Hàm <strong>shootRound</strong> có mục đích đúng như cái tên của nó, dùng để bắn, hay chính xác là timing buffer có sẵn theo các paramter đầu vào.
+Các parameter ở đây gồm có rounds ( là số lần lặp lại, ví dụ súng của bạn bắn 3 phát một thì rounds sẽ là 3), interval (khoảng cách giữa 2 lần bắn), 2 biến random và random2 dùng để set xem nên bắn đều đều hay bắn một cách random cho nó thật :D.</p>
 
-<h1>Kết luận</h1>
+<p>Chỉ nói lý thuyết không hơi khó hiểu, các bạn có thể xem ví dụ trực quan ở:
+<a href="https://github.com/huydx/html5collection.git">https://github.com/huydx/html5collection.git</a>
+Ví dụ ở trên mình đặt ở html5collection / webaudioapi / guneffect.html. Lưu ý một chút là mình dùng XHR để load file nên các bạn sẽ phải sử dụng thông qua web server (đơn giản nhất là XAMPP) và xem thông qua localhost.</p>
 
-<p>Bài viết này đã trình bày tác dụng của một lớp trong Collection của Java: <strong>WeakHashSet</strong>. Đồng thời, bài viết cũng giới thiệu <strong>weak reference</strong> và <strong>strong reference</strong> và mối quan hệ của chúng với Java garbage collector.</p>
+		
+		
+	</div>
 
-<h1>Tham khảo</h1>
+</article>
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-06-16T21:23:00+09:00" data-updated="true" itemprop="datePublished">Jun 16<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/computation/'>computation</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/06/16/cach-tinh-can-bac-hai/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/06/16/cach-tinh-can-bac-hai/" itemprop="url">Cách Tính Căn Bậc 2</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h2>Câu chuyện</h2>
+
+<p>Trong một buổi phỏng vấn kỹ thuật tại công ty XXX, một lập trình viên &#8220;lão thành&#8221; chịu trách nhiệm phỏng vấn Tèo hỏi Tèo một câu:</p>
+
+<blockquote><p>&#8220;Hãy viết chương trình C tính căn bậc 2 của số nguyên x&#8221;</p></blockquote>
+
+<p>Tèo cười thầm và tự nghĩ &#8220;Công ty công nghệ hàng đầu Việt Nam gì mà hỏi một câu dễ vậy. Nó đâu phải là thằng mới học lập trình!&#8221;</p>
+
+<p>Và Tèo trong chớp mắt đưa ra ngay lời giải với đoạn code như dưới đây:</p>
+
+<figure class='code'><figcaption><span>sqrt.c </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;math.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">x</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Input x: &quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">scanf</span><span class="p">(</span><span class="s">&quot;%d&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">x</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Sqrt of %d = %f</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">x</span><span class="p">));</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<div>
+  <pre><code class='bash'>Input x: 3
+Sqrt of 3 = 1.732051</code></pre>
+</div>
+
+
+<p>Chương trình compiled không có 1 lỗi và kết quả đúng.</p>
+
+<p>Tèo tự tin. Không ngờ công ty XXX nổi tiếng mà lại hỏi một câu ngớ ngẩn đến thế! Nó nghĩ.</p>
+
+<p>Lập trình viên kinh nghiệm nhìn code của Tèo và khen: &#8220;Cậu có căn bản!&#8221;. Tèo sung sướng và nghĩ rằng mình đã chắc chắn 100% được nhận vào làm việc. Đúng lúc đấy vị lập trình viên già kia hỏi tiếp:</p>
+
+<blockquote><p>&#8220;Cậu hãy trả lời lại câu hỏi trên, lần này không dùng hàm sqrt của thư viện C&#8221;</p></blockquote>
+
+<p>&#8220;Chà câu hỏi có vẻ khó hơn. Tèo bắt đầu suy nghĩ. Sau một lúc cậu bắt đầu gãi đầu gãi tai. Làm thế nào để tính bây giờ? Tèo nghĩ mãi nghĩ mãi&#8230;&#8221;</p>
+
+<p>Hết giờ! Người phỏng vấn Tèo nhận xét: &#8220;Cậu vẫn còn phải học nhiều&#8221;. Tèo buồn bã vì biết rằng mình đã trượt. Tuy vậy, nó nghĩ dù trượt nhưng nó nên ra về biết thêm 1 điều gì mới, nó liền hỏi người phỏng vấn:</p>
+
+<p>&#8220;Làm thế nào tôi có thể tính được căn bậc hai? Phải chăng tôi cần một thuật toán phức tạp với rất nhiều dòng mã?&#8221;.</p>
+
+<p>Vị lập trình viên &#8220;lão thành&#8221; cười và trả lời: &#8220;Máy tính làm phép tính rất nhanh, thay vì có câu trả lời tuyệt đối, ta có thể bắt nó đoán câu trả lời cho ta!&#8221;. Nhìn mặt Tèo lớ ngớ, vị kỹ sư già vừa cười vừa từ tốn giải thích tiếp.</p>
+
+<p>Căn bậc hai của y được định nghĩa là số x sao cho: x<sup>2</sup> == y hay x = y / x. Nếu x là kết quả thì x = y / x, còn nếu không kết quả sẽ phải là 1 số x&#8217; nằm trong khoảng x và y/x. Ta không biết số này là bao nhiêu, nhưng ta có 1 cách để đoán lấy 1 số trong khoảng này đó là trung bình cộng!</p>
+
+<p>Tèo gật gù.</p>
+
+<p>Ví dụ: cần tính căn bậc 2 của 3. Ta đoán kết quả là 1.0. Kết quả này không đúng rồi, nên đáp số sẽ nằm trong khoảng 1.0 và 3/1.0 = 2.0. Lấy trung bình cộng lần 1 ta có kết quả là 1.5. Lại thử với 1.5 và 3/1.5 = 2.0 ta có kết quả là 1.75! Sau nhiều lần lặp ta sẽ có kết quả tiệm cận với đáp số!</p>
+
+<p>Tèo sáng mắt! Vị kỹ sư cười và tiếp tục.</p>
+
+<p>Vì ta không có kết quả chính xác, nên số lần lặp sẽ là vô hạn. Tuy vậy tại mỗi bước lặp, ta sẽ thử xem kết quả đủ chính xác theo yêu cầu chưa. Ví dụ nếu đáp số hiện tại là x = 1.73, x<sup>2</sup> = 2.99 và ta chỉ cần độ chính xác đến 2 số sau dấu phẩy, thì 1.73 là đáp án phù hợp. Do vậy ta sẽ có chương trình tính căn bậc 2 như sau:</p>
+
+<figure class='code'><figcaption><span>sqrt.c </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;math.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#define PRECISE 0.0001f</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">double</span> <span class="nf">mysqrt</span><span class="p">(</span><span class="kt">int</span> <span class="n">x</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">double</span> <span class="n">guess</span> <span class="o">=</span> <span class="mf">1.0f</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">while</span> <span class="p">(</span><span class="n">fabs</span><span class="p">(</span><span class="n">guess</span><span class="o">*</span><span class="n">guess</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span><span class="o">/</span><span class="n">x</span> <span class="o">&gt;=</span> <span class="n">PRECISE</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">guess</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="o">/</span><span class="n">guess</span> <span class="o">-</span> <span class="n">guess</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">guess</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">guess</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">x</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Input x: &quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">scanf</span><span class="p">(</span><span class="s">&quot;%d&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">x</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Sqrt of %d = %f</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">mysqrt</span><span class="p">(</span><span class="n">x</span><span class="p">));</span>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<div>
+  <pre><code class='bash'>Input x: 3
+Sqrt of 3 = 1.732051</code></pre>
+</div>
+
+
+<p>Và Tèo được khai sáng!</p>
+
+<h2>Tham khảo</h2>
 
 <ol>
-<li>Core Java Volume I&#8211;Fundamentals</li>
-<li><a href="http://docs.oracle.com/javase/6/docs/api/java/util/WeakHashMap.html">http://docs.oracle.com/javase/6/docs/api/java/util/WeakHashMap.html</a></li>
+<li><a href="http://mitpress.mit.edu/sicp/full-text/book/book.html">Structure and Interpretation of Computer Programs</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Newton's_method">Newton method</a></li>
 </ol>
 
 
@@ -692,19 +586,16 @@ PHP long tag ở đầu có thể thay = PHP short tag</p>
 </script>
 
 
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-	<script type="text/javascript">
-		var _gaq = _gaq || [];
-		_gaq.push(['_setAccount', 'UA-41231691-1']);
-		_gaq.push(['_trackPageview']);
+  ga('create', 'UA-41828637-2', 'ktmt.github.io');
+  ga('send', 'pageview');
 
-		(function() {
-			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-		})();
-	</script>
-
+</script>	
 
 
 		</div>

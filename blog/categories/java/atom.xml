@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Category: java | Blog kỹ thuật máy tính]]></title>
+  <title><![CDATA[Category: java, | Blog kỹ thuật máy tính]]></title>
   <link href="http://ktmt.github.com/blog/categories/java/atom.xml" rel="self"/>
   <link href="http://ktmt.github.com/"/>
-  <updated>2013-06-17T00:03:27+09:00</updated>
+  <updated>2013-07-04T09:00:40+09:00</updated>
   <id>http://ktmt.github.com/</id>
   <author>
     <name><![CDATA[kỹ thuật máy tính]]></name>
@@ -14,62 +14,27 @@
 
   
   <entry>
-    <title type="html"><![CDATA[WeakHashMap và Weak reference trong Java]]></title>
-    <link href="http://ktmt.github.com/blog/2013/06/02/weakhashmap-va-weak-reference-trong-java/"/>
-    <updated>2013-06-02T08:06:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/06/02/weakhashmap-va-weak-reference-trong-java</id>
-    <content type="html"><![CDATA[<h1>Giới thiệu</h1>
+    <title type="html"><![CDATA[Tutorial: Duplicate file finder (Java)]]></title>
+    <link href="http://ktmt.github.com/blog/2013/06/30/tutorial-duplicate-file-finder-java/"/>
+    <updated>2013-06-30T09:07:00+09:00</updated>
+    <id>http://ktmt.github.com/blog/2013/06/30/tutorial-duplicate-file-finder-java</id>
+    <content type="html"><![CDATA[<h1>Mở đầu</h1>
 
-<p>Trong thư viện Collection của Java, có một lớp đặc biệt: <strong>WeakHashMap</strong>. Về hoạt động nói chung nó rất giống với <strong>HashMap</strong>, đều có chức năng quản lý key, value như thêm, bớt, truy xuất value theo key... Vậy khác biệt của <strong>WeakHashMap</strong> so với <strong>HashMap</strong> là gì? Đó chính là khả năng phối hợp của <strong>WeakHashMap</strong> với garbage collector nhằm loại bỏ khả năng leak memory có thể xảy ra với <strong>HashMap</strong>. Trong bài viết này, chúng ta sẽ tìm hiểu <strong>WeakHashMap</strong> là gì, cách hoạt động của nó như thế nào, và cách nó xóa bỏ những entry không dùng đến ra sao.</p>
+<p>Trong quá trình dọn dẹp máy tính cá nhân, tôi gặp phải vấn đề là quá nhiều file trùng lặp trong máy tính. Việc có quá nhiều file như vậy gây lãng phí ổ cứng, cộng thêm đôi lúc tôi không còn nhớ là file này đặt ở thư mục này có ý nghĩa gì nữa. Giá mà có công cụ nào đó để tìm tự động các file này cho tôi thì tốt quá nhỉ??</p>
 
-<h1>Mở đầu</h1>
+<p>Không cần phải giá mà nữa, không gì bằng làm ra cho mình một công cụ như vậy. Bài viết này sẽ trình bày những bước đầu tiên tôi prototype công cụ tìm kiếm các file trùng lặp. Thông qua bài viêt này, tôi cũng sẽ giới thiệu về những chủ đề sau trong Java: tính hash, thread pooling.</p>
 
-<p>Thử tưởng tượng một tình huống như thế này: bạn muốn sử dụng một class nào đó, nhưng không thể extend được nó (ví dụ trường hợp đơn giản nhất là class đó được chỉ định là <strong>final</strong>). Vậy bạn làm gì khi muốn thêm property cho object thuộc class đó?</p>
+<h1>MD5 checksum</h1>
 
-<p>Ví dụ, bạn muốn sử dụng một class <strong>Product</strong> mà không thể extend được. Bây giờ muốn thêm <strong>serialNumber</strong> cho product đó, ứng cử viên hàng đầu là HashMap, bạn có thể tạo một cặp <strong>key</strong> là Product object, <strong>value</strong> là serialNumber:</p>
+<p>MD5 là một thuật toán mã hóa thông điệp (message-digest), về bản chất là một hàm băm (hash) xuất ra một giá trị 128-bit (16-byte). MD5 được sử dụng rất nhiều trong các ứng dụng bảo mật, và cũng được sử dụng để kiểm tra tính toàn vẹn dữ liệu (ví dụ như bạn down một file từ Internet về, thường có một MD5 key đi kèm, để bạn kiểm tra xem file bạn down có chính xác giống nguồn down không.)</p>
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>product.java </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">import</span> <span class="nn">java.util.HashMap</span><span class="o">;</span>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'><span class="n">Map</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">Product</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">productMap</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">Product</span><span class="o">,</span><span class="n">String</span><span class="o">&gt;();</span>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'><span class="n">productMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">product</span><span class="o">,</span> <span class="n">serialNo</span><span class="o">);</span>
-</span><span class='line'><span class="o">...</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>Tôi không có ý định đi sâu vào cách tính MD5, bạn có thể tham khảo trên google. Lưu ý là thuật toán MD5 vẫn có thể sinh ra cùng một giá trị hash với 2 file có nội dung khác nhau (tuy nhiên trường hợp này rất hiếm). Để chắc chắn tìm được 2 file có nội dung giống hệt nhau, ta sẽ so sánh theo thứ tự: so sánh giá trị hash, so sánh độ lớn của file, và cuối cùng là so sánh từng byte của hai file để chắc chắn chúng trùng nhau.</p>
 
-<p>Đoạn code trên có vẻ đã hoàn thành mục tiêu thêm thuộc tính cho Product object, nhưng có vấn đề gì ở đây không? Cách giải quyết này gặp phải vấn đề liên quan đến việc giải phóng bộ nhớ. Vì <strong>HashMap</strong> sử dụng <strong>strong reference</strong> để trỏ đến Product object, nên khi trong chương trình không còn reference nào đến Product object nữa, <strong>garbage collector</strong> nhận thấy vẫn còn strong reference ở trong <strong>HashMap</strong>, nên nó không giải phóng object này nữa. Lâu dần, sẽ xuất hiện hiện tượng <strong>Leak Memory</strong>: ta không thể giải phóng được cặp key, value nằm trong <strong>HashMap</strong>, khi mà <strong>HashMap</strong> còn được sử dụng (để hiểu rõ hơn, bạn có thể xem ví dụ demo ở cuối bài).</p>
+<p>Trong Java, hàm băm đã được đưa vào thư viện <em>java.security</em>, thông qua class <em>MessageDigest</em>. Bạn chỉ cần khai báo đối tượng <em>MessageDigest</em>, sau đó chọn phương thức mã hóa MD5, hoặc SHA. Việc bạn phải làm đối với từng file là chuyển file thành byte stream, và update dòng input này vào đối tượng <em>MessageDigest</em> trên, và bạn sẽ nhận được một dòng byte kết quả.</p>
 
-<p>Nhân đây, xin giải thích thêm về <strong>Strong reference</strong>. Đây là Java reference bình thường mà ta thường sử dụng. Như ví dụ sau:
-<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>strong.java </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">String</span> <span class="n">serialNo</span> <span class="o">=</span> <span class="k">new</span> <span class="n">String</span><span class="o">();</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>Chi tiết về class <em>MessageDigest</em>, bạn có thể tham khảo tại đây: <a href="http://docs.oracle.com/javase/6/docs/api/java/security/MessageDigest.html">http://docs.oracle.com/javase/6/docs/api/java/security/MessageDigest.html</a></p>
 
-<p>sẽ tạo một object String và lưu một strong reference đến nó vào biến serialNo. Ta cần phải để ý mới quan hệ giữa strong reference và garbage collector như sau: Nếu một object được trỏ đến qua một số strong references, object đó sẽ không được garbage collector để ý đến.</p>
-
-<h1>WeakHashMap</h1>
-
-<p>Trái ngược lại với <strong>strong reference</strong> là <strong>weak reference</strong>. *Weak reference** sẽ không thể cản trở garbage collector giải phóng object khỏi memory. Khai báo như sau:</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>weak.java </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">WeakReference</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">&gt;</span> <span class="n">weakProduct</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WeakReference</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">&gt;(</span><span class="n">product</span><span class="o">);</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>Sau đó, ta có thể truy cập đến Product object thông qua việc gọi method weakProduct.get(). Tuy nhiên, ta cần phải chú ý khi gọi method này. Vì weak reference không đủ khả năng chặn quá trình garbage collection, nên đến một cycle nào đó, garbage collector sẽ giải phóng Product object (khi không còn strong reference nào đến nó) , và bạn sẽ thấy weakProduct.get() đột nhiên trả về null.</p>
-
-<p>Quay trở lại với ví dụ Product ở trên, ta giải quyết vấn đề đã nêu bằng cách sử dụng <strong>WeakHashMap</strong> class.  <strong>WeakHashMap</strong> hoạt động y hệt như <strong>HashMap</strong>, chỉ khác là key được refer đến bằng <strong>weak reference</strong>. Lúc này, khi một object chỉ reachable bởi <strong>WeakReference</strong>, garbage collector sẽ giải phóng object, đồng thời sẽ đặt <strong>weak reference</strong> trỏ đến object kia vào một queue. WeakHashMap sẽ định kì kiểm tra queue này xem có weak reference nào mới đến không. Nếu thấy một weak reference trong queue, nghĩa là key đã không được ai sử dụng nữa và nó đã bị garbage collector "tịch thu". Lúc đó, WeakHashMap sẽ bỏ entry liên quan đi. No more memory leak ! :)</p>
-
-<h1>Demo</h1>
-
-<p>Lý thuyết là vậy. Để dễ hiểu hơn, quan sát đoạn demo WeakHashMap sau:
-<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>WeakHashMapDemo.java </span></figcaption>
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>MD5.java </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -113,96 +78,499 @@
 <span class='line-number'>41</span>
 <span class='line-number'>42</span>
 <span class='line-number'>43</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">package</span> <span class="n">corejava</span><span class="o">.</span><span class="na">collection</span><span class="o">;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
 </span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kn">import</span> <span class="nn">java.util.Map</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">java.util.WeakHashMap</span><span class="o">;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kd">public</span> <span class="kd">static</span> <span class="n">String</span> <span class="n">getMD5</span><span class="o">(</span><span class="n">File</span> <span class="n">file</span><span class="o">)</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>    <span class="k">if</span><span class="o">(!</span><span class="n">file</span><span class="o">.</span><span class="na">exists</span><span class="o">())</span>
+</span><span class='line'>        <span class="k">return</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
+</span><span class='line'>    <span class="k">try</span>
+</span><span class='line'>    <span class="o">{</span>
+</span><span class='line'>        <span class="n">MessageDigest</span>  <span class="n">md</span> <span class="o">=</span>  <span class="n">MessageDigest</span><span class="o">.</span><span class="na">getInstance</span><span class="o">(</span><span class="s">&quot;MD5&quot;</span><span class="o">);</span>
 </span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kd">public</span> <span class="kd">class</span> <span class="nc">WeakHashMapTest</span> <span class="o">{&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>        <span class="c1">//read the file into a byte array</span>
+</span><span class='line'>        <span class="kt">byte</span><span class="o">[]</span> <span class="n">input</span> <span class="o">=</span> <span class="k">new</span> <span class="kt">byte</span><span class="o">[(</span><span class="kt">int</span><span class="o">)</span> <span class="n">file</span><span class="o">.</span><span class="na">length</span><span class="o">()];</span>
+</span><span class='line'>        <span class="n">InputStream</span> <span class="n">in</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FileInputStream</span><span class="o">(</span><span class="n">file</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">in</span><span class="o">.</span><span class="na">read</span><span class="o">(</span><span class="n">input</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">in</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
 </span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="n">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="c1">//update the MessageDigest and process</span>
+</span><span class='line'>        <span class="n">md</span><span class="o">.</span><span class="na">update</span><span class="o">(</span><span class="n">input</span><span class="o">);</span>
+</span><span class='line'>        <span class="kt">byte</span><span class="o">[]</span> <span class="n">fileDigest</span> <span class="o">=</span> <span class="n">md</span><span class="o">.</span><span class="na">digest</span><span class="o">();</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="c1">//add one element to the map...</span>
-</span><span class='line'>    <span class="n">Map</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">Data</span><span class="o">,</span> <span class="n">String</span><span class="o">&amp;</span><span class="n">gt</span><span class="o">;</span> <span class="n">map</span>  <span class="o">=</span> <span class="k">new</span> <span class="n">WeakHashMap</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">Data</span><span class="o">,</span> <span class="n">String</span><span class="o">&amp;</span><span class="n">gt</span><span class="o">;();</span>
-</span><span class='line'>    <span class="n">Data</span> <span class="n">someDataObject</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Data</span><span class="o">(</span><span class="s">&quot;test&quot;</span><span class="o">);</span>
-</span><span class='line'>    <span class="n">map</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">someDataObject</span><span class="o">,</span> <span class="n">someDataObject</span><span class="o">.</span><span class="na">value</span><span class="o">);</span>
-</span><span class='line'>    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;map contains someDataObject ? &quot;</span> <span class="o">+</span> <span class="n">map</span><span class="o">.</span><span class="na">containsKey</span><span class="o">(</span><span class="n">someDataObject</span><span class="o">));</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="c1">//now make someDataObject eligible for garbage collection...</span>
-</span><span class='line'>    <span class="n">someDataObject</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span> <span class="mi">1000000</span><span class="o">;</span> <span class="n">i</span><span class="o">++){</span>
-</span><span class='line'>        <span class="k">if</span><span class="o">(</span><span class="n">map</span><span class="o">.</span><span class="na">size</span><span class="o">()!=</span><span class="mi">0</span><span class="o">)</span>
-</span><span class='line'>        <span class="o">{</span>
-</span><span class='line'>            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;At iteration &quot;</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s">&quot; the map still holds the reference on someDataObject&quot;</span><span class="o">);</span>
-</span><span class='line'>        <span class="o">}</span>
-</span><span class='line'>        <span class="k">else</span>
-</span><span class='line'>        <span class="o">{</span>
-</span><span class='line'>            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;someDataObject has finally been garbage collected at iteration &quot;</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s">&quot;, so the map is now empty&quot;</span><span class="o">);</span>
-</span><span class='line'>            <span class="k">break</span><span class="o">;</span>
-</span><span class='line'>        <span class="o">}</span>
-</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="nf">ByteArrayToString</span><span class="o">(</span><span class="n">fileDigest</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="k">catch</span><span class="o">(</span><span class="n">IOException</span> <span class="n">e</span> <span class="o">)</span>
+</span><span class='line'>    <span class="o">{</span>
+</span><span class='line'>        <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>        <span class="k">return</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="k">catch</span><span class="o">(</span><span class="n">NoSuchAlgorithmException</span> <span class="n">e</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
 </span><span class='line'>    <span class="o">}</span>
 </span><span class='line'><span class="o">}</span>
 </span><span class='line'>
-</span><span class='line'><span class="kd">static</span> <span class="kd">class</span> <span class="nc">Data</span><span class="o">{</span>
-</span><span class='line'>    <span class="n">String</span> <span class="n">value</span><span class="o">;</span>
-</span><span class='line'>    <span class="n">Data</span><span class="o">(</span><span class="n">String</span> <span class="n">value</span><span class="o">){</span>
-</span><span class='line'>        <span class="k">this</span><span class="o">.</span><span class="na">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">;</span>
-</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="kd">private</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">ByteArrayToString</span><span class="o">(</span><span class="kt">byte</span><span class="o">[]</span> <span class="n">ba</span><span class="o">)</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>   <span class="n">StringBuilder</span> <span class="n">sb</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StringBuilder</span><span class="o">();</span>
+</span><span class='line'>   <span class="k">for</span><span class="o">(</span><span class="kt">byte</span> <span class="nl">b:</span> <span class="n">ba</span><span class="o">)</span>
+</span><span class='line'>      <span class="n">sb</span><span class="o">.</span><span class="na">append</span><span class="o">(</span><span class="n">String</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">&quot;%02x&quot;</span><span class="o">,</span> <span class="n">b</span><span class="o">&amp;</span><span class="n">amp</span><span class="o">;</span><span class="mh">0xff</span><span class="o">));</span>
+</span><span class='line'>   <span class="k">return</span> <span class="n">sb</span><span class="o">.</span><span class="na">toString</span><span class="o">();</span>
 </span><span class='line'><span class="o">}</span>
 </span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;}&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
 </span><span class='line'>
 </span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div></p>
 
-<p>Chạy đoạn code trên: kết quả như sau:</p>
+<h1>Theading</h1>
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>output </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>map contains someDataObject ? true
-</span><span class='line'>At iteration 0 the map still holds the reference on someDataObject
-</span><span class='line'>At iteration 1 the map still holds the reference on someDataObject
-</span><span class='line'>...
-</span><span class='line'>At iteration 29574 the map still holds the reference on someDataObject
-</span><span class='line'>someDataObject has finally been garbage collected at iteration 29575, hence the map is now empty</span></code></pre></td></tr></table></div></figure></notextile></div>
- thay <strong>WeakHashMap</strong> bằng <strong>HashMap</strong>, kết quả sẽ như thế nào?</p>
+<p>Threading, hay concurrency, trong Java là một chủ đề khá phức tạp và tôi cũng chưa đủ khả năng nắm rõ được tất cả. Do vậy, trong bài viết này, tôi xin chỉ đề cập đến kĩ thuật thread pooling để phân bài toán ra thành nhiều tác vụ, chạy trên nhiều luồng khác nhau.</p>
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>output </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<p>Thread pool là gì? Bạn có thể hiểu nôm na là thay vì cứ gọi một luồng mới cho từng tác vụ khi cần thiết (phương pháp này gặp nhược điểm vì việc tạo thread mới sẽ gặp overhead), ta tạo sẵn một cái "bể" (pool) trong đó khởi động sẵn một loạt các luồng (thread). Các luồng này ngoi ngoi lên để đợi ta ném tác vụ vào để chúng thực hiện. Sau khi thực hiện xong, nó sẽ báo cáo lại kết quả, kết thúc tác vụ, và quay trở lại "bể" để tiếp tục ngoi ngoi chờ tác vụ mới. Chỉ khi nào đóng "bể", thì các luồng mới bị mất đi.</p>
+
+<p>Trong bài toán tìm file trùng lặp này, tôi sẽ áp dụng thread pooling như sau:</p>
+
+<ul>
+<li>Tạo một class DuppFind, implement Runnable class (đây là class ta có thể truyền vào cho pool), đại diện cho tác vụ tìm kiếm. Với mỗi object DuppFind, nó sẽ được truyền vào các tham số gồm có:</li>
+</ul>
+
+
+<p>-- Thư mục bắt đầu tìm kiếm</p>
+
+<p>-- Map&lt;String, List<String>>: là một map chứa key là md5 và value là một List chứa đường dẫn đến các file có md5 value như vậy</p>
+
+<p>-- pool, thuộc class ExcutorService.</p>
+
+<ul>
+<li>Mỗi tác vụ sau khi được luồng chọn để thực thi, nó sẽ làm gì? Nhiệm vụ của tác vụ là quét tất cả các file, thư mục có trong thư mục được chỉ định tìm kiếm. Nếu gặp file, nó sẽ tính MD5 cho file đó, và thêm vào Map. Nếu gặp thư mục, tác vụ này sẽ tạo ra một tác vụ DuppFind mới, chỉ định thư mục mới này cho tác vụ DuppFind mới, và ném vào pool (bây giờ bạn đã hiểu tại sao object DuppFind luôn được truyền pool vào rồi đấy:) )</li>
+</ul>
+
+
+<p>Một vài điểm lưu ý:</p>
+
+<ul>
+<li><p>Mỗi tác vụ phải có trách nhiệm đợi tất cả các tác vụ con nó tạo ra hoàn thành thì mới được chấm dứt. Tôi thực hiện điều này bằng cách sử dụng đối tượng Future được trả lại mỗi lần ném tác vụ mới vào pool. Sau đó chỉ cần gọi polling kết quả từ tác vụ con là được.</p></li>
+<li><p>Với những Collection dùng chung giữa các thread, cần phải dùng những Concurrecy Collection mà Java cung cấp. Cụ thể ở đây, tôi dùng ConcurrentHashMap cho Map và CopyOnWriteArrayList cho List.</p></li>
+</ul>
+
+
+<p>Dưới đây là đoạn code cho phần thread pooling:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>DuppFind.java </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
 <span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>map contains someDataObject ? true
-</span><span class='line'>At iteration 0 the map still holds the reference on someDataObject
-</span><span class='line'>At iteration 1 the map still holds the reference on someDataObject
-</span><span class='line'>...
-</span><span class='line'>At iteration 999997 the map still holds the reference on someDataObject
-</span><span class='line'>At iteration 999998 the map still holds the reference on someDataObject
-</span><span class='line'>At iteration 999999 the map still holds the reference on someDataObject</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">DuppFind</span> <span class="kd">implements</span> <span class="n">Runnable</span><span class="o">{&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kd">private</span> <span class="n">File</span> <span class="n">directory</span><span class="o">;</span>
+</span><span class='line'><span class="kd">private</span> <span class="n">Map</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">String</span><span class="o">,</span> <span class="n">List</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">String</span><span class="o">&amp;</span><span class="n">gt</span><span class="o">;&amp;</span><span class="n">gt</span><span class="o">;</span> <span class="n">md5FileMap</span><span class="o">;</span>
+</span><span class='line'><span class="kd">private</span> <span class="n">ExecutorService</span> <span class="n">pool</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">public</span> <span class="nf">DuppFind</span><span class="o">(</span><span class="n">File</span> <span class="n">directory</span><span class="o">,</span> <span class="n">Map</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">String</span><span class="o">,</span> <span class="n">List</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">String</span><span class="o">&amp;</span><span class="n">gt</span><span class="o">;&amp;</span><span class="n">gt</span><span class="o">;</span> <span class="n">md5FileMap</span><span class="o">,</span> <span class="n">ExecutorService</span> <span class="n">pool</span><span class="o">)</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>    <span class="k">this</span><span class="o">.</span><span class="na">directory</span> <span class="o">=</span> <span class="n">directory</span><span class="o">;</span>
+</span><span class='line'>    <span class="k">this</span><span class="o">.</span><span class="na">md5FileMap</span> <span class="o">=</span> <span class="n">md5FileMap</span><span class="o">;</span>
+</span><span class='line'>    <span class="k">this</span><span class="o">.</span><span class="na">pool</span> <span class="o">=</span> <span class="n">pool</span><span class="o">;</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nd">@Override</span>
+</span><span class='line'><span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span> <span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="k">try</span>
+</span><span class='line'>    <span class="o">{</span>
+</span><span class='line'>        <span class="n">File</span><span class="o">[]</span> <span class="n">files</span> <span class="o">=</span> <span class="n">directory</span><span class="o">.</span><span class="na">listFiles</span><span class="o">();</span>
+</span><span class='line'>        <span class="n">ArrayList</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">Future</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;?&amp;</span><span class="n">gt</span><span class="o">;&amp;</span><span class="n">gt</span><span class="o">;</span> <span class="n">results</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">Future</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;?&amp;</span><span class="n">gt</span><span class="o">;&amp;</span><span class="n">gt</span><span class="o">;();</span>
+</span><span class='line'>        <span class="k">for</span><span class="o">(</span><span class="n">File</span> <span class="n">file</span> <span class="o">:</span> <span class="n">files</span><span class="o">)</span>
+</span><span class='line'>        <span class="o">{</span>
+</span><span class='line'>            <span class="k">if</span><span class="o">(</span><span class="n">file</span><span class="o">.</span><span class="na">isDirectory</span><span class="o">())</span>
+</span><span class='line'>            <span class="o">{</span>
+</span><span class='line'>                <span class="c1">//System.out.println(&quot;Dir: &quot; + file.getAbsolutePath());</span>
+</span><span class='line'>                <span class="n">DuppFind</span> <span class="n">df</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DuppFind</span><span class="o">(</span><span class="n">file</span><span class="o">,</span> <span class="n">md5FileMap</span><span class="o">,</span> <span class="n">pool</span><span class="o">);</span>
+</span><span class='line'>                <span class="n">Future</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;?&amp;</span><span class="n">gt</span><span class="o">;</span> <span class="n">result</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">df</span><span class="o">);</span>
+</span><span class='line'>                <span class="n">results</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">result</span><span class="o">);</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>            <span class="k">else</span> <span class="nf">if</span><span class="o">(</span><span class="n">file</span><span class="o">.</span><span class="na">isFile</span><span class="o">())</span>
+</span><span class='line'>            <span class="o">{</span>
+</span><span class='line'>                <span class="c1">//calculate md5</span>
+</span><span class='line'>                <span class="n">String</span> <span class="n">md5</span> <span class="o">=</span> <span class="n">MD5Utils</span><span class="o">.</span><span class="na">getMD5</span><span class="o">(</span><span class="n">file</span><span class="o">);</span>
+</span><span class='line'>                <span class="n">List</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">String</span><span class="o">&amp;</span><span class="n">gt</span><span class="o">;</span> <span class="n">listFile</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CopyOnWriteArrayList</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">String</span><span class="o">&amp;</span><span class="n">gt</span><span class="o">;();</span>
+</span><span class='line'>                <span class="k">if</span><span class="o">(</span><span class="n">md5FileMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">md5</span><span class="o">)</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+</span><span class='line'>                <span class="o">{</span>
+</span><span class='line'>                    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Duplicate md5: &quot;</span> <span class="o">+</span> <span class="n">md5</span> <span class="o">+</span> <span class="s">&quot;, size now: &quot;</span> <span class="o">+</span> <span class="n">md5FileMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">md5</span><span class="o">).</span><span class="na">size</span><span class="o">());</span>
+</span><span class='line'>                    <span class="n">listFile</span><span class="o">.</span><span class="na">addAll</span><span class="o">(</span><span class="n">md5FileMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">md5</span><span class="o">));</span>
+</span><span class='line'>                <span class="o">}</span>
+</span><span class='line'>                <span class="n">listFile</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">file</span><span class="o">.</span><span class="na">getAbsolutePath</span><span class="o">());</span>
+</span><span class='line'>                <span class="n">md5FileMap</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="n">md5</span><span class="o">);</span>
+</span><span class='line'>                <span class="n">md5FileMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">md5</span><span class="o">,</span> <span class="n">listFile</span><span class="o">);</span>
+</span><span class='line'>                <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Add: File&quot;</span> <span class="o">+</span> <span class="n">file</span><span class="o">.</span><span class="na">getAbsolutePath</span><span class="o">()</span> <span class="o">+</span> <span class="s">&quot;, MD5: &quot;</span> <span class="o">+</span> <span class="n">md5</span><span class="o">);</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">//wait until all sub-tasks complete</span>
+</span><span class='line'>        <span class="k">for</span><span class="o">(</span><span class="n">Future</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;?&amp;</span><span class="n">gt</span><span class="o">;</span> <span class="nl">result:</span> <span class="n">results</span><span class="o">)</span>
+</span><span class='line'>        <span class="o">{</span>
+</span><span class='line'>            <span class="n">result</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="k">catch</span><span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">{</span>
+</span><span class='line'>        <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="k">catch</span><span class="o">(</span><span class="n">ExecutionException</span> <span class="n">e</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">{</span>
+</span><span class='line'>        <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
 
-<p>Bạn đã thấy điểm khác biệt? Sau một khoảng thời gian, <strong>WeakHashMap</strong> sẽ bỏ đi entry tương ứng với weak reference. Còn <strong>HashMap</strong>, vì là strong reference, trong map sẽ luôn chứa cặp phần tử (someDataObject, value) mặc dù bên ngoài someDataObject đã set là null.</p>
+<p>Toàn bộ code đã ở trên github: <a href="https://github.com/viethnguyen/DuppFind">https://github.com/viethnguyen/DuppFind</a></p>
 
-<h1>Kết luận</h1>
+<h1>Đánh giá</h1>
 
-<p>Bài viết này đã trình bày tác dụng của một lớp trong Collection của Java: <strong>WeakHashSet</strong>. Đồng thời, bài viết cũng giới thiệu <strong>weak reference</strong> và <strong>strong reference</strong> và mối quan hệ của chúng với Java garbage collector.</p>
+<ul>
+<li><p>Đoạn code trên chạy chính xác với những thư mục nhỏ, không có quá nhiều thư mục con, cháu... Tuy nhiên, với những thư mục chứa nhiều thư mục con, vì có quá nhiều tác vụ vào thread pool, nên hay xảy ra exception out of memory - heap.</p></li>
+<li><p>Mới chỉ kiểm tra xem 2 file có MD5 trùng nhau không. Nếu trùng nhau rồi, ta cần kiểm tra thêm độ dài 2 file có trùng nhau không, rồi nếu trùng tiếp thì phải check từng byte để chắc chắn nhất có thể (xóa đi khỏi hối hận :P)</p></li>
+<li><p>Ở trên mới hiển thị ra những file nào trùng lặp. Cần cho phép user xóa file trùng lặp trong chương trình.</p></li>
+<li><p>Cần thiết kế GUI!</p></li>
+</ul>
+
+
+<p>Bạn thấy đó, còn khá nhiều vấn đề cần giải quyết để có một tool hoàn chỉnh. Những vấn đề này sẽ được cải tiến và được report lại trong một ngày không xa :) Nếu bạn cảm thấy hứng thú, rất welcome contribute :)</p>
 
 <h1>Tham khảo</h1>
 
 <ol>
-<li>Core Java Volume I--Fundamentals</li>
-<li><a href="http://docs.oracle.com/javase/6/docs/api/java/util/WeakHashMap.html">http://docs.oracle.com/javase/6/docs/api/java/util/WeakHashMap.html</a></li>
+<li>Core Java</li>
+<li>Java Concurrency in Practice</li>
+<li>Effective Java</li>
 </ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Design Pattern: Áp dụng Builder Pattern trong test (Java)]]></title>
+    <link href="http://ktmt.github.com/blog/2013/06/14/design-pattern-ap-dung-builder-pattern-trong-test-java/"/>
+    <updated>2013-06-14T22:31:00+09:00</updated>
+    <id>http://ktmt.github.com/blog/2013/06/14/design-pattern-ap-dung-builder-pattern-trong-test-java</id>
+    <content type="html"><![CDATA[<h1>Giới thiệu</h1>
+
+<p>Builder Pattern là một pattern trong cuốn Design Pattern của "Gang of Four". Mục đích của Builder Pattern như sau: Separate the construction of a complex object from its representation so that the same construction process can
+create different representations (tạm dịch: tách rời quá trình tạo object với nội dung và cấu trúc bên trong của nó, nhờ vậy tương ứng với một quá trình tạo object có thể có nhiều cách tạo nhiều thể hiện khác nhau.)</p>
+
+<p>Bên cạnh đó, Builder pattern còn được dùng để giải quyết một vấn đề thường gặp trong quá trình test: cách nào tốt nhất để tạo những object có quá nhiều optional parameters, trong khi tạm thời một số parameter ta muốn để giá trị default, giá trị của parameter này không ảnh hưởng gì lắm đến algorithm hay flow của chương trình. Bài viết này sẽ trình bày phương pháp sử dụng Builder pattern này.</p>
+
+<h1>Ví dụ</h1>
+
+<p>Ta lấy ví dụ ta có một class quản lý sách, với các trường như sau: tiêu đề, tên tác giả, thể loại, năm xuất bản, ISBN. Để phục vụ việc tạo một object thuộc class này, ta nghĩ đến việc tạo một constructor như sau:
+<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>constructor.java </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kd">public</span> <span class="n">Book</span><span class="o">(</span><span class="n">String</span> <span class="n">title</span><span class="o">,</span> <span class="n">String</span> <span class="n">author</span><span class="o">,</span> <span class="n">Genre</span> <span class="n">genre</span><span class="o">,</span> <span class="n">GregorianCalendar</span> <span class="n">publishDate</span><span class="o">,</span> <span class="n">String</span> <span class="n">ISBN</span><span class="o">)</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>    <span class="k">this</span><span class="o">.</span><span class="na">title</span> <span class="o">=</span> <span class="n">title</span><span class="o">;</span>
+</span><span class='line'>    <span class="k">this</span><span class="o">.</span><span class="na">author</span> <span class="o">=</span> <span class="n">author</span><span class="o">;</span>
+</span><span class='line'>    <span class="k">this</span><span class="o">.</span><span class="na">genre</span> <span class="o">=</span> <span class="n">genre</span><span class="o">;</span>
+</span><span class='line'>    <span class="k">this</span><span class="o">.</span><span class="na">publishDate</span> <span class="o">=</span> <span class="n">publishDate</span><span class="o">;</span>
+</span><span class='line'>    <span class="k">this</span><span class="o">.</span><span class="na">ISBN</span> <span class="o">=</span> <span class="n">ISBN</span><span class="o">;</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Và trong chương trình, để tạo một object Book, ta gọi:
+<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>constructor.java </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">Book</span> <span class="n">book2</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Book</span><span class="o">(</span><span class="s">&quot;Core Java&quot;</span><span class="o">,</span> <span class="s">&quot;Cay Horstman&quot;</span><span class="o">,</span> <span class="n">Genre</span><span class="o">.</span><span class="na">TECHNOLOGY</span><span class="o">,</span> <span class="k">new</span> <span class="n">GregorianCalendar</span><span class="o">(</span><span class="mi">2012</span><span class="o">,</span><span class="mi">12</span><span class="o">,</span><span class="mi">7</span><span class="o">),</span> <span class="s">&quot;0137081898&quot;</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Ta thấy, với cách tạo object như trên, có một số nhược điểm như sau:</p>
+
+<ul>
+<li><p>Ta bắt buộc phải khai báo tất cả các parameters, không có giá trị default. Ta sẽ bị buộc phải set cả những parameters mà ta không quan tâm khi thực hiện test object.</p></li>
+<li><p>Đoạn code khá khó hiểu khi ta chỉ khai báo giá trị của parameter và truyền vào constructor. Người đọc sẽ phải đếm vị trí của parameters, soi vào trong khai báo constructor của Book.java để biết giá trị này là gán cho parameter nào. Với ví dụ trên, chỉ có 5 parameter, nhưng với những class phức tạp có nhiều parameters hơn nữa, việc khai báo như trên rõ ràng không tốt về mặt code visibility.</p></li>
+<li><p>Xuất hiện nhu cầu tạo object với các constructor với bộ tham số đầu vào khác nhau. Như ví dụ ở trên, ta muốn tạo object nhưng không muốn nhập thể loại, hoặc không muốn nhập năm xuất bản, ... dẫn đến rất nhiều phiên bản constructor khác nhau.</p></li>
+</ul>
+
+
+<p>Hoặc bạn có thể khai báo theo một cách thứ hai, theo kiểu JavaBean như sau: tạo một constructor default, không đối số, ví dụ như Book(), sau đó thì tạo một loạt các setter để nhập các tham số cho parameter. Lúc đó thì code cho từng đối tượng sẽ như sau:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>bean.java </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">Book</span> <span class="n">book</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Book</span><span class="o">();</span>
+</span><span class='line'><span class="n">book</span><span class="o">.</span><span class="na">setTitle</span><span class="o">(</span><span class="s">&quot;Core Java&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">book</span><span class="o">.</span><span class="na">setAuthor</span><span class="o">(</span><span class="s">&quot;Cay Horstman&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">book</span><span class="o">.</span><span class="na">setGenre</span><span class="o">(</span><span class="n">Genre</span><span class="o">.</span><span class="na">Technology</span><span class="o">);</span>
+</span><span class='line'><span class="n">book</span><span class="o">.</span><span class="na">setPublishDate</span><span class="o">(</span><span class="k">new</span> <span class="n">GregorianCalendar</span><span class="o">(</span><span class="mi">2012</span><span class="o">,</span><span class="mi">7</span><span class="o">,</span><span class="mi">1</span><span class="o">));</span>
+</span><span class='line'><span class="n">book</span><span class="o">.</span><span class="na">setISBN</span><span class="o">(</span><span class="s">&quot;0137081898&quot;</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Nhưng cách này lại có nhược điểm là: vì việc tạo object bị kéo dài qua nhiều câu lệnh, có thể object sẽ bị rơi vào trạng thái unstable (ví dụ như ta quên mất set publishDate, như thế book sẽ không có giá trị cho publishDate !).</p>
+
+<p>Để khắc phục những nhược điểm trên, có một phương pháp sử dụng Builder pattern như sau: Thay vì tạo object mong muốn trực tiếp, ta gọi một static factory với các tham số bắt buộc, nhận về một <em>builder object</em>. Sau đó gọi các setter method dể đặt các tham số tùy chọn. Cuối cùng gọi build method, tạo ra object. Để dễ hiểu hơn, ta quan sát ví dụ sau:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>builder.java </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Book</span> <span class="o">{&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kd">public</span> <span class="kd">enum</span> <span class="n">Genre</span> <span class="o">{</span><span class="n">FICTION</span><span class="o">,</span> <span class="n">NONFICTION</span><span class="o">,</span> <span class="n">TECHNOLOGY</span><span class="o">,</span> <span class="n">SELFHELP</span><span class="o">,</span> <span class="n">BUSINESS</span><span class="o">,</span> <span class="n">SPORT</span><span class="o">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">private</span> <span class="n">String</span> <span class="n">title</span><span class="o">;</span>
+</span><span class='line'><span class="kd">private</span> <span class="n">String</span> <span class="n">author</span><span class="o">;</span>
+</span><span class='line'><span class="kd">private</span> <span class="n">Genre</span> <span class="n">genre</span><span class="o">;</span>
+</span><span class='line'><span class="kd">private</span> <span class="n">GregorianCalendar</span> <span class="n">publishDate</span><span class="o">;</span>
+</span><span class='line'><span class="kd">private</span> <span class="n">String</span> <span class="n">ISBN</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">Builder</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>    <span class="c1">//required params</span>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">String</span> <span class="n">title</span><span class="o">;</span>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">String</span> <span class="n">author</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">//optional params</span>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">Genre</span> <span class="n">genre</span> <span class="o">=</span> <span class="n">Genre</span><span class="o">.</span><span class="na">FICTION</span><span class="o">;</span>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">GregorianCalendar</span> <span class="n">publishDate</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GregorianCalendar</span><span class="o">(</span><span class="mi">1900</span><span class="o">,</span><span class="mi">1</span><span class="o">,</span><span class="mi">1</span><span class="o">);</span>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">String</span> <span class="n">ISBN</span> <span class="o">=</span> <span class="s">&quot;000000000&quot;</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="nf">Builder</span><span class="o">(</span><span class="n">String</span> <span class="n">title</span><span class="o">,</span> <span class="n">String</span> <span class="n">author</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">{</span>
+</span><span class='line'>        <span class="k">this</span><span class="o">.</span><span class="na">title</span> <span class="o">=</span> <span class="n">title</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">this</span><span class="o">.</span><span class="na">author</span> <span class="o">=</span> <span class="n">author</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="n">Builder</span> <span class="nf">genre</span> <span class="o">(</span><span class="n">Genre</span> <span class="n">val</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">{</span>
+</span><span class='line'>        <span class="k">this</span><span class="o">.</span><span class="na">genre</span> <span class="o">=</span> <span class="n">val</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="n">Builder</span> <span class="nf">publishDate</span><span class="o">(</span><span class="n">GregorianCalendar</span> <span class="n">val</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">{</span>
+</span><span class='line'>        <span class="k">this</span><span class="o">.</span><span class="na">publishDate</span> <span class="o">=</span> <span class="n">val</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="n">Builder</span> <span class="nf">ISBN</span><span class="o">(</span><span class="n">String</span> <span class="n">val</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">{</span>
+</span><span class='line'>        <span class="k">this</span><span class="o">.</span><span class="na">ISBN</span> <span class="o">=</span> <span class="n">val</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="n">Book</span> <span class="nf">build</span><span class="o">()</span>
+</span><span class='line'>    <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="nf">Book</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">public</span> <span class="nf">Book</span><span class="o">(</span><span class="n">Builder</span> <span class="n">builder</span><span class="o">)</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>    <span class="n">title</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="na">title</span><span class="o">;</span>
+</span><span class='line'>    <span class="n">author</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="na">author</span><span class="o">;</span>
+</span><span class='line'>    <span class="n">genre</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="na">genre</span><span class="o">;</span>
+</span><span class='line'>    <span class="n">publishDate</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="na">publishDate</span><span class="o">;</span>
+</span><span class='line'>    <span class="n">ISBN</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="na">ISBN</span><span class="o">;</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nd">@Override</span>
+</span><span class='line'><span class="kd">public</span> <span class="n">String</span> <span class="nf">toString</span><span class="o">()</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="s">&quot;Title: &quot;</span> <span class="o">+</span> <span class="n">title</span> <span class="o">+</span> <span class="s">&quot;, author: &quot;</span> <span class="o">+</span> <span class="n">author</span> <span class="o">+</span> <span class="s">&quot;, genre: &quot;</span> <span class="o">+</span> <span class="n">genre</span><span class="o">.</span><span class="na">toString</span><span class="o">()</span> <span class="o">+</span> <span class="s">&quot;, publish year: &quot;</span>
+</span><span class='line'>                <span class="o">+</span> <span class="n">publishDate</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">Calendar</span><span class="o">.</span><span class="na">YEAR</span><span class="o">)</span> <span class="o">+</span> <span class="s">&quot;, ISBN: &quot;</span> <span class="o">+</span> <span class="n">ISBN</span><span class="o">;</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Lúc đó ta có thể tạo Book object bằng cách sau:
+<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>builder.java </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span>    <span class="n">Book</span> <span class="n">book</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Book</span><span class="o">.</span><span class="na">Builder</span><span class="o">(</span><span class="s">&quot;Effective Java&quot;</span><span class="o">,</span> <span class="s">&quot;Joshua Bloch&quot;</span><span class="o">)</span>
+</span><span class='line'>                    <span class="o">.</span><span class="na">publishDate</span><span class="o">(</span><span class="k">new</span> <span class="n">GregorianCalendar</span><span class="o">(</span><span class="mi">2008</span><span class="o">,</span><span class="mi">05</span><span class="o">,</span> <span class="mi">28</span><span class="o">))</span>
+</span><span class='line'>                    <span class="o">.</span><span class="na">build</span><span class="o">();</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Ta thấy, cách tạo object này có ưu điểm hơn so với cách dùng constructor thông thường:</p>
+
+<ul>
+<li><p>Không cần phải khai báo những parameter nào mà ta tạm thời chưa quan tâm. Những parameters đó sẽ nhận giá trị default. Trong ví dụ trên, ta đã bỏ qua khai báo cho genre và ISBN. Chúng sẽ nhận giá trị default: genre = FICTION, ISBN = "0000000000".</p></li>
+<li><p>Ta thấy rõ là giá trị nào là gán cho parameter nào. Ví dụ: publishDate(new GregorianCalendar(2008,05, 28)) là gán giá trị cho parameter ngày xuất bản.</p></li>
+<li>Thứ tự của các method là không quan trọng. Ta có thể gọi các method để update thêm các giá trị cho các parameter theo thứ tự tùy ý. Object sẽ chưa được tạo cho đến khi gọi build(). Do vậy, builder rất dễ sử dụng và giúp ta tránh khỏi những sai lầm không mong muốn đối với thứ tự parameter.</li>
+</ul>
+
+
+<h1>Kết luận</h1>
+
+<p>Bài viết đã giới thiệu cách sử dụng Builder Pattern để việc tạo object trong quá trinh test được dễ dàng hơn, đồng thời khiến đoạn code được sáng sủa hơn về mặt trình bày.</p>
+
+<h1>Tham khảo</h1>
+
+<ul>
+<li><p>Effective Java - Joshua Bloch</p></li>
+<li><p>Design Patterns - Elements of Reusable</p></li>
+</ul>
 
 ]]></content>
   </entry>

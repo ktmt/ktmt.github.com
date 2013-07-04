@@ -1,0 +1,282 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Giới thiệu một số object của Oracle - phần 2  - Blog kỹ thuật máy tính</title>
+	<meta name="author" content="kỹ thuật máy tính">
+
+	
+	<meta name="description" content="Giới Thiệu Một Số Object Của Oracle - Phần 2 Tổng quan về Oracle và những điểm mạnh (tiếp) Như đã giới thiệu với độc giả từ bài viết trước. Oracle &hellip;">
+	
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="Blog kỹ thuật máy tính" type="application/atom+xml">
+	
+	<link rel="canonical" href="http://ktmt.github.com/blog/2013/07/04/gioi-thieu-mot-so-object-cua-oracle-2/">
+	<link href="/favicon.png" rel="shortcut icon">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	<link href='http://fonts.googleapis.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+	
+</head>
+
+
+<body>
+	<div class="container">
+		<div class="left-col">
+			<div class="intrude-less">
+			<header id="header" class="inner"><div class="profilepic">	
+	<script src="/javascripts/md5.js"></script>
+	<img src='/images/logo.jpg' alt='Profile Picture' style='width: 160px;' />
+</div>
+<h1><a href="/">Blog kỹ thuật máy tính</a></h1>
+<p class="subtitle">kỹ thuật máy tính</p>
+<nav id="main-nav"><ul class="main">
+	<li><a href="/">Blog</a></li>
+	<li><a href="/blog/archives">Archives</a></li>
+</ul>
+</nav>
+<nav id="sub-nav">
+	<div class="social">
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		<a class="rss" href="/atom.xml" title="RSS">RSS</a>
+		
+	</div>
+</nav>
+
+</header>				
+			</div>
+		</div>	
+		<div class="mid-col">
+			
+				
+			
+			<div class="mid-col-container">
+				<div id="content" class="inner"><article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+	<h1 class="title" itemprop="name">Giới Thiệu Một Số Object Của Oracle - Phần 2</h1>
+	<div class="entry-content" itemprop="articleBody"><h2>Tổng quan về Oracle và những điểm mạnh (tiếp)</h2>
+
+<p>Như đã giới thiệu với độc giả từ bài viết trước. Oracle là hệ cơ sở dữ liệu có nhiều object tiện dụng được chuẩn bị sẵn, và những hỗ trợ mạnh mẽ từ các công cụ trên top của tầng RDBMS.</p>
+
+<p>Bài viết lần này sẽ giới thiệu tiếp về những object còn lại, và về chính ngôn ngữ của Oracle DB : PL/SQL</p>
+
+<h2>MATERIALIZED VIEW LOG</h2>
+
+<p>MATERIALIZED VIEW LOG là object bắt buộc phải có nếu bạn lựa chọn chiến lược FAST REFRESH của object MATERIALIZED VIEW trong bài trước.
+Chúng ta sẽ nhắc lại 1 chút về chiến lược REFRESH của object MATERIALZED VIEW.</p>
+
+<p>MATERIALIZED VIEW có 3 kiểu REFRESH sau:</p>
+
+<ul>
+<li>COMPLETE: REFRESH mới hoàn toàn, Oracle sẽ query lại table theo định nghĩa của MATERIALIZED VIEW, Nếu Table chứa lượng data lớn và việc tính toán mất nhiều thời gian thì mỗi lần COMPLETE REFRESH sẽ tốn nhiều thời gian,</li>
+<li>FAST: REFRESH những phần mới từ lần gần đây nhất. Khi chỉ update những kết quả mới mà lần trước chưa tính toán, thời gian cho mỗi lần FAST REFRESH sẽ được rút ngắn tối thiểu.</li>
+<li>FORCE: là default của REFRESH. Oracle sẽ cố FAST REFRESH, và nếu không được thì sẽ COMPLETE REFRESH</li>
+</ul>
+
+
+<p>Bạn có thể hình dung mỗi lần Oracle tính toán và ra kết quả cho MATERIALZED VIEW, bạn sẽ có 1 snapshot.
+Đến lần sau khi FAST REFRESH bạn sẽ có trạng thái hiện tại của data được update từ last snapshot lần trước.
+Tất nhiên cái giá phải trả cho việc có được thời gian REFRESH ngắn là sẽ mất thêm dung lượng đĩa cứng để lưu các snapshot !
+Tuy nhiên để application chạy được smoothly hết mức có thể thì tốc độ luôn là ưu tiên hàng đầu :D</p>
+
+<p>Vậy snapshot (hay là change log) của MATERIALZED VIEW là gì ? Chúng ta đang nói đến object đề cập ở bên trên: MATERIALIZED VIEW LOG</p>
+
+<p>Cần lưu ý là COMPLETE hay FAST là phương pháp REFRESH (how).
+Còn thời điểm REFRESH (when) là khái niệm khác, định nghĩa khi nào thì MATERIALZIED VIEW được REFRESH. Có 2 mode cơ bản là manually (ON DEMAND) và automatically (ON COMMIT, DBMS_JOB).
+ON DEMAND là khi nào bạn (user) ra lệnh REFRESH, ON COMMIT là khi nào MATERIALZED bị thay đổi (COMMIT), còn DBMS_JOB là cho REFRESH thành 1 job được đặt lịch sẵn (giống như cron của Unix system :D)</p>
+
+<p>MATERIALIZED còn có nhiều điểm cần lưu ý khi áp dụng cụ thể. Bài viết chỉ trình bày những khái niệm cơ bản nhất. Bạn có thể xem thêm các restriction và cách create cụ thể tại [Oracle Doc][]</p>
+
+<h2>TRIGGER</h2>
+
+<p>Nếu bạn đã biết TRIGGER trong MySQL thìcó lẽ sẽ không thấy lạ lẫm với obejct này lắm. TRIGGER về cơ bản là để định nghĩa các action tự động khi có 1 event xảy ra.</p>
+
+<p>Ví dụ: Khi bạn có table Users và 2 table Students, Teachers. Bạn muốn khi 1 User mới được INSERT vào table Users, có thể phán đoán dựa theo conđition để cùng insert vào table Students hoặc Teachers</p>
+
+<figure class='code'><figcaption><span>materialized_view.sql </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="k">CREATE</span> <span class="k">OR</span> <span class="k">REPLACE</span> <span class="k">TRIGGER</span> <span class="n">teacher_trigger</span>
+</span><span class='line'>   <span class="k">before</span> <span class="k">insert</span>
+</span><span class='line'>   <span class="k">ON</span> <span class="n">USERS</span>
+</span><span class='line'>   <span class="k">FOR</span> <span class="k">EACH</span> <span class="k">ROW</span>
+</span><span class='line'>   <span class="k">WHEN</span> <span class="p">(</span><span class="k">NEW</span><span class="p">.</span><span class="n">FIELD1</span><span class="o">=</span> <span class="s1">&#39;TEACHER_CONDITION&#39;</span><span class="p">)</span> <span class="o">//</span> <span class="k">Or</span> <span class="k">any</span> <span class="n">other</span> <span class="n">condition</span>
+</span><span class='line'><span class="k">BEGIN</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">TEACHERS</span> <span class="p">(</span><span class="n">col1</span><span class="p">,</span> <span class="n">col2</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col1</span><span class="p">,</span> <span class="p">:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col2</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">END</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">CREATE</span> <span class="k">OR</span> <span class="k">REPLACE</span> <span class="k">TRIGGER</span> <span class="n">student_trigger</span>
+</span><span class='line'>   <span class="k">after</span> <span class="k">insert</span>
+</span><span class='line'>   <span class="k">ON</span> <span class="n">USERS</span>
+</span><span class='line'>   <span class="k">FOR</span> <span class="k">EACH</span> <span class="k">ROW</span>
+</span><span class='line'>   <span class="k">WHEN</span> <span class="p">(</span><span class="k">NEW</span><span class="p">.</span><span class="n">FIELD1</span><span class="o">=</span> <span class="s1">&#39;STUDENT_CONDITION&#39;</span><span class="p">)</span> <span class="o">//</span> <span class="k">Or</span> <span class="k">any</span> <span class="n">other</span> <span class="n">condition</span>
+</span><span class='line'><span class="k">BEGIN</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">STUDENTS</span> <span class="p">(</span><span class="n">col1</span><span class="p">,</span> <span class="n">col2</span><span class="p">,</span> <span class="n">col3</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col1</span><span class="p">,</span> <span class="p">:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col2</span><span class="p">,</span> <span class="p">:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col3</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">END</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">/</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Bạn có thể thấy ở đoạn code trên, TRIGGER có thể được fire BEFORE hoặc AFTER event mà bạn định nghĩa.
+Event trong trường hợp này là INSERT vào table USERS, thuộc loại DML statements (INSERT, UPDATE, DELETE trong các table&#8230;).
+TRIGGER còn có thể fire on DDL statements (CREATE hoặc ALTER table &#8230;) và Database events (logon. logoff, startup, shutdown ..)</p>
+
+<h2>PL/SQL (Procedural Language/Structured Query Language) và PACKAGE Object</h2>
+
+<p>PL/SQL Là 1 procedutal programming language, trong khi SQL chỉ là declarative language. Điều đó có nghĩa bạn có thể viết PL/SQL giống như các ngôn ngữ phổ biến khác. PL/SQL cũng có variable, có try catch exception, có if-statement, loop, function, regex, convert, file reader &#8230; đẩy đủ các builtin function mà Oracle đã chuẩn bị sẵn. PL/SQL còn nắm lợi thế là thao tác trực tiếp với cursor, table, view, materialized view&#8230; các Object của Database, remote action qua DB_LINK &#8230;
+Như vậy với năng lực của 1 ngôn ngữ hoàn chỉnh, cộng với khả năng tương tác với DB giống như SQL, PL/SQL được dùng để đóng gói xử lý trên DB server.</p>
+
+<p>Bạn có thể developer web application = Java, Ruby, PHP v.v&#8230; chỉ gọi đến DB thông qua các PACKAGE object. Mỗi PACKAGE (viết bằng PL/SQL) là 1 &#8220;gói&#8221; Được viết như 1 module xử lỹ nội bộ trong Oracle DB. Ưu điểm của phương pháp này là tốc độ xử lý sẽ được cải thiện, và communication giữa Application server vs DB server (chỉ là truyền parameter cho PACKAGE và nhận lại result từ PACKAGE) được giảm thiểu.</p>
+
+<p>VD: với xử lý như sau:</p>
+
+<ul>
+<li>PHP validate 1 string ADD_ME và nhận 1 string UserId từ user input (trong request gửi đến web server)</li>
+<li>Nếu ADD_ME không tồn tại trong table USERS, insert 1 record mới vào table USERS</li>
+<li>Nếu ADD_ME = &#8220;teacher&#8221;, kiểm tra xem trong table TEACHERS có tồn tại UserID không</li>
+<li>Nếu trong table TEACHERS không có UserID, INSERT 1 record vào table TEACHERS</li>
+<li>Nếu ADD_ME = &#8220;student&#8221;, kiểm tra xem trong table STUDENTS có tồn tại UserID không</li>
+<li>Nếu trong table STUDENTS không có UserID, INSERT 1 record vào table STUDENTS
+&#8230;
+(Lặp lại n lần với n table khác nhau)</li>
+</ul>
+
+
+<p>Như vậy trong các bước kể trên, ngoại trừ bước đầu tiên, tất cả các bước còn lại đều phải init connection từ Application server đến DB server. (Không quan tâm bạn dùng DAO hay ORM hay execute query thẳng trên DB)</p>
+
+<p>Tôi có thể designed lại xử lý trên như sau:</p>
+
+<ul>
+<li>PHP validate 1 string ADD_ME và nhận 1 string UserId từ user input (trong request gửi đến web server)</li>
+<li>PHP truyền parameter ADD_ME và UserId cho PACKAGE &#8220;EVALUATE_USER&#8221; của Oracle</li>
+<li>&#8220;EVALUATE_USER&#8221; does all the stuff :D</li>
+<li>&#8220;EVALUATE_USER&#8221; trả kết quả về cho PHP : 0: kết thúc không có lỗi, 1: Kết thúc với lỗi ở TABLE USERS, 2: Kết thúc với lỗi ở TABLE TEACHER, &#8230;..</li>
+</ul>
+
+
+<p>Như vậy connection từ Application server sang DB server chỉ phát sinh ở bước 2 và bước 4. Tôi dám cá là bạn hệ thống sẽ sppedup với 1 tốc độ không nhỏ :D</p>
+
+<h2>Kết luận</h2>
+
+<ul>
+<li>MATERIALIZED VIEW LOG : là snapshot, là obecjt bắt buộc phải có khi dùng MATERIALZED VIEW với chiến lược FAST REFRESH .</li>
+<li>TRIGGER: Là object định nghĩa sẽ fire event nào khi các action nào được thực hiện trong database.</li>
+<li>PL/SQL: Là extend của SQL, produceral programming language của Oracle, cho phép thao tác trực tiếp với các object của Database trên Database server với đầy đủ năng lực xử lý như 1 ngôn ngữ hoàn chỉnh</li>
+<li>Nếu ADD_ME không tồn tại trong table USERS, insert 1 record mới vào table USERS</li>
+</ul>
+
+</div>
+
+</article>
+
+	<div class="share">
+	<div class="addthis_toolbox addthis_default_style ">
+	
+	<a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+	
+	
+	<a class="addthis_button_tweet"></a>
+	
+	
+	<a class="addthis_counter addthis_pill_style"></a>
+	</div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+
+
+
+<section id="comment">
+    <h1 class="title">Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+</section>
+</div>
+			</div>
+			<footer id="footer" class="inner">Copyright &copy; 2013
+
+    kỹ thuật máy tính
+
+
+</footer>
+			<script src="/javascripts/slash.js"></script>
+<script src="/javascripts/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+	$('.fancybox').fancybox();
+})(jQuery);
+</script> <!-- Delete or comment this line to disable Fancybox -->
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'ktmt';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://ktmt.github.com/blog/2013/07/04/gioi-thieu-mot-so-object-cua-oracle-2/';
+        var disqus_url = 'http://ktmt.github.com/blog/2013/07/04/gioi-thieu-mot-so-object-cua-oracle-2/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-41828637-2', 'ktmt.github.io');
+  ga('send', 'pageview');
+
+</script>	
+
+
+		</div>
+	</div>
+</body>
+</html>

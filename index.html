@@ -7,7 +7,7 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jun 16th, 2013 Database, Oracle, PLSQL Comments Giới Thiệu Một Số Object Của Oracle - Phần 1 Tổng quan về Oracle và những điểm mạnh Oracle là hệ có &hellip;">
+	<meta name="description" content="Jul 4th, 2013 Database, Oracle, PLSQL Comments Giới Thiệu Một Số Object Của Oracle - Phần 2 Tổng quan về Oracle và những điểm mạnh (tiếp) Như đã &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -84,7 +84,7 @@
   
 
 
-<time datetime="2013-06-16T21:16:00+09:00" data-updated="true" itemprop="datePublished">Jun 16<span>th</span>, 2013</time></div>
+<time datetime="2013-07-04T06:20:00+09:00" data-updated="true" itemprop="datePublished">Jul 4<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
@@ -93,121 +93,146 @@
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/06/16/gioi-thieu-mot-so-object-cua-oracle/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/07/04/gioi-thieu-mot-so-object-cua-oracle-2/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/16/gioi-thieu-mot-so-object-cua-oracle/" itemprop="url">Giới Thiệu Một Số Object Của Oracle - Phần 1</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/07/04/gioi-thieu-mot-so-object-cua-oracle-2/" itemprop="url">Giới Thiệu Một Số Object Của Oracle - Phần 2</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h2>Tổng quan về Oracle và những điểm mạnh</h2>
+		<h2>Tổng quan về Oracle và những điểm mạnh (tiếp)</h2>
 
-<p>Oracle là hệ có sở dữ liệu hay dùng trong business application, gồm phiên bản free (standard edition) và phiên bản trả phí (enterprise edition). Với một set rất nhiều feature được develop trong thời gian dài, những object tiện dụng được chuẩn bị sẵn, hay quan trọng hơn hết là các tool tương thích trên top của tầng RDBMS (như RAC hay Datawarehouse), Oracle tỏ ra có ưu thế vượt trội so với các hệ cơ sở dữ liệu quan hệ open source.</p>
+<p>Như đã giới thiệu với độc giả từ bài viết trước. Oracle là hệ cơ sở dữ liệu có nhiều object tiện dụng được chuẩn bị sẵn, và những hỗ trợ mạnh mẽ từ các công cụ trên top của tầng RDBMS.</p>
 
-<p>Bài viết này sẽ mang đến cho độc giả những khái niệm đầu tiên về các object hay được sử dụng và những feature nổi bật của oracle</p>
+<p>Bài viết lần này sẽ giới thiệu tiếp về những object còn lại, và về chính ngôn ngữ của Oracle DB : PL/SQL</p>
 
-<h2>VIEW</h2>
+<h2>MATERIALIZED VIEW LOG</h2>
 
-<p>VIEW là 1 object cũng available trên MySQL, tuy nhiên trước khi đi vào một số object phía sau, mình sẽ nói lại một chút về object này.</p>
+<p>MATERIALIZED VIEW LOG là object bắt buộc phải có nếu bạn lựa chọn chiến lược FAST REFRESH của object MATERIALIZED VIEW trong bài trước.
+Chúng ta sẽ nhắc lại 1 chút về chiến lược REFRESH của object MATERIALZED VIEW.</p>
 
-<p>Needs của VIEW phát sinh khi bạn có 1 complex query. Thay vì gửi complex query về DB mỗi lần, bạn có thể create sẵn 1 VIEW mang nội dung của complex query, và mỗi lần gọi từ tầng application chỉ cần SELECT * FROM VIEW</p>
-
-<p>Như vậy syntax của VIEW đơn giản như sau:</p>
-
-<figure class='code'><figcaption><span>view.sql </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="k">CREATE</span> <span class="k">VIEW</span> <span class="n">demo_view</span> <span class="k">AS</span>
-</span><span class='line'>  <span class="c1">-- select ... (complex query)</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<p>MATERIALIZED VIEW có 3 kiểu REFRESH sau:</p>
 
 <ul>
-<li><p>Một điểm cần lưu ý là, sau khi VIEW được tạo ra thì database không mất bất cứ dung lượng nào ngoại trừ 1 cái dictionary entry để định nghĩa bản thân VIEW. Nói cách khác, VIEW chỉ là định nghĩa, mỗi lần bạn gọi VIEW thì Oracle sẽ đi thực hiện nội dung cái VIEW và trả lại cho bạn kết quả.</p></li>
-<li><p>VIEW cũng thường được dùng để hide table columns. Nói đơn giản, bạn muốn user A chỉ nhìn thấy 1 số chứ ko không tất cả column của table T, bạn có thể create VIEW V chỉ bao gồm những column của table T mà bạn muốn cho user A access, và đơn giản give access control của V cho A</p></li>
-<li><p>Cuối cùng: Predicate pushing, là 1 behaviour của Oracle View thường sẽ đem lại good performance những cũng gây hậu quả ngược trong không ít trường hợp.</p></li>
+<li>COMPLETE: REFRESH mới hoàn toàn, Oracle sẽ query lại table theo định nghĩa của MATERIALIZED VIEW, Nếu Table chứa lượng data lớn và việc tính toán mất nhiều thời gian thì mỗi lần COMPLETE REFRESH sẽ tốn nhiều thời gian,</li>
+<li>FAST: REFRESH những phần mới từ lần gần đây nhất. Khi chỉ update những kết quả mới mà lần trước chưa tính toán, thời gian cho mỗi lần FAST REFRESH sẽ được rút ngắn tối thiểu.</li>
+<li>FORCE: là default của REFRESH. Oracle sẽ cố FAST REFRESH, và nếu không được thì sẽ COMPLETE REFRESH</li>
 </ul>
 
 
-<p>Giả sử bạn có 2 view như sau:</p>
+<p>Bạn có thể hình dung mỗi lần Oracle tính toán và ra kết quả cho MATERIALZED VIEW, bạn sẽ có 1 snapshot.
+Đến lần sau khi FAST REFRESH bạn sẽ có trạng thái hiện tại của data được update từ last snapshot lần trước.
+Tất nhiên cái giá phải trả cho việc có được thời gian REFRESH ngắn là sẽ mất thêm dung lượng đĩa cứng để lưu các snapshot !
+Tuy nhiên để application chạy được smoothly hết mức có thể thì tốc độ luôn là ưu tiên hàng đầu :D</p>
 
-<figure class='code'><figcaption><span>view.sql </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="k">CREATE</span> <span class="k">VIEW</span> <span class="n">V1</span> <span class="k">AS</span>
-</span><span class='line'>  <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">GOTHAM_CITIZENS</span><span class="p">;</span>
-</span><span class='line'><span class="k">CREATE</span> <span class="k">VIEW</span> <span class="n">V2</span> <span class="k">AS</span>
-</span><span class='line'>  <span class="n">SELECR</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">V1</span>
-</span><span class='line'>  <span class="k">WHERE</span>
-</span><span class='line'>    <span class="n">NAME</span> <span class="o">=</span> <span class="s1">&#39;Batman&#39;</span><span class="p">;</span>
-</span></code></pre></td></tr></table></div></figure>
+<p>Vậy snapshot (hay là change log) của MATERIALZED VIEW là gì ? Chúng ta đang nói đến object đề cập ở bên trên: MATERIALIZED VIEW LOG</p>
 
+<p>Cần lưu ý là COMPLETE hay FAST là phương pháp REFRESH (how).
+Còn thời điểm REFRESH (when) là khái niệm khác, định nghĩa khi nào thì MATERIALZIED VIEW được REFRESH. Có 2 mode cơ bản là manually (ON DEMAND) và automatically (ON COMMIT, DBMS_JOB).
+ON DEMAND là khi nào bạn (user) ra lệnh REFRESH, ON COMMIT là khi nào MATERIALZED bị thay đổi (COMMIT), còn DBMS_JOB là cho REFRESH thành 1 job được đặt lịch sẵn (giống như cron của Unix system :D)</p>
 
-<p>Giả sử query gọi từ tầng Application là</p>
+<p>MATERIALIZED còn có nhiều điểm cần lưu ý khi áp dụng cụ thể. Bài viết chỉ trình bày những khái niệm cơ bản nhất. Bạn có thể xem thêm các restriction và cách create cụ thể tại [Oracle Doc][]</p>
 
-<figure class='code'><figcaption><span>query.sql </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">V2</span>
-</span><span class='line'><span class="k">WHERE</span>
-</span><span class='line'>  <span class="n">ABILITY</span> <span class="o">=</span> <span class="s1">&#39;can fly&#39;</span><span class="p">;</span>
-</span></code></pre></td></tr></table></div></figure>
+<h2>TRIGGER</h2>
 
+<p>Nếu bạn đã biết TRIGGER trong MySQL thìcó lẽ sẽ không thấy lạ lẫm với obejct này lắm. TRIGGER về cơ bản là để định nghĩa các action tự động khi có 1 event xảy ra.</p>
 
-<p>Ở đây predicate là những điều kiện đằng sau WHERE, cụ thể là NAME = &#8216;Batman&#8217; và ABILITY = &#8216;can fly&#8217;. Trong trường hợp này Oracle sẽ cố biến VIEW V1 thành như sau</p>
-
-<figure class='code'><figcaption><span>query.sql </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="k">CREATE</span> <span class="k">VIEW</span> <span class="n">V1</span> <span class="k">AS</span>
-</span><span class='line'>  <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">GOTHAM_CITIZENS</span>
-</span><span class='line'>  <span class="k">WHERE</span>
-</span><span class='line'>    <span class="n">NAME</span> <span class="o">=</span> <span class="s1">&#39;Batman&#39;</span>
-</span><span class='line'>  <span class="k">AND</span>
-</span><span class='line'>    <span class="n">ABILITY</span> <span class="o">=</span> <span class="s1">&#39;can fly&#39;</span><span class="p">;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Nói cách khác, Oracle sẽ cố push các predicates xuống tầng cuối cùng! Bạn có thể có 10 hay 100 predicates trải từ V1 đến V100 (stack views), tất cả sẽ được push xuống tầng tiếp xúc trực tiếp với table! Điềy này có ý nghĩa gì ?</p>
-
-<p>V1 sẽ có thể dùng index và tăng performance nhanh chóng cho cả stack views.</p>
-
-<h2>MATERIALIZED VIEW</h2>
-
-<p>MATERIALIZED VIEW là 1 object đặc thù của Oracle. Trên MySQL bạn cũng có thể implement MATERIALIZED VIEW dưới dạng 1 table mới.</p>
-
-<p>Needs của MATERIALZED VIEW phát sinh khi bạn có 1 complex computation hoặc 1 complex JOIN statement . Dĩ nhiên bạn không muốn mỗi lần query DB, DB engine lại bắt đầu select từ các table và thực hiện lại các thao tác tính toán phức tạp.</p>
+<p>Ví dụ: Khi bạn có table Users và 2 table Students, Teachers. Bạn muốn khi 1 User mới được INSERT vào table Users, có thể phán đoán dựa theo conđition để cùng insert vào table Students hoặc Teachers</p>
 
 <figure class='code'><figcaption><span>materialized_view.sql </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="k">CREATE</span> <span class="n">MATERIALIZED</span> <span class="k">VIEW</span> <span class="n">demo_materialized_view</span> <span class="k">AS</span>
-</span><span class='line'>  <span class="c1">-- select ... (comlex JOIN or computation)</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="k">CREATE</span> <span class="k">OR</span> <span class="k">REPLACE</span> <span class="k">TRIGGER</span> <span class="n">teacher_trigger</span>
+</span><span class='line'>   <span class="k">before</span> <span class="k">insert</span>
+</span><span class='line'>   <span class="k">ON</span> <span class="n">USERS</span>
+</span><span class='line'>   <span class="k">FOR</span> <span class="k">EACH</span> <span class="k">ROW</span>
+</span><span class='line'>   <span class="k">WHEN</span> <span class="p">(</span><span class="k">NEW</span><span class="p">.</span><span class="n">FIELD1</span><span class="o">=</span> <span class="s1">&#39;TEACHER_CONDITION&#39;</span><span class="p">)</span> <span class="o">//</span> <span class="k">Or</span> <span class="k">any</span> <span class="n">other</span> <span class="n">condition</span>
+</span><span class='line'><span class="k">BEGIN</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">TEACHERS</span> <span class="p">(</span><span class="n">col1</span><span class="p">,</span> <span class="n">col2</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col1</span><span class="p">,</span> <span class="p">:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col2</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">END</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">CREATE</span> <span class="k">OR</span> <span class="k">REPLACE</span> <span class="k">TRIGGER</span> <span class="n">student_trigger</span>
+</span><span class='line'>   <span class="k">after</span> <span class="k">insert</span>
+</span><span class='line'>   <span class="k">ON</span> <span class="n">USERS</span>
+</span><span class='line'>   <span class="k">FOR</span> <span class="k">EACH</span> <span class="k">ROW</span>
+</span><span class='line'>   <span class="k">WHEN</span> <span class="p">(</span><span class="k">NEW</span><span class="p">.</span><span class="n">FIELD1</span><span class="o">=</span> <span class="s1">&#39;STUDENT_CONDITION&#39;</span><span class="p">)</span> <span class="o">//</span> <span class="k">Or</span> <span class="k">any</span> <span class="n">other</span> <span class="n">condition</span>
+</span><span class='line'><span class="k">BEGIN</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">STUDENTS</span> <span class="p">(</span><span class="n">col1</span><span class="p">,</span> <span class="n">col2</span><span class="p">,</span> <span class="n">col3</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col1</span><span class="p">,</span> <span class="p">:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col2</span><span class="p">,</span> <span class="p">:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col3</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">END</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">/</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
+<p>Bạn có thể thấy ở đoạn code trên, TRIGGER có thể được fire BEFORE hoặc AFTER event mà bạn định nghĩa.
+Event trong trường hợp này là INSERT vào table USERS, thuộc loại DML statements (INSERT, UPDATE, DELETE trong các table&#8230;).
+TRIGGER còn có thể fire on DDL statements (CREATE hoặc ALTER table &#8230;) và Database events (logon. logoff, startup, shutdown ..)</p>
+
+<h2>PL/SQL (Procedural Language/Structured Query Language) và PACKAGE Object</h2>
+
+<p>PL/SQL Là 1 procedutal programming language, trong khi SQL chỉ là declarative language. Điều đó có nghĩa bạn có thể viết PL/SQL giống như các ngôn ngữ phổ biến khác. PL/SQL cũng có variable, có try catch exception, có if-statement, loop, function, regex, convert, file reader &#8230; đẩy đủ các builtin function mà Oracle đã chuẩn bị sẵn. PL/SQL còn nắm lợi thế là thao tác trực tiếp với cursor, table, view, materialized view&#8230; các Object của Database, remote action qua DB_LINK &#8230;
+Như vậy với năng lực của 1 ngôn ngữ hoàn chỉnh, cộng với khả năng tương tác với DB giống như SQL, PL/SQL được dùng để đóng gói xử lý trên DB server.</p>
+
+<p>Bạn có thể developer web application = Java, Ruby, PHP v.v&#8230; chỉ gọi đến DB thông qua các PACKAGE object. Mỗi PACKAGE (viết bằng PL/SQL) là 1 &#8220;gói&#8221; Được viết như 1 module xử lỹ nội bộ trong Oracle DB. Ưu điểm của phương pháp này là tốc độ xử lý sẽ được cải thiện, và communication giữa Application server vs DB server (chỉ là truyền parameter cho PACKAGE và nhận lại result từ PACKAGE) được giảm thiểu.</p>
+
+<p>VD: với xử lý như sau:</p>
+
 <ul>
-<li><p>Khác với VIEW, MATERIALIZED VIEW thực sự chiếm storage của DB. Khi được tạo ra MATERIALZED VIEW sẽ đi tính toán theo công thức được chỉ định sẵn và lưu vào 1 object trong DB. Mỗi lần bạn SELECT FROM MATERIALZED_VIEW thì sẽ nhận được kết quả tính toán của lần gần nhất.</p></li>
-<li><p>Kết quả tính toán sẽ được update trong mỗi lần REFRESH. Giữa 2 lần REFRESH thì kết quả tính toán là không đổi.</p></li>
-<li><p>REFRESH có thể được kích hoạt bẳng COMMIT, bằng TRIGGER hoặc được đặt SCHEDULE.</p></li>
-<li><p>Chiến lược REFRESH của MATERIALZED_VIEW bao gồm COMPLETE (mới hoàn toàn), FAST (chỉ lấy thêm phần khác biệt so với lần trước). FAST REFRESH đòi hỏi phải có 1 object nữa là MATERIALZED VIEW LOG, sẽ được đề cập trong bài tiếp.</p></li>
-<li><p>Khi dữ liệu quá lớn và tính toán quá phức tạp, MATERIALZED VIEW sẽ đưa toàn bộ phần load của complex computation về thời điểm REFRESH và giúp câu query tại các thời điểm khác trả về kết quả tức thì. Nói hình tượng, bạn có thể schedule cho MATERIALZED VIEW được REFRESH vào lúc nửa đêm, khi user của bạn không mấy khi phát sinh request nào đến Application có thể động chạm đến DB, và trong 1 ngày tiếp theo bạn sẽ có kết quả tính toán được query ra trong 1s và đảm bảo là luôn dúng cho đến ngày hôm trước!</p></li>
+<li>PHP validate 1 string ADD_ME và nhận 1 string UserId từ user input (trong request gửi đến web server)</li>
+<li>Nếu ADD_ME không tồn tại trong table USERS, insert 1 record mới vào table USERS</li>
+<li>Nếu ADD_ME = &#8220;teacher&#8221;, kiểm tra xem trong table TEACHERS có tồn tại UserID không</li>
+<li>Nếu trong table TEACHERS không có UserID, INSERT 1 record vào table TEACHERS</li>
+<li>Nếu ADD_ME = &#8220;student&#8221;, kiểm tra xem trong table STUDENTS có tồn tại UserID không</li>
+<li>Nếu trong table STUDENTS không có UserID, INSERT 1 record vào table STUDENTS
+&#8230;
+(Lặp lại n lần với n table khác nhau)</li>
 </ul>
 
+
+<p>Như vậy trong các bước kể trên, ngoại trừ bước đầu tiên, tất cả các bước còn lại đều phải init connection từ Application server đến DB server. (Không quan tâm bạn dùng DAO hay ORM hay execute query thẳng trên DB)</p>
+
+<p>Tôi có thể designed lại xử lý trên như sau:</p>
+
+<ul>
+<li>PHP validate 1 string ADD_ME và nhận 1 string UserId từ user input (trong request gửi đến web server)</li>
+<li>PHP truyền parameter ADD_ME và UserId cho PACKAGE &#8220;EVALUATE_USER&#8221; của Oracle</li>
+<li>&#8220;EVALUATE_USER&#8221; does all the stuff :D</li>
+<li>&#8220;EVALUATE_USER&#8221; trả kết quả về cho PHP : 0: kết thúc không có lỗi, 1: Kết thúc với lỗi ở TABLE USERS, 2: Kết thúc với lỗi ở TABLE TEACHER, &#8230;..</li>
+</ul>
+
+
+<p>Như vậy connection từ Application server sang DB server chỉ phát sinh ở bước 2 và bước 4. Tôi dám cá là bạn hệ thống sẽ sppedup với 1 tốc độ không nhỏ :D</p>
 
 <h2>Kết luận</h2>
 
 <ul>
-<li>VIEW: là logical object, không chiếm storage của DB và thường tổng hợp 1 set các SQL query để có thể gọi 1 cách đơn giản từ application.</li>
-<li>Predicates pusing: là behaviour của Oracle khi tạo nhiều VIEW chồng nhau thành cấu trúc stack views. Oracle luôn cố push predicates xuống tầng cuối cùng để index.</li>
-<li>MATERIALZED VIEW: là object chiếm storage trực tiếp của DB, thường tổng hợp 1 set các tính toán hoặc JOIN phức tạp và được REFRESH dựa theo chiến lược được định nghĩa sẵn. Với khả năng index chính các kết quả sau khi tính toán, MATERIALZED VIEW cho kết quả trả lại gần như ngay lập tức đối với những data up-to-date đến 1 thời điểm nhất định.</li>
+<li>MATERIALIZED VIEW LOG : là snapshot, là obecjt bắt buộc phải có khi dùng MATERIALZED VIEW với chiến lược FAST REFRESH .</li>
+<li>TRIGGER: Là object định nghĩa sẽ fire event nào khi các action nào được thực hiện trong database.</li>
+<li>PL/SQL: Là extend của SQL, produceral programming language của Oracle, cho phép thao tác trực tiếp với các object của Database trên Database server với đầy đủ năng lực xử lý như 1 ngôn ngữ hoàn chỉnh</li>
+<li>Nếu ADD_ME không tồn tại trong table USERS, insert 1 record mới vào table USERS</li>
 </ul>
 
 
@@ -232,86 +257,377 @@
   
 
 
-<time datetime="2013-06-09T21:15:00+09:00" data-updated="true" itemprop="datePublished">Jun 9<span>th</span>, 2013</time></div>
+<time datetime="2013-07-02T23:38:00+09:00" data-updated="true" itemprop="datePublished">Jul 2<span>nd</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/programming/'>programming</a>, <a class='category' href='/blog/categories/python/'>python,</a>
+	<a class='category' href='/blog/categories/linux/'>linux</a>, <a class='category' href='/blog/categories/system/'>system,</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/06/09/xay-dung-he-thong-sinh-64bit-unique-id/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/07/02/tim-hieu-redis/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/09/xay-dung-he-thong-sinh-64bit-unique-id/" itemprop="url">Giới Thiệu Một Số Phương Pháp Sinh 64 Bit Unique ID</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/07/02/tim-hieu-redis/" itemprop="url">Tìm Hiểu Redis - Phần 1</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h1>Bài toán sinh unique ID</h1>
+		<h2>1. Giới thiệu</h2>
 
-<p>Unique ID được sử dụng để phân biệt các đối tượng khác nhau.
-Ví dụ primary key là một unique key đặc biệt dùng để phân biệt các row trong table.</p>
+<p><a href="www.redis.io">Redis</a> là hệ thống lưu trữ key-value với rất nhiều tính năng và được <a href="http://redis.io/topics/whos-using-redis">sử dụng rộng rãi</a>. Redis nổi bật bởi việc hỗ trợ nhiều cấu trúc dữ liệu cơ bản (hash, list, set, sorted set, string), đồng thời cho phép scripting bằng ngôn ngữ lua. Bên cạnh lưu trữ key-value trên RAM với hiệu năng cao, redis còn hỗ trợ lưu trữ dữ liệu trên đĩa cứng (persistent redis) cho phép phục hồi dữ liệu khi gặp sự cố. Ngoài tính năng replicatation (sao chép giữa master-client), tính năng cluster (sao lưu master-master) cũng đang được phát triển . Để sử dụng một cách hiệu quả những tính năng redis hỗ trợ cũng như vận hành redis với hiệu suất cao nhất thì việc am hiểu hệ thống lưu trữ này là điều không thể thiếu. Chính vì lý do này, mình quyết định tìm hiểu mã nguồn redis. Loạt bài viết về redis này tóm tắt những điều mình tìm hiểu được từ việc đọc mã nguồn của redis.</p>
 
-<p>Bài viết giới thiệu một số phương pháp sinh 64 bit unique ID.</p>
+<h2>2. Khái quát</h2>
 
-<h1>Một số giải pháp sinh unique ID</h1>
+<p>Bạn có thể clone mã nguồn redis về máy tính mình bằng câu lệnh dưới đây:</p>
+
+<div>
+  <pre><code class='bash'>git clone https://github.com/antirez/redis.git</code></pre>
+</div>
+
+
+<p>Trước hết là một số thống kê nho nhỏ về redis (tại thời điểm bài viết):
+* Số lượng file mã nguồn: 55</p>
+
+<div>
+  <pre><code class='bash'>ls *.c | wc -l
+55</code></pre>
+</div>
+
 
 <ul>
-<li>Nếu số lượng dữ liệu nhỏ, ta có thể sử dụng ID kiểu Integer và set cho nó thuộc tính auto increment.</li>
+<li>Số lượng file header: 30</li>
 </ul>
 
 
-<p> Ưu điểm: đơn giản, dễ làm.</p>
+<div>
+  <pre><code class='bash'>ls *.h | wc -l
+30</code></pre>
+</div>
 
-<p> Nhược điểm: số lượng ID bị giới hạn (2 ^ 32 = 4294967296) và đặc biệt cách làm này không scale. Để đảm bảo tính duy nhất, tại một thời điểm, chỉ có thể sinh ra đúng một ID mà thôi.</p>
 
 <ul>
-<li>Sử dụng <a href="http://en.wikipedia.org/wiki/Uuid">UUID</a> - UUID là một giá trị 128bit, tuỳ vào thuật toán xây dựng UUID, có thể dựa trên Mac Address của máy.</li>
+<li>Tổng số dòng code: 43829</li>
 </ul>
 
 
-<p> Ưu điểm: scalable, distributed. Tại một thời điểm có thể sinh ra nhiều ID khác nhau, thậm chí client cũng có thể sinh ID mà vẫn đảm bảo không bị trùng lặp với server</p>
+<div>
+  <pre><code class='bash'>wc -l *.[ch]
+341    adlist.c     197   pqsort.c            228   sha1.c          810   dict.c
+93     adlist.h     40    pqsort.h            17    sha1.h          173   dict.h
+435    ae.c         359   pubsub.c            169   slowlog.c       124   endianconv.c
+130    ae_epoll.c   93    rand.c              47    slowlog.h       64    endianconv.h
+315    ae_evport.c  38    rand.h              50    solarisfixes.h  52    fmacros.h
+118    ae.h         1230  rdb.c               530   sort.c          759   help.h
+132    ae_kqueue.c  114   rdb.h               144   syncio.c        483   intset.c
+99     ae_select.c  683   redis-benchmark.c   57    testhelp.h      50    intset.h
+441    anet.c       3008  redis.c             761   t_hash.c        295   lzf_c.c
+60     anet.h       218   redis-check-aof.c   1149  t_list.c        150   lzf_d.c
+1178   aof.c        768   redis-check-dump.c  913   t_set.c         100   lzf.h
+47     asciilogo.h  1556  redis-cli.c         459   t_string.c      159   lzfP.h
+220    bio.c        1517  redis.h             2205  t_zset.c        279   memtest.c
+41     bio.h        52    release.c           520   util.c          323   multi.c
+412    bitops.c     3     release.h           41    util.h          1444  networking.c
+2866   cluster.c    1658  replication.c       1     version.h       128   notify.c
+1726   config.c     198   rio.c               1534  ziplist.c       580   object.c
+195    config.h     104   rio.h               46    ziplist.h
+88     crc16.c      1065  scripting.c         467   zipmap.c
+191    crc64.c      732   sds.c               49    zipmap.h
+8      crc64.h      99    sds.h               351   zmalloc.c
+815    db.c         3160  sentinel.c          85    zmalloc.h
+929    debug.c      261   setproctitle.c
+43829  total</code></pre>
+</div>
 
-<p> Nhược điểm: sử dụng 128 bit, một số hệ thống phải lưu trữ dưới dạng char, tốn tài nguyên và index</p>
 
-<p> 64 bit unique ID trùng hoà giữa 2 cách trên, đảm bảo số lượng ID sinh ra là đủ lớn, đồng thời có thể lưu trữ dưới dạng dạng Big Int</p>
+<p>Một số thư viện được sử dụng: <a href="http://www.canonware.com/jemalloc/">jemalloc</a>, <a href="https://github.com/antirez/linenoise">linenoise</a>, <a href="http://www.lua.org/">lua</a></p>
 
-<h1>Một số phương pháp sinh 64 bit unique ID</h1>
+<h2>3. Các modules</h2>
+
+<p>Redis bao gồm các module sau:</p>
+
+<ul>
+<li>Framework hỗ trợ xử lý bất đồng bộ, networking: ae, anet</li>
+<li>Mô tả dữ liệu: sds.c, t_hash.c, t_list.c, t_string.c, t_zset.c, object.c, notify.c (pub-sub)</li>
+<li>Lưu trữ dữ liệu, cơ sở dữ liệu: db.c, dict.c, ziplist.c, zipmap.c, adlist.c</li>
+<li>Module hỗ trợ IO/persistent redis: rdb.c, aof.c, bio.c, rio.c</li>
+<li>Utilities: crc16.c, crc64.c, pqsort.c, lzf_c.c, lzf_d.c</li>
+</ul>
+
+
+<p>Mình sẽ lần lượt giới thiệu các modules trong các bài viết sau. Ở bài viết này, mình sẽ tập trung vào module IO/persistent redis.</p>
+
+<h2>4. Persistent redis</h2>
+
+<p>Bên cạnh việc lưu key-value trên bộ nhớ RAM, Redis có 2 background threads chuyên làm nhiệm vụ định kỳ ghi dữ liệu lên đĩa cứng.</p>
+
+<p>Có 2 loại file được ghi xuống đĩa cứng:</p>
+
+<ul>
+<li>RDB</li>
+<li>AOF</li>
+</ul>
+
+
+<p>RDB lưu dữ liệu dưới dạng đã mã hóa. AOF lưu lại toàn bộ dưới liệu dưới dạng command, giống như command mà redis client gửi đến server để thao tác bằng cách ghi đè xuống cuối file.</p>
+
+<p>File rdb có thể coi là một snapshot của cơ sở dữ liệu tại một thời điểm nhất định. File dữ liệu này được dùng với 2 mục đích</p>
+
+<ul>
+<li>Cho phép redis có thể phục hồi lại dữ liệu trên memory bằng việc đọc file</li>
+<li>Bản thân dữ liệu được ghi ra file rdb sẽ được gửi đến các redis slave server, phục vụ mục đích sao lưu server.</li>
+</ul>
+
+
+<p>Dữ liệu ghi ra file rdb được chỉnh sửa và mã hóa để giảm kích thước ghi trên đĩa, đồng thời tằng tốc độ replication. Cụ thể  định dạng của file rdb như sau.</p>
+
+<p>Với những key ngắn, việc dùng 32 bit để mô tả key là thừa thãi, do vậy redis quy định những key ngắn được mã hóa sử dụng 2 bit đầu tiên của 1 byte. Cụ thể:</p>
+
+<pre><code>00|000000 =&gt; 00, độ dài dữ liệu mô tả  bởi 6 bit 
+01|000000 00000000 =&gt; 01, độ dài dữ liệu là 14 bit
+10|000000 [số 32 bit] =&gt; 1 chuỗi độ dài 32 bit sẽ theo sau
+11|000000 =&gt; obj được encode đặc biệt sẽ theo sau byte này. 6 bit sau sẽ xác định kiểu object.
+</code></pre>
+
+<p>Kiểu object ở đây cụ thể như sau:</p>
+
+<figure class='code'><figcaption><span>rdb.c </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cm">/* When a length of a string object stored on disk has the first two bits</span>
+</span><span class='line'><span class="cm"> * set, the remaining two bits specify a special encoding for the object</span>
+</span><span class='line'><span class="cm"> * accordingly to the following defines: */</span>
+</span><span class='line'><span class="cp">#define REDIS_RDB_ENC_INT8 0        </span><span class="cm">/* 8 bit signed integer */</span><span class="cp"></span>
+</span><span class='line'><span class="cp">#define REDIS_RDB_ENC_INT16 1       </span><span class="cm">/* 16 bit signed integer */</span><span class="cp"></span>
+</span><span class='line'><span class="cp">#define REDIS_RDB_ENC_INT32 2       </span><span class="cm">/* 32 bit signed integer */</span><span class="cp"></span>
+</span><span class='line'><span class="cp">#define REDIS_RDB_ENC_LZF 3         </span><span class="cm">/* string compressed with FASTLZ */</span><span class="cp"></span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Với AOF file, các command sẽ được nhóm thành các block. Các block được tổ chức dưới dạng danh sách liên kết. Mỗi block có độ lớn 10MB là vì trong trường hợp redis server chịu tải cao, số lượng key được cập nhật lớn, nếu kích thước buffer lớn, việc realloc buffer dùng cho các command với tốc độ lớn không đảm bảo.</p>
+
+<p>Trong trường hợp file rdb, redis fork 1 process con và thực hiện ghi dữ liệu xuống đĩa cứng sử dụng rio (stream IO).</p>
+
+<p>Trong trường hợp file aof, việc thực hiện ghi dữ liệu là của background threads. Toàn bộ chức năng này được code trong file bio.c (background IO?). Thiết kế background IO này khá đơn giản. Môt loạt thread sẽ chia sẻ 1 job queue và thay nhau đợi việc từ job queue. Mỗi khi có job mới, thread sẽ chạy và thực thi job được mô tả. Có 2 loại job đơn giản:</p>
+
+<ul>
+<li>REDIS_BIO_CLOSE_FILE: đóng file</li>
+<li><p>REDIS_BIO_AOF_FSYNC: thực hiện việc flush dữ liệu từ buffer của kernel xuống buffer của đĩa cứng.</p>
+
+<p>  process -> job 1 -> job2 -> &#8230; background threads</p></li>
+</ul>
+
+
+<p>Tạo ra các job là công việc của child process. Để thực hiện ghi dữ liệu ra đĩa cứng, redis sẽ fork ra 1 process con. Process con này sẽ tạo ra việc cho các background threads. Một đặc điểm cùa aof file đấy là dữ liệu trong các block mới sẽ không được ghi trực tiếp vào file aof hiện tại, mà sẽ được ghi vào file tạm thời. Khi việc ghi dữ liệu hoàn thành, redis mới tiến hành ghi đè file tạm lên file thật. Việc này đảm bảo trong trường hợp hệ thống có sự cố, file aof cũ vẫn được duy trì, giúp phục hồi phần nào dữ liệu.</p>
+
+<p>Trong cả 2 trường hợp, redis sử dụng tính năng <a href="http://en.wikipedia.org/wiki/Copy-on-write">Copy-on-Write</a> của linux khi fork process con, do vậy hiệu năng không vì fork process con mà suy giảm.</p>
+
+<p>Đến đây, sau khi tìm hiểu về định dạng của 2 files dữ liệu cũng như phương thức ghi dữ liệu của từng loại file, ta vẫn còn những câu hỏi mở về persistent redis như sau:</p>
+
+<ul>
+<li>Tần suất ghi dữ liệu là bao nhiêu?</li>
+<li>Ai chịu trách nhiệm fork process con.</li>
+</ul>
+
+
+<p>Thực chất redis định nghĩa 1 giá trị gọi là tần số ghi: REDIS_DEFAULT_HZ với giá trị mặc định là 10 (redis.h). Như vậy trong 1s, redis sẽ thực hiện 10 lần việc gọi hàm fork. Toàn bộ thao tác ghi dữ liệu redis và thao tác với các key hết hạn được thực hiện bởi 1 hệ thống các &#8220;cron&#8221;. Hàm cron thực hiện việc validate các key là: databaseCron. Hàm cron thực hiện ghi dữ liệu là serverCron. Hàm serverCron sẽ được gọi theo cơ chế bất đồng bộ (dùng thư viện bất đồng bộ của chính redis) với tần số 1/1000s. Với REDIS_DEFAULT_HZ là 10, cứ 100 lần gọi, serverCron sẽ thực hiện fork child process 1 lần để ghi dữ liệu xuống bộ đĩa cứng.</p>
+
+<h2>5. Tại sao phải fsync</h2>
+
+<p>Đến đây chắc bạn đã hiểu phần nào về cơ chế persistent của redis. Tuy nhiên ta vẫn còn 1 câu hỏi nhỏ khá thú vị: tại sao phải flush liên tục như vậy (100ms / lần)? Tại sao không chỉ dùng hàm write/read của kernel và mặc định việc ghi dữ liệu xuống đĩa cứng cho kernel. Để trả lời câu hỏi nhỏ này, ta cần hiểu mối liên quan giữa OS - đĩa cứng - buffer của tầng ứng dụng.</p>
+
+<p>Về mặt trực quan tra có mô hình như sau:</p>
+
+<pre><code>buffer ---(Write) --| (kernel buffer) ---&gt; hard disk buffer ---&gt; đĩa từ.
+</code></pre>
+
+<p>Một thao tác ghi dùng write/read api của kernel sẽ copy dữ liệu từ buffer tần ứng dụng xuống buffer của kernel. Đây là thao tác cơ bản của write api. Tại buffer của kernel, kernel có toàn quyền quyết định với buffer này như: khi nào ghi, ghi bao nhiêu bytes&#8230; Khi kernel ghi dữ liệu (sử dụng các hàm IO của đĩa), dữ liệu sẽ được ghi xuống hard disk buffer và được schedule ghi xuống đĩa từ. Do vậy nếu tại tầng kernel hệ thống gặp sự cố, dữ liệu vẫn có thể bị mất dù rằng write <strong>thành công</strong> (và tầng ứng dụng không có cách nào biết write không thành công). Bằng việc định kỳ gọi fsync, ứng dụng có thể  <strong>thoát khỏi sử quản lý của kernel</strong>, ghi thằng dữ liệu đang có ở buffer xuống hard disk buffer. Bằng việc gọi fsync, ta tránh khỏi được rủi ro mất dữ liệu do đổ vớ ở tầng ứng dụng. Tất nhiên dữ liệu hard disk vẫn chưa hoàn toàn an toàn (ví dụ trường hợp đĩa cứng bị hỏng).</p>
+
+<p>Đây là cách làm chung của các hệ thống cơ sở dữ liệu RDMS hiện hành.</p>
+
+<h2>6. Kết luận</h2>
+
+<p>Bài viết giới thiệu khái quát các module redis, đồng thời trình bày cụ thể cơ chế ghi dữ liệu của redis. Bài viết cũng làm rõ hơn ý nghĩa của fsync cũng như quy trình ghi dữ liệu của hệ điều hành. Hy vọng qua bài viết, người đọc hiểu phần nào cơ chế, hành vi của redis, qua đó sử dụng công cụ này hiệu quả hơn.</p>
+
+<h2>7. Tham khảo</h2>
 
 <ol>
-<li>Twitter <a href="https://github.com/twitter/snowflake/">snowflake</a>
-Snowflake là thrift service sử dụng Apache ZooKeeper để liên kết các node và sinh ra 64bit unique ID.
-Mỗi node là một worker, các worker được đánh số khác nhau</li>
+<li><a href="http://redis.io/topics/persistence">persistent redis</a></li>
+<li><a href="http://redis.io/topics/virtual-memory">vm</a></li>
+<li><a href="http://www.redhat.com/magazine/001nov04/features/vm/">Understanding Virtual Memory</a></li>
+<li><a href="http://openmymind.net/redis.pdf">redis book</a></li>
 </ol>
 
 
-<p> ID được sinh ra theo công thức</p>
+		
+		
+	</div>
+
+</article>
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-06-30T09:07:00+09:00" data-updated="true" itemprop="datePublished">Jun 30<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/hash/'>hash</a>, <a class='category' href='/blog/categories/java/'>java,</a>, <a class='category' href='/blog/categories/programming/'>programming,</a>, <a class='category' href='/blog/categories/thread/'>thread,</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/06/30/tutorial-duplicate-file-finder-java/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/06/30/tutorial-duplicate-file-finder-java/" itemprop="url">Tutorial: Duplicate File Finder (Java)</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1>Mở đầu</h1>
+
+<p>Trong quá trình dọn dẹp máy tính cá nhân, tôi gặp phải vấn đề là quá nhiều file trùng lặp trong máy tính. Việc có quá nhiều file như vậy gây lãng phí ổ cứng, cộng thêm đôi lúc tôi không còn nhớ là file này đặt ở thư mục này có ý nghĩa gì nữa. Giá mà có công cụ nào đó để tìm tự động các file này cho tôi thì tốt quá nhỉ??</p>
+
+<p>Không cần phải giá mà nữa, không gì bằng làm ra cho mình một công cụ như vậy. Bài viết này sẽ trình bày những bước đầu tiên tôi prototype công cụ tìm kiếm các file trùng lặp. Thông qua bài viêt này, tôi cũng sẽ giới thiệu về những chủ đề sau trong Java: tính hash, thread pooling.</p>
+
+<h1>MD5 checksum</h1>
+
+<p>MD5 là một thuật toán mã hóa thông điệp (message-digest), về bản chất là một hàm băm (hash) xuất ra một giá trị 128-bit (16-byte). MD5 được sử dụng rất nhiều trong các ứng dụng bảo mật, và cũng được sử dụng để kiểm tra tính toàn vẹn dữ liệu (ví dụ như bạn down một file từ Internet về, thường có một MD5 key đi kèm, để bạn kiểm tra xem file bạn down có chính xác giống nguồn down không.)</p>
+
+<p>Tôi không có ý định đi sâu vào cách tính MD5, bạn có thể tham khảo trên google. Lưu ý là thuật toán MD5 vẫn có thể sinh ra cùng một giá trị hash với 2 file có nội dung khác nhau (tuy nhiên trường hợp này rất hiếm). Để chắc chắn tìm được 2 file có nội dung giống hệt nhau, ta sẽ so sánh theo thứ tự: so sánh giá trị hash, so sánh độ lớn của file, và cuối cùng là so sánh từng byte của hai file để chắc chắn chúng trùng nhau.</p>
+
+<p>Trong Java, hàm băm đã được đưa vào thư viện <em>java.security</em>, thông qua class <em>MessageDigest</em>. Bạn chỉ cần khai báo đối tượng <em>MessageDigest</em>, sau đó chọn phương thức mã hóa MD5, hoặc SHA. Việc bạn phải làm đối với từng file là chuyển file thành byte stream, và update dòng input này vào đối tượng <em>MessageDigest</em> trên, và bạn sẽ nhận được một dòng byte kết quả.</p>
+
+<p>Chi tiết về class <em>MessageDigest</em>, bạn có thể tham khảo tại đây: <a href="http://docs.oracle.com/javase/6/docs/api/java/security/MessageDigest.html">http://docs.oracle.com/javase/6/docs/api/java/security/MessageDigest.html</a></p>
+
+<figure class='code'><figcaption><span>MD5.java </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'> <span class="kd">public</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">getMD5</span><span class="o">(</span><span class="n">File</span> <span class="n">file</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">{</span>
+</span><span class='line'>      <span class="k">if</span><span class="o">(!</span><span class="n">file</span><span class="o">.</span><span class="na">exists</span><span class="o">())</span>
+</span><span class='line'>          <span class="k">return</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
+</span><span class='line'>      <span class="k">try</span>
+</span><span class='line'>      <span class="o">{</span>
+</span><span class='line'>          <span class="n">MessageDigest</span>  <span class="n">md</span> <span class="o">=</span>  <span class="n">MessageDigest</span><span class="o">.</span><span class="na">getInstance</span><span class="o">(</span><span class="s">&quot;MD5&quot;</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="c1">//read the file into a byte array</span>
+</span><span class='line'>          <span class="kt">byte</span><span class="o">[]</span> <span class="n">input</span> <span class="o">=</span> <span class="k">new</span> <span class="kt">byte</span><span class="o">[(</span><span class="kt">int</span><span class="o">)</span> <span class="n">file</span><span class="o">.</span><span class="na">length</span><span class="o">()];</span>
+</span><span class='line'>          <span class="n">InputStream</span> <span class="n">in</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FileInputStream</span><span class="o">(</span><span class="n">file</span><span class="o">);</span>
+</span><span class='line'>          <span class="n">in</span><span class="o">.</span><span class="na">read</span><span class="o">(</span><span class="n">input</span><span class="o">);</span>
+</span><span class='line'>          <span class="n">in</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
+</span><span class='line'>          
+</span><span class='line'>          <span class="c1">//update the MessageDigest and process</span>
+</span><span class='line'>          <span class="n">md</span><span class="o">.</span><span class="na">update</span><span class="o">(</span><span class="n">input</span><span class="o">);</span>
+</span><span class='line'>          <span class="kt">byte</span><span class="o">[]</span> <span class="n">fileDigest</span> <span class="o">=</span> <span class="n">md</span><span class="o">.</span><span class="na">digest</span><span class="o">();</span>
+</span><span class='line'>          
+</span><span class='line'>          <span class="k">return</span> <span class="nf">ByteArrayToString</span><span class="o">(</span><span class="n">fileDigest</span><span class="o">);</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      <span class="k">catch</span><span class="o">(</span><span class="n">IOException</span> <span class="n">e</span> <span class="o">)</span>
+</span><span class='line'>      <span class="o">{</span>
+</span><span class='line'>          <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>          <span class="k">return</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      <span class="k">catch</span><span class="o">(</span><span class="n">NoSuchAlgorithmException</span> <span class="n">e</span><span class="o">)</span>
+</span><span class='line'>      <span class="o">{</span>
+</span><span class='line'>          <span class="k">return</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="kd">private</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">ByteArrayToString</span><span class="o">(</span><span class="kt">byte</span><span class="o">[]</span> <span class="n">ba</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">{</span>
+</span><span class='line'>     <span class="n">StringBuilder</span> <span class="n">sb</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StringBuilder</span><span class="o">();</span>
+</span><span class='line'>     <span class="k">for</span><span class="o">(</span><span class="kt">byte</span> <span class="nl">b:</span> <span class="n">ba</span><span class="o">)</span>
+</span><span class='line'>        <span class="n">sb</span><span class="o">.</span><span class="na">append</span><span class="o">(</span><span class="n">String</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">&quot;%02x&quot;</span><span class="o">,</span> <span class="n">b</span><span class="o">&amp;</span><span class="mh">0xff</span><span class="o">));</span>
+</span><span class='line'>     <span class="k">return</span> <span class="n">sb</span><span class="o">.</span><span class="na">toString</span><span class="o">();</span>
+</span><span class='line'>  <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>Theading</h1>
+
+<p>Threading, hay concurrency, trong Java là một chủ đề khá phức tạp và tôi cũng chưa đủ khả năng nắm rõ được tất cả. Do vậy, trong bài viết này, tôi xin chỉ đề cập đến kĩ thuật thread pooling để phân bài toán ra thành nhiều tác vụ, chạy trên nhiều luồng khác nhau.</p>
+
+<p>Thread pool là gì? Bạn có thể hiểu nôm na là thay vì cứ gọi một luồng mới cho từng tác vụ khi cần thiết (phương pháp này gặp nhược điểm vì việc tạo thread mới sẽ gặp overhead), ta tạo sẵn một cái &#8220;bể&#8221; (pool) trong đó khởi động sẵn một loạt các luồng (thread). Các luồng này ngoi ngoi lên để đợi ta ném tác vụ vào để chúng thực hiện. Sau khi thực hiện xong, nó sẽ báo cáo lại kết quả, kết thúc tác vụ, và quay trở lại &#8220;bể&#8221; để tiếp tục ngoi ngoi chờ tác vụ mới. Chỉ khi nào đóng &#8220;bể&#8221;, thì các luồng mới bị mất đi.</p>
+
+<p>Trong bài toán tìm file trùng lặp này, tôi sẽ áp dụng thread pooling như sau:</p>
 
 <ul>
-<li> time - 42bit (được tính bằng epoch)</li>
-<li> worker id - 10 bit (số worker có thể lên đến 1024)</li>
-<li> sequence number - 12 bit (number được tăng liên tiếp, đảm bảo tại một thời điểm, mỗi worker có thể sinh được 4096 ID)</li>
+<li>Tạo một class DuppFind, implement Runnable class (đây là class ta có thể truyền vào cho pool), đại diện cho tác vụ tìm kiếm. Với mỗi object DuppFind, nó sẽ được truyền vào các tham số gồm có:</li>
 </ul>
 
 
-<p> Ở phần tiếp theo, chúng ta sẽ implement thuật một service sử dụng thuật toán trên để sinh ID</p>
+<p>&#8211; Thư mục bắt đầu tìm kiếm</p>
 
-<ol>
-<li><a href="http://instagram-engineering.tumblr.com/post/10853187575/sharding-ids-at-instagram">Instagram 64bt ID</a></li>
-</ol>
+<p>&#8211; Map&lt;String, List<String>>: là một map chứa key là md5 và value là một List chứa đường dẫn đến các file có md5 value như vậy</p>
 
-
-<p> Instagram sinh ID dựa vào posgresql schema. Thuật toán sinh ID tương tự như snowflake, mỗi ID 64 bit bao gồm</p>
+<p>&#8211; pool, thuộc class ExcutorService.</p>
 
 <ul>
-<li> time - 41 bit (time epoch)</li>
-<li> shard_id - 13 bit (so shard id lên tới 8192)</li>
-<li> sequence number - 10 bit</li>
+<li>Mỗi tác vụ sau khi được luồng chọn để thực thi, nó sẽ làm gì? Nhiệm vụ của tác vụ là quét tất cả các file, thư mục có trong thư mục được chỉ định tìm kiếm. Nếu gặp file, nó sẽ tính MD5 cho file đó, và thêm vào Map. Nếu gặp thư mục, tác vụ này sẽ tạo ra một tác vụ DuppFind mới, chỉ định thư mục mới này cho tác vụ DuppFind mới, và ném vào pool (bây giờ bạn đã hiểu tại sao object DuppFind luôn được truyền pool vào rồi đấy:) )</li>
 </ul>
 
 
-<h1>Implement thuật toán sinh 64 bit uniqueID của snowflake bằng python</h1>
+<p>Một vài điểm lưu ý:</p>
 
-<figure class='code'><figcaption><span>flake.py </span></figcaption>
+<ul>
+<li><p>Mỗi tác vụ phải có trách nhiệm đợi tất cả các tác vụ con nó tạo ra hoàn thành thì mới được chấm dứt. Tôi thực hiện điều này bằng cách sử dụng đối tượng Future được trả lại mỗi lần ném tác vụ mới vào pool. Sau đó chỉ cần gọi polling kết quả từ tác vụ con là được.</p></li>
+<li><p>Với những Collection dùng chung giữa các thread, cần phải dùng những Concurrecy Collection mà Java cung cấp. Cụ thể ở đây, tôi dùng ConcurrentHashMap cho Map và CopyOnWriteArrayList cho List.</p></li>
+</ul>
+
+
+<p>Dưới đây là đoạn code cho phần thread pooling:</p>
+
+<figure class='code'><figcaption><span>DuppFind.java </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -372,241 +688,90 @@ Mỗi node là một worker, các worker được đánh số khác nhau</li>
 <span class='line-number'>58</span>
 <span class='line-number'>59</span>
 <span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-<span class='line-number'>64</span>
-<span class='line-number'>65</span>
-<span class='line-number'>66</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="kn">import</span> <span class="nn">simplejson</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">sys</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">tornado.httpserver</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">tornado.ioloop</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">tornado.options</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">tornado.web</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">DuppFind</span> <span class="kd">implements</span> <span class="n">Runnable</span><span class="o">{</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">File</span> <span class="n">directory</span><span class="o">;</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">md5FileMap</span><span class="o">;</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">ExecutorService</span> <span class="n">pool</span><span class="o">;</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="kd">public</span> <span class="nf">DuppFind</span><span class="o">(</span><span class="n">File</span> <span class="n">directory</span><span class="o">,</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">md5FileMap</span><span class="o">,</span> <span class="n">ExecutorService</span> <span class="n">pool</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">{</span>
+</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">directory</span> <span class="o">=</span> <span class="n">directory</span><span class="o">;</span>
+</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">md5FileMap</span> <span class="o">=</span> <span class="n">md5FileMap</span><span class="o">;</span>
+</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">pool</span> <span class="o">=</span> <span class="n">pool</span><span class="o">;</span>
+</span><span class='line'>  <span class="o">}</span>    
 </span><span class='line'>
-</span><span class='line'><span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
-</span><span class='line'><span class="kn">from</span> <span class="nn">tornado.options</span> <span class="kn">import</span> <span class="n">define</span><span class="p">,</span> <span class="n">options</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">define</span><span class="p">(</span><span class="s">&quot;port&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">8888</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;run on the given port&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-</span><span class='line'><span class="n">define</span><span class="p">(</span><span class="s">&quot;worker_id&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;globally unique worker_id between 0 and 1023&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">IDHandler</span><span class="p">(</span><span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">RequestHandler</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">max_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="p">()</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">sequence</span> <span class="o">=</span> <span class="mi">0</span>
-</span><span class='line'>    <span class="n">worker_id</span> <span class="o">=</span> <span class="bp">False</span>
-</span><span class='line'>    <span class="n">epoch</span> <span class="o">=</span> <span class="mi">137079712900000</span> <span class="c"># 2013-06-09</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span class='line'>        <span class="n">curr_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="p">()</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">if</span> <span class="n">curr_time</span> <span class="o">&lt;</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">max_time</span><span class="p">:</span>
-</span><span class='line'>            <span class="c"># stop handling requests til we&#39;ve caught back up</span>
-</span><span class='line'>            <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="s">&#39;Clock went backwards! </span><span class="si">%d</span><span class="s"> &lt; </span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">curr_time</span><span class="p">,</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">max_time</span><span class="p">))</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">if</span> <span class="n">curr_time</span> <span class="o">&gt;</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">max_time</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span> <span class="o">=</span> <span class="mi">0</span>
-</span><span class='line'>            <span class="n">IDHandler</span><span class="o">.</span><span class="n">max_time</span> <span class="o">=</span> <span class="n">curr_time</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span> <span class="o">+=</span> <span class="mi">1</span>
-</span><span class='line'>        <span class="k">if</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span> <span class="o">&gt;</span> <span class="mi">4095</span><span class="p">:</span>
-</span><span class='line'>            <span class="c"># Sequence overflow, bail out</span>
-</span><span class='line'>            <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="s">&#39;Sequence Overflow: </span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="n">generated_id</span> <span class="o">=</span> <span class="p">((</span><span class="n">curr_time</span> <span class="o">-</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">epoch</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">22</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">IDHandler</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">&lt;&lt;</span> <span class="mi">12</span><span class="p">)</span> <span class="o">+</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">set_header</span><span class="p">(</span><span class="s">&quot;Content-Type&quot;</span><span class="p">,</span> <span class="s">&quot;text/plain&quot;</span><span class="p">)</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">generated_id</span><span class="p">))</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span> <span class="c"># avoid ETag, etc generation</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
-</span><span class='line'>    <span class="n">tornado</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">parse_command_line</span><span class="p">()</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">if</span> <span class="s">&#39;worker_id&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
-</span><span class='line'>        <span class="k">print</span> <span class="s">&#39;missing --worker_id argument, see </span><span class="si">%s</span><span class="s"> --help&#39;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-</span><span class='line'>        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">options</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">&lt;</span> <span class="mi">1024</span><span class="p">:</span>
-</span><span class='line'>        <span class="k">print</span> <span class="s">&#39;invalid worker id, must be between 0 and 1023&#39;</span>
-</span><span class='line'>        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">IDHandler</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">worker_id</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">application</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">Application</span><span class="p">([</span>
-</span><span class='line'>        <span class="p">(</span><span class="s">r&quot;/&quot;</span><span class="p">,</span> <span class="n">IDHandler</span><span class="p">),</span>
-</span><span class='line'>    <span class="p">],</span> <span class="n">static_path</span><span class="o">=</span><span class="s">&quot;./static&quot;</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">http_server</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">httpserver</span><span class="o">.</span><span class="n">HTTPServer</span><span class="p">(</span><span class="n">application</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">http_server</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">port</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">tornado</span><span class="o">.</span><span class="n">ioloop</span><span class="o">.</span><span class="n">IOLoop</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
-</span><span class='line'>    <span class="n">main</span><span class="p">()</span>
+</span><span class='line'>  <span class="nd">@Override</span>
+</span><span class='line'>  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span> <span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>      <span class="k">try</span>
+</span><span class='line'>      <span class="o">{</span>
+</span><span class='line'>          <span class="n">File</span><span class="o">[]</span> <span class="n">files</span> <span class="o">=</span> <span class="n">directory</span><span class="o">.</span><span class="na">listFiles</span><span class="o">();</span>
+</span><span class='line'>          <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">Future</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">results</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">Future</span><span class="o">&lt;?&gt;&gt;();</span>
+</span><span class='line'>          <span class="k">for</span><span class="o">(</span><span class="n">File</span> <span class="n">file</span> <span class="o">:</span> <span class="n">files</span><span class="o">)</span>
+</span><span class='line'>          <span class="o">{</span>
+</span><span class='line'>              <span class="k">if</span><span class="o">(</span><span class="n">file</span><span class="o">.</span><span class="na">isDirectory</span><span class="o">())</span>
+</span><span class='line'>              <span class="o">{</span>
+</span><span class='line'>                  <span class="c1">//System.out.println(&quot;Dir: &quot; + file.getAbsolutePath());</span>
+</span><span class='line'>                  <span class="n">DuppFind</span> <span class="n">df</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DuppFind</span><span class="o">(</span><span class="n">file</span><span class="o">,</span> <span class="n">md5FileMap</span><span class="o">,</span> <span class="n">pool</span><span class="o">);</span>
+</span><span class='line'>                  <span class="n">Future</span><span class="o">&lt;?&gt;</span> <span class="n">result</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">df</span><span class="o">);</span>
+</span><span class='line'>                  <span class="n">results</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">result</span><span class="o">);</span>
+</span><span class='line'>              <span class="o">}</span>
+</span><span class='line'>              <span class="k">else</span> <span class="nf">if</span><span class="o">(</span><span class="n">file</span><span class="o">.</span><span class="na">isFile</span><span class="o">())</span>
+</span><span class='line'>              <span class="o">{</span>
+</span><span class='line'>                  <span class="c1">//calculate md5</span>
+</span><span class='line'>                  <span class="n">String</span> <span class="n">md5</span> <span class="o">=</span> <span class="n">MD5Utils</span><span class="o">.</span><span class="na">getMD5</span><span class="o">(</span><span class="n">file</span><span class="o">);</span>
+</span><span class='line'>                  <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">listFile</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CopyOnWriteArrayList</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;();</span>
+</span><span class='line'>                  <span class="k">if</span><span class="o">(</span><span class="n">md5FileMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">md5</span><span class="o">)</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+</span><span class='line'>                  <span class="o">{</span>
+</span><span class='line'>                      <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Duplicate md5: &quot;</span> <span class="o">+</span> <span class="n">md5</span> <span class="o">+</span> <span class="s">&quot;, size now: &quot;</span> <span class="o">+</span> <span class="n">md5FileMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">md5</span><span class="o">).</span><span class="na">size</span><span class="o">());</span>
+</span><span class='line'>                      <span class="n">listFile</span><span class="o">.</span><span class="na">addAll</span><span class="o">(</span><span class="n">md5FileMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">md5</span><span class="o">));</span>
+</span><span class='line'>                  <span class="o">}</span>
+</span><span class='line'>                  <span class="n">listFile</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">file</span><span class="o">.</span><span class="na">getAbsolutePath</span><span class="o">());</span>
+</span><span class='line'>                  <span class="n">md5FileMap</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="n">md5</span><span class="o">);</span>
+</span><span class='line'>                  <span class="n">md5FileMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">md5</span><span class="o">,</span> <span class="n">listFile</span><span class="o">);</span>
+</span><span class='line'>                  <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Add: File&quot;</span> <span class="o">+</span> <span class="n">file</span><span class="o">.</span><span class="na">getAbsolutePath</span><span class="o">()</span> <span class="o">+</span> <span class="s">&quot;, MD5: &quot;</span> <span class="o">+</span> <span class="n">md5</span><span class="o">);</span>
+</span><span class='line'>              <span class="o">}</span>
+</span><span class='line'>          <span class="o">}</span>
+</span><span class='line'>          
+</span><span class='line'>          <span class="c1">//wait until all sub-tasks complete</span>
+</span><span class='line'>          <span class="k">for</span><span class="o">(</span><span class="n">Future</span><span class="o">&lt;?&gt;</span> <span class="nl">result:</span> <span class="n">results</span><span class="o">)</span>
+</span><span class='line'>          <span class="o">{</span>
+</span><span class='line'>              <span class="n">result</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+</span><span class='line'>          <span class="o">}</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      <span class="k">catch</span><span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span>
+</span><span class='line'>      <span class="o">{</span>
+</span><span class='line'>          <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      <span class="k">catch</span><span class="o">(</span><span class="n">ExecutionException</span> <span class="n">e</span><span class="o">)</span>
+</span><span class='line'>      <span class="o">{</span>
+</span><span class='line'>          <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Đoạn code trên được trích từ repository <a href="https://github.com/formspring/flake/blob/master/flake.py">flake</a>
-Sử dụng <a href="http://www.tornadoweb.org/en/stable/">tornado</a> - Python web framework and asynchronous networking library, ở một thời điểm (độ chính xác tới millisecond), một node có thể handle được nhiều request, mỗi một request sẽ được trả về một số là ID được sinh ra. Số lượng ID được sinh ra bởi một node, tại một thời điểm bị giới hạn bởi 4096, nếu lớn hơn, request sẽ bị báo lỗi</p>
+<p>Toàn bộ code đã ở trên github: <a href="https://github.com/viethnguyen/DuppFind">https://github.com/viethnguyen/DuppFind</a></p>
 
-<h1>Kết luận</h1>
-
-<p>Bài viết trình bày một số phương pháp sinh ID 64 bit, kèm code minh hoạ. Tuỳ vào hệ thống của bạn, bạn có thể sử dụng ID 64 bit cho những mục đích khác nhau. Ví dụ như đánh số tất cả các đối tượng trong database (giống như FB làm với graph API), hoặc sử dụng 64 bit ID như một bước đệm và áp dụng thêm một bước mã hoá để sinh ID cho một loại đối tượng (giống như youtube đánh số các video).</p>
-
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-06-08T23:46:00+09:00" data-updated="true" itemprop="datePublished">Jun 8<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/html5/'>html5</a>, <a class='category' href='/blog/categories/introduction/'>introduction</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/06/08/playing-with-web-audio-api/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/08/playing-with-web-audio-api/" itemprop="url">Playing With Web Audio Api</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h3>Web audio api là gì?</h3>
-
-<p>Web audio api là là javascript API dành cho xử lý (processing) và tái tạo(synthesizing) âm thanh. Mới được ra đời vào thời gian gần đây (first draft vào 2011/05/12), mặc dù chưa được sử dụng nhiều ( do phần nhiều là chưa được support rộng rãi, tình trạng support các bạn có thể xem ở <a href="http://caniuse.com/audio-api">đây</a> ), nhưng cá nhân mình thấy web audio api có tiềm năng ứng dụng không nhỏ, nằm ở các lý do dưới đây:</p>
+<h1>Đánh giá</h1>
 
 <ul>
-<li>Web audio cung cấp api ở tầng cao, giúp cho việc xử lý âm thanh trở nên dễ dàng hơn rất nhiều, đặc biệt bạn không phải quan tâm nhiều đến những công đoạn như xử lý binary data, phân tích FFT, encode/decode, input/output.</li>
-<li>Engine để xử lý âm thanh của web audio api chạy trên một thread riêng biệt, chính vì thế một số xử lý nặng như convolve, filter sẽ không làm ảnh hưởng đến GUI thread, chính vì vậy bạn sẽ đỡ phải quan tâm nhiều đến việc phải xử lý thế nào cho nhẹ, hay cho không block UI.</li>
-<li>Việc xử lý âm thanh (đặc biệt là play vào thời điểm nào- timing control) là rất quan trọng với việc làm game. Xu hướng làm rich game trên browser ngày càng phát triển, khiến cho việc sử dụng và phát triên web audio api là không thể tránh khỏi.</li>
+<li><p>Đoạn code trên chạy chính xác với những thư mục nhỏ, không có quá nhiều thư mục con, cháu&#8230; Tuy nhiên, với những thư mục chứa nhiều thư mục con, vì có quá nhiều tác vụ vào thread pool, nên hay xảy ra exception out of memory - heap.</p></li>
+<li><p>Mới chỉ kiểm tra xem 2 file có MD5 trùng nhau không. Nếu trùng nhau rồi, ta cần kiểm tra thêm độ dài 2 file có trùng nhau không, rồi nếu trùng tiếp thì phải check từng byte để chắc chắn nhất có thể (xóa đi khỏi hối hận :P)</p></li>
+<li><p>Ở trên mới hiển thị ra những file nào trùng lặp. Cần cho phép user xóa file trùng lặp trong chương trình.</p></li>
+<li><p>Cần thiết kế GUI!</p></li>
 </ul>
 
 
-<p>Để tìm hiểu và sử dụng web audio api thì bài viết này mình sẽ chia làm 2 ý, đầu tiên là kiến thức cơ bản về xử lý âm thanh, và thứ hai là web audio cung cấp những gì, và sử dụng nó ra sao.</p>
+<p>Bạn thấy đó, còn khá nhiều vấn đề cần giải quyết để có một tool hoàn chỉnh. Những vấn đề này sẽ được cải tiến và được report lại trong một ngày không xa :) Nếu bạn cảm thấy hứng thú, rất welcome contribute :)</p>
 
-<h3>Cơ bản về xử lý âm thanh</h3>
-
-<p>Bài viết này sẽ không đi quá sâu về xử lý âm thanh, mình sẽ đi qua một số khái niệm cơ bản để giúp cho việc sử dụng web audio api dễ dàng hơn. Đầu tiên các bạn nên tham khảo trước ở một số tài liệu cơ bản về digital audio processing. Mình có google thì nó ra một cái tài liệu khá dễ hiểu ở <a href="http://smc.dei.unipd.it/education/algo4smc_ch1.pdf">đây</a>. Sau khi đọc tài liệu trên thì mình mong muốn các bạn nắm rõ được các khái niệm</p>
+<h1>Tham khảo</h1>
 
 <ol>
-<li><strong>Khái niệm âm thanh là gì và được biểu diễn thế nào trên máy tính?</strong> Âm thanh là các dao động cơ học  được truyền trong không khí, va đập vào màng nhĩ , làm rung màng nhĩ và kích thích não người. Trên máy tính ở dạng raw thì âm thanh thường được biểu diễn dưới dạng đồ thị dạng time-series data, tức là có 1 trục là thời gian , và một trục là độ lớn (amplitude)</li>
+<li>Core Java</li>
+<li>Java Concurrency in Practice</li>
+<li>Effective Java</li>
 </ol>
-
-
-<p><img src="/images/webaudioapi/sound1.png"></p>
-
-<p>Để biểu diễn được trên máy tính thì sẽ cần làm 2 việc, 1 là sampling (tức là một khoảng thời gian bao nhiêu lại lấy dữ liệu một lần) và 2 là quantitize , tức là với sóng có biên độ là X thì bạn phải biểu diễn X dưới dạng bit để máy tính có thể hiểu được. Như hình vẽ dưới đây thì data được sampling với thời gian là 0.1s và được sử dụng 8bit để quantitize.</p>
-
-<p><img src="/images/webaudioapi/sound2.png"></p>
-
-<ol>
-<li><strong>Khái niệm về tần số (frequency) và biến đổi Fourier(Fourier transform)</strong>. Khái niệm về tần số các bạn có thể tìm hiểu thông qua google. Về Fourier transform, hay viết tắt là FT, thì FT giúp biên dữ liệu time series data nói chung ( ở đây là sound wave ) từ dạng ban đầu là trục độ lớn(x)/trục thời gian(y) trở thành trục độ lớn(x)/trục tần số(y). Việc biến đổi này có ích ở việc là giúp phân tích thành phần của sound wave, giúp cho ta biết trong data đó có những sóng có tần số thế nào, độ lớn ra sao. Điều này sẽ giúp cho việc nhận diện/ biểu diễn sound wave được thực hiện một cách dễ dàng hơn rất nhiều.</li>
-</ol>
-
-
-<p><img src="/images/webaudioapi/ft.gif"></p>
-
-<p>Nắm được các khái niệm trên một cách rõ ràng, chúng ta đã có thể sử dụng web audio api để làm một số việc từ đơn giản đến tương đối phức tạp rồi :).</p>
-
-<h3>Cấu trúc cơ bản của web audio api</h3>
-
-<p>Web audio api có thiết kế dưới dạng <strong>graph</strong>, được cấu thành bởi các <strong>node</strong> ( kiến trúc này còn được gọi là <strong>modular routing</strong> ). Mỗi node có thể có nhiều inputs và/hoặc nhiều outputs.</p>
-
-<p><img src="/images/webaudioapi/graph.png"></p>
-
-<p>Tại sao lại là dưới dạng graph? Vì audio processing thường qua nhiều công đoạn, mỗi công đoạn xử lý lại có thể có nhiều output ( giống như hình trên ), do đó mà việc biểu diễn dưới dạng graph và connection giữa các node giúp cho việc tách các xử lý ra/ tổng hợp kết quả xử lý lại được thực hiện một cách dễ dàng và clean hơn.</p>
-
-<h3>Load audio file một cách đơn giản</h3>
-
-<p>Chúng ta sẽ bắt đầu sử dụng web audio api bằng cách load và play một file audio đơn giản:</p>
-
-<figure class='code'><figcaption><span>loadfile.js </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">context</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">webkitAudioContext</span><span class="p">();</span>
-</span><span class='line'><span class="nx">sourceNode</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">createBufferSource</span><span class="p">();</span>
-</span><span class='line'><span class="nx">sourceNode</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">destination</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">function</span> <span class="nx">loadSound</span><span class="p">(</span><span class="nx">source</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">req</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">XMLHttpRequest</span><span class="p">();</span>
-</span><span class='line'>    <span class="nx">req</span><span class="p">.</span><span class="nx">open</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="nx">source</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
-</span><span class='line'>    <span class="nx">req</span><span class="p">.</span><span class="nx">responseType</span> <span class="o">=</span> <span class="s1">&#39;arraybuffer&#39;</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nx">req</span><span class="p">.</span><span class="nx">onload</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nx">context</span><span class="p">.</span><span class="nx">decodeAudioData</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">response</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">buffer</span><span class="p">){</span>
-</span><span class='line'>        <span class="nx">playSound</span><span class="p">(</span><span class="nx">buffer</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">},</span> <span class="kd">function</span><span class="p">(){});</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="nx">req</span><span class="p">.</span><span class="nx">send</span><span class="p">();</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">function</span> <span class="nx">playSound</span><span class="p">(</span> <span class="nx">buffer</span> <span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="nx">sourceNode</span><span class="p">.</span><span class="nx">buffer</span> <span class="o">=</span> <span class="nx">buffer</span><span class="p">;</span>
-</span><span class='line'>  <span class="nx">sourceNode</span><span class="p">.</span><span class="nx">noteOn</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Các bạn sẽ thấy để thao tác với web audio api thì đầu tiên các bạn sẽ phải tạo ra một object gọi là AudioContext ( trên chrome sẽ gọi là WebkitAudioContext ). Toàn bộ các thao tác như tạo node mới sẽ quay quanh object này</p>
-
-<p>Sau khi đã có context rồi thì các bước tiếp theo sẽ là :</p>
-
-<ol>
-<li>Tạo ra sourceNode (sourceNode còn là Node dùng để input data)</li>
-<li>Tạo ra destinationNode (là Node dùng để output data)</li>
-<li>Load data thông qua XHR</li>
-<li>play thông qua hàm noteOn của sourceNode (noteOn(0) tức là play tại thời điểm 0 là thời điểm bắt đầu của audio data)</li>
-</ol>
-
-
-<p>Các bạn có thể thấy ở trên một graph đơn giản nhất đã được tạo ra với 2 node là Source và Destination được connect với nhau.</p>
-
-<h3>Kết luận</h3>
-
-<p>Như vậy các bạn đã có hình dung cơ bản về web audio api.</p>
-
-<p>Ở bài viết tiếp theo mình sẽ nói về các node xử lý cơ bản như AnalyzerNode, ConvolverNode, OscillatorNode và các ứng dụng của chúng.</p>
-
-<p>Các bạn có thể xem bài trình bày của mình tại osaka htmlday (bài viết bằng tiếng Nhật :D):</p>
-
-<script async class="speakerdeck-embed" data-id="8575d620b2e30130eaf25236bfdba4c0" data-ratio="1.33333333333333" src="//speakerdeck.com/assets/embed.js"></script>
 
 
 		
@@ -653,19 +818,16 @@ Sử dụng <a href="http://www.tornadoweb.org/en/stable/">tornado</a> - Python 
 </script>
 
 
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-	<script type="text/javascript">
-		var _gaq = _gaq || [];
-		_gaq.push(['_setAccount', 'UA-41231691-1']);
-		_gaq.push(['_trackPageview']);
+  ga('create', 'UA-41828637-2', 'ktmt.github.io');
+  ga('send', 'pageview');
 
-		(function() {
-			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-		})();
-	</script>
-
+</script>	
 
 
 		</div>

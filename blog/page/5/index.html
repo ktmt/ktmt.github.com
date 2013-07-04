@@ -7,7 +7,7 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="May 13th, 2013 concurrency, database, storage Comments Exclusive Lock - Shared Lock 1. Mở đầu Nhân tiện trả lời thắc mắc của bạn kiennt về shared &hellip;">
+	<meta name="description" content="Jun 2nd, 2013 garbage collector, java, programming Comments WeakHashMap và Weak Reference Trong Java Giới thiệu Trong thư viện Collection của Java, &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -84,677 +84,77 @@
   
 
 
-<time datetime="2013-05-13T04:52:00+09:00" data-updated="true" itemprop="datePublished">May 13<span>th</span>, 2013</time></div>
+<time datetime="2013-06-02T08:06:00+09:00" data-updated="true" itemprop="datePublished">Jun 2<span>nd</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/concurrency/'>concurrency</a>, <a class='category' href='/blog/categories/database/'>database</a>, <a class='category' href='/blog/categories/storage/'>storage</a>
+	<a class='category' href='/blog/categories/garbage-collector/'>garbage collector</a>, <a class='category' href='/blog/categories/java/'>java</a>, <a class='category' href='/blog/categories/programming/'>programming</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/05/13/exclusivelock-sharedlock/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/06/02/weakhashmap-va-weak-reference-trong-java/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/05/13/exclusivelock-sharedlock/" itemprop="url">Exclusive Lock - Shared Lock</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/06/02/weakhashmap-va-weak-reference-trong-java/" itemprop="url">WeakHashMap và Weak Reference Trong Java</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h2>1. Mở đầu</h2>
+		<h1>Giới thiệu</h1>
 
-<p>Nhân tiện trả lời thắc mắc của bạn kiennt về <em>shared lock</em> và <em>exclusive lock</em> được nhắc đến trong bài viết <a href="http://ktmt.github.io/blog/2013/05/07/storageenginemysql/">Giới Thiệu Một Số Storage Engine Của Mysql</a>, mình viết bài này để giải thích khái niệm và ý nghĩa của exclusive lock, shared lock, MVCC cũng như làm rõ một số điểm chưa rõ ràng trong bài viết trên.</p>
+<p>Trong thư viện Collection của Java, có một lớp đặc biệt: <strong>WeakHashMap</strong>. Về hoạt động nói chung nó rất giống với <strong>HashMap</strong>, đều có chức năng quản lý key, value như thêm, bớt, truy xuất value theo key&#8230; Vậy khác biệt của <strong>WeakHashMap</strong> so với <strong>HashMap</strong> là gì? Đó chính là khả năng phối hợp của <strong>WeakHashMap</strong> với garbage collector nhằm loại bỏ khả năng leak memory có thể xảy ra với <strong>HashMap</strong>. Trong bài viết này, chúng ta sẽ tìm hiểu <strong>WeakHashMap</strong> là gì, cách hoạt động của nó như thế nào, và cách nó xóa bỏ những entry không dùng đến ra sao.</p>
 
-<h2>2. Cơ chế và ý nghĩa của Lock và MVCC</h2>
+<h1>Mở đầu</h1>
 
-<h3>2.1 Khái niệm và ý nghĩa của lock</h3>
+<p>Thử tưởng tượng một tình huống như thế này: bạn muốn sử dụng một class nào đó, nhưng không thể extend được nó (ví dụ trường hợp đơn giản nhất là class đó được chỉ định là <strong>final</strong>). Vậy bạn làm gì khi muốn thêm property cho object thuộc class đó?</p>
 
-<p><a href="http://en.wikipedia.org/wiki/Lock_%28computer_science%29">Lock</a> (khóa) là <em>cơ chế đồng bộ</em> và <em>giới hạn truy cập</em> đến <em>tài nguyên đươc chia sẻ</em> trong một môi trường có <em>nhiều luồng xử lý cùng truy cập</em>.</p>
+<p>Ví dụ, bạn muốn sử dụng một class <strong>Product</strong> mà không thể extend được. Bây giờ muốn thêm <strong>serialNumber</strong> cho product đó, ứng cử viên hàng đầu là HashMap, bạn có thể tạo một cặp <strong>key</strong> là Product object, <strong>value</strong> là serialNumber:</p>
 
-<p>Nói một cách hình tượng, lock giống một cái cờ tuyên bố chủ quyền đối với tài nguyên máy tính. Mỗi luồng xử lý (thread) khi truy cập tài nguyên dùng chung nào đó sẽ phải &#8220;dựng cờ lên&#8221; để báo cho các luồng xử lý khác biết tài nguyên đó đang được xử dụng và &#8220;hạ cờ xuống&#8221; khi hoàn thành xử lý trên tài nguyên đó. Các luồng xử lý khác bằng việc quan sát trạng thái của cờ này mà sẽ chiếm tài nguyên cho xử lý của mình, hay chờ đợi cho đến khi luồng xử lý khác kết thúc. Có thể nói lock là một phương tiện khẳng định quyền sở hữu đối với 1 loại tài nguyên. Nhờ cơ chế lock này mà tại mỗi thời điểm chỉ có duy nhất 1 luồng xử lý truy cập tài nguyên dùng chung..</p>
-
-<p><em>Shared lock</em>, hay còn gọi là read-only lock (khóa chỉ đọc) là lock mà một luồng xử lý phải chiếm hữu khi muốn đọc từ một vùng nhớ được chia sẻ.</p>
-
-<p><em>Exclusive lock</em>, hay còn gọi là read-write lock (khóa đọc ghi) là lock mà một luồng xử lý phải chiếm hữu khi muốn cập nhật một vùng nhớ được chia sẻ.</p>
-
-<h3>2.2 Tại sao phải cần lock</h3>
-
-<h4>a. Tác dụng của exclusive lock</h4>
-
-<p>Xét bài toán ta có 2 luồng xử lý A, B cùng thao tác trên 2 biến a, b.
-Giá trị hiện tại của các biến</p>
-
-<ul>
-<li>a = 0</li>
-<li>b = 0</li>
-</ul>
-
-
-<p>Nhiệm vụ của 2 luồng xử lý:</p>
-
-<ul>
-<li>Luồng xử lý A đọc giá trị 2 biến, tăng giá trị của a lên 1, và cập nhật giá trị cả 2 biến vào bộ nhớ.</li>
-<li>Luồng xử lý B đọc giá trị 2 biến, tăng giá trị của b lên 1, và cập nhật giá trị cả 2 biến vào bộ nhớ.</li>
-</ul>
-
-
-<p>Giả sử A thực hiện trước, đọc giá trị của a và b (a=0, b=0) và tăng a lên 1. Lúc này giá trị của a đang là 1, của b là 0. Tuy nhiên, chính tại thời điểm này, hệ điều hành quyết định dừng A, và thực hiện B. B đọc giá trị 2 biến a và b và tăng b lên 1 rồi cập nhật cả 2 biến vào bộ nhớ. Do A chưa cập nhật giá trị 2 biến, giá trị của a lúc này vẫn là 0, của b là 1 (a=0,b=1 do A chưa hoàn thành). Vì vậy, tại thời điểm B kết thúc a = 0, b = 1. Đến đây hệ điều hành thực hiện chạy A ở bước cuối cùng, cập nhật giá trị 2 biến (a = 1, b = 0) vào bộ nhớ, ghi đè giá trị b = 1 được cập nhật bởi B. Kết quả cuối cùng (a = 1, b = 0) sai so với kết quả mong đợi (a = 1, b = 1).</p>
-
-<pre><code>    Luồng A            |  Luồng B
-    -------------------|-------------------------
-    Đọc a, b (a=0, b=0)| 
-    a = 1, b = 0       |
-                       |  Đọc a, b (a=0, b=0)
-                       |  a = 0, b = 1
-                       |  Ghi a, b (a = 0, b = 1)
-    Ghi a, b (a=1, b=0)|
-
-
-Trạng thái cuối cùng (a=1, b=0)
-Kết quả mong chờ: (a=1, b=1)
-</code></pre>
-
-<p>Để giải quyết bài toán này, người ta dùng một exclusive lock. Luồng A, B muốn cập nhật giá trị a, b phải trước tiên chiếm lock, rồi mới thực hiện xử lý của mình. Các bước thực hiện giờ sẽ như sau:</p>
-
-<ul>
-<li>Chiếm lock. Nếu như chiếm được lock thì tiến hành xử lý tiếp theo. Nếu không, chờ đến khi chiếm được lock</li>
-<li>Đọc a, b</li>
-<li>Cập nhật a (hoặc b)</li>
-<li>Ghi a, b</li>
-<li>Thôi chiếm lock</li>
-</ul>
-
-
-<p>Quy trình bây giờ tăng 2 bước (chiếm lock hoặc chờ đến khi nào chiếm được lock và nhả lock). Các bước chạy ở  trên giờ sẽ như sau:
-A chiếm lock thành công (do chưa có luồn nào chiếm lock) và tiến hành đọc và cập nhật a (a=1, b=0). Tại thời điểm A bị dùng, B được chạy và thử chiếm lock nhưng do A đang nắm giữ lock nên B sẽ <em>phải</em> chờ. Lúc này A thực hiện nốt bước cuối cùng ghi giá trị vào bộ nhớ (a=1, b=0) và nhả lock. B lúc này thấy lock bị nhả và nắm giữ lock, đọc giá trị từ bộ nhớ (a=1, b=0!!), cập nhật b (a=1, b=1) và ghi dữ liệu vào bộ nhớ (a=1, b=1) đồng thời nhả lock. Kết quả cuối cùng như mong đợi (a=1, b=1)</p>
-
-<pre><code>    Luồng A             | Luồng B
-    --------------------|--------------------------------
-    Chiếm lock          |
-    Đọc a, b            |    
-    a = 1, b = 0        |
-                        | Chiếm lock (không thành công)
-    Ghi a, b (a=1, b=0) |
-    Nhả lock            |
-                        | Chiếm lock (thành công)
-                        | Đọc a, b (a=1, b=0)
-                        | a = 1, b = 1
-                        | Ghi a, b (a = 1, b = 1)
-                        | Nhả lock
-
-Trạng thái cuối cùng (a=1, b=1)
-Kết quả mong chờ: (a=1, b=1)!!!!
-</code></pre>
-
-<p>Ta có thể thấy nhờ có lock, mà tại mỗi thời điểm chỉ có 1 luồng xử lý truy cập a, b. Các luồng khác khi không chiếm được lock sẽ phải chờ đến lượt.</p>
-
-<p><em>Kết luận</em>: exclusive lock được sử dụng để đồng bộ 2 xử lý ghi đồng thời.</p>
-
-<h4>b. Tác dụng của shared lock</h4>
-
-<p>Để hiểu ý nghĩa shared lock, ta xét bài toán tương tự như ở trên. Lần này, thay vì 2 luồng cùng cập nhật vùng nhớ chung, 1 luồng sẽ đọc, còn một luồng sẽ cập nhật. Giả sử A đọc và B cập nhật, và giá trị ban đầu là a=0, b=0.</p>
-
-<p>A tiến hành đọc a (a=0) và bị hệ điều hành <em>cho nghỉ</em> để B thực hiện. B đọc a, b (a=0, b=0) và thực hiện cập nhật b (a=0, b=1) và ghi kết quả lên bộ nhớ. A đọc nốt giá trị còn lại b (b=1).</p>
-
-<p>Kết quả cuối cùng đối với A rõ ràng không như mong đợi (Mong chờ: a=0, b=0 nhưng nhận về a=0, b=1).</p>
-
-<pre><code>    Luồng A     | Luồng B
-    ------------|-------------------------
-    Đọc a (a=0) |
-                | Đọc a, b (a=0, b=0)
-                | a = 0, b = 1
-                | Ghi a, b (a = 0, b = 1)
-    Đọc b (b=0) |
-
-Kết quả cuối cùng (a=0, b=1)
-Kết quả mong chờ: (a=0, b=0)
-</code></pre>
-
-<p>Để giải quyết bài toán này, ta dùng shared-lock. Luồng A muốn đọc sẽ cần phải chiếm shared-lock. Luồng B muốn ghi sẽ phải nhìn xem shared-lock có bị chiếm hay không. Nếu shared-lock đang bị chiếm. B phải đợi cho đến khi tất cả shared-lock được giải phóng mới tiến hành cập nhật. Luồng chạy sau bây giờ sẽ như sau:</p>
-
-<p>A chiếm shared-lock và tiến hành đọc a (a=0). A được <em>cho nghỉ</em> và B được <em>đưa vào sân</em>. Do A đang chiếm shared lock nên B không được quyền cập nhật và được <em>cho nghỉ</em>. A thực hiện nốt việc đọc b (b=0) và nhả shared-lock. B không thấy shared-lock và tiến hành cập nhật b (b=1) như bình thường.</p>
-
-<pre><code>    Luồng A           | Luồng B
-    ------------------|-----------------------------
-    Chiếm shared-lock |
-    Đọc a (a=0)       |
-                      | Nhìn thấy shared-lock. Nghỉ
-    Đọc b (b=0)       |
-    Nhả shared-lock   |
-                      | Chiếm exclusive lock
-                      | Đọc a, b (a=0, b=0)
-                      | a = 0, b = 1
-                      | Ghi a, b (a = 0, b = 1)
-                      | Nhả exclusive lock.
-
-Kết quả cuối cùng (a=0, b=0)
-Kết quả mong chờ: (a=0, b=0)
-</code></pre>
-
-<p><em>Kết luận</em>: shared-lock được sử dụng để đồng bộ 2 xử lý đọc ghi đồng thời.</p>
-
-<h4>c. Tại sao cần chiếm shared lock khi đọc dữ liệu</h4>
-
-<p>Đến đây ta có thể dễ dàng trả lời câu hỏi thứ nhất của kiennt! Khi tiến hành đọc dữ liệu, nếu không chiếm shared-lock, dữ liệu đó có thể bị cập nhật bởi 1 thread khác, dẫn tới giá trị đọc được bị thay đổi một phần, không bảo đảm tính toàn vẹn.</p>
-
-<p>Tuy vậy có một điểm trong bài viết cần được làm rõ như sau: Trong câu nói &#8220;MyISAM lock toàn bộ table. User (MySQL server) chiếm shared-lock khi đọc và chiếm exclusive-lock khi ghi. Tuy vậy, việc đọc ghi có thể diễn ra đồng thời!&#8221;, thì câu nói: &#8220;Tuy vậy, việc đọc ghi có thể diễn ra đồng thời!&#8221; là không đúng.</p>
-
-<p>Nói một cách chính xác hơn: việc <em>đọc và cập nhật (SELECT và UPDATE)</em> không được tiến hành đồng thời (Do tại thời điểm chiếm exclusive lock, không shared-lock nào được phép tồn tại). Tuy nhiên, việc <em>ghi mới</em> dữ liệu có thể được tiến hành mà không gây ảnh hưởng gì đến tính toàn vẹn của dữ liệu được đọc (vì chúng khác nhau!). Nói cách khác việc <em>đọc và ghi mới (SELECT và INSERT)</em> có thể được tiến hành đồng thời, và thực tế đây cũng là một tính năng của MyISAM.</p>
-
-<h3>2.2 MVCC (Multiversion concurrency control)</h3>
-
-<p>MVCC được đặt ra để giải quyết vấn đề đọc và ghi đồng thời. Rõ ràng ở giải pháp shared-lock trình bày ở trên, việc A phải chiếm shared lock là rất mất thời gian; B phải chờ đợi A hoàn thành xử lý đọc mới được cập nhật cũng hoàn toàn không hiệu quả. MVCC giải quyết sự không hiệu quả này bằng nhận xét: <em>Thao tác đọc không cập nhật dữ liệu</em> vì vậy nếu ta duy trì 2 version của dữ liệu (1 cũ - 1 mới) và chỉ tiến hành ghi đè dữ liệu mới vào cũ khi A hoàn thành việc đọc, thì ta không cần shared-lock. B sẽ cập nhật và <em>version mới</em> thay vì phải chờ A hoàn thành việc đọc.</p>
-
-<p>MVCC lưu timestamp và transaction ID để duy trì tính tính nhất quán của dữ liệu.</p>
-
-<p>Để hiểu cách MVCC hoạt động, ta xét ví dụ sau (Copy từ Wikipedia :D)</p>
-
-<pre><code>    Thời gian       | Object 1      | Object 2
-    ----------------|---------------|------------
-    0               | Foo           | Bar
-    1               | Hello (T1)    | 
-</code></pre>
-
-<p>Tại thời điểm 0, Object 1 có giá trị Foo, Object 2 có giá trị Bar. Tại thời điểm 1, thread T1 cập nhật giá trị Object 1 thành Hello. Như vậy trước khi T1 commit dữ liệu, bất cứ xử lý đọc nào cũng cho kết quả Object 1 và 2 tại thời điểm 0 (Foo-Bar). Khi T1 commit dữ liệu, xử lý đọc sẽ trả về giá trị Hello-Bar.</p>
-
-<p>Giả sử tại thời điểm T1 chưa commit, T2 lại cập nhật Object 2 như sau:</p>
-
-<pre><code>    Thời gian       | Object 1      | Object 2
-    ----------------|---------------|------------
-    0               | Foo           | Bar
-    1               | Hello (T1)    | 
-    2               |               | World (T2)
-</code></pre>
-
-<p>Lúc này, mọi thao tác đọc sẽ vẫn trả về Foo-Bar. Khi T1 commit, dữ liệu đọc tiếp theo sẽ là Hello-Bar. Và khi T2 commit, dữ liệu đọc sẽ là Hello-World. Nói cách khác, tại mỗi thời điểm ta nhìn thấy 1 phiên bản dữ liệu, các cập nhật bởi thread khác sẽ được lưu tại một version khác.</p>
-
-<p>Chính nhờ cách quản lý nhiều version dữ liệu này, mà việc đọc không cần lock shared-lock vẫn đảm bảo được tính toàn vẹn của dữ liệu được đọc.</p>
-
-<h2>3. Tổng kết</h2>
-
-<p>Bài viết đã giải thích phần nào hiểu hơn ý nghĩa của exclusive lock và shared-lock cũng như tác dụng và sự cần thiết của chúng. Đồng thời, bài viết cũng làm rõ những điểm được nói đến trong viết trong bài <a href="http://ktmt.github.io/blog/2013/05/07/storageenginemysql/">Giới Thiệu Một Số Storage Engine Của Mysql</a> cũng như giải đáp những thắc mắc của bạn kiennt.</p>
-
-<h2>4. Tham khảo:</h2>
-
-<ol>
-<li><a href="http://en.wikipedia.org/wiki/Multiversion_concurrency_control">MVCC</a></li>
-<li><a href="http://en.wikipedia.org/wiki/Lock_%28computer_science%29">Lock</a></li>
-<li><a href="http://stackoverflow.com/questions/11837428/whats-the-difference-between-an-exclusive-lock-and-a-shared-lock">Exclusive lock &amp; shared lock</a></li>
-<li><a href="http://www.amazon.com/High-Performance-MySQL-Optimization-Replication/dp/1449314287">High performance MySQL</a></li>
-</ol>
-
-
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-05-12T00:15:00+09:00" data-updated="true" itemprop="datePublished">May 12<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/javascript/'>javascript</a>, <a class='category' href='/blog/categories/programming/'>programming</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/05/12/closure-va-scope-cua-javascript/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/05/12/closure-va-scope-cua-javascript/" itemprop="url">Closure và Scope Trong Javascript</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h1>Scope và closure là gì?</h1>
-
-<p>Scope và closure là 2 khái niệm cơ bản mà một programmer nên biết, vì hiểu rõ 2 khái niệm này vừa giúp cho programmer tránh được một số lỗi hay gặp, vừa giúp thiết kế chương trình tốt hơn. Đầu tiên chúng ta sẽ remind lại 2 khái niệm này một cách ngắn gọn.
-Đầu tiên là khái niệm về scope, khái niệm này quá cơ bản chắc hẳn mọi người đều biết, nhưng thôi mình cứ quote lại từ wikipedia đề phòng có người quên:</p>
-
-<blockquote><p>[Scope refers to where variables and functions are accessible, and in what context it is being executed]</p></blockquote>
-
-<p> => Dịch ra đại thể là scope là nơi mà <em>biến</em> hoặc <em>hàm</em> có thể truy cập vào và sử dụng/ tham chiếu được qua tên trực tiếp. Và ở ngoài scope đó thì <em>biến</em> hoặc <em>hàm</em> đó sẽ không thể <strong>nhìn</strong> được một cách trực tiếp nữa. (hơi khó hình dung nhỉ). Để phân loại scope thì có rất nhiều cách tùy thuộc vào từng góc nhìn , nhưng mình sẽ không đi sâu vào vấn đề này. Mỗi ngôn ngữ lại có đặc trưng về scope khác nhau. Trong bài viết này chúng ta sẽ chỉ tập trung vào javascript.</p>
-
-<p> Khái niệm tiếp theo là về closure, khái niệm này thì không phải ai cũng biết, vì không phải ai cũng cần đến và từng động đến. Một số ngôn ngữ mainstream như C++ , java cũng không hỗ trợ closure, càng làm ít người để ý đến nó (java 8 expected sẽ cho closure vào). Hãy xem wiki nói về closure thế nào:</p>
-
-<blockquote><p>[a closure (also lexical closure or function closure) is a function or reference to a function together with a <strong>referencing environment</strong>]</p></blockquote>
-
-<p> => Dịch ra đại thể là closure là một hàm hoặc một tham chiếu (hay còn gọi là một cái <strong>bao đóng</strong>) đi kèm với cái môi trường mà nó tham chiếu đến (khá là xoắn). Cái cần nhấn mạnh ở đây là cái <strong>referencing environment</strong> (môi trường tham chiếu) mà các bạn sẽ hiểu hơn ở các ví dụ dưới đây.</p>
-
-<h1>Scope và closure trong javascript</h1>
-
-<p>Javascript là một ngôn ngữ phổ biến hiện nay. Người biết về js thì nhiều, nhưng người hiểu rõ một số corner của js thì chắc không nhiều đến thế :D. Một trong các corner đấy chính là <strong>scope và closure</strong>. Js là một ngôn ngữ khá đặc biệt, đặc biệt ở chỗ js mang hơi hướng của lập trình hàm (functional programming), khi mà <strong>function ở js cũng là một first-class object</strong>, tức là function có thể được tạo mới (construct new) tại run-time, được lưu dưới dạng một cấu trúc dữ liệu (data structure), được truyền qua parameter, được dùng như một giá trị trả về (return value). Chính vì đặc điểm đấy khiến cho scope và closure của js không giống như các ngôn ngữ phổ biến khác.</p>
-
-<p>Đầu tiên chúng ta sẽ nói về scope</p>
-
-<h2>1. <strong><em><u>Scope</u></em></strong></h2>
-
-<p>Như chúng ta vừa nói ở trên, scope là khái niệm qui định &#8220;visibility&#8221; và &#8220;lifetime&#8221; của variable. Thông thường, ví dụ như C thì scope sẽ là <strong>block scope</strong>, tức là những biến <strong>tạo ra</strong> trong block sẽ chỉ được nhìn thấy trong block đấy thôi, và khi ra ngoài block đấy thì những variable nằm trong block sẽ được giải phóng ( như trong C là các biến tạo ra trong stack sẽ được free khi ra khỏi block), và không nhìn thấy được nữa.</p>
-
-<p>Tuy nhiên rất buồn là javascript của chúng ta lại không có cái scope dễ hiểu đến thế, mà nó lại là <strong>function block</strong>.Function block ở đây là gì: tức là những gì bạn tạo ra trong một function sẽ available ở trong function đó. Vì javascript cũng là block syntax, nên sẽ hơi dễ confusing, chúng ta sẽ dùng ví dụ dễ hiểu này:</p>
-
-<figure class='code'><figcaption><span>function.js </span></figcaption>
+<figure class='code'><figcaption><span>product.java </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">scope</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="kc">true</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">test</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  <span class="nx">alert</span><span class="p">(</span><span class="nx">test</span><span class="p">);</span> <span class="err">#</span><span class="o">=&gt;</span> <span class="mi">1</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="nx">scope</span><span class="p">();</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">import</span> <span class="nn">java.util.HashMap</span><span class="o">;</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="n">Map</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">productMap</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">,</span><span class="n">String</span><span class="o">&gt;();</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="n">productMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">product</span><span class="o">,</span> <span class="n">serialNo</span><span class="o">);</span>
+</span><span class='line'><span class="o">...</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Nói đến đây chắc chắn có bạn sẽ nghĩ đến điều gì xảy ra khi chúng ta có <strong>nested function</strong>. Let&#8217;s try</p>
+<p>Đoạn code trên có vẻ đã hoàn thành mục tiêu thêm thuộc tính cho Product object, nhưng có vấn đề gì ở đây không? Cách giải quyết này gặp phải vấn đề liên quan đến việc giải phóng bộ nhớ. Vì <strong>HashMap</strong> sử dụng <strong>strong reference</strong> để trỏ đến Product object, nên khi trong chương trình không còn reference nào đến Product object nữa, <strong>garbage collector</strong> nhận thấy vẫn còn strong reference ở trong <strong>HashMap</strong>, nên nó không giải phóng object này nữa. Lâu dần, sẽ xuất hiện hiện tượng <strong>Leak Memory</strong>: ta không thể giải phóng được cặp key, value nằm trong <strong>HashMap</strong>, khi mà <strong>HashMap</strong> còn được sử dụng (để hiểu rõ hơn, bạn có thể xem ví dụ demo ở cuối bài).</p>
 
-<figure class='code'><figcaption><span>function.js </span></figcaption>
+<p>Nhân đây, xin giải thích thêm về <strong>Strong reference</strong>. Đây là Java reference bình thường mà ta thường sử dụng. Như ví dụ sau:</p>
+
+<figure class='code'><figcaption><span>strong.java </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">outer</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">outer_var</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
-</span><span class='line'>  <span class="kd">function</span> <span class="nx">inner</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">alert</span><span class="p">(</span><span class="nx">outer_var</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  <span class="nx">inner</span><span class="p">();</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="nx">outer</span><span class="p">();</span> <span class="err">#</span><span class="o">=&gt;</span> <span class="mi">2</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">String</span> <span class="n">serialNo</span> <span class="o">=</span> <span class="k">new</span> <span class="n">String</span><span class="o">();</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Từ ví dụ trên ta có thể dễ dàng thấy là inner function có thể access được outer function variable. Từ ví dụ này chúng ta có thể thấy là <strong>inner function có thể inherit biến của outer function</strong>, hay nói cách khác, inner function <strong>chứa(contain)</strong> scope của outer function. Chính nhờ điều đặc biệt này mà chúng ta có cái gọi là <strong>Closure</strong> mà mình sắp sửa nói đến ngay dưới đây. Một điều chú ý là đối với nhiều ngôn ngữ thì các bạn hay được khuyên là declare biến muộn nhất có thể để tránh overhead, tuy nhiên với javascript là ngôn ngữ với <strong>function scope</strong> thì best practice lại là <strong>declare biến sớm nhất có thể </strong> để tránh nguy cơ xảy ra một số lỗi không mong muốn.</p>
+<p>sẽ tạo một object String và lưu một strong reference đến nó vào biến serialNo. Ta cần phải để ý mới quan hệ giữa strong reference và garbage collector như sau: Nếu một object được trỏ đến qua một số strong references, object đó sẽ không được garbage collector để ý đến.</p>
 
-<h2>2. <strong><em><u>Closure</u></em></strong></h2>
+<h1>WeakHashMap</h1>
 
-<p> Quote lại cái định nghĩa cho đỡ quên:</p>
+<p>Trái ngược lại với <strong>strong reference</strong> là <strong>weak reference</strong>. *Weak reference** sẽ không thể cản trở garbage collector giải phóng object khỏi memory. Khai báo như sau:</p>
 
-<blockquote><p>A closure is an expression (typically a function) that can have free variables <strong>together with an environment that binds those variables (that &#8220;closes&#8221; the expression).</strong></p></blockquote>
-
-<p>Chắc có bạn sẽ thắc mắc, <strong>environment</strong> ở đây là gì. Để hình dung một cách dễ hiểu, thì environment ở đây trong phần lớn các trường hợp chính là cái outer function mà chung ta vừa thử ở ví dụ về scope ở trên. Một đặc điểm rất hay của closure là <strong>closure sẽ giữ tham chiếu đến các biến nằm bên trong nó, hoặc được gọi đến bên trong nó</strong>. Điều này dẫn đến việc gì? Chắc sẽ có bạn nghĩ đến một trường hợp rất đặc biệt là khi bạn muốn context của một function được giữ lại sau khi hàm đó đã được execute xong :D. Hãy bắt đầu bằng một ví dụ:</p>
-
-<figure class='code'><figcaption><span>closure.js </span></figcaption>
+<figure class='code'><figcaption><span>weak.java </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">outside</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">function</span> <span class="nx">inside</span><span class="p">(</span><span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="nx">x</span> <span class="o">+</span> <span class="nx">y</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  <span class="k">return</span> <span class="nx">inside</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="nx">fn_inside</span> <span class="o">=</span> <span class="nx">outside</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
-</span><span class='line'><span class="nx">result</span> <span class="o">=</span> <span class="nx">fn_inside</span><span class="p">(</span><span class="mi">5</span><span class="p">);</span> <span class="c1">// #=&gt; 8</span>
-</span><span class='line'>
-</span><span class='line'><span class="nx">result1</span> <span class="o">=</span> <span class="nx">outside</span><span class="p">(</span><span class="mi">3</span><span class="p">)(</span><span class="mi">5</span><span class="p">);</span> <span class="c1">// #=&gt; 8</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">WeakReference</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">&gt;</span> <span class="n">weakProduct</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WeakReference</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">&gt;(</span><span class="n">product</span><span class="o">);</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Bạn có nhận thấy điều gì đặc biệt ở trên? Điều đặc biệt nằm ở hàm <strong>fn_inside</strong> : hàm fn_inside được tạo ra bởi kết quả trả về của hàm outside() với parameter là 3, và bạn có thể nhận thấy hàm fn_inside vẫn giữ tham chiếu đến cái parameter 3 đó <strong>ngay cả khi hàm outside() đã được execute xong</strong>. Chắc các bạn sẽ thấy mâu thuẫn với cái lý thuyết về function scope chúng ta đã nói đến ở trên, khi mà <em>mọi thứ được tạo ra trong function của js chỉ nhìn thấy và sử dụng được ở trong đó, và sẽ được giải phóng hoặc không nhìn thấy khi ra ngoài function đó</em>.
-Thực tế là không hề mâu thuẫn chút nào cả, chính vì cái gọi là closure của js :D. Nói một cách cụ thể hơn: <strong>fn_inside khi được tạo ra đã đồng thời cũng tạo ra một cái closure (bao đóng), trong cái bao đó, giá trị 3 được truyền vào, và cái bao của fn_inside sẽ vẫn giữ cái giá trị 3 đó cho dù outside() function có execute xong</strong>. Các bạn cứ hình dung trực quan closure như một cái bao chứa rất nhiều thứ trong nó là sẽ thấy dễ hiểu hơn:</p>
+<p>Sau đó, ta có thể truy cập đến Product object thông qua việc gọi method weakProduct.get(). Tuy nhiên, ta cần phải chú ý khi gọi method này. Vì weak reference không đủ khả năng chặn quá trình garbage collection, nên đến một cycle nào đó, garbage collector sẽ giải phóng Product object (khi không còn strong reference nào đến nó) , và bạn sẽ thấy weakProduct.get() đột nhiên trả về null.</p>
 
-<p><img src="/images/closurejs/closure.png"></p>
+<p>Quay trở lại với ví dụ Product ở trên, ta giải quyết vấn đề đã nêu bằng cách sử dụng <strong>WeakHashMap</strong> class.  <strong>WeakHashMap</strong> hoạt động y hệt như <strong>HashMap</strong>, chỉ khác là key được refer đến bằng <strong>weak reference</strong>. Lúc này, khi một object chỉ reachable bởi <strong>WeakReference</strong>, garbage collector sẽ giải phóng object, đồng thời sẽ đặt <strong>weak reference</strong> trỏ đến object kia vào một queue. WeakHashMap sẽ định kì kiểm tra queue này xem có weak reference nào mới đến không. Nếu thấy một weak reference trong queue, nghĩa là key đã không được ai sử dụng nữa và nó đã bị garbage collector &#8220;tịch thu&#8221;. Lúc đó, WeakHashMap sẽ bỏ entry liên quan đi. No more memory leak ! :)</p>
 
-<p>Như vậy chúng ta có thể tóm gọn lại đoạn code ở trên như sau:</p>
+<h1>Demo</h1>
 
-<ol>
-<li>Khi outside() được gọi, outside trả về một function</li>
-<li>function được outside trả lại (fn_inside) đó đóng lại cái context hiện tại và cái context đó <strong>chứa biến x tại thời điểm outside() được gọi</strong></li>
-<li>Khi fn_inside được gọi, nó vẫn nhớ x có giá trị là 3</li>
-<li>Khi invoke fn_inside(5) thì nó sẽ lấy giá trị biến y=5 + giá trị biến x=3 và kết quả sẽ là 8</li>
-</ol>
+<p>Lý thuyết là vậy. Để dễ hiểu hơn, quan sát đoạn demo WeakHashMap sau:</p>
 
-
-<p>Như vậy chúng ta có thể rút ra một đặc điểm của closure là:</p>
-
-<blockquote><p> <strong><em>A closure must preserve the arguments and variables in all scopes it references</em></strong></p></blockquote>
-
-<ul>
-<li><p>Một câu hỏi được đặt ra là: Khi nào cái biến x được giải phóng?? Câu trả lời là khi mà cái context mà biến x được reference đến ( ở đây là fn_inside ) không còn accessible được nữa ( refer đến scope của js, chúng ta có thể hiểu là khi mà function chứa fn_inside được execute xong và không còn bất kì tham chiếu nào đến fn_inside nữa ).</p></li>
-<li><p>Một câu hỏi khác được đặt ra là với multi-nested function thì điều gì sẽ xảy ra?? Let&#8217;s give a try:</p></li>
-</ul>
-
-
-<figure class='code'><figcaption><span>multinested.js </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">A</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">function</span> <span class="nx">B</span><span class="p">(</span><span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kd">function</span> <span class="nx">C</span><span class="p">(</span><span class="nx">z</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nx">alert</span><span class="p">(</span><span class="nx">x</span> <span class="o">+</span> <span class="nx">y</span> <span class="o">+</span> <span class="nx">z</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="nx">C</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  <span class="nx">B</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="nx">A</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span> <span class="err">#</span><span class="o">=&gt;</span> <span class="mi">6</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Ở đoạn code trên thì điều gì đã xảy ra?</p>
-
-<ol>
-<li>B tạo ra một cái closure chữa context của A, do đó B có thể access vào A&#8217;s variable, ở đây là x</li>
-<li>C tạo ra một cái closure chứa context của B</li>
-<li>Vì B chứa context của A nên C cũng sẽ chứa context của A, tức là C cũng access được vào biến x của A, và cả biến y của B.</li>
-</ol>
-
-
-<p>Do đó kết quả sẽ là 1+2+3=6, khá là obvious nhỉ. Đoạn code ở trên giúp chúng ta có thêm một khái niệm mới gọi là <strong><em>scope chaining</em></strong>. Tại sao gọi là chaining, vì khi context được include từ outer function vào inner function, thì chúng ta sẽ hiểu một cách đơn giản là context của inner function và context của outer function được nối với nhau, một cách có chiều (<strong>directed</strong>). Và độ ưu tiên khi access biến là từ trong ra ngoài.</p>
-
-<p><img src="/images/closurejs/closure2.png"></p>
-
-<p>Do cái scope chaining là directed nên ở phía ngược lại, A lại không thể access được C, vì C nằm trong context của B, và chỉ visible <strong>inside B</strong>, hay nói cách khác là C sẽ là private của B, và không nhìn được từ A.</p>
-
-<ul>
-<li>Lại có một bạn nghĩ là khi outer function có biến tên là x, mà ta cũng truyền 1 biến tên là x vào inner function, tức là khi có name-conflict thì chuyện gì sẽ xảy ra. Let&#8217;s take an example</li>
-</ul>
-
-
-<figure class='code'><figcaption><span>nameconflict.js </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">outside</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
-</span><span class='line'>  <span class="kd">function</span> <span class="nx">inside</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="nx">x</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  <span class="k">return</span> <span class="nx">inside</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="nx">result</span> <span class="o">=</span> <span class="nx">outside</span><span class="p">()(</span><span class="mi">20</span><span class="p">);</span> <span class="err">#</span><span class="o">=&gt;</span> <span class="mi">20</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Bạn có thể thấy kết quả trả về biến x được trực tiếp truyền vào inner function thay vì biến x của outer function. Sử dụng khái niệm scope chaining ở trên thì chúng ta có thể thấy độ ưu tiên của context inside là cao hon context outside khi intepreter tìm giá trị của x, nên giá trị của x ở inside (ở đây là 20) sẽ được sử dụng.</p>
-
-<p>Hy vọng là với 3 ví dụ trên các bạn đã có cái nhìn rõ ràng hơn về closure.</p>
-
-<h2>3. <strong><em><u>Closure pitfalls</u></em></strong></h2>
-
-<p>Closure là một khái niệm khá dễ nhầm lẫn và khó nắm rõ với những người người ít quan tâm đến javascript. Một trong những ví dụ hay được dùng để minh họa cái sự dễ nhầm này được gọi là <strong>The Infamous Loop Problem</strong>. Ví dụ này được minh họa bằng đoạn code dưới đây:</p>
-
-<figure class='code'><figcaption><span>closurepitfall.js </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">add_the_handlers</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">nodes</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">i</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">for</span> <span class="p">(</span><span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">nodes</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">nodes</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">onclick</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nx">alert</span><span class="p">(</span><span class="nx">i</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">};</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">};</span>
-</span><span class='line'><span class="nx">nodes</span> <span class="o">=</span> <span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s2">&quot;click&quot;</span><span class="p">);</span>
-</span><span class='line'><span class="nx">add_the_handlers</span><span class="p">(</span><span class="nx">nodes</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Đoan code ở trên làm một việc là tìm tất cả các node có id là &#8220;click&#8221;, add vào node đó một cái sự kiện là khi click vào node đó sẽ alert lên thứ tự của node đó. Giả sử bạn có một file html như sau:</p>
-
-<figure class='code'><figcaption><span>closurepitfall.html </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;li</span> <span class="na">id=</span><span class="s">&quot;click&quot;</span><span class="nt">&gt;</span>link 1 <span class="nt">&lt;/li&gt;</span>
-</span><span class='line'><span class="nt">&lt;li</span> <span class="na">id=</span><span class="s">&quot;click&quot;</span><span class="nt">&gt;</span>link 2 <span class="nt">&lt;/li&gt;</span>
-</span><span class='line'><span class="nt">&lt;li</span> <span class="na">id=</span><span class="s">&quot;click&quot;</span><span class="nt">&gt;</span>link 3 <span class="nt">&lt;/li&gt;</span>
-</span><span class='line'><span class="nt">&lt;li</span> <span class="na">id=</span><span class="s">&quot;click&quot;</span><span class="nt">&gt;</span>link 4 <span class="nt">&lt;/li&gt;</span>
-</span><span class='line'><span class="nt">&lt;li</span> <span class="na">id=</span><span class="s">&quot;click&quot;</span><span class="nt">&gt;</span>link 5 <span class="nt">&lt;/li&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Bạn hy vọng là khi click vào link 1 sẽ alert 1, click vào link 2 sẽ alert ra 2&#8230;. đúng không. Tuy nhiên thực tế là <strong>bạn click vào link nào nó cũng alert ra 5 cả</strong>. Kì lạ nhỉ? Để giải thích cho hiện tượng này thì chúng ta hãy xem lại khái niệm về closure nào. Biến i được sử dụng trong anonymous function được gán cho onclick, được <strong>kế thừa từ context của add_the_handlers function</strong>. Tại thời điểm mà bạn gọi onclick, for loop đã được execute xong, và biến i <strong>của context của add_the_handlers</strong> lúc này có giá trị là 5. Do đó bạn có click vào link nào thì giá trị được alert ra cũng là 5 cả. Điểm chú ý của việc này chính là do bạn đang nhầm lẫn, hay chính xác là có sự khác biệt giữa <strong>scope/context của for-loop</strong> với <strong>scope/context của outer function là add_the_handlers </strong>.</p>
-
-<p>Để giải quyết vấn đề này thì bạn có thể làm như dưới đây:</p>
-
-<figure class='code'><figcaption><span>pitfall.js </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">add_the_handlers</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">nodes</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">helper</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">i</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nx">alert</span><span class="p">(</span><span class="nx">i</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">};</span>
-</span><span class='line'>  <span class="p">};</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">i</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">for</span> <span class="p">(</span><span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">nodes</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">modes</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">onclick</span> <span class="o">=</span> <span class="nx">helper</span><span class="p">(</span><span class="nx">i</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">};</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Point của cách làm này chính là việc truyền được giá trị của (i) tại thời điểm hiện tại vào closure của function được bind (gán) vào onclick. Giúp cho hàm helper() luôn tham chiếu đến giá trị i đúng. Một best practice để tránh những sai lầm như thế này là</p>
-
-<blockquote><p>Avoid creating functions within a loop. It can be wasteful computationally,and it can cause confusion (tránh tạo mới function trong vòng loop, vì nó vừa làm tốn tài nguyên cpu, vừa dễ gây nhầm lẫn)</p></blockquote>
-
-<h1>Kết luận</h1>
-
-<p>Như vậy qua bài viết này chúng ta đã nắm được khái niệm về function scope và closure trong javascript, và một số best practices trong việc sử dụng closure và scope. Closure trong javascript hay sử dụng để tạo ra một cái bao mà các thứ trong đấy không được nhìn thấy bởi bên ngoài nhưng vẫn truy cập được từ bên trong, và thường được áp dụng cho một số design pattern trong js (tiêu biểu nhất là module pattern).Chi tiết hơn các bạn có thể tham khảo ở các tài liệu sau:</p>
-
-<ul>
-<li><a href="http://www.amazon.com/JavaScript-Good-Parts-Douglas-Crockford/dp/0596517742/ref=sr_1_1?ie=UTF8&amp;qid=1368334060&amp;sr=8-1&amp;keywords=javascript+the+good+part">Javascript the good part (by Douglas Crockford)</a></li>
-<li><a href="http://www.ecma-international.org/publications/standards/Ecma-262.htm">Ecma-262 standard</a></li>
-<li><a href="http://robertnyman.com/2008/10/09/explaining-javascript-scope-and-closures/">http://robertnyman.com/2008/10/09/explaining-javascript-scope-and-closures/</a></li>
-<li><a href="https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Functions_and_function_scope">https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Functions_and_function_scope</a></li>
-</ul>
-
-
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-05-09T15:31:00+09:00" data-updated="true" itemprop="datePublished">May 9<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/05/09/y-nghia-cua-tu-khoa-volatile-trong-c/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/05/09/y-nghia-cua-tu-khoa-volatile-trong-c/" itemprop="url">Ý Nghĩa Của Từ Khóa Volatile Trong C</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h1>Mở đầu</h1>
-
-<p>Trong lập trình nhúng (embedded system), ta rất thường hay gặp khai báo biến với từ khóa volatile. Việc khai báo biến volatile là rất cần thiết để tránh những lỗi sai khó phát hiện do tính năng optimization của compiler. Trong bài viết này, ta sẽ tìm hiểu ý nghĩa của từ khóa này, cách sử dụng nó và giải thích tại sao nó quan trọng trong một số trường hợp lập trình với hệ thống nhúng và lập trình ứng dụng đa luồng.</p>
-
-<h1>Tại sao cần phải có biến volatile</h1>
-
-<p>Cách khai báo biến với từ khóa volatile:</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>volatile int foo;//both this way...
-</span><span class='line'>int volatile foo;//... and this way is OK! Define a volatile integer variable
-</span><span class='line'>
-</span><span class='line'>volatile uint8_t *pReg;//both this way...
-</span><span class='line'>uint8_t volatile *pReg;//... and this way is OK! Define a pointer to a volatile unsigned 8-bit integer</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Một biến cần được khai báo dưới dạng biến volatile khi nào? Khi mà giá trị của nó có thể thay đổi một cách không báo trước. Trong thực tế, có 3 loại biến mà giá trị có thể bị thay đổi như vậy:</p>
-
-<ul>
-<li>Memory-mapped peripheral registers (thanh ghi ngoại vi có ánh xạ đến ô nhớ)</li>
-<li>Biến toàn cục được truy xuất từ các tiến trình con xử lý ngắt (interrupt service routine)</li>
-<li>Biến toàn cục được truy xuất từ nhiều tác vụ trong một ứng dụng đa luồng.</li>
-</ul>
-
-
-<h2>Thanh ghi ngoại vi</h2>
-
-<p>Trong các hệ thống nhúng thường có các thiết bị ngoại vi (ví dụ như cổng vào ra đa chức năng GPIO, cổng UART, cổng SPI, &#8230;), và các thiết bị ngoại vi này chứa các thanh ghi mà giá trị của nó có thể thay đổi ngoài ý muốn của dòng chương trình (program flow). Ví dụ một thanh ghi trạng thái pStatReg, ta cần phải thực hiện polling thanh ghi trạng thái này đến khi nó khác 0
-(Đoạn code minh họa với Keil ARM compiler, trên vi điều khiển ARM LPC2368)</p>
-
-<figure class='code'><figcaption><span>mappedIOi_nonvolatile.c</span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">unsigned</span> <span class="kt">long</span> <span class="o">*</span> <span class="n">pStatReg</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="o">*</span><span class="p">)</span> <span class="mh">0xE002C004</span><span class="p">;</span>
-</span><span class='line'><span class="c1">//Wait for the status register to become non-zero</span>
-</span><span class='line'><span class="k">while</span><span class="p">(</span><span class="o">*</span><span class="n">pStatReg</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Đoạn code này có gì không ổn? Nó sẽ chạy sai khi ta bật chức năng tối ưu (optimization) của compiler.
-Quan sát mã assembly mà compiler xuất ra của đoạn code trên như sau:</p>
-
-<figure class='code'><figcaption><span>mappedIO_nonvolatile.s</span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='s'><span class='line'>        LDR      r0<span class="p">,</span><span class="o">|</span>L2.564<span class="o">|</span>
-</span><span class='line'>        SUB      sp<span class="p">,</span>sp<span class="p">,</span><span class="c1">#0x10</span>
-</span><span class='line'>        LDR      r0<span class="p">,[</span>r0<span class="p">,</span><span class="c1">#0]</span>
-</span><span class='line'><span class="o">|</span>L2.22<span class="o">|</span>
-</span><span class='line'>        CMP      r0<span class="p">,</span><span class="c1">#0</span>
-</span><span class='line'>        BEQ      <span class="o">|</span>L2.22<span class="o">|</span>
-</span><span class='line'>        LDR      r1<span class="p">,</span><span class="o">|</span>L2.564<span class="o">|</span>
-</span><span class='line'><span class="kc">...</span>
-</span><span class='line'><span class="o">|</span>L2.564<span class="o">|</span>
-</span><span class='line'>        DCD      <span class="mh">0xe002c004</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Trước khi vào label |L2.22|, tương ứng với vòng lặp while, thanh ghi r0 được ghi vào giá trị được lưu trong ô nhớ 0xE002C004. Khi vào vòng lặp while, compiler thực hiện ngay việc so sánh giá trị của thanh ghi r0 với 0. Tại sao lại như vậy? Vì compiler nhận thấy biến pStatReg là một biến normal, giá trị của nó được hiểu là không thể thay đổi một cách bất thường. Do vậy, khi bật tối ưu, compiler sẽ chỉ thực hiện so sánh giá trị của r0 mà không load lại giá trị này từ ô nhớ 0xE002C004, vì theo flow của chương trình thì biến pStatReg không bị thay đổi ở bất cứ đâu. Do đó, vòng lặp while sẽ chạy vô tận, hoặc không chạy gì cả (tùy theo giá trị ban đầu mà pStatReg trỏ đến).</p>
-
-<p>Điều gì sẽ xảy ra nếu ta đổi biến pStatReg sang volatile?</p>
-
-<figure class='code'><figcaption><span>mappedIO_volatile.c</span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">volatile</span> <span class="kt">unsigned</span> <span class="kt">long</span> <span class="o">*</span> <span class="n">pStatReg</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="o">*</span><span class="p">)</span> <span class="mh">0xE002C004</span><span class="p">;</span>
-</span><span class='line'><span class="c1">//Wait for the status register to become non-zero</span>
-</span><span class='line'><span class="k">while</span><span class="p">(</span><span class="o">*</span><span class="n">pStatReg</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Mã assembly mà compiler xuất ra sẽ như sau:</p>
-
-<figure class='code'><figcaption><span>mappedIO_volatile.s</span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='s'><span class='line'>    SUB      sp<span class="p">,</span>sp<span class="p">,</span><span class="c1">#0x10</span>
-</span><span class='line'>        LDR      r0<span class="p">,</span><span class="o">|</span>L3.544<span class="o">|</span>
-</span><span class='line'><span class="o">|</span>L3.4<span class="o">|</span>
-</span><span class='line'>        LDR      r1<span class="p">,[</span>r0<span class="p">,</span><span class="c1">#0]</span>
-</span><span class='line'>        CMP      r1<span class="p">,</span><span class="c1">#0</span>
-</span><span class='line'>        BEQ      <span class="o">|</span>L3.4<span class="o">|</span>
-</span><span class='line'>        LDR      r1<span class="p">,</span><span class="o">|</span>L3.544<span class="o">|</span>
-</span><span class='line'><span class="kc">...</span>
-</span><span class='line'><span class="o">|</span>L3.544<span class="o">|</span>
-</span><span class='line'>        DCD      <span class="mh">0xe002c004</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Điều gì khác biệt ở đây? Đầu tiên, ở dòng LDR trước label |L3.4|, compiler đã đặt địa chỉ 0xE002C004 vào thanh ghi r0. Ở dòng LDR đầu tiên ngay sau label |L3.4|, ta thấy compiler đã LOAD LẠI GIÁ TRỊ của ô nhớ 0xE002C004 vào ô nhớ r1! Sau đó nó mới thực hiện so sánh giá trị của ô nhớ r1 này với 0.</p>
-
-<p>Lý do là gì? Vì ta đã đặt biến pStatReg là biến volatile, để báo hiệu là biến này có thể thay đổi một cách bất thường, ngoài flow của chương trình. Do vậy nên, để &#8220;đề phòng&#8221;, compiler lúc nào cũng phải load lại giá trị mới của ô nhớ 0xE002C004, để đảm bảo mình có giá trị mới nhất!</p>
-
-<p>Đến đây, bạn có thể hỏi là &#8220;giá trị bị thay đổi một cách bất thường&#8221; là như thế nào? Hiện tượng này đặc biệt hay xảy ra khi lập trình nhúng.  Trong hệ thống nhúng, một thanh ghi có thể bị thay đổi giá trị do những điều kiện bên ngoài. Ví dụ như mức điện áp không vượt quá ngưỡng, làm cho giá trị 0 thành 1, 1 thành 0. Hoặc, khi cổng UART nhận được đầy buffer thì thanh ghi BUFFER_READY tự động chuyển 0 thành 1&#8230; Bằng cách sử dụng biến volatile, chương trình C được compiler biên dịch sẽ đảm bảo luôn luôn đọc lại giá trị của thanh ghi, tránh mọi assumption của compiler.</p>
-
-<h2>Tiến trình con xử lý ngắt (Interrupt Service Routine)##</h2>
-
-<p>Ngắt là một khái niệm quan trọng trong hệ thống nhúng. Có nhiều loại ngắt khác nhau như ngắt vào ra (I/O), ngắt SPI, ngắt UART&#8230; Mỗi khi xảy ra ngắt, stack pointer sẽ nhảy đến chương trình con xử lý ngắt (ISR). Thường thì các chương trình con xử lý ngắt này sẽ thay đổi giá trị của biến toàn cục và trong chương trình chính sẽ đọc những giá trị này để xử lý.</p>
-
-<p>Để dễ hiểu, lấy ví dụ ngắt cổng serial (UART) kiểm tra các kí tự nhận được xem có phải là 0xFF không. Nếu là kí tự 0xFF, ISR sẽ set một biến cờ toàn cục. Nếu không có volatile, code như sau:</p>
-
-<figure class='code'><figcaption><span>isr.c </span></figcaption>
+<figure class='code'><figcaption><span>WeakHashMapDemo.java </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -777,42 +177,243 @@ Quan sát mã assembly mà compiler xuất ra của đoạn code trên như sau:
 <span class='line-number'>20</span>
 <span class='line-number'>21</span>
 <span class='line-number'>22</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="n">etx_rcvd</span> <span class="o">=</span> <span class="n">FALSE</span><span class="p">;</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">package</span> <span class="n">corejava</span><span class="o">.</span><span class="na">collection</span><span class="o">;</span>
 </span><span class='line'>
-</span><span class='line'><span class="kt">void</span> <span class="nf">main</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="p">...</span>
-</span><span class='line'>  <span class="k">while</span><span class="p">(</span><span class="o">!</span><span class="n">ext_rcvd</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>      <span class="c1">//Wait...</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  <span class="p">...</span>
-</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">java.util.Map</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">java.util.WeakHashMap</span><span class="o">;</span>
 </span><span class='line'>
-</span><span class='line'><span class="n">interrupt</span> <span class="kt">void</span> <span class="nf">rx_isr</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="p">...</span>
-</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="mh">0xFF</span> <span class="o">==</span> <span class="n">rx_char</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>      <span class="p">...</span>
-</span><span class='line'>      <span class="n">etx_rcvd</span> <span class="o">=</span> <span class="n">TRUE</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  <span class="p">...</span>
-</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">WeakHashMapTest</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="c1">//add one element to the map...</span>
+</span><span class='line'>      <span class="n">Map</span><span class="o">&lt;</span><span class="n">Data</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">map</span>  <span class="o">=</span> <span class="k">new</span> <span class="n">WeakHashMap</span><span class="o">&lt;</span><span class="n">Data</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;();</span>
+</span><span class='line'>      <span class="n">Data</span> <span class="n">someDataObject</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Data</span><span class="o">(</span><span class="s">&quot;test&quot;</span><span class="o">);</span>
+</span><span class='line'>      <span class="n">map</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">someDataObject</span><span class="o">,</span> <span class="n">someDataObject</span><span class="o">.</span><span class="na">value</span><span class="o">);</span>
+</span><span class='line'>      <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;map contains someDataObject ? &quot;</span> <span class="o">+</span> <span class="n">map</span><span class="o">.</span><span class="na">containsKey</span><span class="o">(</span><span class="n">someDataObject</span><span class="o">));</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="c1">//now make someDataObject eligible for garbage collection...</span>
+</span><span class='line'>      <span class="n">someDataObject</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">1000000</span><span class="o">;</span> <span class="n">i</span><span class="o">++){</span>
+</span><span class='line'>          <span class="k">if</span><span class="o">(</span><span class="n">map</span><span class="o">.</span><span class="na">size</span><span class="o">()!=</span><span class="mi">0</span><span class="o">)</span>
+</span><span class='line'>          <span class="o">{</span>
+</span><span class='line'>              <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;At iteration &quot;</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s">&quot; the map still holds the reference on someDataObject&quot;</span><span class="o">);</span>
+</span><span class='line'>          <span class="o">}</span>
+</span><span class='line'>          <span class="k">else</span>
+</span><span class='line'>          <span class="o">{</span>
+</span><span class='line'>              <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;someDataObject has finally been garbage collected at iteration &quot;</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s">&quot;, so the map is now empty&quot;</span><span class="o">);</span>
+</span><span class='line'>              <span class="k">break</span><span class="o">;</span>
+</span><span class='line'>          <span class="o">}</span>
+</span><span class='line'>          
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kd">static</span> <span class="kd">class</span> <span class="nc">Data</span><span class="o">{</span>
+</span><span class='line'>      <span class="n">String</span> <span class="n">value</span><span class="o">;</span>
+</span><span class='line'>      <span class="n">Data</span><span class="o">(</span><span class="n">String</span> <span class="n">value</span><span class="o">){</span>
+</span><span class='line'>          <span class="k">this</span><span class="o">.</span><span class="na">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">;</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Ta để ý trong main(): compiler không thể biết được là biến ext_rcvd có thể bị thay đổi trong ISR. Compiler dò đoạn code, thấy rằng biểu thức !ext_rcvd luôn đúng, vì thế không thể thoát được vòng lặp while. Nếu compiler được bật optimization lên, tất cả đoạn code sau vòng lặp while sẽ bị loại bỏ. Nếu không có warning cẩn thận, chương trình của ta có thể bị lỗi mà phát hiện rất khó.</p>
+<p>Chạy đoạn code trên: kết quả như sau:</p>
 
-<p>Giải pháp là đặt biến ext_rcvd là biến volatile. compiler sẽ biết đó là biến có thể bị thay đổi theo một cách nào đó ngoài ý muốn (ở đây là do ISR). Compiler sẽ bị buộc phải check giá trị của biến ext_rcvd.</p>
+<figure class='code'><figcaption><span>output </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>map contains someDataObject ? true
+</span><span class='line'>At iteration 0 the map still holds the reference on someDataObject
+</span><span class='line'>At iteration 1 the map still holds the reference on someDataObject
+</span><span class='line'>...
+</span><span class='line'>At iteration 29574 the map still holds the reference on someDataObject
+</span><span class='line'>someDataObject has finally been garbage collected at iteration 29575, hence the map is now empty</span></code></pre></td></tr></table></div></figure>
 
-<h2>Ứng dụng đa luồng</h2>
 
-<p>Trong các ứng dụng đa luồng, thường xảy ra trường hợp các tác vụ trao đổi thông tin với nhau thông qua một biến toàn cục. Như vậy, một tác vụ thay đổi giá trị của biến toàn cục cũng sẽ giống như trường hợp ISR ở trên. Nếu compiler mà bật tính năng optimization thì sẽ xảy ra vấn đề.</p>
+<p> thay <strong>WeakHashMap</strong> bằng <strong>HashMap</strong>, kết quả sẽ như thế nào?</p>
 
-<p>Ví dụ đoạn code</p>
+<figure class='code'><figcaption><span>output </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>map contains someDataObject ? true
+</span><span class='line'>At iteration 0 the map still holds the reference on someDataObject
+</span><span class='line'>At iteration 1 the map still holds the reference on someDataObject
+</span><span class='line'>...
+</span><span class='line'>At iteration 999997 the map still holds the reference on someDataObject
+</span><span class='line'>At iteration 999998 the map still holds the reference on someDataObject
+</span><span class='line'>At iteration 999999 the map still holds the reference on someDataObject</span></code></pre></td></tr></table></div></figure>
 
-<figure class='code'><figcaption><span>multithreaded.c </span></figcaption>
+
+<p>Bạn đã thấy điểm khác biệt? Sau một khoảng thời gian, <strong>WeakHashMap</strong> sẽ bỏ đi entry tương ứng với weak reference. Còn <strong>HashMap</strong>, vì là strong reference, trong map sẽ luôn chứa cặp phần tử (someDataObject, value) mặc dù bên ngoài someDataObject đã set là null.</p>
+
+<h1>Kết luận</h1>
+
+<p>Bài viết này đã trình bày tác dụng của một lớp trong Collection của Java: <strong>WeakHashSet</strong>. Đồng thời, bài viết cũng giới thiệu <strong>weak reference</strong> và <strong>strong reference</strong> và mối quan hệ của chúng với Java garbage collector.</p>
+
+<h1>Tham khảo</h1>
+
+<ol>
+<li>Core Java Volume I&#8211;Fundamentals</li>
+<li><a href="http://docs.oracle.com/javase/6/docs/api/java/util/WeakHashMap.html">http://docs.oracle.com/javase/6/docs/api/java/util/WeakHashMap.html</a></li>
+</ol>
+
+
+		
+		
+	</div>
+
+</article>
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-05-28T22:28:00+09:00" data-updated="true" itemprop="datePublished">May 28<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/sql/'>sql</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/05/28/sql-and-null/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/05/28/sql-and-null/" itemprop="url">Sql and Null</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<p>Khi sử dụng SQL, chắc hẳn các bạn đã biết có một cái gọi là <strong>NULL</strong> (mình gọi là cái vì NULL <strong>không
+phải là một giá trị</strong>)
+Để so sánh với NULL thì các bạn sẽ dùng toán tử <strong>is</strong> và <strong>is not</strong> thay vì <strong>=</strong>(equal) hoặc là
+<strong>&lt;></strong>(not equal)</p>
+
+<figure class='code'><figcaption><span>null.sql </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="k">SELECT</span> <span class="o">*</span> <span class="k">WHERE</span> <span class="n">field</span> <span class="k">IS</span> <span class="k">NULL</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Bạn đã bao giờ tự hỏi tại sao lại không dùng (=) và (&lt;>). Đầu tiên chúng ta hãy thử nhé</p>
+
+<figure class='code'><figcaption><span>null.sql </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="k">select</span> <span class="ss">&quot;1&quot;</span> <span class="k">where</span> <span class="mi">1</span> <span class="o">&lt;&gt;</span> <span class="k">NULL</span><span class="p">;</span>
+</span><span class='line'><span class="k">select</span> <span class="ss">&quot;2&quot;</span> <span class="k">where</span> <span class="mi">1</span> <span class="k">IS</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">;</span>
+</span><span class='line'><span class="k">select</span> <span class="ss">&quot;3&quot;</span> <span class="k">where</span> <span class="k">NULL</span> <span class="o">=</span> <span class="k">NULL</span><span class="p">;</span>
+</span><span class='line'><span class="k">select</span> <span class="ss">&quot;4&quot;</span> <span class="k">where</span> <span class="k">NULL</span> <span class="o">&lt;&gt;</span> <span class="k">NULL</span><span class="p">;</span>
+</span><span class='line'><span class="k">select</span> <span class="ss">&quot;5&quot;</span> <span class="k">where</span> <span class="k">NULL</span> <span class="k">IS</span> <span class="k">NULL</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>và kết quả nhận được sẽ là &#8220;2&#8221; và &#8220;5&#8221;. Từ đấy có thể thấy một điều đơn giản là: để so sánh với NULL chúng ta chỉ có thể dùng IS và IS NOT.
+Vậy nếu bạn thực hiện các phép toán với NULL thì sao? Mọi phép toán như cộng ,trừ ,nhân ,chia ,concat mà có sự tham gia của NULL đều cho
+kết quả là NULL cả.</p>
+
+<p>Đầu tiên để hiểu lý do thì chúng ta phải biết là tại sao lại có giá trị NULL.
+Giá trị NULL trong SQL mục đích chính là để nhằm tạo ra một cách thể hiện cho cái gọi là &#8220;không có thông tin hoặc thông tin không phù hợp&#8221;
+(missing information and inapplicable information). Do đó về mặt tự nhiên, bạn sẽ nói là field X không có thông tin, chứ sẽ không nói là
+field X bằng (equal) không có thông tin, đúng không. Tuy nhiên lý do trên không có giá trị về mặt giải thích.</p>
+
+<p>Để giải thích cặn kẽ thì chúng ta phải đi lại một chút về khái niệm Logic. Về mặt toán học thì có rất nhiều loại LOGIC. Boolean logic được
+biết đến nhiều nhất. Bản chất của Boolean là chỉ tồn tại 2 giá trị TRUE, FALSE và các phép toán trên chúng. Do đó Boolean được xếp vào loại
+2VL (2 valued logic). Tuy nhiên logic trong SQL rất tiếc lại không phải Boolean, vì trong SQL sẽ tồn tại 3 khái niệm logic: TRUE, FALSE, và
+Unknown ( hay chính là NULL ). Do đó logic trong SQL gọi là 3VL (3 valued logic). Trong Boolean chỉ có 2 phép so sánh là equal (=) và not(&lt;>),
+tuy nhiên với 3VL như SQL sẽ có thêm phép so sánh là <strong>IS</strong> và <strong>IS NOT</strong>. Kết hợp 3 loại giá trị với các phép so sánh đó sẽ cho chúng ta kết
+quả là 3 loại bảng truth table dưới đây:</p>
+
+<p><img src="/images/sqlandnull/truthtbl.png" width="500" height="1000" title="truth table" ></p>
+
+<p><img src="/images/sqlandnull/truthtbl2.png" width="300" height="600" title="truth table" ></p>
+
+<p>(trích dẫn từ Wikipedia)</p>
+
+<p>Trên đây là những kiến thức hết sức basic về giá trị NULL trên SQL, hy vọng có thể giúp các bạn đỡ nhầm lẫn khi thực hiện các phép toán với NULL.</p>
+
+		
+		
+	</div>
+
+</article>
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-05-28T16:53:00+09:00" data-updated="true" itemprop="datePublished">May 28<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/unittest/'>unittest</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/05/28/thiet-ke-huong-test/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/05/28/thiet-ke-huong-test/" itemprop="url">Sử Dụng Unittest để Refactoring Code</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<p>Ở bài viết trước tôi đã đề cập đến <a href="http://ktmt.github.io/blog/2013/05/09/mock-with-unittest-in-python/">cách sử dụng mock để viết unittest</a>. Unittest có tác dụng không chỉ trong việc đảm bảo các đoạn code mới được viết thêm không phá vỡ các yêu cầu logic trước đó, trong bài viết này, tôi sẽ chia sẽ các kinh nghiệm sử dụng unittest để refactoring các đoạn code</p>
+
+<p>Một trong những vấn đề khi viết các hàm đó là các hàm thường quá phức tạp. <a href="http://en.wikipedia.org/wiki/Robert_Cecil_Martin">Robert Martin</a> trong cuốn sách &#8220;Clean code - a handbook of Agile Software Craftmenship&#8221; đã nói về nói về các quy tắc khi thiết kế hàm: Quy tắc đầu tiên của function đó là chúng nên nhỏ, quy tắc thứ hai là chúng nên nhỏ hơn thế nữa&#8221; (The first rule ò functions is that they should be small. The second rule of functions is that they should be smaller than that). Function càng ngắn thì càng dễ hiểu, function càng ngắn thì nó càng tách biệt so với các hàm khác. Và hơn thế nữa hàm càng ngắn, thì test càng đơn giản. Vậy làm thế nào để biết function bạn viết là đủ ngắn hay chưa? Nếu để test 1 hàm cần tới hơn 20 dòng code, theo bản thân tôi, hàm đó nên được viết lại.</p>
+
+<p>Hãy xét một ví dụ sau</p>
+
+<figure class='code'><figcaption><span>models.py </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -833,30 +434,258 @@ Quan sát mã assembly mà compiler xuất ra của đoạn code trên như sau:
 <span class='line-number'>18</span>
 <span class='line-number'>19</span>
 <span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="n">cntr</span><span class="p">;</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Order</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+</span><span class='line'>    <span class="c"># define fields in here</span>
 </span><span class='line'>
-</span><span class='line'><span class="kt">void</span> <span class="nf">task1</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="n">cntr</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>  
-</span><span class='line'>  <span class="k">while</span><span class="p">(</span><span class="n">cntr</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>      <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  <span class="c1">//code follows...</span>
-</span><span class='line'><span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'><span class="kt">void</span> <span class="nf">task2</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="c1">//...code...</span>
-</span><span class='line'>  <span class="n">cntr</span> <span class="o">++</span><span class="p">;</span>
-</span><span class='line'>  <span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
-</span><span class='line'>  <span class="c1">//...code...</span>
-</span><span class='line'><span class="p">}</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">create_final_pdf_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_order_id</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">front_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">create_frontcover_image</span><span class="p">()</span>
+</span><span class='line'>        <span class="n">back_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">create_backcover_image</span><span class="p">(</span><span class="n">client_order_id</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_type</span> <span class="o">==</span> <span class="n">Order</span><span class="o">.</span><span class="n">SOFT_COVER</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">frontcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
+</span><span class='line'>                <span class="p">[</span><span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">front_image</span><span class="p">),</span> <span class="bp">None</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_size</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">backcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
+</span><span class='line'>                <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">back_image</span><span class="p">)],</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_size</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">frontcover_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached_pdf_file</span><span class="p">,</span> <span class="n">backcover_file</span><span class="p">]</span>
+</span><span class='line'>        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_type</span> <span class="o">==</span> <span class="n">Order</span><span class="o">.</span><span class="n">HARD_COVER</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">hardcover_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_hardcover_image</span><span class="p">(</span><span class="n">back_image</span><span class="p">,</span> <span class="n">front_image</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">hardcover_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PDF_SIZES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">size_type</span><span class="p">]</span>
+</span><span class='line'>            <span class="n">hardcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
+</span><span class='line'>                <span class="p">[</span><span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">hardcover_image</span><span class="p">)],</span> <span class="n">hardcover_size</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">hardcover_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached_pdf_file</span><span class="p">]</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">new_path</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">merge_pdf_files</span><span class="p">(</span><span class="n">input_files</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">new_path</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Cách khắc phục vấn như cũ: đặt biến cntr thành biến volatile !</p>
+<p>Hàm <code>create_final_pdf_file</code> nhận tham số là một <code>client_order_id</code>, tạo ra một pdf file tương ứng <code>client_order_id</code>, và trả về đường dẫn của pdf file đó. Hàm này tạo ra một ảnh cover trước, và ảnh cover sau, sau đó ghép với một file pdf có sẵn để tạo nên <code>final_pdf</code>.</p>
+
+<p>Tuy nhiên tuỳ theo giá trị của <code>self.order_type</code> mà cách tạo các ảnh trước và ảnh sau là khác nhau.</p>
+
+<p>Nếu chỉ dừng ở đây, bản thân tôi, thấy khá hài lòng với hàm  <code>create_final_pdf_file</code>. Hàm dài vừa đủ, không quá dài (19 lines), chỉ có một input đầu vào, và 1 output đầu ra. Tuy nhiên, nếu viết testcase cho hàm này, chúng ta sẽ thấy có vấn đề</p>
+
+<figure class='code'><figcaption><span>test_models.py </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">TestModel</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">tree</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">()</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="n">Order</span><span class="p">(</span><span class="n">tree</span><span class="o">=</span><span class="n">tree</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.image_helper.save_image&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.generator.pdf.merge_pdf_files&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.generator.pdf.create_pdf_from_images&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">test_create_final_pdf_file_soft_cover</span><span class="p">(</span>
+</span><span class='line'>            <span class="bp">self</span><span class="p">,</span> <span class="n">mock_create_pdf</span><span class="p">,</span> <span class="n">mock_merge_pdf</span><span class="p">,</span> <span class="n">mock_save_image</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">order_type</span> <span class="o">=</span> <span class="n">Order</span><span class="o">.</span><span class="n">SOFT_COVER</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">mock_cached_pdf</span> <span class="o">=</span> <span class="n">PropertyMock</span><span class="p">(</span>
+</span><span class='line'>            <span class="n">return_value</span><span class="o">=</span><span class="s">&#39;StoryTree/tests/fixtures/1.pdf&#39;</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_backcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_frontcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">with</span> <span class="n">nested</span><span class="p">(</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="s">&#39;cached_pdf_file&#39;</span><span class="p">,</span> <span class="n">mock_cached_pdf</span><span class="p">),</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="s">&#39;create_backcover_image&#39;</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="p">),</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="s">&#39;create_frontcover_image&#39;</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="p">)):</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">create_final_pdf_file</span><span class="p">(</span><span class="s">&#39;STORYTREE01111&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">mock_create_pdf</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">first_args</span> <span class="o">=</span> <span class="n">mock_create_pdf</span><span class="o">.</span><span class="n">call_args_list</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">first_args</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.image_helper.save_image&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.generator.pdf.merge_pdf_files&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.generator.pdf.create_pdf_from_images&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">test_create_final_pdf_file_hard_cover</span><span class="p">(</span>
+</span><span class='line'>            <span class="bp">self</span><span class="p">,</span> <span class="n">mock_create_pdf</span><span class="p">,</span> <span class="n">mock_merge_pdf</span><span class="p">,</span> <span class="n">mock_save_image</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">order_type</span> <span class="o">=</span> <span class="n">Order</span><span class="o">.</span><span class="n">HARD_COVER</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">mock_cached_pdf</span> <span class="o">=</span> <span class="n">PropertyMock</span><span class="p">(</span>
+</span><span class='line'>            <span class="n">return_value</span><span class="o">=</span><span class="s">&#39;StoryTree/tests/fixtures/1.pdf&#39;</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_backcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_frontcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_hardcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">with</span> <span class="n">nested</span><span class="p">(</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="s">&#39;create_backcover_image&#39;</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="p">),</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="s">&#39;create_frontcover_image&#39;</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="p">),</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="s">&#39;cached_pdf_file&#39;</span><span class="p">,</span> <span class="n">mock_cached_pdf</span><span class="p">),</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="s">&#39;create_hardcover_image&#39;</span><span class="p">,</span> <span class="n">mock_hardcover</span><span class="p">)):</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">create_final_pdf_file</span><span class="p">(</span><span class="s">&#39;STORYTREE01111&#39;</span><span class="p">)</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_hardcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_create_pdf</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Đoạn code test trên có vấn đề gì? Để test hàm <code>create_final_pdf_file</code>, chúng ta cần viết 2 test case, cho 2 trường hợp trong đoạn code if-else. Và 2 đoạn code test bị lặp lại khá nhiều, đặc biệt là ở việc mock các objects. Chúng ta có thể viết lại test case gọn hơn bằng cách viết một function chung, hoặc một function tạo ra các mock object và gọi nó trong từng hàm test. Nhưng liệu có phải đó là vấn đề chính.</p>
+
+<p>Điều tôi muốn nói ở đây là: Code smell trong test code có nguyên nhân từ test code, hay từ bản thân đoạn code chúng ta muốn test. Hãy xem lại hàm <code>create_final_pdf_file</code>. Hàm nãy đã thực sự tốt? Một hàm tốt, là một hàm chỉ nên làm một việc. Hàm <code>create_final_pdf_file</code> ở đây, ngoài việc gọi các hàm khác, còn thêm vào nó đoạn xử lý logic xét kiểu của <code>order</code>. Đoạn code if-else xử lý 2 logic khác nhau, chúng nên được tách ra thành một hàm khác.</p>
+
+<figure class='code'><figcaption><span>models.py </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Order</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">create_input_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">front_image</span><span class="p">,</span> <span class="n">back_image</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_type</span> <span class="o">==</span> <span class="n">Order</span><span class="o">.</span><span class="n">SOFT_COVER</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">frontcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
+</span><span class='line'>                <span class="p">[</span><span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">front_image</span><span class="p">),</span> <span class="bp">None</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_size</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">backcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
+</span><span class='line'>                <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">back_image</span><span class="p">)],</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_size</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">frontcover_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached_pdf_file</span><span class="p">,</span> <span class="n">backcover_file</span><span class="p">]</span>
+</span><span class='line'>        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_type</span> <span class="o">==</span> <span class="n">Order</span><span class="o">.</span><span class="n">HARD_COVER</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">hardcover_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_hardcover_image</span><span class="p">(</span><span class="n">back_image</span><span class="p">,</span> <span class="n">front_image</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">hardcover_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PDF_SIZES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">size_type</span><span class="p">]</span>
+</span><span class='line'>            <span class="n">hardcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
+</span><span class='line'>                <span class="p">[</span><span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">hardcover_image</span><span class="p">)],</span> <span class="n">hardcover_size</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">hardcover_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached_pdf_file</span><span class="p">]</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">input_files</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">create_final_pdf_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_order_id</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">front_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">create_frontcover_image</span><span class="p">()</span>
+</span><span class='line'>        <span class="n">back_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">create_backcover_image</span><span class="p">(</span><span class="n">client_order_id</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">input_files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_input_files</span><span class="p">(</span><span class="n">front_image</span><span class="p">,</span> <span class="n">back_image</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">new_path</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">merge_pdf_files</span><span class="p">(</span><span class="n">input_files</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">new_path</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Hàm <code>create_final_pdf_file</code> sau khi được refactoring, đã trở nên đơn giản và dễ đọc hơn, thay vì phải lướt qua 19 lines, và đọc hiểu logic của đoạn code if-else, giờ đây bạn có thể hiểu nó chỉ bằng <code>create_input_files</code>. Và code test mới cho hàm <code>create_final_pdf_file</code> như sau</p>
+
+<figure class='code'><figcaption><span>test_models.py </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">TestModel</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="n">Order</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.generator.pdf.merge_pdf_files&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">test_create_final_pdf_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_merge_pdf</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">mock_cached_pdf</span> <span class="o">=</span> <span class="n">PropertyMock</span><span class="p">(</span>
+</span><span class='line'>            <span class="n">return_value</span><span class="o">=</span><span class="s">&#39;StoryTree/tests/fixtures/1.pdf&#39;</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_backcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_frontcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_input_files</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_values</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;&#39;</span><span class="p">])</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">with</span> <span class="n">nested</span><span class="p">(</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="s">&#39;create_input_files&#39;</span><span class="p">,</span> <span class="n">mock_input_files</span><span class="p">)</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="s">&#39;cached_pdf_file&#39;</span><span class="p">,</span> <span class="n">mock_cached_pdf</span><span class="p">),</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="s">&#39;create_backcover_image&#39;</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="p">),</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="s">&#39;create_frontcover_image&#39;</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="p">)):</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">create_final_pdf_file</span><span class="p">(</span><span class="s">&#39;STORYTREE01111&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEquals</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_input_files</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Việc tách logic của đoạn code tạo 2 input files ra thành một hàm <code>create_input_files</code>, làm cho hàm <code>create_final_pdf</code> dễ hiểu hơn, nói cách khác, nó che giấu thông tin không cần thiết cho lập trình viên khi đọc tới đoạn code của <code>create_final_pdf</code>.
+Hàm <code>create_final_test</code> giờ đây không làm gì khác ngoại việc gọi tới các hàm khác.
+Không có bất cứ logic nào được đặt trong hàm này. Trên thực tế rất nhiều lập trình viên sẽ không viết test cho những hàm như <code>create_final_pdf</code> nữa. Họ chỉ cần viết test cho 4 hàm <code>create_input_files</code>, <code>create_backcover_image</code>, <code>create_frontcover_image</code>, và <code>cached_pdf_file</code> là đủ.</p>
+
+<p>Tóm lại, bạn có thể tìm kiếm code smell trong unittest, và refactoring hàm mà unittest đó muốn test</p>
 
 		
 		
@@ -904,19 +733,16 @@ Quan sát mã assembly mà compiler xuất ra của đoạn code trên như sau:
 </script>
 
 
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-	<script type="text/javascript">
-		var _gaq = _gaq || [];
-		_gaq.push(['_setAccount', 'UA-41231691-1']);
-		_gaq.push(['_trackPageview']);
+  ga('create', 'UA-41828637-2', 'ktmt.github.io');
+  ga('send', 'pageview');
 
-		(function() {
-			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-		})();
-	</script>
-
+</script>	
 
 
 		</div>
