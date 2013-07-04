@@ -82,21 +82,21 @@ Chúng ta sẽ nhắc lại 1 chút về chiến lược REFRESH của object MA
 <p>MATERIALIZED VIEW có 3 kiểu REFRESH sau:</p>
 
 <ul>
-<li>COMPLETE: REFRESH mới hoàn toàn, Oracle sẽ query lại table theo định nghĩa của MATERIALIZED VIEW, Nếu Table chứa lượng data lớn và việc tính toán mất nhiều thời gian thì mỗi lần COMPLETE REFRESH sẽ tốn nhiều thời gian,</li>
-<li>FAST: REFRESH những phần mới từ lần gần đây nhất. Khi chỉ update những kết quả mới mà lần trước chưa tính toán, thời gian cho mỗi lần FAST REFRESH sẽ được rút ngắn tối thiểu.</li>
+<li>COMPLETE: REFRESH mới hoàn toàn, Oracle sẽ query lại và tính toán lại, Nếu Table chứa lượng data lớn và việc tính toán mất nhiều thời gian thì mỗi lần COMPLETE REFRESH sẽ tốn nhiều thời gian,</li>
+<li>FAST: REFRESH những phần mới từ lần gần đây nhất. thời gian cho mỗi lần FAST REFRESH sẽ được rút ngắn tối thiểu.</li>
 <li>FORCE: là default của REFRESH. Oracle sẽ cố FAST REFRESH, và nếu không được thì sẽ COMPLETE REFRESH</li>
 </ul>
 
 
 <p>Bạn có thể hình dung mỗi lần Oracle tính toán và ra kết quả cho MATERIALZED VIEW, bạn sẽ có 1 snapshot.
-Đến lần sau khi FAST REFRESH bạn sẽ có trạng thái hiện tại của data được update từ last snapshot lần trước.
+Đến lần sau khi FAST REFRESH bạn sẽ update laị kết quả từ last snapshot lần trước.
 Tất nhiên cái giá phải trả cho việc có được thời gian REFRESH ngắn là sẽ mất thêm dung lượng đĩa cứng để lưu các snapshot !
 Tuy nhiên để application chạy được smoothly hết mức có thể thì tốc độ luôn là ưu tiên hàng đầu :D</p>
 
 <p>Vậy snapshot (hay là change log) của MATERIALZED VIEW là gì ? Chúng ta đang nói đến object đề cập ở bên trên: MATERIALIZED VIEW LOG</p>
 
 <p>Cần lưu ý là COMPLETE hay FAST là phương pháp REFRESH (how).
-Còn thời điểm REFRESH (when) là khái niệm khác, định nghĩa khi nào thì MATERIALZIED VIEW được REFRESH. Có 2 mode cơ bản là manually (ON DEMAND) và automatically (ON COMMIT, DBMS_JOB).
+Còn thời điểm REFRESH (when) sẽ định nghĩa khi nào thì MATERIALZIED VIEW được REFRESH. Có 2 mode cơ bản là manually (ON DEMAND) và automatically (ON COMMIT, DBMS_JOB).
 ON DEMAND là khi nào bạn (user) ra lệnh REFRESH, ON COMMIT là khi nào MATERIALZED bị thay đổi (COMMIT), còn DBMS_JOB là cho REFRESH thành 1 job được đặt lịch sẵn (giống như cron của Unix system :D)</p>
 
 <p>MATERIALIZED còn có nhiều điểm cần lưu ý khi áp dụng cụ thể. Bài viết chỉ trình bày những khái niệm cơ bản nhất. Bạn có thể xem thêm các restriction và cách create cụ thể tại [Oracle Doc][]</p>
@@ -135,7 +135,7 @@ ON DEMAND là khi nào bạn (user) ra lệnh REFRESH, ON COMMIT là khi nào MA
 </span><span class='line'>   <span class="k">before</span> <span class="k">insert</span>
 </span><span class='line'>   <span class="k">ON</span> <span class="n">USERS</span>
 </span><span class='line'>   <span class="k">FOR</span> <span class="k">EACH</span> <span class="k">ROW</span>
-</span><span class='line'>   <span class="k">WHEN</span> <span class="p">(</span><span class="k">NEW</span><span class="p">.</span><span class="n">FIELD1</span><span class="o">=</span> <span class="s1">&#39;TEACHER_CONDITION&#39;</span><span class="p">)</span> <span class="o">//</span> <span class="k">Or</span> <span class="k">any</span> <span class="n">other</span> <span class="n">condition</span>
+</span><span class='line'>   <span class="k">WHEN</span> <span class="p">(</span><span class="k">NEW</span><span class="p">.</span><span class="n">FIELD1</span><span class="o">=</span> <span class="s1">&#39;TEACHER_CONDITION&#39;</span><span class="p">)</span> <span class="c1">-- Or any other condition</span>
 </span><span class='line'><span class="k">BEGIN</span>
 </span><span class='line'>
 </span><span class='line'>    <span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">TEACHERS</span> <span class="p">(</span><span class="n">col1</span><span class="p">,</span> <span class="n">col2</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col1</span><span class="p">,</span> <span class="p">:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col2</span><span class="p">);</span>
@@ -146,7 +146,7 @@ ON DEMAND là khi nào bạn (user) ra lệnh REFRESH, ON COMMIT là khi nào MA
 </span><span class='line'>   <span class="k">after</span> <span class="k">insert</span>
 </span><span class='line'>   <span class="k">ON</span> <span class="n">USERS</span>
 </span><span class='line'>   <span class="k">FOR</span> <span class="k">EACH</span> <span class="k">ROW</span>
-</span><span class='line'>   <span class="k">WHEN</span> <span class="p">(</span><span class="k">NEW</span><span class="p">.</span><span class="n">FIELD1</span><span class="o">=</span> <span class="s1">&#39;STUDENT_CONDITION&#39;</span><span class="p">)</span> <span class="o">//</span> <span class="k">Or</span> <span class="k">any</span> <span class="n">other</span> <span class="n">condition</span>
+</span><span class='line'>   <span class="k">WHEN</span> <span class="p">(</span><span class="k">NEW</span><span class="p">.</span><span class="n">FIELD1</span><span class="o">=</span> <span class="s1">&#39;STUDENT_CONDITION&#39;</span><span class="p">)</span> <span class="c1">-- Or any other condition</span>
 </span><span class='line'><span class="k">BEGIN</span>
 </span><span class='line'>
 </span><span class='line'>    <span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">STUDENTS</span> <span class="p">(</span><span class="n">col1</span><span class="p">,</span> <span class="n">col2</span><span class="p">,</span> <span class="n">col3</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col1</span><span class="p">,</span> <span class="p">:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col2</span><span class="p">,</span> <span class="p">:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col3</span><span class="p">);</span>
@@ -163,10 +163,16 @@ TRIGGER còn có thể fire on DDL statements (CREATE hoặc ALTER table &#8230;
 
 <h2>PL/SQL (Procedural Language/Structured Query Language) và PACKAGE Object</h2>
 
-<p>PL/SQL Là 1 procedutal programming language, trong khi SQL chỉ là declarative language. Điều đó có nghĩa bạn có thể viết PL/SQL giống như các ngôn ngữ phổ biến khác. PL/SQL cũng có variable, có try catch exception, có if-statement, loop, function, regex, convert, file reader &#8230; đẩy đủ các builtin function mà Oracle đã chuẩn bị sẵn. PL/SQL còn nắm lợi thế là thao tác trực tiếp với cursor, table, view, materialized view&#8230; các Object của Database, remote action qua DB_LINK &#8230;
-Như vậy với năng lực của 1 ngôn ngữ hoàn chỉnh, cộng với khả năng tương tác với DB giống như SQL, PL/SQL được dùng để đóng gói xử lý trên DB server.</p>
+<p>PL/SQL Là 1 procedutal programming language, trong khi SQL chỉ là declarative language.
+Điều đó có nghĩa bạn có thể viết PL/SQL giống như các ngôn ngữ phổ biến khác.
+PL/SQL cũng có variable, có try catch exception, có if-statement, loop, function, regex, convert, file reader &#8230; đẩy đủ các builtin function mà Oracle đã chuẩn bị sẵn.
+PL/SQL còn nắm lợi thế là thao tác trực tiếp với cursor, table, view, materialized view&#8230; các object của Database, remote action qua DB_LINK &#8230;</p>
 
-<p>Bạn có thể developer web application = Java, Ruby, PHP v.v&#8230; chỉ gọi đến DB thông qua các PACKAGE object. Mỗi PACKAGE (viết bằng PL/SQL) là 1 &#8220;gói&#8221; Được viết như 1 module xử lỹ nội bộ trong Oracle DB. Ưu điểm của phương pháp này là tốc độ xử lý sẽ được cải thiện, và communication giữa Application server vs DB server (chỉ là truyền parameter cho PACKAGE và nhận lại result từ PACKAGE) được giảm thiểu.</p>
+<p>Như vậy với năng lực của 1 ngôn ngữ hoàn chỉnh, cộng với khả năng tương tác với DB giống như SQL, PL/SQL được dùng để đóng gói xử lý trên DB server.</p>
+
+<p>Bạn có thể developer web application = Java, Ruby, PHP v.v&#8230; chỉ gọi đến DB thông qua các PACKAGE object.
+Mỗi PACKAGE (viết bằng PL/SQL) là 1 &#8220;gói&#8221; Được viết như 1 module xử lỹ nội bộ trong Oracle DB.
+Ưu điểm của phương pháp này là tốc độ xử lý sẽ được cải thiện, và communication giữa Application server vs DB server (chỉ là truyền parameter cho PACKAGE và nhận lại result từ PACKAGE) được giảm thiểu.</p>
 
 <p>VD: với xử lý như sau:</p>
 
