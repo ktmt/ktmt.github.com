@@ -502,6 +502,71 @@ Tôi sẽ thêm static function <code>singleton</code> cho IoC như sau:</p>
 <p>Bạn có thể lấy <a href="https://gist.github.com/DTVD/5997723">đoạn code sample trên Gist</a> về chạy thử.
 Have fun with IoC :)</p>
 
+<h2>Real-World Use Case</h2>
+
+<p>Đọc đến đây có thể bạn sẽ hỏi tôi, việc quái gì phải xoắn cái IoC này thế, nó có thực sự hữu dụng hay chỉ là 1 cái pattern mang tính demo biếu diễn ?</p>
+
+<p>Chúng ta hãy cùng ghé qua <a href="http://laravel.com/docs/ioc">Laravel</a>, 1 framework hiện đại của PHP.</p>
+
+<p>Ở Laravel, <a href="http://laravel.com/docs/ioc">IoC</a> đã được chuẩn bị sẵn và không chỉ dùng 1 mình, còn kết hợp với <a href="http://laravel.com/docs/ioc#service-providers">ServiceProviders</a> và <a href="http://laravel.com/docs/facades">Facades</a> để tăng tối đa độ linh hoạt của code base.
+Một Facades (lại là 1 design pattern khác - hãy google sau khi đọc bài này :) ) có thể được kết nối với IoC và UnitTest như sau :</p>
+
+<figure class='code'><figcaption><span>Facades.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// binding IoC</span>
+</span><span class='line'><span class="nx">App</span><span class="o">::</span><span class="na">bind</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">,</span> <span class="k">function</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// binding facades to IoC</span>
+</span><span class='line'><span class="k">use</span> <span class="nx">Illuminate\Support\Facades\Facade</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">FacadesBook</span> <span class="k">extends</span> <span class="nx">Facade</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">protected</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">getFacadeAccessor</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="s1">&#39;book&#39;</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Tại sao đã bind class Book vào IoC <code>book</code> rồi, lại còn tiếp tục bind IoC <code>book</code> và Facades <code>FacadesBook</code> lần nữa?</p>
+
+<p>Facades trong Laravel có thể &#8220;biến thành&#8221; Mock object sau khi gọi method <code>shouldReceive</code> (a magic method :D)</p>
+
+<figure class='code'><figcaption><span>Facades.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="c1">//Use Book as usual:</span>
+</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="nx">FacadesBook</span><span class="o">::</span><span class="na">AnInstanceMethodOfBookClass</span><span class="p">(</span><span class="nv">$AParams</span><span class="p">);</span>
+</span><span class='line'><span class="c1">//Mocking for UnitTest:</span>
+</span><span class='line'><span class="nx">FacadesBook</span><span class="o">::</span><span class="na">shouldReceive</span><span class="p">(</span><span class="s1">&#39;AnInstanceMethodOfBookClass&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">once</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">with</span><span class="p">(</span><span class="nv">$AParams</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">andReturn</span><span class="p">(</span><span class="nv">$FakeValue</span><span class="p">);</span>
+</span><span class='line'><span class="nv">$mockBook</span> <span class="o">=</span> <span class="nx">FacadesBook</span><span class="o">::</span><span class="na">AnInstanceMethodOfBookClass</span><span class="p">(</span><span class="nv">$AParams</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>$book</code> sẽ trả về giá trị thực khi thực hiện method <code>AnInstanceMethodOfBookClass</code> của class Book, trong khi đó <code>$mockBook</code> sẽ trả về <code>$FakeValue</code>.</p>
+
 <h2>Summary</h2>
 
 <ul>
