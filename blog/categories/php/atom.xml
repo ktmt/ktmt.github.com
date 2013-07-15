@@ -4,7 +4,7 @@
   <title><![CDATA[Category: PHP | Blog kỹ thuật máy tính]]></title>
   <link href="http://toandk.github.com/blog/categories/php/atom.xml" rel="self"/>
   <link href="http://toandk.github.com/"/>
-  <updated>2013-07-15T13:52:21+09:00</updated>
+  <updated>2013-07-15T14:47:38+09:00</updated>
   <id>http://toandk.github.com/</id>
   <author>
     <name><![CDATA[kỹ thuật máy tính]]></name>
@@ -338,7 +338,7 @@ Cùng với đó, các dependency có thể inject thông qua <code>IoC::registe
 Nói cách khác, bạn chỉ muốn chỉ có 1 Book với đầy đủ Title, Author, ... được khởi tạo 1 lần, và lần sau muốn sử dụng thì gọi lại chính instance đã được tạo.</p>
 
 <p>Đây là đất diễn của Singleton design pattern :)
-Tôi sẽ viết thêm 1 static function cho IoC như sau:</p>
+Tôi sẽ thêm static function <code>singleton</code> cho IoC như sau:</p>
 
 <p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>IoC.php </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
@@ -391,18 +391,39 @@ Tôi sẽ viết thêm 1 static function cho IoC như sau:</p>
 <span class='line-number'>48</span>
 <span class='line-number'>49</span>
 <span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
 </pre></td><td class='code'><pre><code class='php'><span class='line'><span class="x">&amp;lt;?php</span>
 </span><span class='line'><span class="x">class IoC {</span>
 </span><span class='line'><span class="x">  protected static $registry = array();</span>
 </span><span class='line'><span class="x">  protected static $shared = array();&lt;/p&gt;</span>
 </span><span class='line'>
-</span><span class='line'><span class="x">&lt;p&gt;...&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="x">&lt;p&gt;  // Singleton</span>
-</span><span class='line'><span class="x">  public static function singleton($name, $resolve)</span>
+</span><span class='line'><span class="x">&lt;p&gt;  // Register, here save the Closure to static::$registry</span>
+</span><span class='line'><span class="x">  public static function register($name, Closure $resolve)</span>
 </span><span class='line'><span class="x">  {&lt;/p&gt;</span>
 </span><span class='line'>
-</span><span class='line'><span class="x">&lt;pre&gt;&lt;code&gt;static::$shared[$name] = $resolve;</span>
+</span><span class='line'><span class="x">&lt;pre&gt;&lt;code&gt; static::$registry[$name] = $resolve;</span>
+</span><span class='line'><span class="x">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;  }&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;  // Singleton, Note that here we save the result of Closure, not the Closure</span>
+</span><span class='line'><span class="x">  public static function singleton($name, Closure $resolve)</span>
+</span><span class='line'><span class="x">  {&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;pre&gt;&lt;code&gt;static::$shared[$name] = $resolve();</span>
 </span><span class='line'><span class="x">&lt;/code&gt;&lt;/pre&gt;</span>
 </span><span class='line'>
 </span><span class='line'><span class="x">&lt;p&gt;  }&lt;/p&gt;</span>
@@ -419,7 +440,7 @@ Tôi sẽ viết thêm 1 static function cho IoC như sau:</p>
 </span><span class='line'>
 </span><span class='line'><span class="x">if ( static::singletoned($name) )</span>
 </span><span class='line'><span class="x">{</span>
-</span><span class='line'><span class="x">  $instance = static::$singleton[$name];</span>
+</span><span class='line'><span class="x">  $instance = static::$shared[$name];</span>
 </span><span class='line'><span class="x">  return $instance;</span>
 </span><span class='line'><span class="x">} </span>
 </span><span class='line'>
@@ -428,7 +449,14 @@ Tôi sẽ viết thêm 1 static function cho IoC như sau:</p>
 </span><span class='line'>
 </span><span class='line'><span class="x">&lt;p&gt;  }&lt;/p&gt;</span>
 </span><span class='line'>
-</span><span class='line'><span class="x">&lt;p&gt;...&lt;/p&gt;</span>
+</span><span class='line'><span class="x">&lt;p&gt;  // Check resigtered or not</span>
+</span><span class='line'><span class="x">  public static function registered($name)</span>
+</span><span class='line'><span class="x">  {&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;pre&gt;&lt;code&gt; return array_key_exists($name, static::$registry);</span>
+</span><span class='line'><span class="x">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;  }&lt;/p&gt;</span>
 </span><span class='line'>
 </span><span class='line'><span class="x">&lt;p&gt;  // Check singleton object or not</span>
 </span><span class='line'><span class="x">  public static function singletoned($name)</span>
@@ -487,7 +515,8 @@ Tôi sẽ viết thêm 1 static function cho IoC như sau:</p>
 </span><span class='line'><span class="x">&lt;p&gt;?&gt;</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div></p>
 
-<p>Have fun with IoC :)</p>
+<p>Bạn có thể lấy <a href="https://gist.github.com/DTVD/5997723">đoạn code sample trên Gist</a> về chạy thử.
+Have fun with IoC :)</p>
 
 <h2>Summary</h2>
 

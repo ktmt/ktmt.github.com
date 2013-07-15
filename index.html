@@ -383,7 +383,7 @@ Cùng với đó, các dependency có thể inject thông qua <code>IoC::registe
 Nói cách khác, bạn chỉ muốn chỉ có 1 Book với đầy đủ Title, Author, &#8230; được khởi tạo 1 lần, và lần sau muốn sử dụng thì gọi lại chính instance đã được tạo.</p>
 
 <p>Đây là đất diễn của Singleton design pattern :)
-Tôi sẽ viết thêm 1 static function cho IoC như sau:</p>
+Tôi sẽ thêm static function <code>singleton</code> cho IoC như sau:</p>
 
 <figure class='code'><figcaption><span>IoC.php </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
@@ -427,17 +427,30 @@ Tôi sẽ viết thêm 1 static function cho IoC như sau:</p>
 <span class='line-number'>39</span>
 <span class='line-number'>40</span>
 <span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
 </pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
 </span><span class='line'><span class="k">class</span> <span class="nc">IoC</span> <span class="p">{</span>
 </span><span class='line'>  <span class="k">protected</span> <span class="k">static</span> <span class="nv">$registry</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
 </span><span class='line'>  <span class="k">protected</span> <span class="k">static</span> <span class="nv">$shared</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
 </span><span class='line'>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="c1">// Singleton </span>
-</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">singleton</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nv">$resolve</span><span class="p">)</span>
+</span><span class='line'>  <span class="c1">// Register, here save the Closure to static::$registry</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">register</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nx">Closure</span> <span class="nv">$resolve</span><span class="p">)</span>
 </span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>    <span class="k">static</span><span class="o">::</span><span class="nv">$shared</span><span class="p">[</span><span class="nv">$name</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$resolve</span><span class="p">;</span>
+</span><span class='line'>     <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">[</span><span class="nv">$name</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$resolve</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Singleton, Note that here we save the result of Closure, not the Closure</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">singleton</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nx">Closure</span> <span class="nv">$resolve</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="k">static</span><span class="o">::</span><span class="nv">$shared</span><span class="p">[</span><span class="nv">$name</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$resolve</span><span class="p">();</span>
 </span><span class='line'>  <span class="p">}</span>
 </span><span class='line'>
 </span><span class='line'>  <span class="c1">// Resolve, consider register or singleton here</span>
@@ -451,14 +464,19 @@ Tôi sẽ viết thêm 1 static function cho IoC như sau:</p>
 </span><span class='line'>
 </span><span class='line'>    <span class="k">if</span> <span class="p">(</span> <span class="k">static</span><span class="o">::</span><span class="na">singletoned</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span> <span class="p">)</span>
 </span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="nv">$instance</span> <span class="o">=</span> <span class="k">static</span><span class="o">::</span><span class="nv">$singleton</span><span class="p">[</span><span class="nv">$name</span><span class="p">];</span>
+</span><span class='line'>      <span class="nv">$instance</span> <span class="o">=</span> <span class="k">static</span><span class="o">::</span><span class="nv">$shared</span><span class="p">[</span><span class="nv">$name</span><span class="p">];</span>
 </span><span class='line'>      <span class="k">return</span> <span class="nv">$instance</span><span class="p">;</span>
 </span><span class='line'>    <span class="p">}</span>
 </span><span class='line'>
 </span><span class='line'>    <span class="k">throw</span> <span class="k">new</span> <span class="nx">Exception</span><span class="p">(</span><span class="s1">&#39;Nothing registered with that name, fool.&#39;</span><span class="p">);</span>
 </span><span class='line'>  <span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'><span class="o">...</span>
+</span><span class='line'>  <span class="c1">// Check resigtered or not</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">registered</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>     <span class="k">return</span> <span class="nb">array_key_exists</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
 </span><span class='line'>
 </span><span class='line'>  <span class="c1">// Check singleton object or not</span>
 </span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">singletoned</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
@@ -511,7 +529,8 @@ Tôi sẽ viết thêm 1 static function cho IoC như sau:</p>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Have fun with IoC :)</p>
+<p>Bạn có thể lấy <a href="https://gist.github.com/DTVD/5997723">đoạn code sample trên Gist</a> về chạy thử.
+Have fun with IoC :)</p>
 
 <h2>Summary</h2>
 
