@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Blog kỹ thuật máy tính]]></title>
-  <link href="http://ktmt.github.com/atom.xml" rel="self"/>
-  <link href="http://ktmt.github.com/"/>
-  <updated>2013-07-04T09:52:59+09:00</updated>
-  <id>http://ktmt.github.com/</id>
+  <link href="http://toandk.github.com/atom.xml" rel="self"/>
+  <link href="http://toandk.github.com/"/>
+  <updated>2013-07-15T13:17:46+09:00</updated>
+  <id>http://toandk.github.com/</id>
   <author>
     <name><![CDATA[kỹ thuật máy tính]]></name>
     
@@ -14,10 +14,899 @@
 
   
   <entry>
+    <title type="html"><![CDATA[Inversion of Control and Dependency Injection]]></title>
+    <link href="http://toandk.github.com/blog/2013/07/15/inversion-of-control-and-dependency-injection/"/>
+    <updated>2013-07-15T02:02:00+09:00</updated>
+    <id>http://toandk.github.com/blog/2013/07/15/inversion-of-control-and-dependency-injection</id>
+    <content type="html"><![CDATA[<h2>Preface</h2>
+
+<p>Trước khi đọc bài này, tôi có 1 vài recommend cho độc giả :)
+1. Bạn nên đọc trước bài viết về [Builder Pattern trong Java] (http://ktmt.github.io/blog/2013/06/14/design-pattern-ap-dung-builder-pattern-trong-test-java/) cũng trong blog ktmt, sẽ có 1 cái nhìn tổng quát và hình dung dễ dàng hơn về ứng dụng của các pattern trong programming.
+2. Có hàng tá bài viết về Inversion Of Control và Dependency Injection. Try to google it first.
+3. Nếu không, nhớ google thêm sau khi đọc bài viết :D</p>
+
+<h2>Dependency Injection</h2>
+
+<p>Chúng ta sẽ bắt đầu với 1 ví dụ gần giống ví dụ trong bài viết về Builder Pattern ở trên. Xem đoạn code sau. Ngôn ngữ ở đây là PHP.</p>
+
+<figure class='code'><figcaption><span>Book.php</span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="x">class Book ()</span>
+</span><span class='line'><span class="x">{</span>
+</span><span class='line'><span class="x">    public function __construct()</span>
+</span><span class='line'><span class="x">    {</span>
+</span><span class='line'><span class="x">        $this-&gt;title = new Title;</span>
+</span><span class='line'><span class="x">        $this-&gt;author = new Author;</span>
+</span><span class='line'><span class="x">        $this-&gt;genre = new Genre;</span>
+</span><span class='line'><span class="x">        $this-&gt;publishDate = new PublishDate;</span>
+</span><span class='line'><span class="x">        $this-&gt;ISBN = new ISBN;</span>
+</span><span class='line'><span class="x">    }</span>
+</span><span class='line'><span class="x">}</span>
+</span><span class='line'><span class="x">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">$book = new Book;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Ở đây giả sử Title, Author, Genre, PublishDate hay ISBN đều là các class đã được định nghĩa trước. Như vậy class Book có 5 <strong>dependency</strong> là 5 class kể trên.</p>
+
+<p>Về mặt technical, chẳng có gì là không ổn với 1 class như trên cả.
+Tuy nhiên programmer có kinh nghiệm sẽ dễ dàng nhận thấy chúng ta đã hardcoded 5 dependency trên vào trong Book.
+Nói cách khác nếu muốn Book chứa những dependency khác, chẳng có cách nào khác là sửa lại định nghĩa class.</p>
+
+<p>Như vậy, để tránh những phiền phức nói trên và tạo độ linh hoạt khi sử dụng, class Book nên được viết lại như sau:</p>
+
+<figure class='code'><figcaption><span>Book.php</span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="x">class Book ()</span>
+</span><span class='line'><span class="x">{</span>
+</span><span class='line'><span class="x">    public function __construct($title, $author, $genre, $publishdate, $isbn)</span>
+</span><span class='line'><span class="x">    {</span>
+</span><span class='line'><span class="x">        $this-&gt;title = $title;</span>
+</span><span class='line'><span class="x">        $this-&gt;author = $author;</span>
+</span><span class='line'><span class="x">        $this-&gt;genre = $genre;</span>
+</span><span class='line'><span class="x">        $this-&gt;publishDate = $publishdate;</span>
+</span><span class='line'><span class="x">        $this-&gt;ISBN = $isbn;</span>
+</span><span class='line'><span class="x">    }</span>
+</span><span class='line'><span class="x">}</span>
+</span><span class='line'><span class="x">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">$book = new Book (new Title, new Author, new Genre, new PublishDate, new ISBN)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Bạn có thể thấy, ý tưởng của Dependency Injection(DI) thực ra rất đơn giản, chỉ là bạn vẫn thường sử dụng và không để ý.
+Dependency có thể được inject theo nhiều kiểu, ví dụ bên trên là constructor injection.
+Chúng ta còn có setter injection như sau:</p>
+
+<figure class='code'><figcaption><span>Book.php</span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="x">class Book ()</span>
+</span><span class='line'><span class="x">{</span>
+</span><span class='line'><span class="x">    public function __construct()</span>
+</span><span class='line'><span class="x">    {</span>
+</span><span class='line'><span class="x">    }</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">    public function setTitle($title)</span>
+</span><span class='line'><span class="x">    {</span>
+</span><span class='line'><span class="x">        $this-&gt;title = $title;</span>
+</span><span class='line'><span class="x">    }</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">...  Here we have 4 more methods : setAuthor ,setGenre, setPublishDate, setISBN</span>
+</span><span class='line'><span class="x">}</span>
+</span><span class='line'><span class="x">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">$book = new Book;</span>
+</span><span class='line'><span class="x">$book-&gt;setTitle(new Title);</span>
+</span><span class='line'><span class="x">$book-&gt;setAuthor(new Author);</span>
+</span><span class='line'><span class="x">$book-&gt;setGenre(new Genre);</span>
+</span><span class='line'><span class="x">$book-&gt;setPublishDate(new PublishDate);</span>
+</span><span class='line'><span class="x">$book-&gt;setISBN(new ISBN);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Và vấn đề mới lại nảy sinh! Có quá nhiều setter và điều đó biến Book thành 1 class phức tạp khi sử dụng.
+Việc viết lại tất cả các setter khi khởi tạo 1 Book thật là painful !</p>
+
+<p>Để giải quyết vấn đề kể trên, chúng ta sẽ đến với design pattern tiếp theo: Inversion of Control(IoC)</p>
+
+<h2>Inversion of Control</h2>
+
+<blockquote><p>In software engineering, inversion of control (IoC) is a programming technique, expressed here in terms of object-oriented programming, in which object coupling is bound at run time by an assembler object and is typically not known at compile time using static analysis.</p></blockquote>
+
+<p>Giải thích lý thuyết về IoC có lẽ sẽ tốn nhiều công sức,
+như recommend trên đầu bài, bạn có thể google 1 chút về IoC.
+Ở đây tôi sẽ đưa ra luôn 1 implement để sử dụng với class Book kể trên.</p>
+
+<figure class='code'><figcaption><span>IoC.php</span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="x">class IoC {</span>
+</span><span class='line'><span class="x">   protected static $registry = array();</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">   // Register</span>
+</span><span class='line'><span class="x">   public static function register($name, Closure $resolve)</span>
+</span><span class='line'><span class="x">   {</span>
+</span><span class='line'><span class="x">      static::$registry[$name] = $resolve;</span>
+</span><span class='line'><span class="x">   }</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">   // Resolve</span>
+</span><span class='line'><span class="x">   public static function resolve($name)</span>
+</span><span class='line'><span class="x">   {</span>
+</span><span class='line'><span class="x">      if ( static::registered($name) )</span>
+</span><span class='line'><span class="x">      {</span>
+</span><span class='line'><span class="x">         $name = static::$registry[$name];</span>
+</span><span class='line'><span class="x">         return $name();</span>
+</span><span class='line'><span class="x">      }</span>
+</span><span class='line'><span class="x"> </span>
+</span><span class='line'><span class="x">      throw new Exception(&#39;Nothing registered with that name, fool.&#39;);</span>
+</span><span class='line'><span class="x">   }</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">   // Check resigtered or not</span>
+</span><span class='line'><span class="x">   public static function registered($name)</span>
+</span><span class='line'><span class="x">   {</span>
+</span><span class='line'><span class="x">      return array_key_exists($name, static::$registry);</span>
+</span><span class='line'><span class="x">   }</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>WTH! Cái khỉ gì trông lằng nhằng quá phải không :D</p>
+
+<p>Đừng lo lắng, để hiểu đoạn code trên, trước hết, hãy để ý rằng ở đây chúng ta có rất nhiều các static function,
+nghĩa là các function có thể gọi trục tiếp trên class chứ không phải trên instance thông qua cách gọi &#8220;Class::StaticMethod()&#8221;
+Ngoài ra Closure là 1 anonymous function. Bạn sẽ hiểu ngay khi xem cách dùng dưới đây</p>
+
+<figure class='code'><figcaption><span>Book.php</span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="x">IoC:register(&#39;book&#39;, function(){</span>
+</span><span class='line'><span class="x">    $book = new Book;</span>
+</span><span class='line'><span class="x">    $book-&gt;setTitle(new Title);</span>
+</span><span class='line'><span class="x">    $book-&gt;setAuthor(new Author);</span>
+</span><span class='line'><span class="x">    $book-&gt;setGenre(new Genre);</span>
+</span><span class='line'><span class="x">    $book-&gt;setPublishDate(new PublishDate);</span>
+</span><span class='line'><span class="x">    $book-&gt;setISBN(new ISBN);</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">    return $book;</span>
+</span><span class='line'><span class="x">});</span>
+</span><span class='line'><span class="x">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">$book = IoC::resolve(&#39;book&#39;);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Woo! Bây giở mỗi khi muốn tạo 1 instance của Book với đầy đủ các dependency, chỉ cần IoC:resolve(&#8216;book&#8217;).
+Cùng với đó, các dependency có thể inject thông qua register.
+Đến khi unit test, bạn có thể dùng IoC::register để mocking các dependency và test Book mà không khởi tạo Title,Author,&#8230;.</p>
+
+<h2>Singleton pattern with IoC</h2>
+
+<p>Bạn thử tưởng tượng, nếu như phần register &#8216;book&#8217; bên trên chiếm nhiều tài nguyên, có thể bạn sẽ không muốn mỗi lần resolve lại khởi tạo 1 instance mới.
+Nói cách khác, bạn chỉ muốn chỉ có 1 Book với đầy đủ Title, Author, &#8230; được khởi tạo 1 lần, và lần sau muốn sử dụng thì gọi lại chính instance đã được tạo.</p>
+
+<p>Đây là đất diễn của Singleton design pattern :)
+Tôi sẽ viết thêm 1 static function cho IoC như sau:</p>
+
+<figure class='code'><figcaption><span>IoC.php</span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="x">class IoC {</span>
+</span><span class='line'><span class="x">  protected static $registry = array();</span>
+</span><span class='line'><span class="x">  protected static $shared = array();</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">  // Singleton </span>
+</span><span class='line'><span class="x">  public static function singleton($name, $resolve)</span>
+</span><span class='line'><span class="x">  {</span>
+</span><span class='line'><span class="x">    static::$shared[$name] = $resolve;</span>
+</span><span class='line'><span class="x">  }</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">  // Resolve, consider register or singleton here</span>
+</span><span class='line'><span class="x">  public static function resolve($name)</span>
+</span><span class='line'><span class="x">  {</span>
+</span><span class='line'><span class="x">    if ( static::registered($name) )</span>
+</span><span class='line'><span class="x">    {</span>
+</span><span class='line'><span class="x">      $name = static::$registry[$name];</span>
+</span><span class='line'><span class="x">      return $name();</span>
+</span><span class='line'><span class="x">    }</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">    if ( static::singletoned($name) )</span>
+</span><span class='line'><span class="x">    {</span>
+</span><span class='line'><span class="x">      $instance = static::$singleton[$name];</span>
+</span><span class='line'><span class="x">      return $instance;</span>
+</span><span class='line'><span class="x">    } </span>
+</span><span class='line'><span class="x"> </span>
+</span><span class='line'><span class="x">    throw new Exception(&#39;Nothing registered with that name, fool.&#39;);</span>
+</span><span class='line'><span class="x">  }</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">  // Check singleton object or not</span>
+</span><span class='line'><span class="x">  public static function singletoned($name)</span>
+</span><span class='line'><span class="x">  {</span>
+</span><span class='line'><span class="x">    return array_key_exists($name, static::$shared);</span>
+</span><span class='line'><span class="x">  }</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Và bây giờ</p>
+
+<figure class='code'><figcaption><span>Book.php</span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="x">IoC:singleton(&#39;book&#39;, function(){</span>
+</span><span class='line'><span class="x">    $book = new Book;</span>
+</span><span class='line'><span class="x">    $book-&gt;setTitle(new Title);</span>
+</span><span class='line'><span class="x">    $book-&gt;setAuthor(new Author);</span>
+</span><span class='line'><span class="x">    $book-&gt;setGenre(new Genre);</span>
+</span><span class='line'><span class="x">    $book-&gt;setPublishDate(new PublishDate);</span>
+</span><span class='line'><span class="x">    $book-&gt;setISBN(new ISBN);</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">    return $book;</span>
+</span><span class='line'><span class="x">});</span>
+</span><span class='line'><span class="x">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">$book1 = IoC::resolve(&#39;book&#39;);</span>
+</span><span class='line'><span class="x">$book2 = IoC::resolve(&#39;book&#39;); // exactly same instance with $book1</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Have fun with IoC :)</p>
+
+<h2>Summary</h2>
+
+<ul>
+<li>Dependency Injection: Đưa các dependency vào class thông qua constructor hoặc setter, không khỏi tạo trực tiếp bên trong class</li>
+<li>Inversion of Control: bind object vào thời điểm run time, không phải vào thời điểm complile time.</li>
+<li>Singleton: Design pattern, cho phép trong 1 hệ thống chỉ có 1 instance duy nhất của class được tồn tại.</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[tự tạo dịch vụ thu gọn url với sinatra và redis]]></title>
+    <link href="http://toandk.github.com/blog/2013/07/10/tu-tao-dich-vu-thu-gon-url-voi-sinatra-va-redis/"/>
+    <updated>2013-07-10T15:24:00+09:00</updated>
+    <id>http://toandk.github.com/blog/2013/07/10/tu-tao-dich-vu-thu-gon-url-voi-sinatra-va-redis</id>
+    <content type="html"><![CDATA[<h2>Mở đầu</h2>
+
+<p>Chắc hẳn các bạn đã biết về các dịch vụ rút gọn url, điển hình là bit.ly. Mục đích của dịch vụ này là nhằm thu gọn là những url rất dài để tiết kiệm chữ (cho những dịch vụ giới hạn về số kí tự như twitter chẳng hạn) và để cho url nhìn gọn hơn.
+Cơ chế của một dịch vụ rút gọn url khá đơn giản, vậy tại sao không tự làm một dịch vụ cho chính mình. Bài này mình sẽ hướng dẫn cách làm một url shorten service đơn giản dựa trên sinatra và redis.</p>
+
+<h2>Cài đặt</h2>
+
+<p>Để cài đặt sinatra thì bạn phải có ruby đã cài sẵn trên máy, việc cài đặt sinatra khá đơn giản thông qua <strong>gem</strong>:</p>
+
+<figure class='code'><figcaption><span>sinatra_install.sh </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>  gem install sinatra
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Tiếp đến là redis, để cài đặt redis thì tùy thuộc vào hệ điều hành, trên mac-osx các bạn có thể cài đặt rất dễ dàng thông qua <strong>brew</strong>:</p>
+
+<figure class='code'><figcaption><span>redis_install.sh </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>  brew install redis
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Trên linux hoặc windows các bạn có thể google để tìm ra hướng dẫn  cài tương ứng.
+Các bạn khởi động redis thông qua, khi khởi động redis mà không set option với config gì cả thì redis sẽ chạy trên localhost và port là 6789:</p>
+
+<figure class='code'><figcaption><span>redis_install.sh </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>  redis-server
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Giới thiệu qua về sinatra và redis</h2>
+
+<p>Sinatra là một mini webframework based trên Rack(Rack là web server interface rút gọn nhất có thể rất nổi tiếng trên ruby). Sinatra cung cấp cho bạn một DSL(Domain specific language) để có thể build một web app một cách dễ dàng nhất. Các bạn có thể tìm hiểu về sinatra ở <a href="http://www.sinatrarb.com/intro.html">trang chủ của sinatra</a>.</p>
+
+<p>Redis là hệ thống lưu trữ key-value với rất nhiều tính năng và được sử dụng rộng rãi. KTMT blog đã có <a href="http://ktmt.github.io/blog/2013/07/02/tim-hieu-redis/">một bài viết về redis</a> cách đây không lâu, các bạn có thể tham khảo lại. Về cách sử dụng redis, các bạn có thể tham khảo tại <a href="http://redis.io/documentation">trang chủ redis</a></p>
+
+<h2>Thiết kế chương trình</h2>
+
+<p>Cơ chế của một dịch vụ thu gọn hết sức đơn giản, được thể hiện ở diagram dưới đây:</p>
+
+<p><img src="http://toandk.github.com/images/urlshorten/url-shorten-flow.png"></p>
+
+<p>Chắc bạn nào đã dùng bit.ly sẽ tưởng tượng ra usage flow một dịch vụ rút gọn url nên có. Cơ chế chúng ta dùng ở bài viết này như sau: đầu tiên user sẽ gửi url cần rút gọn thông qua form input. Web server nhận được request này sẽ hash url lại thành một chuỗi ngắn hơn, thông thường từ 5~10 kí tự, webserver sẽ lưu lại cặp &lt;hash, origin url> vào redis, và trả lại chuỗi hash đó được ghép vào url của dịch vụ : http://your-service.com/hash.</p>
+
+<p>Khi user click vào http://your-service.com/hash, đầu tiên server sẽ dùng chuỗi hash tìm original url trên redis, sau đó sẽ trả về response 301 (redirect) với location mới là original url, nhờ vậy mà user sẽ được redirect đến original url.</p>
+
+<p>Như vậy là đã định hình ý tưởng nên làm gì, chúng ta sẽ bắt tay vào code</p>
+
+<h2>Coding</h2>
+
+<ol>
+<li>Tạo khung
+Đầu tiên là sườn của một Sinatra app, có get, post. Chúng ta tạo folder cho app của chúng ta và tạo 1 file là app.rb chính là sinatra app:</li>
+</ol>
+
+
+<figure class='code'><figcaption><span>make.sh </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>mkdir url_shorten <span class="o">&amp;&amp;</span> <span class="nb">cd </span>url_shorten
+</span><span class='line'>touch app.rb <span class="o">&amp;&amp;</span> vim app.rb
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Sau đó chúng ta sẽ tạo cái khung cho sinatra app như dưới đây:</p>
+
+<figure class='code'><figcaption><span>url_shorten.rb </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='rb'><span class='line'><span class="nb">require</span> <span class="s1">&#39;sinatra/base&#39;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;redis&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">UrlShort</span> <span class="o">&lt;</span> <span class="ss">Sinatra</span><span class="p">:</span><span class="ss">:Base</span>
+</span><span class='line'>  <span class="n">set</span> <span class="ss">:public_dir</span><span class="p">,</span> <span class="no">File</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">__FILE__</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;/static&#39;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">get</span> <span class="s1">&#39;/&#39;</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">erb</span> <span class="ss">:index</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">UrlShort</span><span class="o">.</span><span class="n">run!</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Sinatra có syntax dạng DSL: get &#8216;some info&#8217; do &#8216;something&#8217; để represent cho &#8216;get&#8217; request rất dễ hiểu. Đoạn code trên có nghĩa là khi request đến &#8216;/&#8217; (root) thì sẽ render file index nằm trong views.
+Như vậy chúng ta đã có cái khung đơn giản nhất của một web service, nhận request, trả về view. (erb là template engine có sẵn của ruby, nó sẽ render file có đuôi erb ra html)</p>
+
+<p>Tiếp đến chúng ta sẽ thực hiện xử lý hash url. Về mặt lý thuyết thì gọi là hash không đúng lắm vì hash phải là nhận đầu vào X và trả lại Y là kết quả của việc hash X, bài toán của chúng ta ở đây chỉ đơn thuần là generate ra một chuỗi random để represent cho một cái url, như vậy bài toán của chúng ta sẽ là một hàm random_hash(N) nhận đầu vào N là độ dài của chuỗi input và đầu ra là một chuỗi random (cả chữ cả số) có độ dài N, ví dụ như sau:</p>
+
+<figure class='code'><figcaption><span>hash.rb </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='rb'><span class='line'>  <span class="n">rand_hash</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span> <span class="c1">#=&gt; &quot;s4xA6&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Để giải quyết bài toán này thì có khá nhiều hướng đi:</p>
+
+<ol>
+<li>Loop từ 1 đến 5 rồi với mỗi lần loop bạn random ra một số hoặc chữ cái.</li>
+<li>Tạo ra 1 array có độ dài 64 gồm từ [0..9] [a..z] và [A..Z] và random ra 5 vị trí trong đó (việc này có thể thực hiện rất dễ dàng thông qua Array#sample của ruby).</li>
+<li>Sử dụng base64. base64 có một đặc điểm là sẽ biến 1 số M thành 1 chuỗi cả chữ cả số có độ dài max là log(64)(M). Do đó để tạo ra một chuỗi random có length N thì chúng ta chỉ cần random một số M nằm trong khoảng 64<sup>(N-1)</sup> đến 64<sup>(N)</sup> và chuyển nó về base 64.</li>
+<li>Sử dụng một số kĩ thuật generate 64bit (mà đã được giới thiệu ở <a href="http://ktmt.github.io/blog/2013/06/09/xay-dung-he-thong-sinh-64bit-unique-id/">bài viết về generate 64bit uid</a> trên KTMT gần đây.</li>
+</ol>
+
+
+<p>Ở bài viết này chúng ta sẽ sử dụng kĩ thuật số (3). Chúng ta đưa hàm generate hash vào trong helper của sinatra thông qua hàm helpers như sau:</p>
+
+<figure class='code'><figcaption><span>hash.rb </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='rb'><span class='line'><span class="k">class</span> <span class="nc">UrlShort</span> <span class="o">&lt;</span> <span class="ss">Sinatra</span><span class="p">:</span><span class="ss">:Base</span>
+</span><span class='line'>  <span class="o">.</span><span class="n">.</span>
+</span><span class='line'>  <span class="n">helpers</span> <span class="k">do</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">rand_hash</span><span class="p">(</span><span class="n">length</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">gap</span> <span class="o">=</span> <span class="mi">64</span><span class="o">**</span><span class="p">(</span><span class="n">length</span><span class="p">)</span> <span class="o">-</span> <span class="mi">64</span><span class="o">**</span><span class="p">(</span><span class="n">length</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>      <span class="p">(</span><span class="nb">rand</span><span class="p">(</span><span class="n">gap</span><span class="p">)</span> <span class="o">+</span> <span class="mi">64</span><span class="o">**</span><span class="p">(</span><span class="n">length</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">to_s</span><span class="p">(</span><span class="mi">64</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Tiếp theo chúng ta sẽ làm nhiệm vụ gắn hash thu được với url thành một cặp key-value và ghi vào redis. Để làm nhiệm vụ này thì đầu tiên chúng ta cần khởi tạo redis, mình khởi tạo redis bằng cách overwrite constructor của app và đưa redis instance vào thành 1 instance property. Ngoài ra, chúng ta cũng không muốn 1 url mà mỗi lần request lại tạo một hash khác nhau , rất tốn tài nguyên, do đó mỗi lần gen hash mình sẽ lưu duplicate thành 2 cặp key-value. Một cặp chứa url làm key và hash làm value, và một cặp chứ hash làm key và url là value, điều này đảm bảo mối liên hệ giữa url/hash là 1/1.</p>
+
+<figure class='code'><figcaption><span>implement.rb </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='rb'><span class='line'><span class="n">post</span> <span class="s1">&#39;/&#39;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="vi">@error</span> <span class="o">=</span> <span class="kp">nil</span>
+</span><span class='line'>  <span class="vi">@error</span> <span class="o">=</span> <span class="s1">&#39;please enter url&#39;</span> <span class="k">if</span> <span class="no">URI</span><span class="o">.</span><span class="n">regexp</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">params</span><span class="o">[</span><span class="ss">:url</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">nil?</span>
+</span><span class='line'>  <span class="vi">@success</span> <span class="o">=</span> <span class="kp">false</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">unless</span> <span class="vi">@error</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">params</span><span class="o">[</span><span class="ss">:url</span><span class="o">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">params</span><span class="o">[</span><span class="ss">:url</span><span class="o">].</span><span class="n">empty?</span>
+</span><span class='line'>      <span class="vi">@url</span> <span class="o">=</span> <span class="n">params</span><span class="o">[</span><span class="ss">:url</span><span class="o">]</span>
+</span><span class='line'>      <span class="vi">@hash</span> <span class="o">=</span> <span class="n">rand_hash</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">exist</span> <span class="o">=</span> <span class="vi">@redis</span><span class="o">.</span><span class="n">setnx</span> <span class="s2">&quot;url:</span><span class="si">#{</span><span class="vi">@url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="vi">@hash</span>
+</span><span class='line'>      <span class="k">if</span> <span class="n">exist</span> <span class="c1">#key not set</span>
+</span><span class='line'>        <span class="vi">@redis</span><span class="o">.</span><span class="n">setnx</span> <span class="s2">&quot;hash:</span><span class="si">#{</span><span class="vi">@hash</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="vi">@url</span>
+</span><span class='line'>      <span class="k">else</span>
+</span><span class='line'>        <span class="vi">@hash</span> <span class="o">=</span> <span class="vi">@redis</span><span class="o">.</span><span class="n">get</span> <span class="s2">&quot;url:</span><span class="si">#{</span><span class="vi">@url</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>      <span class="vi">@success</span> <span class="o">=</span> <span class="kp">true</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">erb</span> <span class="ss">:index</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Như vậy chúng ta đã có @hash để trả về cho user, chúng ta sẽ ghep hash vào trong views để hiển thị cho user (views/index.rb)</p>
+
+<figure class='code'><figcaption><span>index.erb </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='erb'><span class='line'><span class="x">&lt;form id=&quot;form&quot; method=&quot;post&quot;&gt;</span>
+</span><span class='line'><span class="x">  &lt;input type=&quot;text&quot; value=&quot;&quot; name=&quot;url&quot; id=&quot;url&quot;/&gt;</span>
+</span><span class='line'><span class="x">  &lt;input type=&quot;submit&quot; value=&quot;shorten&quot; id=&quot;submit&quot; class=&quot;submit&quot;/&gt;</span>
+</span><span class='line'><span class="x">&lt;/form&gt;</span>
+</span><span class='line'><span class="x">&lt;hr/&gt;</span>
+</span><span class='line'><span class="x">&lt;div class=&quot;mes&quot;&gt;Result&lt;/div&gt;</span>
+</span><span class='line'><span class="cp">&lt;%</span> <span class="k">if</span> <span class="vi">@error</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'><span class="x">  &lt;div id=&#39;error&#39;&gt;</span>
+</span><span class='line'><span class="x">    </span><span class="cp">&lt;%=</span> <span class="vi">@error</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'><span class="x">  &lt;/div&gt;</span>
+</span><span class='line'><span class="cp">&lt;%</span> <span class="k">else</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'><span class="x">  </span><span class="cp">&lt;%</span> <span class="k">if</span> <span class="vi">@success</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'><span class="x">    &lt;a id=&quot;result&quot; href=&#39;</span><span class="cp">&lt;%=</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">escape_html</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="si">}#{</span><span class="vi">@hash</span><span class="si">}</span><span class="s2">&quot;</span> <span class="cp">%&gt;</span><span class="x">&#39;&gt;</span><span class="cp">&lt;%=</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">escape_html</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="si">}#{</span><span class="vi">@hash</span><span class="si">}</span><span class="s2">&quot;</span> <span class="cp">%&gt;</span><span class="x">&lt;/a&gt;</span>
+</span><span class='line'><span class="x">    &lt;input data-clipboard-text=&#39;</span><span class="cp">&lt;%=</span><span class="s2">&quot;</span><span class="si">#{</span><span class="n">escape_html</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="si">}#{</span><span class="vi">@hash</span><span class="si">}</span><span class="s2">&quot;</span> <span class="cp">%&gt;</span><span class="x">&#39; type=&quot;button&quot; id=&quot;yank&quot; class=&quot;submit&quot; value=&quot;yank&quot;/&gt;</span>
+</span><span class='line'><span class="x">  </span><span class="cp">&lt;%</span> <span class="k">end</span> <span class="cp">%&gt;</span><span class="x">  </span>
+</span><span class='line'><span class="cp">&lt;%</span> <span class="k">end</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Phần việc còn lại chúng ta phải giải quyết là khi user click vào link. Link của chúng ta có dạng là www.my-application.com/#{hash}, với sinatra để lọc phần hash hết sức đon giản vì sinatra đã tự động lọc hộ chúng ta và đưa vào biến global params, do đó chúng ta chỉ cần lấy hash từ params, tìm trong redis, và redirect user là ok:</p>
+
+<figure class='code'><figcaption><span>redirect.rb </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='rb'><span class='line'>  <span class="n">get</span> <span class="s1">&#39;/:hash&#39;</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">url</span> <span class="o">=</span> <span class="vi">@redis</span><span class="o">.</span><span class="n">get</span> <span class="s2">&quot;hash:</span><span class="si">#{</span><span class="n">params</span><span class="o">[</span><span class="ss">:hash</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>    <span class="n">redirect</span> <span class="n">url</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Như vậy chúng ta đã có một flow hoàn chỉnh rồi, thêm tí css và sử dụng <a href="https://github.com/zeroclipboard/ZeroClipboard">ZeroClipboard</a> để có nút yank để copy url vào clipboard, chúng ta đã có một dịch vụ rút gọn url cho riêng mình!</p>
+
+<p><img src="http://toandk.github.com/images/urlshorten/background.png"></p>
+
+<p>Toàn bộ source code cho tutorial này mình đang để ở đây, mọi người có thể sử dụng tùy ý :).
+<a href="https://github.com/ktmt/link_shorttener">https://github.com/ktmt/link_shorttener</a></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Githook và server hook (tiếp)]]></title>
+    <link href="http://toandk.github.com/blog/2013/07/07/git-server-hook-dot-markdown/"/>
+    <updated>2013-07-07T22:54:00+09:00</updated>
+    <id>http://toandk.github.com/blog/2013/07/07/git-server-hook-dot-markdown</id>
+    <content type="html"><![CDATA[<p>Ở bài viết <a href="http://toandk.github.com/blog/2013/06/25/using-githook-to-automatically-test-your-app/">trước</a>, tôi đã giới thiệu về githook, client hook và các user case hay sử dụng với client hook. Bài viết này, tôi sẽ giới thiệu thêm về server hook và các ứng dụng của chúng trong thực tế</p>
+
+<h1>Server-side hooks</h1>
+
+<p>Bên cạnh việc sử dụng các client-side hooks, bạn có thể sử dụng một vài server-side hook như là một hệ thống admin để áp đặt một cơ chế quán lý cho project của bạn. Những script này sẽ được chạy trước và sau khi commit được đẩy lên server. Những pre-hooks có thể trả về giá trị khác 0 ở bất cứ thời điểm nào để loại bỏ một push từ client, cũng như để in ra một error message cho client</p>
+
+<h2>pre-receive và post-receive</h2>
+
+<p>Script đầu tiên được chạy khi server nhận được một push từ client đó là <code>pre-receive</code>. Script này nhận một list các tham chiếu sẽ được push từ stdin. Nếu nó trả về giá trị khác 0, không có tham chiếu nào được chấp nhận. Bạn có thể sử dụng hook này để làm những việc như đảm bảo không có bất cứ tham chiếu nào là <code>non-fast-forwards</code>.</p>
+
+<p><code>post-receive</code> hook chạy sau khi toàn bộ quá trình được hoàn tất và có thể sử dụng để update các service khác hoặc để notify uer. Nó nhận cùng dữ liệu từ stdin như <code>pre-receive</code> hook. Ví dụ bao gồm gửi email chó một list các developer liên quan, notify CI server, hoặc update ticket tracking system. Bạn thậm chí có thể parse commit message để kiểm tra xem có bất cứ ticket nào cần open, modified hoặc update hay không. <code>post-receive</code> không thể làm ngừng lại quá trình push, nhưng client sẽ không đóng kết nối tới server cho đên khi <code>post-receive</code> kết thúc. Ví thế hãy cẩn thận khi bạn muốn làm những việc tốn thời gian. Cách tốt nhất là hãy sử dụng các background process để xử lý các tác vụ tốn thời gian.</p>
+
+<h2>update</h2>
+
+<p>Update script là tương tự với <code>pre-receive</code> script, ngoại trừ việc nó chỉ chạy một làn cho mỗi branch mà pusher muốn update. Nếu pusher muốn update nhiều branch, <code>pre-receive</code> chỉ chạy duy nhất một lần, nhưng update sẽ chạy một lần cho mỗi branch mà chúng được push. Thay vì đọc dữ liệu từ stdin, script này sẽ nhận 3 tham số đầu vào: tên của branch, SHA-1 trỏ đến commit trước khi được push, và SHA-1 user đang muốn push. Nếu update script trả về kết quả khác 0, chỉ branch ứng với script này bị reject, các branch khác vẫn được update bình thường</p>
+
+<h1>Ví dụ</h1>
+
+<p>Trong ví dụ này, chúng ta sẽ bắt buộc mỗi commit message phải có phần mở đầu của message tuân theo một định dạng. Cụ thể mỗi mesage phải có dạng &#8220;ref:1234&#8221; bởi vì mỗi một commit sẽ ứng với một ticket trong hệ thống.</p>
+
+<p>Để làm việc này, sẻver sẽ phải kiểm tra tất cả các commit được push để xem string trong commit message có đúng format hay không. Nếu commit message là không đúng format, trả về giá trị khác 0 và reject push.</p>
+
+<p>Chúng ta sẽ viết một update hook để làm việc này. Chú ý rắng, update hook nhận 3 giá trị đầu vào: tên của branch được update, SHA-1 của commit trước khi được push, và SHA-1 của commit sau khi được push. Các đoạn code dưới đây được minh hoạ bằng ruby, bạn có thể sử dụng ngôn ngữ lập trình khác nếu muốn</p>
+
+<figure class='code'><figcaption><span>update </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#!/usr/bin/env ruby
+</span><span class='line'>
+</span><span class='line'>$refname = ARGV[0]
+</span><span class='line'>$oldrev  = ARGV[1]
+</span><span class='line'>$newrev  = ARGV[2]</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Để lấy các commit từ <code>$oldrev</code> tới <code>$newrev</code>, chúng ta sử dụng lệnh <code>git rev-lít</code>. Lệnh này sẽ trả về danh sách các SHA-1 cho các commit nằm giữa 2 commit mà chúng ta truyền vào</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ git rev-list 538c33..d14fc7
+</span><span class='line'>d14fc7c847ab946ec39590d87783c69b031bdfb7
+</span><span class='line'>9f585da4401b0a3999e84113824d15245c13f0be
+</span><span class='line'>234071a1be950e2a8d078e6141f5cd20c1e61ad3
+</span><span class='line'>dfa04c9ef3d5197182f13fb5b9b1fb7717d2222a
+</span><span class='line'>17716ec0f1ff5c77eff40b7fe912f9f6cfd0e475</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Sau đó, chúng ta sử dụng lệnh <code>git cat-file</code> đẻ duyệt qua từng commit và lấy nội dụng của commit message.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ git cat-file commit ca82a6
+</span><span class='line'>tree cfda3bf379e4f8dba8717dee55aab78aef7f4daf
+</span><span class='line'>parent 085bb3bcb608e1e8451d4b2432f8ecbe6306e7e7
+</span><span class='line'>author kiennt &lt;kiennt@gmail.com> 1205815931 -0700
+</span><span class='line'>committer kiennt &lt;schacon@gmail.com> 1240030591 -0700
+</span><span class='line'>
+</span><span class='line'>Add new post about githook</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Cách đơn giản để lấy commit message từ một commit là khi có SHA-1 , chúng ta xác định dòng blank đầu tiên và lấy tất cả phần đằng sau nó. Chúng ta có thể sử dụng <code>sed</code> để làm điều này</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ git cat-file commit ca82a6 | sed '1,/^$/d'
+</span><span class='line'>Add new post about githook</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Sau đây là toàn bộ đoạn code ruby để hoàn thành tác vụ trên</p>
+
+<figure class='code'><figcaption><span>update </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#!/usr/bin/env ruby
+</span><span class='line'>
+</span><span class='line'>$refname = ARGV[0]
+</span><span class='line'>$oldrev  = ARGV[1]
+</span><span class='line'>$newrev  = ARGV[2]
+</span><span class='line'>$regex = /\[ref: (\d+)\]/
+</span><span class='line'>
+</span><span class='line'># enforced custom commit message format
+</span><span class='line'>def check_message_format
+</span><span class='line'>  missed_revs = `git rev-list #{$oldrev}..#{$newrev}`.split("\n")
+</span><span class='line'>  missed_revs.each do |rev|
+</span><span class='line'>    message = `git cat-file commit #{rev} | sed '1,/^$/d'`
+</span><span class='line'>    if !$regex.match(message)
+</span><span class='line'>      puts "[POLICY] Your message is not formatted correctly"
+</span><span class='line'>      exit 1
+</span><span class='line'>    end
+</span><span class='line'>  end
+</span><span class='line'>end
+</span><span class='line'>check_message_format</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>Kết luận</h1>
+
+<p>Qua 2 bài viết về githook, bạn đã nắm được phần nào các hooks trong git, và các ứng dụng liên quan đến chúng. Giờ bạn có thể sử dụng githook để tạo nên workflow phù hợp nhất với git cho project của mình</p>
+
+<h1>Tham khảo</h1>
+
+<p><a href="http://git-scm.com/book/en/Customizing-Git-Git-Hooks">Githook documentation</a>
+<a href="http://git-scm.com/book/en/Customizing-Git-An-Example-Git-Enforced-Policy">Customizing Git</a></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Tự tạo UITableViewCell]]></title>
+    <link href="http://toandk.github.com/blog/2013/07/06/tu-tao-uitableviewcell/"/>
+    <updated>2013-07-06T16:44:00+09:00</updated>
+    <id>http://toandk.github.com/blog/2013/07/06/tu-tao-uitableviewcell</id>
+    <content type="html"><![CDATA[<p>UITableView là 1 trong những control được sử dụng nhiều nhất trong các ứng dụng iOS. Tuy nhiên, các kiểu cơ bản của UITableViewCell có rất nhiều hạn chế cho người sử dụng bởi vì sự đơn giản của nó. Trong bài viết này, tôi sẽ hướng dẫn các bạn tạo ra tuỳ chỉnh 1 UITableViewCell của riêng mình.</p>
+
+<p>Trong bài viết này, chúng ta sẽ tạo ra 1 Table View Cell đơn giản chứa 1 tiêu đề, 1 button và 1 switcher. Bạn hoàn toàn có thể thay thế các thành phần này theo mục đích riêng của mình.</p>
+
+<p>Trước hết, hãy tạo 1 class mới kế thừa từ UITableViewCell, tạm gọi là CustomTableCell. Tiếp theo, tạo 1 file xib mới đặt tên trùng với 2 file class đã tạo: New -> File -> User Interface -> View</p>
+
+<p><img src="http://toandk.github.com/images/CustomCell/new_xib.png"></p>
+
+<p>Trên file xib, hãy xoá đi View hiện tại và kéo vào 1 UITableViewCell từ panel bên phải vào:</p>
+
+<p><img src="http://toandk.github.com/images/CustomCell/pull_xib.png"></p>
+
+<p>Sau đó, hãy kéo các thành phần bạn muốn vào trong view này, trong ví dụ này là 1 UILabel, 1 UIButton, 1 Switch.</p>
+
+<p>Tiếp theo chúng ta phải khai báo class cho file xib này. Bấm vào View và chuyển sang tab Identity inspector của panel bên phải, mục Custom Class đặt tên là CustomTableCell (tên của class chúng ta vừa kế thừa từ UITableViewCell):</p>
+
+<p><img src="http://toandk.github.com/images/CustomCell/class_name.png"></p>
+
+<p>Mỗi UITableViewCell đều có 1 định danh để có thể sử dụng lại trong 1 TableView. Chúng ta có thể set trường này trong tab Attributes inspector của panel bên phải trong mục Identifier. Đặt 1 id bất kỳ cho trường này, trong ví dụ là &#8220;CustomIdentifier&#8221;:</p>
+
+<p><img src="http://toandk.github.com/images/CustomCell/name_iden.png"></p>
+
+<p>Vẫn ở tab Identity Inspector này, bấm vào File&#8217;s Owner ở panel bên trái, mục custom class đặt tên là UIViewController. Điều này có thể hiểu nôm na là chúng ta sẽ khởi tạo CustomTableCell từ 1 UIViewController:</p>
+
+<p><img src="http://toandk.github.com/images/CustomCell/owner_name.png"></p>
+
+<p>Bước tiếp theo là kéo Outlet cho các thành phần của View. Bấm vào File&#8217;s Owner rồi chuyển sang tab Connections inspector của pannel bên phải, kéo Outlet View vào Custom Table Cell ở panel bên trái. Điều này giúp kết nối file xib của bạn với class định nghĩa trong file h, m</p>
+
+<p><img src="http://toandk.github.com/images/CustomCell/outlet_view.png">
+Để sử dụng được label, button và switch trên table cell, chúng ta phải khai báo Outlet trong file .h bằng đoạn code:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="n">nonatomic</span><span class="p">,</span> <span class="n">unsafe_unretained</span><span class="p">)</span> <span class="kt">IBOutlet</span> <span class="n">UILabel</span> <span class="o">*</span><span class="n">nameLabel</span><span class="p">;</span>
+</span><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="n">nonatomic</span><span class="p">,</span> <span class="n">unsafe_unretained</span><span class="p">)</span> <span class="kt">IBOutlet</span> <span class="n">UISwitch</span> <span class="o">*</span><span class="n">switcher</span><span class="p">;</span>
+</span><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="n">nonatomic</span><span class="p">,</span> <span class="n">unsafe_unretained</span><span class="p">)</span> <span class="kt">IBOutlet</span> <span class="n">UIButton</span> <span class="o">*</span><span class="n">aButton</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Sau đó, chuyển sang file xib, bấm vào Custom Table Cell ở panel bên trái, bấm vào Connections Inspector tab ở panel bên phải rồi kéo outlet vào các thành phần của view:</p>
+
+<p><img src="http://toandk.github.com/images/CustomCell/outlet_component.png"></p>
+
+<p>Vậy là đã xong các bước cài đặt cho Custom Table Cell. Tiếp đến là sử dụng TableCell này như thế nào. Hãy cùng so sánh 2 đoạn code của hàm -(UITableViewCell <em>)tableView:(UITableView </em>)tableView_ cellForRowAtIndexPath:(NSIndexPath *)indexPath:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">static</span> <span class="n">NSString</span> <span class="o">*</span><span class="n">identifier</span> <span class="o">=</span> <span class="s">@&quot;NormalCell&quot;</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">UITableViewCell</span> <span class="o">*</span><span class="n">cell</span> <span class="o">=</span> <span class="p">[</span><span class="n">tableView</span> <span class="nl">dequeueReusableCellWithIdentifier:</span><span class="n">identifier</span><span class="p">];</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">cell</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">cell</span> <span class="o">=</span> <span class="p">[[</span><span class="n">UITableViewCell</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithStyle:</span><span class="n">UITableViewCellStyleDefault</span> <span class="nl">reuseIdentifier:</span><span class="n">identifier</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">cell</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">static</span> <span class="n">NSString</span> <span class="o">*</span><span class="n">identifier</span> <span class="o">=</span> <span class="s">@&quot;CustomIdentifier&quot;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">CustomTableCell</span> <span class="o">*</span><span class="n">cell</span> <span class="o">=</span> <span class="p">[</span><span class="n">tableView</span> <span class="nl">dequeueReusableCellWithIdentifier:</span><span class="n">identifier</span><span class="p">];</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">cell</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">UIViewController</span> <span class="o">*</span><span class="n">tempVC</span> <span class="o">=</span> <span class="p">[[</span><span class="n">UIViewController</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithNibName:</span><span class="s">@&quot;CustomTableCell&quot;</span> <span class="nl">bundle:</span><span class="nb">nil</span><span class="p">];</span>
+</span><span class='line'>        <span class="n">cell</span> <span class="o">=</span> <span class="p">(</span><span class="n">CustomTableCell</span> <span class="o">*</span><span class="p">)</span><span class="n">tempVC</span><span class="p">.</span><span class="n">view</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="k">return</span> <span class="n">cell</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Đoạn code đầu tiên là cách khởi tạo UITableViewCell bình thường. Cách thứ 2 là khởi tạo CustomTableCell. Hãy chú ý là identifier được sử dụng chính là identifier chúng ta đã đặt trong file xib, và biến này phải được để là static. Tại vì sao lại để là static thì tôi sẽ đề cập trong 1 bài viết khác.</p>
+
+<p>Sau khi khởi tạo Cell xong, chúng ta có thể tuỳ chỉnh nó, như trong ví dụ:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="c1">// Set up cell</span>
+</span><span class='line'>    <span class="n">cell</span><span class="p">.</span><span class="n">nameLabel</span><span class="p">.</span><span class="n">text</span> <span class="o">=</span> <span class="p">[</span><span class="n">NSString</span> <span class="nl">stringWithFormat:</span><span class="s">@&quot;Cell %d&quot;</span><span class="p">,</span> <span class="n">indexPath</span><span class="p">.</span><span class="n">row</span><span class="p">];</span>
+</span><span class='line'>    <span class="n">cell</span><span class="p">.</span><span class="n">switcher</span><span class="p">.</span><span class="n">on</span> <span class="o">=</span> <span class="n">indexPath</span><span class="p">.</span><span class="n">row</span> <span class="o">%</span> <span class="mi">2</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Vậy là xong. Hãy viết nốt đoạn code cho TableView và đây là kết quả cuối cùng:</p>
+
+<p><img src="http://toandk.github.com/images/CustomCell/final.png" width="320" height="480"></p>
+
+<p>Toàn bộ code của ví dụ bạn có thể download ở đây https://github.com/toandk/Custom-UITableViewCell</p>
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[Giới thiệu một số object của Oracle - phần 2 ]]></title>
-    <link href="http://ktmt.github.com/blog/2013/07/04/gioi-thieu-mot-so-object-cua-oracle-2/"/>
+    <link href="http://toandk.github.com/blog/2013/07/04/gioi-thieu-mot-so-object-cua-oracle-2/"/>
     <updated>2013-07-04T06:20:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/07/04/gioi-thieu-mot-so-object-cua-oracle-2</id>
+    <id>http://toandk.github.com/blog/2013/07/04/gioi-thieu-mot-so-object-cua-oracle-2</id>
     <content type="html"><![CDATA[<h2>Tổng quan về Oracle và những điểm mạnh</h2>
 
 <p>Như đã giới thiệu với độc giả từ bài viết trước. Oracle là hệ cơ sở dữ liệu có nhiều object tiện dụng được chuẩn bị sẵn, và những hỗ trợ mạnh mẽ từ các công cụ trên top của tầng RDBMS.</p>
@@ -165,9 +1054,9 @@ Mỗi PACKAGE (viết bằng PL/SQL) là 1 &#8220;gói&#8221; được viết nh
   
   <entry>
     <title type="html"><![CDATA[Tìm hiểu redis - phần 1]]></title>
-    <link href="http://ktmt.github.com/blog/2013/07/02/tim-hieu-redis/"/>
+    <link href="http://toandk.github.com/blog/2013/07/02/tim-hieu-redis/"/>
     <updated>2013-07-02T23:38:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/07/02/tim-hieu-redis</id>
+    <id>http://toandk.github.com/blog/2013/07/02/tim-hieu-redis</id>
     <content type="html"><![CDATA[<h2>1. Giới thiệu</h2>
 
 <p><a href="www.redis.io">Redis</a> là hệ thống lưu trữ key-value với rất nhiều tính năng và được <a href="http://redis.io/topics/whos-using-redis">sử dụng rộng rãi</a>. Redis nổi bật bởi việc hỗ trợ nhiều cấu trúc dữ liệu cơ bản (hash, list, set, sorted set, string), đồng thời cho phép scripting bằng ngôn ngữ lua. Bên cạnh lưu trữ key-value trên RAM với hiệu năng cao, redis còn hỗ trợ lưu trữ dữ liệu trên đĩa cứng (persistent redis) cho phép phục hồi dữ liệu khi gặp sự cố. Ngoài tính năng replicatation (sao chép giữa master-client), tính năng cluster (sao lưu master-master) cũng đang được phát triển . Để sử dụng một cách hiệu quả những tính năng redis hỗ trợ cũng như vận hành redis với hiệu suất cao nhất thì việc am hiểu hệ thống lưu trữ này là điều không thể thiếu. Chính vì lý do này, mình quyết định tìm hiểu mã nguồn redis. Loạt bài viết về redis này tóm tắt những điều mình tìm hiểu được từ việc đọc mã nguồn của redis.</p>
@@ -363,9 +1252,9 @@ Mỗi PACKAGE (viết bằng PL/SQL) là 1 &#8220;gói&#8221; được viết nh
   
   <entry>
     <title type="html"><![CDATA[Tutorial: Duplicate file finder (Java)]]></title>
-    <link href="http://ktmt.github.com/blog/2013/06/30/tutorial-duplicate-file-finder-java/"/>
+    <link href="http://toandk.github.com/blog/2013/06/30/tutorial-duplicate-file-finder-java/"/>
     <updated>2013-06-30T09:07:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/06/30/tutorial-duplicate-file-finder-java</id>
+    <id>http://toandk.github.com/blog/2013/06/30/tutorial-duplicate-file-finder-java</id>
     <content type="html"><![CDATA[<h1>Mở đầu</h1>
 
 <p>Trong quá trình dọn dẹp máy tính cá nhân, tôi gặp phải vấn đề là quá nhiều file trùng lặp trong máy tính. Việc có quá nhiều file như vậy gây lãng phí ổ cứng, cộng thêm đôi lúc tôi không còn nhớ là file này đặt ở thư mục này có ý nghĩa gì nữa. Giá mà có công cụ nào đó để tìm tự động các file này cho tôi thì tốt quá nhỉ??</p>
@@ -647,9 +1536,9 @@ Mỗi PACKAGE (viết bằng PL/SQL) là 1 &#8220;gói&#8221; được viết nh
   
   <entry>
     <title type="html"><![CDATA[Giới thiệu về Githook và Client side hook]]></title>
-    <link href="http://ktmt.github.com/blog/2013/06/25/using-githook-to-automatically-test-your-app/"/>
+    <link href="http://toandk.github.com/blog/2013/06/25/using-githook-to-automatically-test-your-app/"/>
     <updated>2013-06-25T21:07:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/06/25/using-githook-to-automatically-test-your-app</id>
+    <id>http://toandk.github.com/blog/2013/06/25/using-githook-to-automatically-test-your-app</id>
     <content type="html"><![CDATA[<h1>Githook là gì</h1>
 
 <p>Giống như các hệ thống quản lý version khác, Git cung cấp một cách để gọi những custom script khi một hành động đặc biệt được thực hiện trong git. Có 2 nhóm hook trong git: hook cho client, và hook cho server. Client hook là dành cho những hoạt động xảy ra ở client như commit và merge. Server hook là dành cho những hoạt động xảy ra ở Git server như nhận được một commit push lên từ client. Bài viết này giới thiệu một số cách sử dụng hook cả client side hook</p>
@@ -706,9 +1595,9 @@ Mỗi PACKAGE (viết bằng PL/SQL) là 1 &#8220;gói&#8221; được viết nh
   
   <entry>
     <title type="html"><![CDATA[playing with web audio api (part 2)]]></title>
-    <link href="http://ktmt.github.com/blog/2013/06/21/playing-with-web-audio-api-part-2/"/>
+    <link href="http://toandk.github.com/blog/2013/06/21/playing-with-web-audio-api-part-2/"/>
     <updated>2013-06-21T23:07:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/06/21/playing-with-web-audio-api-part-2</id>
+    <id>http://toandk.github.com/blog/2013/06/21/playing-with-web-audio-api-part-2</id>
     <content type="html"><![CDATA[<h3>Playing audio with multisource and precise timing</h3>
 
 <p>Để làm game một game hay trên html5 thì âm thanh là một thứ không thể thiếu. Đầu tiên hãy đến với một game rất nổi tiếng:
@@ -901,9 +1790,9 @@ Ví dụ ở trên mình đặt ở html5collection / webaudioapi / guneffect.ht
   
   <entry>
     <title type="html"><![CDATA[Cách tính căn bậc 2]]></title>
-    <link href="http://ktmt.github.com/blog/2013/06/16/cach-tinh-can-bac-hai/"/>
+    <link href="http://toandk.github.com/blog/2013/06/16/cach-tinh-can-bac-hai/"/>
     <updated>2013-06-16T21:23:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/06/16/cach-tinh-can-bac-hai</id>
+    <id>http://toandk.github.com/blog/2013/06/16/cach-tinh-can-bac-hai</id>
     <content type="html"><![CDATA[<h2>Câu chuyện</h2>
 
 <p>Trong một buổi phỏng vấn kỹ thuật tại công ty XXX, một lập trình viên &#8220;lão thành&#8221; chịu trách nhiệm phỏng vấn Tèo hỏi Tèo một câu:</p>
@@ -1040,9 +1929,9 @@ Sqrt of 3 = 1.732051</code></pre>
   
   <entry>
     <title type="html"><![CDATA[Giới thiệu một số object của Oracle - phần 1 ]]></title>
-    <link href="http://ktmt.github.com/blog/2013/06/16/gioi-thieu-mot-so-object-cua-oracle/"/>
+    <link href="http://toandk.github.com/blog/2013/06/16/gioi-thieu-mot-so-object-cua-oracle/"/>
     <updated>2013-06-16T21:16:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/06/16/gioi-thieu-mot-so-object-cua-oracle</id>
+    <id>http://toandk.github.com/blog/2013/06/16/gioi-thieu-mot-so-object-cua-oracle</id>
     <content type="html"><![CDATA[<h2>Tổng quan về Oracle và những điểm mạnh</h2>
 
 <p>Oracle là hệ có sở dữ liệu hay dùng trong business application, gồm phiên bản free (standard edition) và phiên bản trả phí (enterprise edition). Với một set rất nhiều feature được develop trong thời gian dài, những object tiện dụng được chuẩn bị sẵn, hay quan trọng hơn hết là các tool tương thích trên top của tầng RDBMS (như RAC hay Datawarehouse), Oracle tỏ ra có ưu thế vượt trội so với các hệ cơ sở dữ liệu quan hệ open source.</p>
@@ -1160,9 +2049,9 @@ Sqrt of 3 = 1.732051</code></pre>
   
   <entry>
     <title type="html"><![CDATA[Design Pattern: Áp dụng Builder Pattern trong test (Java)]]></title>
-    <link href="http://ktmt.github.com/blog/2013/06/14/design-pattern-ap-dung-builder-pattern-trong-test-java/"/>
+    <link href="http://toandk.github.com/blog/2013/06/14/design-pattern-ap-dung-builder-pattern-trong-test-java/"/>
     <updated>2013-06-14T22:31:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/06/14/design-pattern-ap-dung-builder-pattern-trong-test-java</id>
+    <id>http://toandk.github.com/blog/2013/06/14/design-pattern-ap-dung-builder-pattern-trong-test-java</id>
     <content type="html"><![CDATA[<h1>Giới thiệu</h1>
 
 <p>Builder Pattern là một pattern trong cuốn Design Pattern của &#8220;Gang of Four&#8221;. Mục đích của Builder Pattern như sau: Separate the construction of a complex object from its representation so that the same construction process can
@@ -1408,9 +2297,9 @@ create different representations (tạm dịch: tách rời quá trình tạo ob
   
   <entry>
     <title type="html"><![CDATA[Giới thiệu một số phương pháp sinh 64 bit unique ID]]></title>
-    <link href="http://ktmt.github.com/blog/2013/06/09/xay-dung-he-thong-sinh-64bit-unique-id/"/>
+    <link href="http://toandk.github.com/blog/2013/06/09/xay-dung-he-thong-sinh-64bit-unique-id/"/>
     <updated>2013-06-09T21:15:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/06/09/xay-dung-he-thong-sinh-64bit-unique-id</id>
+    <id>http://toandk.github.com/blog/2013/06/09/xay-dung-he-thong-sinh-64bit-unique-id</id>
     <content type="html"><![CDATA[<h1>Bài toán sinh unique ID</h1>
 
 <p>Unique ID được sử dụng để phân biệt các đối tượng khác nhau.
@@ -1623,9 +2512,9 @@ Sử dụng <a href="http://www.tornadoweb.org/en/stable/">tornado</a> - Python 
   
   <entry>
     <title type="html"><![CDATA[playing with web audio api]]></title>
-    <link href="http://ktmt.github.com/blog/2013/06/08/playing-with-web-audio-api/"/>
+    <link href="http://toandk.github.com/blog/2013/06/08/playing-with-web-audio-api/"/>
     <updated>2013-06-08T23:46:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/06/08/playing-with-web-audio-api</id>
+    <id>http://toandk.github.com/blog/2013/06/08/playing-with-web-audio-api</id>
     <content type="html"><![CDATA[<h3>Web audio api là gì?</h3>
 
 <p>Web audio api là là javascript API dành cho xử lý (processing) và tái tạo(synthesizing) âm thanh. Mới được ra đời vào thời gian gần đây (first draft vào 2011/05/12), mặc dù chưa được sử dụng nhiều ( do phần nhiều là chưa được support rộng rãi, tình trạng support các bạn có thể xem ở <a href="http://caniuse.com/audio-api">đây</a> ), nhưng cá nhân mình thấy web audio api có tiềm năng ứng dụng không nhỏ, nằm ở các lý do dưới đây:</p>
@@ -1648,18 +2537,18 @@ Sử dụng <a href="http://www.tornadoweb.org/en/stable/">tornado</a> - Python 
 </ol>
 
 
-<p><img src="http://ktmt.github.com/images/webaudioapi/sound1.png"></p>
+<p><img src="http://toandk.github.com/images/webaudioapi/sound1.png"></p>
 
 <p>Để biểu diễn được trên máy tính thì sẽ cần làm 2 việc, 1 là sampling (tức là một khoảng thời gian bao nhiêu lại lấy dữ liệu một lần) và 2 là quantitize , tức là với sóng có biên độ là X thì bạn phải biểu diễn X dưới dạng bit để máy tính có thể hiểu được. Như hình vẽ dưới đây thì data được sampling với thời gian là 0.1s và được sử dụng 8bit để quantitize.</p>
 
-<p><img src="http://ktmt.github.com/images/webaudioapi/sound2.png"></p>
+<p><img src="http://toandk.github.com/images/webaudioapi/sound2.png"></p>
 
 <ol>
 <li><strong>Khái niệm về tần số (frequency) và biến đổi Fourier(Fourier transform)</strong>. Khái niệm về tần số các bạn có thể tìm hiểu thông qua google. Về Fourier transform, hay viết tắt là FT, thì FT giúp biên dữ liệu time series data nói chung ( ở đây là sound wave ) từ dạng ban đầu là trục độ lớn(x)/trục thời gian(y) trở thành trục độ lớn(x)/trục tần số(y). Việc biến đổi này có ích ở việc là giúp phân tích thành phần của sound wave, giúp cho ta biết trong data đó có những sóng có tần số thế nào, độ lớn ra sao. Điều này sẽ giúp cho việc nhận diện/ biểu diễn sound wave được thực hiện một cách dễ dàng hơn rất nhiều.</li>
 </ol>
 
 
-<p><img src="http://ktmt.github.com/images/webaudioapi/ft.gif"></p>
+<p><img src="http://toandk.github.com/images/webaudioapi/ft.gif"></p>
 
 <p>Nắm được các khái niệm trên một cách rõ ràng, chúng ta đã có thể sử dụng web audio api để làm một số việc từ đơn giản đến tương đối phức tạp rồi :).</p>
 
@@ -1667,7 +2556,7 @@ Sử dụng <a href="http://www.tornadoweb.org/en/stable/">tornado</a> - Python 
 
 <p>Web audio api có thiết kế dưới dạng <strong>graph</strong>, được cấu thành bởi các <strong>node</strong> ( kiến trúc này còn được gọi là <strong>modular routing</strong> ). Mỗi node có thể có nhiều inputs và/hoặc nhiều outputs.</p>
 
-<p><img src="http://ktmt.github.com/images/webaudioapi/graph.png"></p>
+<p><img src="http://toandk.github.com/images/webaudioapi/graph.png"></p>
 
 <p>Tại sao lại là dưới dạng graph? Vì audio processing thường qua nhiều công đoạn, mỗi công đoạn xử lý lại có thể có nhiều output ( giống như hình trên ), do đó mà việc biểu diễn dưới dạng graph và connection giữa các node giúp cho việc tách các xử lý ra/ tổng hợp kết quả xử lý lại được thực hiện một cách dễ dàng và clean hơn.</p>
 
@@ -1743,16 +2632,16 @@ Sử dụng <a href="http://www.tornadoweb.org/en/stable/">tornado</a> - Python 
 
 <p>Các bạn có thể xem bài trình bày của mình tại osaka htmlday (bài viết bằng tiếng Nhật :D):</p>
 
-<script async class="speakerdeck-embed" data-id="8575d620b2e30130eaf25236bfdba4c0" data-ratio="1.33333333333333" src="http://ktmt.github.com//speakerdeck.com/assets/embed.js"></script>
+<script async class="speakerdeck-embed" data-id="8575d620b2e30130eaf25236bfdba4c0" data-ratio="1.33333333333333" src="http://toandk.github.com//speakerdeck.com/assets/embed.js"></script>
 
 ]]></content>
   </entry>
   
   <entry>
     <title type="html"><![CDATA[unix tools phần 2]]></title>
-    <link href="http://ktmt.github.com/blog/2013/06/03/unix-tools-2/"/>
+    <link href="http://toandk.github.com/blog/2013/06/03/unix-tools-2/"/>
     <updated>2013-06-03T22:15:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/06/03/unix-tools-2</id>
+    <id>http://toandk.github.com/blog/2013/06/03/unix-tools-2</id>
     <content type="html"><![CDATA[<h3>Giới thiệu</h3>
 
 <p>Hàng ngày chúng ta gặp phải rất nhiều bài toán thống kê khác nhau. Bài toán thống kê số liệu cũng có thể xuất hiện dưới nhiều dạng khác nhau như: bằng việc kiểm apache acccess log thống kê xem có tổng số truy cập vào 1 API trong 1 phút, hay 1 API cụ thể được truy cập từ những địa điểm nào và cụ thể là bao nhiều lần. Xử lý số liệu là một bài toán khó, và việc bóc tách dữ liệu nhiều khi cũng không hể đơn giản. Tuy vậy, bằng việc sử dụng thành thạo các công cụ command line của linux, nhiều khi ta có thể giải quyết những bài toán trên một cách nhanh chóng chỉ bằng 1, 2 dòng lệnh. Bài viết này sẽ đưa ra 1 bài toán cụ thể và cách sử dụng các unix command line tool để giải quyết các bài toán đó.</p>
@@ -1878,9 +2767,9 @@ Bằng 1 câu lệnh, ta có thể đưa ngay ra được kết quả. Dễ như
   
   <entry>
     <title type="html"><![CDATA[99-bottles-of-beer]]></title>
-    <link href="http://ktmt.github.com/blog/2013/06/02/99-bottles-of-beer/"/>
+    <link href="http://toandk.github.com/blog/2013/06/02/99-bottles-of-beer/"/>
     <updated>2013-06-02T19:47:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/06/02/99-bottles-of-beer</id>
+    <id>http://toandk.github.com/blog/2013/06/02/99-bottles-of-beer</id>
     <content type="html"><![CDATA[<h2>The song, and the home page</h2>
 
 <p>Đầu tiên có thể độc giả sẽ tự hỏi ý nghĩa của tiêu đề bài viết là gì ? Vậy trước hết mời bạn ghé qua <a href="http://99-bottles-of-beer.net">home page</a> và enjoy the <a href="http://www.youtube.com/watch?v=qVjCag8XoHQ">song</a></p>
@@ -2054,9 +2943,9 @@ PHP long tag ở đầu có thể thay = PHP short tag</p>
   
   <entry>
     <title type="html"><![CDATA[WeakHashMap và Weak reference trong Java]]></title>
-    <link href="http://ktmt.github.com/blog/2013/06/02/weakhashmap-va-weak-reference-trong-java/"/>
+    <link href="http://toandk.github.com/blog/2013/06/02/weakhashmap-va-weak-reference-trong-java/"/>
     <updated>2013-06-02T08:06:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/06/02/weakhashmap-va-weak-reference-trong-java</id>
+    <id>http://toandk.github.com/blog/2013/06/02/weakhashmap-va-weak-reference-trong-java</id>
     <content type="html"><![CDATA[<h1>Giới thiệu</h1>
 
 <p>Trong thư viện Collection của Java, có một lớp đặc biệt: <strong>WeakHashMap</strong>. Về hoạt động nói chung nó rất giống với <strong>HashMap</strong>, đều có chức năng quản lý key, value như thêm, bớt, truy xuất value theo key&#8230; Vậy khác biệt của <strong>WeakHashMap</strong> so với <strong>HashMap</strong> là gì? Đó chính là khả năng phối hợp của <strong>WeakHashMap</strong> với garbage collector nhằm loại bỏ khả năng leak memory có thể xảy ra với <strong>HashMap</strong>. Trong bài viết này, chúng ta sẽ tìm hiểu <strong>WeakHashMap</strong> là gì, cách hoạt động của nó như thế nào, và cách nó xóa bỏ những entry không dùng đến ra sao.</p>
@@ -2249,9 +3138,9 @@ PHP long tag ở đầu có thể thay = PHP short tag</p>
   
   <entry>
     <title type="html"><![CDATA[sql and null]]></title>
-    <link href="http://ktmt.github.com/blog/2013/05/28/sql-and-null/"/>
+    <link href="http://toandk.github.com/blog/2013/05/28/sql-and-null/"/>
     <updated>2013-05-28T22:28:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/05/28/sql-and-null</id>
+    <id>http://toandk.github.com/blog/2013/05/28/sql-and-null</id>
     <content type="html"><![CDATA[<p>Khi sử dụng SQL, chắc hẳn các bạn đã biết có một cái gọi là <strong>NULL</strong> (mình gọi là cái vì NULL <strong>không
 phải là một giá trị</strong>)
 Để so sánh với NULL thì các bạn sẽ dùng toán tử <strong>is</strong> và <strong>is not</strong> thay vì <strong>=</strong>(equal) hoặc là
@@ -2295,9 +3184,9 @@ Unknown ( hay chính là NULL ). Do đó logic trong SQL gọi là 3VL (3 valued
 tuy nhiên với 3VL như SQL sẽ có thêm phép so sánh là <strong>IS</strong> và <strong>IS NOT</strong>. Kết hợp 3 loại giá trị với các phép so sánh đó sẽ cho chúng ta kết
 quả là 3 loại bảng truth table dưới đây:</p>
 
-<p><img src="http://ktmt.github.com/images/sqlandnull/truthtbl.png" width="500" height="1000" title="truth table" ></p>
+<p><img src="http://toandk.github.com/images/sqlandnull/truthtbl.png" width="500" height="1000" title="truth table" ></p>
 
-<p><img src="http://ktmt.github.com/images/sqlandnull/truthtbl2.png" width="300" height="600" title="truth table" ></p>
+<p><img src="http://toandk.github.com/images/sqlandnull/truthtbl2.png" width="300" height="600" title="truth table" ></p>
 
 <p>(trích dẫn từ Wikipedia)</p>
 
@@ -2307,9 +3196,9 @@ quả là 3 loại bảng truth table dưới đây:</p>
   
   <entry>
     <title type="html"><![CDATA[Sử dụng unittest để refactoring code]]></title>
-    <link href="http://ktmt.github.com/blog/2013/05/28/thiet-ke-huong-test/"/>
+    <link href="http://toandk.github.com/blog/2013/05/28/thiet-ke-huong-test/"/>
     <updated>2013-05-28T16:53:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/05/28/thiet-ke-huong-test</id>
+    <id>http://toandk.github.com/blog/2013/05/28/thiet-ke-huong-test</id>
     <content type="html"><![CDATA[<p>Ở bài viết trước tôi đã đề cập đến <a href="http://ktmt.github.io/blog/2013/05/09/mock-with-unittest-in-python/">cách sử dụng mock để viết unittest</a>. Unittest có tác dụng không chỉ trong việc đảm bảo các đoạn code mới được viết thêm không phá vỡ các yêu cầu logic trước đó, trong bài viết này, tôi sẽ chia sẽ các kinh nghiệm sử dụng unittest để refactoring các đoạn code</p>
 
 <p>Một trong những vấn đề khi viết các hàm đó là các hàm thường quá phức tạp. <a href="http://en.wikipedia.org/wiki/Robert_Cecil_Martin">Robert Martin</a> trong cuốn sách &#8220;Clean code - a handbook of Agile Software Craftmenship&#8221; đã nói về nói về các quy tắc khi thiết kế hàm: Quy tắc đầu tiên của function đó là chúng nên nhỏ, quy tắc thứ hai là chúng nên nhỏ hơn thế nữa&#8221; (The first rule ò functions is that they should be small. The second rule of functions is that they should be smaller than that). Function càng ngắn thì càng dễ hiểu, function càng ngắn thì nó càng tách biệt so với các hàm khác. Và hơn thế nữa hàm càng ngắn, thì test càng đơn giản. Vậy làm thế nào để biết function bạn viết là đủ ngắn hay chưa? Nếu để test 1 hàm cần tới hơn 20 dòng code, theo bản thân tôi, hàm đó nên được viết lại.</p>
@@ -2594,9 +3483,9 @@ Không có bất cứ logic nào được đặt trong hàm này. Trên thực t
   
   <entry>
     <title type="html"><![CDATA[Quy tắc xoắn ốc]]></title>
-    <link href="http://ktmt.github.com/blog/2013/05/21/quy-tac-xoan-oc/"/>
+    <link href="http://toandk.github.com/blog/2013/05/21/quy-tac-xoan-oc/"/>
     <updated>2013-05-21T21:50:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/05/21/quy-tac-xoan-oc</id>
+    <id>http://toandk.github.com/blog/2013/05/21/quy-tac-xoan-oc</id>
     <content type="html"><![CDATA[<h3>Quy tắc xoắn ốc</h3>
 
 <p>Có một quy tắc gọi là &#8220;quy tắc xoắn ốc&#8221; cho phép lập trình viên C/C++ phân tích trong đầu bất cứ khai báo nào. Quy tắc này rất đơn giản như sau:</p>
@@ -2692,765 +3581,6 @@ Không có bất cứ logic nào được đặt trong hàm này. Trên thực t
 
 <pre><code>void (*signal(int, void (*fp)(int)))(int);
 </code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Cơ bản về Arduino - Platform for Physical Computing]]></title>
-    <link href="http://ktmt.github.com/blog/2013/05/21/co-ban-ve-arduino-platform-for-physical-computing/"/>
-    <updated>2013-05-21T09:37:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/05/21/co-ban-ve-arduino-platform-for-physical-computing</id>
-    <content type="html"><![CDATA[<h1>Giới thiệu về Arduino và Physical Computing</h1>
-
-<p>Có thể bạn đã quen lập trình trên PC, với những ngôn ngữ như C, C++, C#, Java, Python, Ruby&#8230;</p>
-
-<p>Nhưng bạn có biết là phần mềm trên PC chỉ chiếm khoảng 10% sản lượng phần mềm trên thị trường. 90% còn lại là code điều khiển tivi, máy giặt, điều hòa, tủ lạnh&#8230; tóm lại là tất cả các thiết bị điện tử xung quanh bạn. Đây cũng là một mảng theo tôi là khá thú vị. Lập trình theo hướng này được gọi là embedded computing, hay physical computing, tức là lập trình để con người tương tác với các thiết bị thực.</p>
-
-<p>Để người thiết kế có thể nhanh chóng đưa ra được mẫu thể hiện ý tưởng của mình, rất cần phải có những platform để dễ dàng prototyping. Và một trong những platform đang được sử dụng rất nhiều trong prototyping là Arduino.</p>
-
-<p>Vậy Arduino là gì và vì sao nó được sử dụng rộng rãi như vậy?</p>
-
-<p>Arduino là một bo mạch xử lý được dùng để lập trình tương tác với các thiết bị phần cứng như cảm biến, động cơ,&#8230; Điểm hấp dẫn ở Arduino với anh em lập trình là ngôn ngữ cực kì dễ học (giống C/C++), các ngoại vi trên bo mạch đều đã được chuẩn hóa, nên không cần biết nhiều về điện tử, chúng ta cũng có thể lập trình được những ứng dụng thú vị. Thêm nữa, vì Arduino là một platform đã được chuẩn hóa, nên đã có rất nhiều các bo mạch mở rộng (gọi là shield) để cắm chồng lên bo mạch Arduino, có thể hình dung nôm na là &#8220;library&#8221; của các ngôn ngữ lập trình. Ví dụ, muốn kết nối Internet thì có Ethernet shield, muốn điều khiển động cơ thì có Motor shield, muốn kết nối nhận tin nhắn thì có GSM shield,&#8230; Rất đơn giản, và ta chỉ phải tập trung vào việc &#8220;lắp ghép&#8221; các thành phần này và sáng tạo ra các ứng dụng cần thiết :)</p>
-
-<p>Có thể kể ở đây một số ứng dụng hay ho của Arduino:</p>
-
-<ul>
-<li><p>Robot: Arduino được dùng để làm bộ xử lý trung tâm của rất nhiều loại robot. Đó là nhờ vào khả năng đọc các thiết bị cảm biến, điều khiển động cơ,&#8230; của Arduino.</p></li>
-<li><p>Game tương tác: chúng ta có thể dùng Arduino để tương tác với Joystick, màn hình,&#8230; để chơi các trò như Tetrix, phá gach, Mario&#8230; Còn nhiều game rất sáng tạo nữa, ví dụ bạn có thể tham khảo ở đây:
-<a href="http://wn.com/arduino_game">http://wn.com/arduino_game</a></p></li>
-<li><p>Máy bay không người lái</p></li>
-<li><p>Mô phỏng Ipod :D (ví dụ ở đây: <a href="http://www.youtube.com/watch?v=5gy7w6R091M">http://www.youtube.com/watch?v=5gy7w6R091M</a>)</p></li>
-<li><p>và nhiều nhiều ứng dụng khác nữa &#8230;</p></li>
-</ul>
-
-
-<h1>Để lập trình Arduino cần những gì?</h1>
-
-<p>Như vậy, bạn đã biết là tuy là một bo mạch nhỏ như thế, Arduino có thể dùng vào rất nhiều ứng dụng thú vị khác nhau. Vậy để phát triển ứng dụng dựa trên Arduino, ta cần những gì?
-Rất đơn giản, bạn chỉ cần IDE phát triển (download ở <a href="http://arduino.cc/">đây</a>), một dây kết nối USB loại A-B, và một bo mạch Arduino là bạn có thể bắt đầu được rồi.</p>
-
-<p>Ngôn ngữ lập trình của Arduino dựa trên ngôn ngữ lập trình Wiring cho phần cứng. Chắc bạn đã quá quen thuộc với ngôn ngữ C/C++, như vậy việc viết code Wiring là rất dễ dàng. Cộng thêm, trên <a href="http://arduino.cc/">website</a>, có khá nhiều các library viết sẵn để điều khiển ngoại vi: LCD, sensor, motor&#8230; nên việc bạn cần làm chỉ là kết hợp chúng với nhau để tạo ứng dụng cho riêng bạn.</p>
-
-<h1>Cận cảnh phần cứng của Arduino</h1>
-
-<p><img src="http://ktmt.github.com/images/arduino-intro/arduino-overview.gif" title="" ></p>
-
-<p>Hình trên là cận cảnh con Arduino Uno. Đối với chúng ta lập trình cho Arduino thì trước tiên quan tâm những thành phần được đánh số ở trên:</p>
-
-<ol>
-<li><p>Cổng USB (loại B): đây là cổng giao tiếp để ta upload code từ PC lên vi điểu khiển. Đồng thời nó cũng là giao tiếp serial để truyền dữ liệu giữa vi điểu khiển với máy tính.</p></li>
-<li><p>Jack nguồn: để chạy Arduino thì có thể lấy nguồn từ cổng USB ở trên, nhưng không phải lúc nào cũng có thể cắm với máy tính được. Lúc đó, ta cần một nguồn 9V đến 12V.</p></li>
-<li><p>Hàng Header: đánh số từ 0 đến 12 là hàng digital pin, nhận vào hoặc xuất ra các tín hiệu số. Ngoài ra có một pin đất (GND) và pin điện áp tham chiếu (AREF).</p></li>
-<li><p>Hàng header thứ hai: chủ yếu liên quan đến điện áp đất, nguồn.</p></li>
-<li><p>Hàng header thứ ba: các chân để nhận vào hoặc xuất ra các tín hiệu analog. Ví dụ như đọc thông tin của các thiết bị cảm biến.</p></li>
-<li><p>Vi điều khiển AVR: đây là bộ xử lý trung tâm của toàn bo mạch. Với mỗi mẫu Arduino khác nhau thì con chip này khác nhau. Ở con Arduino Uno này thì sử dụng ATMega328.</p></li>
-</ol>
-
-
-<h1>&#8220;Hello World&#8221; trên nền Arduino</h1>
-
-<p>Với việc học bất cứ một ngôn ngữ nào, thường người ta hay bắt đầu bằng ví dụ &#8220;Hello World&#8221;, tức là bắt máy tính bắn ra màn hình dòng chữ &#8220;Hello, World!&#8221;. Với các bạn có kinh nghiệm lập trình, việc này có lẽ quá dễ dàng, chỉ vài dòng code là được, ngôn ngữ nào cũng vậy (C, C++, Java, Python, Ruby&#8230;).</p>
-
-<p>Nhưng với lập trình trên Arduino thì sao? Việc bắt cái bo mạch Arduino đưa ra một thông tin báo hiệu nào đó cho ta là nó đang chạy, phải thực hiện thế nào? Nói cách khác, output của Arduino sẽ là như thế nào đây:</p>
-
-<ol>
-<li><p>Nháy LED</p></li>
-<li><p>Kết nối với PC qua đường UART, bắn lên dòng chữ Hello World cho ta ngắm.</p></li>
-<li><p>Kết nối với một cái màn LCD, cũng bắt nó bắn lên Hello World cho ta nhìn.</p></li>
-</ol>
-
-
-<p>&#8230; vài cách nữa</p>
-
-<p>Trong bài mở đầu này, tôi chọn cách dễ nhất là Nháy LED. Nháy LED cũng được coi là Hello World của lập trình nhúng, với mỗi con chip mới, điều đầu tiên nên làm là nháy LED, để kiểm tra xem mình đã kiểm soát được đầu vào đầu ra cho con chip chưa :)</p>
-
-<p>Đầu tiên là đoạn code nháy LED:</p>
-
-<figure class='code'><figcaption><span>blink_series.c </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cm">/* </span>
-</span><span class='line'><span class="cm">  Multiple blink </span>
-</span><span class='line'><span class="cm">  Turns on and off a LED series, using Arduino pin 4,5,6,7</span>
-</span><span class='line'><span class="cm">  </span>
-</span><span class='line'><span class="cm">  written by Viet Nguyen</span>
-</span><span class='line'><span class="cm"> */</span>
-</span><span class='line'>
-</span><span class='line'> <span class="kt">int</span> <span class="n">led</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'> <span class="c1">//the setup routine runs once when you reset the Arduino</span>
-</span><span class='line'> <span class="kt">void</span> <span class="nf">setup</span><span class="p">()</span>
-</span><span class='line'> <span class="p">{</span>
-</span><span class='line'>   <span class="c1">//initialize the digital pin as an output</span>
-</span><span class='line'>   <span class="k">for</span><span class="p">(</span><span class="n">led</span> <span class="o">=</span> <span class="mi">4</span><span class="p">;</span> <span class="n">led</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">;</span> <span class="n">led</span> <span class="o">++</span><span class="p">)</span>
-</span><span class='line'>   <span class="p">{</span>
-</span><span class='line'>     <span class="n">pinMode</span><span class="p">(</span><span class="n">led</span><span class="p">,</span> <span class="n">OUTPUT</span><span class="p">);</span> <span class="c1">//init the digital pin as output.</span>
-</span><span class='line'>   <span class="p">}</span>
-</span><span class='line'> <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'> <span class="c1">// the loop routine runs over and over again</span>
-</span><span class='line'> <span class="kt">void</span> <span class="nf">loop</span><span class="p">()</span>
-</span><span class='line'> <span class="p">{</span>
-</span><span class='line'>   <span class="k">for</span><span class="p">(</span><span class="n">led</span> <span class="o">=</span> <span class="mi">4</span><span class="p">;</span> <span class="n">led</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">;</span> <span class="n">led</span><span class="o">++</span><span class="p">)</span>
-</span><span class='line'>   <span class="p">{</span>
-</span><span class='line'>     <span class="n">digitalWrite</span><span class="p">(</span><span class="n">led</span><span class="p">,</span> <span class="n">HIGH</span><span class="p">);</span>  <span class="c1">//turn the LED on (HIGH is the voltage level)</span>
-</span><span class='line'>     <span class="n">delay</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>      <span class="c1">//100 ms</span>
-</span><span class='line'>     <span class="n">digitalWrite</span><span class="p">(</span><span class="n">led</span><span class="p">,</span> <span class="n">LOW</span><span class="p">);</span>  <span class="c1">//turn the LED off by making the volage LOW</span>
-</span><span class='line'>     <span class="n">delay</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>      <span class="c1">//100 ms</span>
-</span><span class='line'>   <span class="p">}</span>
-</span><span class='line'> <span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Bạn thấy đó, đoạn code trên rất đơn giản và mang phong cách giống C/C++. Một chương trình như trên được gọi là sketch, sẽ được upload lên bo mạch Arduino qua cổng USB.</p>
-
-<p>Phân tích chương trình: có 2 method quan trọng nhất là setup() và loop().</p>
-
-<ul>
-<li><p>setup() làm nhiệm vụ khởi tạo mode cho các ngoại vi của Arduino. Hàm này sẽ được chạy một lần khi bo mạch Arduino được reset. Ở chương trình này, setup() chỉ làm nhiệm vụ đặt các chân 4,5,6,7 của Arduino sang mode output.</p></li>
-<li><p>loop() là chương trình chính của Arduino. Đoạn code trong loop() sẽ được Arduino chạy vô hạn. Trong chương trình này, có hàm digitalWrite() để đặt các chân (pin) ở mức điện áp cao (HIGH) hay thấp (LOW). Hàm tiếp theo là delay(), nhận đối số là một số nguyên, thẻ hiện số mili giây ta muốn chương trình tạm ngưng.</p></li>
-</ul>
-
-
-<p>Đó là tất cả về phần code chạy, còn nối dây như thế nào? Dưới đây là sơ đồ nối dây:</p>
-
-<p><img src="http://ktmt.github.com/images/arduino-intro/arduino_led.png"></p>
-
-<p>Giải thích một chút, đoạn code trên sẽ lần lượt xuất điện áp 5V ra các pin 4,5,6,7 rồi tắt. Để kiểm nghiệm, nối LED với một con trở giữa các pin đó với đất, ta sẽ thấy các đèn LED bật tắt nhịp nhàng :)</p>
-
-<p>Sau đây là video demo :P</p>
-
-<iframe width="560" height="315" src="http://www.youtube.com/embed/4EOGnKN2RiE" frameborder="0" allowfullscreen></iframe>
-
-
-<h1>Kết luận#</h1>
-
-<p>Bài này đã giới thiệu những kiến thức mở đầu về Arduino, cách lập trình trên platform này và demo bài &#8220;Hello World&#8221; của Arduino. Với cộng đồng chia sẻ rất lớn, nhiều ứng dụng, Arduino rất đáng để học, cũng là một cách để bạn tiếp cận dễ dàng hơn với electronics :D</p>
-
-<h1>Tham khảo</h1>
-
-<ol>
-<li><a href="http://arduino.cc/en/">http://arduino.cc/en/</a></li>
-</ol>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Web Beacon và cookie]]></title>
-    <link href="http://ktmt.github.com/blog/2013/05/18/web-beacon/"/>
-    <updated>2013-05-18T15:27:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/05/18/web-beacon</id>
-    <content type="html"><![CDATA[<h2>Web Beacon là gì</h2>
-
-<p>Web Beacon, hay Web Bug là 1 khái niệm với 2 tên gọi khác nhau.
-Có thể bạn chưa từng nghe nói đến, hay đã nghe nhưng ko hiểu rõ lắm về cụm từ này. Trước hết mình sẽ lấy định nghĩa trên Wikipedia xuống để dễ theo dõi</p>
-
-<blockquote><p>A web bug is an object that is embedded in a web page or email and is usually invisible to the user but allows checking that a user has viewed the page or email. Common uses are email tracking and page tagging for Web analytics</p></blockquote>
-
-<p>Như vậy, Web beacon là 1 technique trong web programming, mục đích là phục vụ cho web data analytics.</p>
-
-<p>Tại sao lại cần phải có web beacon ? Cách implement web beacon ra sao ? Bài viết này sẽ trả lời 2 câu hỏi trên và 2 khái niệm liên quan thông qua các ví dụ và hình dung cụ thể.</p>
-
-<h2>Tại sao lại phải có web beacon ?</h2>
-
-<p>Nếu bạn đã từng tự xây dựng 1 web application, deploy trên server của chính bạn - bravo - bạn đã có sản phẩm của chính bạn - đứa con tinh thần đầu tiên :D</p>
-
-<p>Now what ? Bạn muốn application của mình to hơn, lớn nữa, performance cao lên, vậy sẽ bắt đầu phải scale up, add feature, brainstorming để <strong>lôi kéo user</strong>.</p>
-
-<p>Phần khó khăn nhất ở đây - Long live the users :D Application cần có nhiều idea mới. Hoặc đơn giản, không có thứ gì interesting thì phải có link đến những web khác có interesting content.
-Vậy, <strong>làm thế nào</strong> để biết user cảm thấy interesting với content nào nhất ? User hứng thú với dịch vụ gì và không hứng thú với dịch vụ gì ?</p>
-
-<p>1 cách mô hình hoá, Website của bạn - website A có link đến website N1, N2, N3, &#8230; (các site có intersting content)
-Bạn - site A webmaster muốn biết user của bạn click vào những link nào nhiều nhất trong số các N-site.
-Dĩ nhiên là site nào ít attractive nhất thì muốn bỏ đi, site nào càng nhiều attractive thì tìm thêm các loại tương ứng.
-Mặc dù khi user click vào các link thì đã ra khỏi site của bạn và đi đến site khác, nhưng bạn có thể <strong>đặt web beacon ở từng link</strong> để tracking user của bạn.</p>
-
-<p>Ngược lại, giả sử vì mục đích quảng cáo, site N của bạn đặt link (banner) ở các site A1, A2, A3,&#8230;.
-Đổi lại bạn đang trả tiền cho tất cả.
-Dĩ nhiên bạn muốn biết user visit site của mình đến từ nơi nào nhiều nhất.
-Nơi nào user ko đến thì cắt bỏ để giảm chi phí v.v&#8230;
-Bạn có thể <strong>đặt web beacon ở cổng vào site mình</strong> và record lại các information bạn cần.</p>
-
-<p>Thử tưởng tượng 1 hệ thống web có n node X1, X2,&#8230; Xn , mỗi node đều đặt web beacon ở đầu vào và các đầu ra của mình, mỗi node sẽ có 1 action flow của user, được identify bằng 1 sessionID thống nhất. Đến giai đoạn user behavior analytics, chỉ cần dựa vào 1 sessionID đó có thể tổng hợp được flow tổng quát của từng user trên cả hệ thống !</p>
-
-<h2>Implement Web Beacon</h2>
-
-<p>Trước hết, Web beacon thường được implement dưới dạng 1 file gif 1x1 pixel, gần như trong suốt với user và giảm tối đa load mỗi lần generate ra request với server.</p>
-
-<p>Trường hợp 1 ở bên trên, cách implement khá đơn giản: Mỗi link đến các website N1, N2, N3&#8230; có để đặt gán với 1 hàm javascript, khởi động 1 ajax request đến server của site mình kèm theo các thông tin hữu ích (IP của user, target website v.v&#8230;)
-Nội dung request là GET web beacon (request file fig 1x1 pixel) Như thế server site mình sẽ mất thêm lượng tải tối thiếu cho mục đích tracking.</p>
-
-<p>Cách viết cụ thể ajax request và xử lý cookie phía server sẽ không trình bày cụ thể ở bài viết này.</p>
-
-<p>Trường hợp 2, cần có 1 chút lưu ý. Các site A1, A2, A3,&#8230; bạn đặt banner cần phải có 1 param ghi lại domain của họ, ví dụ:</p>
-
-<figure class='code'><figcaption><span>siteA.html </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;form</span> <span class="na">method =</span><span class="err"> </span><span class="s">&quot;GET&quot;</span> <span class="na">action =</span><span class="err"> </span><span class="s">&quot;www.your_site.com&quot;</span><span class="nt">&gt;</span>
-</span><span class='line'><span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;hidden&quot;</span> <span class="na">name=</span><span class="s">&quot;callback_url&quot;</span> <span class="na">value=</span><span class="s">&quot;domain_of_this_site&quot;</span><span class="nt">&gt;</span>
-</span><span class='line'><span class="nt">&lt;/form&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Như vậy user đi đến site N của bạn sẽ mang theo &#8220;callback_url&#8221;. Ở cổng vào site của bạn có thể đặt 1 beacon như sau</p>
-
-<figure class='code'><figcaption><span>siteN.html </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;img</span> <span class="na">src=</span><span class="s">&quot;/img/_.gif?from_=&lt;?php $_GET[&quot;</span><span class="na">callback_url</span><span class="err">&quot;];?</span><span class="nt">&gt;</span><span class="err">&amp;</span>_=<span class="cp">&lt;?php date(&quot;Y-m-d H:i:s&quot;);?&gt;</span>&quot;&gt;
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Tại sao ở đây lại cần hàm date(&#8220;Y-m-d H:i:s&#8221;) ? Browser có cơ chế cache và thông thường sẽ cache lại các file image tại 1 website để lần sau quay lại load trang web nhanh hơn. Nếu Browser detect thấy file _.gif nằm trong cache thì sẽ <strong>không make request đến server</strong> và tracking sẽ thất bại :D</p>
-
-<p>Với &amp;_=&lt;?php date(&#8220;Y-m-d H:i:s&#8221;);?> image sẽ vẫn đc request nhưng với đuôi có chưa curent time nên sẽ không bị cache.</p>
-
-<h2>Cross-domain cookies</h2>
-
-<p>Phần này sẽ đề cập đến 1 khái niệm liên quan: cross-domain cookie.
-Giả sử site A có đặt link hay ads(quảng cáo) của site N, và cả site A lẫn site N đều nằm thuộc cùng 1 group, 1 công ty. Lúc đó webmaster của site A và site N có thể sử dụng cross-domain cookie để tracking user action flow trên cả 2 site.</p>
-
-<p>Cái gì gọi là cross-domain cookie ? Chẳng phải là cookie chỉ readable với 1 domain cố định hay sao ?</p>
-
-<p>Bạn có thể hình dung đơn giản như sau:</p>
-
-<ul>
-<li>User visit site A, site A tạo 1 cookie với domain của mình, kèm theo 1 sessionID. Với sessionID này site A có thể tracking user trong phạm vi site của mình.</li>
-<li>User click vào link (hoặc ads) đến site N, site A &#8220;gửi kèm&#8221; 1 param là sessionID kể trên . Site N đón nhận request với sessionID và cũng tạo 1 cookie trên domain của mình chứa sessionID dược nhận.</li>
-<li>User click vào nút &#8220;Come back to previous site&#8221; trên site N, site N sẽ tổng hợp action flow trên site mình (dựa vào cookie tạo ở trên), send ngược trờ lại cùng với sessionID cho site A.</li>
-<li>Site A sẽ welcome user trở lại, VD thêm đoạn chào hỏi: &#8220;Aha, bạn đến site N để mua abcxyz phải không, để tôi show cho bạn thêm vài site khác nữa cũng có thứ đồ abcxyz đó nữa, tốt lắm &#8221; etc :D</li>
-</ul>
-
-
-<p>Vậy vấn đề sẽ thế nào nếu như ko có nút &#8220;Come back to previous site&#8221; hay link hoặc ads trên site A ?
-Nói 1 cách khác, nếu user chỉ visit site A và site N bằng cách gõ URL trực tiếp trên thanh URL của browser ?</p>
-
-<p>Implement cross-domain cookies sẽ hơi phức tạp hơn nhưng không phải là không làm được.</p>
-
-<ul>
-<li>User visit siteA, site A vẫn tạo cookie với 1 sessionID như trên</li>
-<li>User visit siteN/randompage, site N redirect lại siteA/cookieGetter.php với param callback_url=&#8221;randompage&#8221;</li>
-<li>Khi browser quay trờ lại siteA/cookieGetter.php, site A sẽ check cookie của mình và nếu tìm thấy sessionID sẽ gửi dưới dạng param ngược lại cho siteN/randompage (&#8220;randompage được lấy ra từ param callback_url&#8221;)</li>
-<li>User được redirect back lại siteN/randompage cùng với sessionID, lúc này site N sẽ tạo cookie của site mình với sessionID kể trên.</li>
-</ul>
-
-
-<p>Như vậy cross-domain cookie thực tế vẫn là các cookie khác nhau trên các domain khác nhau</p>
-
-<h2>Third-party cookies</h2>
-
-<p>Third-party cookies lại là 1 khái niệm khác và dễ nhầm lẫn. Trong trường hợp site A và site N ở trên không cùng 1 công ty hay đơn vị quản lý, cookie của site A đối với site N gọi là third-party cookie và ngược lại.</p>
-
-<p>Giả sử trên site A đặt 1 ads banner của site N. Khi browser của user load webpage từ site A, 1 đoạn JS có thể được khỏi động để load banner image từ site N. Site N có thể tạo ra 1 cookie của mình với 1 sessionID (anonymous profile) và <strong>được phép set vào browser mặc dù user đang ở site A</strong>.</p>
-
-<p>Tiếp theo, user đến site B cũng đặt ads banner của site N. Mọi chuyện sẽ diễn ra tương tự và site N lại <strong>được phép set vào browser 1 cookie mặc dù user đang ở site B</strong> Tuy nhiên với khả năng đọc được cookie của chính mình, lần này site N sẽ detect được cookie đã từng được set và tìm thấy sessionID lần trước. Chuyện gì xảy ra ở đây ?</p>
-
-<p>Site N không hề biết user ở đâu, dùng browser gì, nhưng biết là <strong>cùng 1 user</strong> đã đi từ site A đến site B. Hay gọi là, site N có &#8220;anonymous profile&#8221; của user, identify bằng unique sessionID ở trên.</p>
-
-<p>Kết quả: Site N có thể build rất nhiều anonymous profile cho rất nhiều user, và theo thời gian nắm bắt habit và interest, đưa ra các banner quảng cáo phù hợp nếu lần sau gặp lại mỗi user.</p>
-
-<p>Đây là một kỹ thuật phổ biến trong công nghệ quảng cáo. Tuy nhiên, các browser hiện đại đều có chức năng block third-party cookie. Vậy nếu bạn không thích bị track, có thể đơn giản disable third-party cookie trên browser của mình.</p>
-
-<h2>Kết luận</h2>
-
-<ul>
-<li>Web beacon: là 1 technique trong web programming, mục đích là phục vụ cho web data analytics</li>
-<li>Cross-domain cookies: các cookie khác nhau trên các domain khác nhau, tuy nhiên identify được lẫn nhau thông qua unique ID</li>
-<li>Third-party cookies: cookies của domain khác nhưng được set khi user visit webpage của server mình</li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Sử dụng ssl trên rubyonrails]]></title>
-    <link href="http://ktmt.github.com/blog/2013/05/15/su-dung-ssl-voi-rails-va-mot-so-chu-y/"/>
-    <updated>2013-05-15T23:03:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/05/15/su-dung-ssl-voi-rails-va-mot-so-chu-y</id>
-    <content type="html"><![CDATA[<h1>HTTPS trên rails</h1>
-
-<p>Là RoR developer, khi phải làm việc với một số thông tin quan trọng như: thông tin cá nhân user, thông tin về thanh toán trực tuyến thì thường bạn phải dùng kết nối có bảo mật (secure connection), và điển hình ở đây là sử dụng HTTPS. Để setup HTTPS trên rails, thì trước hết mình phải nhắc lại là các web server phổ biến trên rails như là webrick, unicorn hay thin đều không hỗ trợ HTTPS từ đầu.  Để sử dụng SSL thì có 2 cách:</p>
-
-<ol>
-<li>Add thêm plugin: ví dụ như với webrick thì bạn sử dụng &#8220;webrick/https&#8221;, nhưng cách này có một bất lợi là bạn phải setting từ đầu, và server đó sẽ luôn và chỉ phục vụ các request ssl:</li>
-</ol>
-
-
-<figure class='code'><figcaption><span>webrickssl.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'><span class="k">module</span> <span class="nn">Rails</span>
-</span><span class='line'>  <span class="k">class</span> <span class="nc">Server</span> <span class="o">&lt;</span> <span class="o">::</span><span class="ss">Rack</span><span class="p">:</span><span class="ss">:Server</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">default_options</span>
-</span><span class='line'>      <span class="k">super</span><span class="o">.</span><span class="n">merge</span><span class="p">({</span>
-</span><span class='line'>        <span class="ss">:Port</span> <span class="o">=&gt;</span> <span class="mi">3000</span><span class="p">,</span>
-</span><span class='line'>        <span class="ss">:environment</span> <span class="o">=&gt;</span> <span class="p">(</span><span class="no">ENV</span><span class="o">[</span><span class="s1">&#39;RAILS_ENV&#39;</span><span class="o">]</span> <span class="o">||</span> <span class="s2">&quot;development&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">dup</span><span class="p">,</span>
-</span><span class='line'>        <span class="ss">:daemonize</span> <span class="o">=&gt;</span> <span class="kp">false</span><span class="p">,</span>
-</span><span class='line'>        <span class="ss">:debugger</span> <span class="o">=&gt;</span> <span class="kp">false</span><span class="p">,</span>
-</span><span class='line'>        <span class="ss">:pid</span> <span class="o">=&gt;</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="s2">&quot;tmp/pids/server.pid&quot;</span><span class="p">),</span>
-</span><span class='line'>        <span class="ss">:config</span> <span class="o">=&gt;</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="s2">&quot;config.ru&quot;</span><span class="p">),</span>
-</span><span class='line'>        <span class="ss">:SSLEnable</span> <span class="o">=&gt;</span> <span class="kp">true</span><span class="p">,</span>
-</span><span class='line'>        <span class="ss">:SSLVerifyClient</span> <span class="o">=&gt;</span> <span class="ss">OpenSSL</span><span class="p">:</span><span class="ss">:SSL</span><span class="o">::</span><span class="no">VERIFY_NONE</span><span class="p">,</span>
-</span><span class='line'>        <span class="ss">:SSLPrivateKey</span> <span class="o">=&gt;</span> <span class="ss">OpenSSL</span><span class="p">:</span><span class="ss">:PKey</span><span class="o">::</span><span class="no">RSA</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
-</span><span class='line'>        <span class="no">IO</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="s2">&quot;vendor/ssl/gs.key&quot;</span><span class="p">))),</span>
-</span><span class='line'>        <span class="ss">:SSLCertificate</span> <span class="o">=&gt;</span> <span class="ss">OpenSSL</span><span class="p">:</span><span class="ss">:X509</span><span class="o">::</span><span class="no">Certificate</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
-</span><span class='line'>        <span class="no">IO</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="s2">&quot;vendor/ssl/gs.crt&quot;</span><span class="p">))),</span>
-</span><span class='line'>        <span class="ss">:SSLCertName</span> <span class="o">=&gt;</span> <span class="o">[[</span><span class="s2">&quot;CN&quot;</span><span class="p">,</span> <span class="ss">WEBrick</span><span class="p">:</span><span class="ss">:Utils</span><span class="o">::</span><span class="n">getservername</span><span class="o">]]</span>
-</span><span class='line'>      <span class="p">})</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Để switch được giữa ssl và non-ssl thì thường bạn sẽ phải chạy song song 2 bản webrick, một bản hỗ trợ ssl và một bản không</p>
-
-<ol>
-<li>Bạn sử dụng <strong>Nginx</strong> như một ssl proxy, sau khi xử lý ssl request thì Nginx sẽ forward lại request cho rails-server. Ở bài viết này mình sẽ nói về thiết lập môi trường ssl ở dưới môi trường development sử dụng <strong>Pow</strong> và <strong>Nginx</strong></li>
-</ol>
-
-
-<h1>Pow + Nginx</h1>
-
-<p>Tại sao lại sử dụng Pow? Pow là một rails-server rất hay được sử dụng trong công đoạn <strong>development</strong>. Lý do vì: dễ cài đặt, không phải config, và pow cho mỗi webapp của chúng ta một cái domain đẹp đẽ trên local. Để cài đặt pow thì vô cùng đơn giản:</p>
-
-<figure class='code'><figcaption><span>install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$curl</span> get.pow.cx | sh
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Pow không đi kèm một bộ tool dòng lệnh tốt lắm (command line tool), tuy nhiên rất may đã có người làm hộ chúng ta 1 cái gem tên là <strong>powder</strong>, có nó thì chúng ta sẽ sử dụng pow dễ dàng hơn:</p>
-
-<figure class='code'><figcaption><span>install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$sudo</span> gem install powder
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Sau khi install xong powder, chúng ta đi đến folder chứa rails app và chỉ cần [powder link appname] là đã xong phần cài đặt</p>
-
-<figure class='code'><figcaption><span>install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">cd</span> ~/yourapp
-</span><span class='line'><span class="nv">$powder</span> link app-name
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Sau khi làm thao tác này thì một symlink với tên là app-name sẽ được tạo ra ở trong thư mục <strong>~/.pow</strong>
-Kết thúc thao tác này, powder đã tự động được khởi động, và chúng ta chỉ cần truy cập vào url [app-name.dev] là đã sử dụng được như bình thường :)</p>
-
-<p>OK vậy là xong pow, giờ đến lượt nginx, để cài đặt nginx thì khá đơn giản trên mac, mình sử dụng brew:</p>
-
-<figure class='code'><figcaption><span>install.sh</span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>brew install nginx
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Thường thì nginx sau khi được cài đặt xong sẽ nằm ở :[/usr/local/etc/nginx]</p>
-
-<p>Bạn đang muốn sử dụng HTTPS, nên công đoạn tiếp theo sẽ là setup để nginx nhận request HTTPS và forward lại cho pow. Đầu tiên là phải generate ra một cặp <strong>private key</strong> và <strong>certificate sign</strong>, tại sao lại cần cặp này thì các bạn có thể tự tìm hiểu về giao thức HTTPS.</p>
-
-<figure class='code'><figcaption><span>install.sh</span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$openssl</span> req -new -nodes -keyout server.key -out server.csr
-</span><span class='line'><span class="nv">$openssl</span> x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Sau khi có cặp key và sign, rồi bạn copy cặp đó vào thư mục [/usr/local/etc/nginx/ssl] cho dễ config. Tiếp đến bạn mở config của nginx ra và config lại như dưới đây</p>
-
-<figure class='code'><figcaption><span>nginx </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>worker_processes  1;
-</span><span class='line'>
-</span><span class='line'>events {
-</span><span class='line'>      worker_connections  1024;
-</span><span class='line'>}
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'>http {
-</span><span class='line'>      include       mime.types;
-</span><span class='line'>      default_type  application/octet-stream;
-</span><span class='line'>
-</span><span class='line'>      sendfile        on;
-</span><span class='line'>      keepalive_timeout  65;
-</span><span class='line'>
-</span><span class='line'>      server {
-</span><span class='line'>        ### server port and name ###
-</span><span class='line'>        listen          443 ssl;
-</span><span class='line'>        server_name     app-name.dev;
-</span><span class='line'>
-</span><span class='line'>        ### SSL log files ###
-</span><span class='line'>        access_log      logs/ssl-access.log;
-</span><span class='line'>        error_log       logs/ssl-error.log;
-</span><span class='line'>
-</span><span class='line'>        ### SSL cert files ###
-</span><span class='line'>        ssl_certificate      ssl/app-name.crt;
-</span><span class='line'>        ssl_certificate_key  ssl/app-name.key;
-</span><span class='line'>        ### Add SSL specific settings here ###
-</span><span class='line'>        keepalive_timeout    60;
-</span><span class='line'>        ### We want full access to SSL via backend ###
-</span><span class='line'>        location / {
-</span><span class='line'>          proxy_pass  http://app-name.dev/;
-</span><span class='line'>          ### force timeouts if one of backend is died ##
-</span><span class='line'>          proxy_next_upstream error timeout invalid_header http_500 http_502 http_503;
-</span><span class='line'>
-</span><span class='line'>          ### Set headers ####
-</span><span class='line'>          proxy_set_header Host $host;
-</span><span class='line'>          proxy_set_header X-Real-IP $remote_addr;
-</span><span class='line'>          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-</span><span class='line'>
-</span><span class='line'>          ### Most PHP, Python, Rails, Java App can use this header ###
-</span><span class='line'>          proxy_set_header X-Forwarded-Proto https;
-</span><span class='line'>          ### By default we don't want to redirect it ####
-</span><span class='line'>          proxy_redirect     off;
-</span><span class='line'>        }
-</span><span class='line'>     }
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Công việc cuối cùng chỉ là chạy nginx, bạn khởi động nginx với option -t để test config file có đúng và không có warning nào không:</p>
-
-<figure class='code'><figcaption><span>runnginx.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$ </span>sudo nginx -t
-</span><span class='line'>nginx: the configuration file /usr/local/etc/nginx/nginx.conf syntax is ok
-</span><span class='line'>nginx: configuration file /usr/local/etc/nginx/nginx.conf <span class="nb">test </span>is successful
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Như vậy là mọi thứ đã OK, giờ chỉ việc dev thôi :D</p>
-
-<p>Để switch một cách đơn giản nhất giữa HTTPS và HTTP thì mình tạo 2 hàm sau trong application_controller:</p>
-
-<figure class='code'><figcaption><span>switch.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'><span class="k">def</span> <span class="nf">redirect_to_https</span>
-</span><span class='line'>  <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">protocol</span> <span class="o">==</span> <span class="s1">&#39;http://&#39;</span>
-</span><span class='line'>    <span class="n">redirect_to</span> <span class="ss">action</span><span class="p">:</span> <span class="n">action_name</span><span class="p">,</span>
-</span><span class='line'>      <span class="ss">params</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">query_parameters</span><span class="p">,</span>
-</span><span class='line'>      <span class="ss">protocol</span><span class="p">:</span> <span class="s1">&#39;https://&#39;</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">def</span> <span class="nf">redirect_to_http</span>
-</span><span class='line'>  <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">protocol</span> <span class="o">==</span> <span class="s1">&#39;https://&#39;</span>
-</span><span class='line'>    <span class="n">redirect_to</span> <span class="ss">action</span><span class="p">:</span> <span class="n">action_name</span><span class="p">,</span>
-</span><span class='line'>      <span class="ss">params</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">query_parameters</span><span class="p">,</span>
-</span><span class='line'>      <span class="ss">protocol</span><span class="p">:</span> <span class="s1">&#39;http://&#39;</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Và với nhứng method nào cần sử dụng https thì mình chỉ cần gọi đến hàm redirect_to_https là ok :D.</p>
-
-<p>Các bạn có thể thấy bộ đôi pow và nginx rất dễ sử dụng đúng không.
-Gần đây mình có gặp phải một problem với bộ đôi này là mình sử dụng oauth2 để login với google account. Và google api <strong>không chấp nhận callback uri có domain có đuôi là .dev nhưng lại chấp nhận domain là localhost</strong>. Khi cài đặt powder thì default cái 127.0.0.1 sẽ không được trỏ đến app-name.dev của bạn, để làm việc này thì bạn chỉ cần vào ~/.pow, tạo một symlink với tên là <strong>default</strong> trỏ đến rails app của bạn là OK :D.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Exclusive Lock - Shared Lock]]></title>
-    <link href="http://ktmt.github.com/blog/2013/05/13/exclusivelock-sharedlock/"/>
-    <updated>2013-05-13T04:52:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/05/13/exclusivelock-sharedlock</id>
-    <content type="html"><![CDATA[<h2>1. Mở đầu</h2>
-
-<p>Nhân tiện trả lời thắc mắc của bạn kiennt về <em>shared lock</em> và <em>exclusive lock</em> được nhắc đến trong bài viết <a href="http://ktmt.github.io/blog/2013/05/07/storageenginemysql/">Giới Thiệu Một Số Storage Engine Của Mysql</a>, mình viết bài này để giải thích khái niệm và ý nghĩa của exclusive lock, shared lock, MVCC cũng như làm rõ một số điểm chưa rõ ràng trong bài viết trên.</p>
-
-<h2>2. Cơ chế và ý nghĩa của Lock và MVCC</h2>
-
-<h3>2.1 Khái niệm và ý nghĩa của lock</h3>
-
-<p><a href="http://en.wikipedia.org/wiki/Lock_%28computer_science%29">Lock</a> (khóa) là <em>cơ chế đồng bộ</em> và <em>giới hạn truy cập</em> đến <em>tài nguyên đươc chia sẻ</em> trong một môi trường có <em>nhiều luồng xử lý cùng truy cập</em>.</p>
-
-<p>Nói một cách hình tượng, lock giống một cái cờ tuyên bố chủ quyền đối với tài nguyên máy tính. Mỗi luồng xử lý (thread) khi truy cập tài nguyên dùng chung nào đó sẽ phải &#8220;dựng cờ lên&#8221; để báo cho các luồng xử lý khác biết tài nguyên đó đang được xử dụng và &#8220;hạ cờ xuống&#8221; khi hoàn thành xử lý trên tài nguyên đó. Các luồng xử lý khác bằng việc quan sát trạng thái của cờ này mà sẽ chiếm tài nguyên cho xử lý của mình, hay chờ đợi cho đến khi luồng xử lý khác kết thúc. Có thể nói lock là một phương tiện khẳng định quyền sở hữu đối với 1 loại tài nguyên. Nhờ cơ chế lock này mà tại mỗi thời điểm chỉ có duy nhất 1 luồng xử lý truy cập tài nguyên dùng chung..</p>
-
-<p><em>Shared lock</em>, hay còn gọi là read-only lock (khóa chỉ đọc) là lock mà một luồng xử lý phải chiếm hữu khi muốn đọc từ một vùng nhớ được chia sẻ.</p>
-
-<p><em>Exclusive lock</em>, hay còn gọi là read-write lock (khóa đọc ghi) là lock mà một luồng xử lý phải chiếm hữu khi muốn cập nhật một vùng nhớ được chia sẻ.</p>
-
-<h3>2.2 Tại sao phải cần lock</h3>
-
-<h4>a. Tác dụng của exclusive lock</h4>
-
-<p>Xét bài toán ta có 2 luồng xử lý A, B cùng thao tác trên 2 biến a, b.
-Giá trị hiện tại của các biến</p>
-
-<ul>
-<li>a = 0</li>
-<li>b = 0</li>
-</ul>
-
-
-<p>Nhiệm vụ của 2 luồng xử lý:</p>
-
-<ul>
-<li>Luồng xử lý A đọc giá trị 2 biến, tăng giá trị của a lên 1, và cập nhật giá trị cả 2 biến vào bộ nhớ.</li>
-<li>Luồng xử lý B đọc giá trị 2 biến, tăng giá trị của b lên 1, và cập nhật giá trị cả 2 biến vào bộ nhớ.</li>
-</ul>
-
-
-<p>Giả sử A thực hiện trước, đọc giá trị của a và b (a=0, b=0) và tăng a lên 1. Lúc này giá trị của a đang là 1, của b là 0. Tuy nhiên, chính tại thời điểm này, hệ điều hành quyết định dừng A, và thực hiện B. B đọc giá trị 2 biến a và b và tăng b lên 1 rồi cập nhật cả 2 biến vào bộ nhớ. Do A chưa cập nhật giá trị 2 biến, giá trị của a lúc này vẫn là 0, của b là 1 (a=0,b=1 do A chưa hoàn thành). Vì vậy, tại thời điểm B kết thúc a = 0, b = 1. Đến đây hệ điều hành thực hiện chạy A ở bước cuối cùng, cập nhật giá trị 2 biến (a = 1, b = 0) vào bộ nhớ, ghi đè giá trị b = 1 được cập nhật bởi B. Kết quả cuối cùng (a = 1, b = 0) sai so với kết quả mong đợi (a = 1, b = 1).</p>
-
-<pre><code>    Luồng A            |  Luồng B
-    -------------------|-------------------------
-    Đọc a, b (a=0, b=0)| 
-    a = 1, b = 0       |
-                       |  Đọc a, b (a=0, b=0)
-                       |  a = 0, b = 1
-                       |  Ghi a, b (a = 0, b = 1)
-    Ghi a, b (a=1, b=0)|
-
-
-Trạng thái cuối cùng (a=1, b=0)
-Kết quả mong chờ: (a=1, b=1)
-</code></pre>
-
-<p>Để giải quyết bài toán này, người ta dùng một exclusive lock. Luồng A, B muốn cập nhật giá trị a, b phải trước tiên chiếm lock, rồi mới thực hiện xử lý của mình. Các bước thực hiện giờ sẽ như sau:</p>
-
-<ul>
-<li>Chiếm lock. Nếu như chiếm được lock thì tiến hành xử lý tiếp theo. Nếu không, chờ đến khi chiếm được lock</li>
-<li>Đọc a, b</li>
-<li>Cập nhật a (hoặc b)</li>
-<li>Ghi a, b</li>
-<li>Thôi chiếm lock</li>
-</ul>
-
-
-<p>Quy trình bây giờ tăng 2 bước (chiếm lock hoặc chờ đến khi nào chiếm được lock và nhả lock). Các bước chạy ở  trên giờ sẽ như sau:
-A chiếm lock thành công (do chưa có luồn nào chiếm lock) và tiến hành đọc và cập nhật a (a=1, b=0). Tại thời điểm A bị dùng, B được chạy và thử chiếm lock nhưng do A đang nắm giữ lock nên B sẽ <em>phải</em> chờ. Lúc này A thực hiện nốt bước cuối cùng ghi giá trị vào bộ nhớ (a=1, b=0) và nhả lock. B lúc này thấy lock bị nhả và nắm giữ lock, đọc giá trị từ bộ nhớ (a=1, b=0!!), cập nhật b (a=1, b=1) và ghi dữ liệu vào bộ nhớ (a=1, b=1) đồng thời nhả lock. Kết quả cuối cùng như mong đợi (a=1, b=1)</p>
-
-<pre><code>    Luồng A             | Luồng B
-    --------------------|--------------------------------
-    Chiếm lock          |
-    Đọc a, b            |    
-    a = 1, b = 0        |
-                        | Chiếm lock (không thành công)
-    Ghi a, b (a=1, b=0) |
-    Nhả lock            |
-                        | Chiếm lock (thành công)
-                        | Đọc a, b (a=1, b=0)
-                        | a = 1, b = 1
-                        | Ghi a, b (a = 1, b = 1)
-                        | Nhả lock
-
-Trạng thái cuối cùng (a=1, b=1)
-Kết quả mong chờ: (a=1, b=1)!!!!
-</code></pre>
-
-<p>Ta có thể thấy nhờ có lock, mà tại mỗi thời điểm chỉ có 1 luồng xử lý truy cập a, b. Các luồng khác khi không chiếm được lock sẽ phải chờ đến lượt.</p>
-
-<p><em>Kết luận</em>: exclusive lock được sử dụng để đồng bộ 2 xử lý ghi đồng thời.</p>
-
-<h4>b. Tác dụng của shared lock</h4>
-
-<p>Để hiểu ý nghĩa shared lock, ta xét bài toán tương tự như ở trên. Lần này, thay vì 2 luồng cùng cập nhật vùng nhớ chung, 1 luồng sẽ đọc, còn một luồng sẽ cập nhật. Giả sử A đọc và B cập nhật, và giá trị ban đầu là a=0, b=0.</p>
-
-<p>A tiến hành đọc a (a=0) và bị hệ điều hành <em>cho nghỉ</em> để B thực hiện. B đọc a, b (a=0, b=0) và thực hiện cập nhật b (a=0, b=1) và ghi kết quả lên bộ nhớ. A đọc nốt giá trị còn lại b (b=1).</p>
-
-<p>Kết quả cuối cùng đối với A rõ ràng không như mong đợi (Mong chờ: a=0, b=0 nhưng nhận về a=0, b=1).</p>
-
-<pre><code>    Luồng A     | Luồng B
-    ------------|-------------------------
-    Đọc a (a=0) |
-                | Đọc a, b (a=0, b=0)
-                | a = 0, b = 1
-                | Ghi a, b (a = 0, b = 1)
-    Đọc b (b=0) |
-
-Kết quả cuối cùng (a=0, b=1)
-Kết quả mong chờ: (a=0, b=0)
-</code></pre>
-
-<p>Để giải quyết bài toán này, ta dùng shared-lock. Luồng A muốn đọc sẽ cần phải chiếm shared-lock. Luồng B muốn ghi sẽ phải nhìn xem shared-lock có bị chiếm hay không. Nếu shared-lock đang bị chiếm. B phải đợi cho đến khi tất cả shared-lock được giải phóng mới tiến hành cập nhật. Luồng chạy sau bây giờ sẽ như sau:</p>
-
-<p>A chiếm shared-lock và tiến hành đọc a (a=0). A được <em>cho nghỉ</em> và B được <em>đưa vào sân</em>. Do A đang chiếm shared lock nên B không được quyền cập nhật và được <em>cho nghỉ</em>. A thực hiện nốt việc đọc b (b=0) và nhả shared-lock. B không thấy shared-lock và tiến hành cập nhật b (b=1) như bình thường.</p>
-
-<pre><code>    Luồng A           | Luồng B
-    ------------------|-----------------------------
-    Chiếm shared-lock |
-    Đọc a (a=0)       |
-                      | Nhìn thấy shared-lock. Nghỉ
-    Đọc b (b=0)       |
-    Nhả shared-lock   |
-                      | Chiếm exclusive lock
-                      | Đọc a, b (a=0, b=0)
-                      | a = 0, b = 1
-                      | Ghi a, b (a = 0, b = 1)
-                      | Nhả exclusive lock.
-
-Kết quả cuối cùng (a=0, b=0)
-Kết quả mong chờ: (a=0, b=0)
-</code></pre>
-
-<p><em>Kết luận</em>: shared-lock được sử dụng để đồng bộ 2 xử lý đọc ghi đồng thời.</p>
-
-<h4>c. Tại sao cần chiếm shared lock khi đọc dữ liệu</h4>
-
-<p>Đến đây ta có thể dễ dàng trả lời câu hỏi thứ nhất của kiennt! Khi tiến hành đọc dữ liệu, nếu không chiếm shared-lock, dữ liệu đó có thể bị cập nhật bởi 1 thread khác, dẫn tới giá trị đọc được bị thay đổi một phần, không bảo đảm tính toàn vẹn.</p>
-
-<p>Tuy vậy có một điểm trong bài viết cần được làm rõ như sau: Trong câu nói &#8220;MyISAM lock toàn bộ table. User (MySQL server) chiếm shared-lock khi đọc và chiếm exclusive-lock khi ghi. Tuy vậy, việc đọc ghi có thể diễn ra đồng thời!&#8221;, thì câu nói: &#8220;Tuy vậy, việc đọc ghi có thể diễn ra đồng thời!&#8221; là không đúng.</p>
-
-<p>Nói một cách chính xác hơn: việc <em>đọc và cập nhật (SELECT và UPDATE)</em> không được tiến hành đồng thời (Do tại thời điểm chiếm exclusive lock, không shared-lock nào được phép tồn tại). Tuy nhiên, việc <em>ghi mới</em> dữ liệu có thể được tiến hành mà không gây ảnh hưởng gì đến tính toàn vẹn của dữ liệu được đọc (vì chúng khác nhau!). Nói cách khác việc <em>đọc và ghi mới (SELECT và INSERT)</em> có thể được tiến hành đồng thời, và thực tế đây cũng là một tính năng của MyISAM.</p>
-
-<h3>2.2 MVCC (Multiversion concurrency control)</h3>
-
-<p>MVCC được đặt ra để giải quyết vấn đề đọc và ghi đồng thời. Rõ ràng ở giải pháp shared-lock trình bày ở trên, việc A phải chiếm shared lock là rất mất thời gian; B phải chờ đợi A hoàn thành xử lý đọc mới được cập nhật cũng hoàn toàn không hiệu quả. MVCC giải quyết sự không hiệu quả này bằng nhận xét: <em>Thao tác đọc không cập nhật dữ liệu</em> vì vậy nếu ta duy trì 2 version của dữ liệu (1 cũ - 1 mới) và chỉ tiến hành ghi đè dữ liệu mới vào cũ khi A hoàn thành việc đọc, thì ta không cần shared-lock. B sẽ cập nhật và <em>version mới</em> thay vì phải chờ A hoàn thành việc đọc.</p>
-
-<p>MVCC lưu timestamp và transaction ID để duy trì tính tính nhất quán của dữ liệu.</p>
-
-<p>Để hiểu cách MVCC hoạt động, ta xét ví dụ sau (Copy từ Wikipedia :D)</p>
-
-<pre><code>    Thời gian       | Object 1      | Object 2
-    ----------------|---------------|------------
-    0               | Foo           | Bar
-    1               | Hello (T1)    | 
-</code></pre>
-
-<p>Tại thời điểm 0, Object 1 có giá trị Foo, Object 2 có giá trị Bar. Tại thời điểm 1, thread T1 cập nhật giá trị Object 1 thành Hello. Như vậy trước khi T1 commit dữ liệu, bất cứ xử lý đọc nào cũng cho kết quả Object 1 và 2 tại thời điểm 0 (Foo-Bar). Khi T1 commit dữ liệu, xử lý đọc sẽ trả về giá trị Hello-Bar.</p>
-
-<p>Giả sử tại thời điểm T1 chưa commit, T2 lại cập nhật Object 2 như sau:</p>
-
-<pre><code>    Thời gian       | Object 1      | Object 2
-    ----------------|---------------|------------
-    0               | Foo           | Bar
-    1               | Hello (T1)    | 
-    2               |               | World (T2)
-</code></pre>
-
-<p>Lúc này, mọi thao tác đọc sẽ vẫn trả về Foo-Bar. Khi T1 commit, dữ liệu đọc tiếp theo sẽ là Hello-Bar. Và khi T2 commit, dữ liệu đọc sẽ là Hello-World. Nói cách khác, tại mỗi thời điểm ta nhìn thấy 1 phiên bản dữ liệu, các cập nhật bởi thread khác sẽ được lưu tại một version khác.</p>
-
-<p>Chính nhờ cách quản lý nhiều version dữ liệu này, mà việc đọc không cần lock shared-lock vẫn đảm bảo được tính toàn vẹn của dữ liệu được đọc.</p>
-
-<h2>3. Tổng kết</h2>
-
-<p>Bài viết đã giải thích phần nào hiểu hơn ý nghĩa của exclusive lock và shared-lock cũng như tác dụng và sự cần thiết của chúng. Đồng thời, bài viết cũng làm rõ những điểm được nói đến trong viết trong bài <a href="http://ktmt.github.io/blog/2013/05/07/storageenginemysql/">Giới Thiệu Một Số Storage Engine Của Mysql</a> cũng như giải đáp những thắc mắc của bạn kiennt.</p>
-
-<h2>4. Tham khảo:</h2>
-
-<ol>
-<li><a href="http://en.wikipedia.org/wiki/Multiversion_concurrency_control">MVCC</a></li>
-<li><a href="http://en.wikipedia.org/wiki/Lock_%28computer_science%29">Lock</a></li>
-<li><a href="http://stackoverflow.com/questions/11837428/whats-the-difference-between-an-exclusive-lock-and-a-shared-lock">Exclusive lock &amp; shared lock</a></li>
-<li><a href="http://www.amazon.com/High-Performance-MySQL-Optimization-Replication/dp/1449314287">High performance MySQL</a></li>
-</ol>
-
 ]]></content>
   </entry>
   

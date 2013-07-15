@@ -1,0 +1,476 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Design pattern | Blog kỹ thuật máy tính]]></title>
+  <link href="http://toandk.github.com/blog/categories/design-pattern/atom.xml" rel="self"/>
+  <link href="http://toandk.github.com/"/>
+  <updated>2013-07-15T13:17:46+09:00</updated>
+  <id>http://toandk.github.com/</id>
+  <author>
+    <name><![CDATA[kỹ thuật máy tính]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Inversion of Control and Dependency Injection]]></title>
+    <link href="http://toandk.github.com/blog/2013/07/15/inversion-of-control-and-dependency-injection/"/>
+    <updated>2013-07-15T02:02:00+09:00</updated>
+    <id>http://toandk.github.com/blog/2013/07/15/inversion-of-control-and-dependency-injection</id>
+    <content type="html"><![CDATA[<h2>Preface</h2>
+
+<p>Trước khi đọc bài này, tôi có 1 vài recommend cho độc giả :)
+1. Bạn nên đọc trước bài viết về [Builder Pattern trong Java] (http://ktmt.github.io/blog/2013/06/14/design-pattern-ap-dung-builder-pattern-trong-test-java/) cũng trong blog ktmt, sẽ có 1 cái nhìn tổng quát và hình dung dễ dàng hơn về ứng dụng của các pattern trong programming.
+2. Có hàng tá bài viết về Inversion Of Control và Dependency Injection. Try to google it first.
+3. Nếu không, nhớ google thêm sau khi đọc bài viết :D</p>
+
+<h2>Dependency Injection</h2>
+
+<p>Chúng ta sẽ bắt đầu với 1 ví dụ gần giống ví dụ trong bài viết về Builder Pattern ở trên. Xem đoạn code sau. Ngôn ngữ ở đây là PHP.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>Book.php</span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="x">class Book ()</span>
+</span><span class='line'><span class="x">{&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;pre&gt;&lt;code&gt;public function __construct()</span>
+</span><span class='line'><span class="x">{</span>
+</span><span class='line'><span class="x">    $this-&amp;gt;title = new Title;</span>
+</span><span class='line'><span class="x">    $this-&amp;gt;author = new Author;</span>
+</span><span class='line'><span class="x">    $this-&amp;gt;genre = new Genre;</span>
+</span><span class='line'><span class="x">    $this-&amp;gt;publishDate = new PublishDate;</span>
+</span><span class='line'><span class="x">    $this-&amp;gt;ISBN = new ISBN;</span>
+</span><span class='line'><span class="x">}</span>
+</span><span class='line'><span class="x">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;}</span>
+</span><span class='line'><span class="x">...&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;$book = new Book;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Ở đây giả sử Title, Author, Genre, PublishDate hay ISBN đều là các class đã được định nghĩa trước. Như vậy class Book có 5 <strong>dependency</strong> là 5 class kể trên.</p>
+
+<p>Về mặt technical, chẳng có gì là không ổn với 1 class như trên cả.
+Tuy nhiên programmer có kinh nghiệm sẽ dễ dàng nhận thấy chúng ta đã hardcoded 5 dependency trên vào trong Book.
+Nói cách khác nếu muốn Book chứa những dependency khác, chẳng có cách nào khác là sửa lại định nghĩa class.</p>
+
+<p>Như vậy, để tránh những phiền phức nói trên và tạo độ linh hoạt khi sử dụng, class Book nên được viết lại như sau:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>Book.php</span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="x">class Book ()</span>
+</span><span class='line'><span class="x">{&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;pre&gt;&lt;code&gt;public function __construct($title, $author, $genre, $publishdate, $isbn)</span>
+</span><span class='line'><span class="x">{</span>
+</span><span class='line'><span class="x">    $this-&amp;gt;title = $title;</span>
+</span><span class='line'><span class="x">    $this-&amp;gt;author = $author;</span>
+</span><span class='line'><span class="x">    $this-&amp;gt;genre = $genre;</span>
+</span><span class='line'><span class="x">    $this-&amp;gt;publishDate = $publishdate;</span>
+</span><span class='line'><span class="x">    $this-&amp;gt;ISBN = $isbn;</span>
+</span><span class='line'><span class="x">}</span>
+</span><span class='line'><span class="x">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;}</span>
+</span><span class='line'><span class="x">...&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;$book = new Book (new Title, new Author, new Genre, new PublishDate, new ISBN)&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Bạn có thể thấy, ý tưởng của Dependency Injection(DI) thực ra rất đơn giản, chỉ là bạn vẫn thường sử dụng và không để ý.
+Dependency có thể được inject theo nhiều kiểu, ví dụ bên trên là constructor injection.
+Chúng ta còn có setter injection như sau:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>Book.php</span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="x">class Book ()</span>
+</span><span class='line'><span class="x">{&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;pre&gt;&lt;code&gt;public function __construct()</span>
+</span><span class='line'><span class="x">{</span>
+</span><span class='line'><span class="x">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">public function setTitle($title)</span>
+</span><span class='line'><span class="x">{</span>
+</span><span class='line'><span class="x">    $this-&amp;gt;title = $title;</span>
+</span><span class='line'><span class="x">}</span>
+</span><span class='line'><span class="x">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;...  Here we have 4 more methods : setAuthor ,setGenre, setPublishDate, setISBN</span>
+</span><span class='line'><span class="x">}</span>
+</span><span class='line'><span class="x">...&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;$book = new Book;</span>
+</span><span class='line'><span class="x">$book-&gt;setTitle(new Title);</span>
+</span><span class='line'><span class="x">$book-&gt;setAuthor(new Author);</span>
+</span><span class='line'><span class="x">$book-&gt;setGenre(new Genre);</span>
+</span><span class='line'><span class="x">$book-&gt;setPublishDate(new PublishDate);</span>
+</span><span class='line'><span class="x">$book-&gt;setISBN(new ISBN);&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Và vấn đề mới lại nảy sinh! Có quá nhiều setter và điều đó biến Book thành 1 class phức tạp khi sử dụng.
+Việc viết lại tất cả các setter khi khởi tạo 1 Book thật là painful !</p>
+
+<p>Để giải quyết vấn đề kể trên, chúng ta sẽ đến với design pattern tiếp theo: Inversion of Control(IoC)</p>
+
+<h2>Inversion of Control</h2>
+
+<blockquote><p>In software engineering, inversion of control (IoC) is a programming technique, expressed here in terms of object-oriented programming, in which object coupling is bound at run time by an assembler object and is typically not known at compile time using static analysis.</p></blockquote>
+
+<p>Giải thích lý thuyết về IoC có lẽ sẽ tốn nhiều công sức,
+như recommend trên đầu bài, bạn có thể google 1 chút về IoC.
+Ở đây tôi sẽ đưa ra luôn 1 implement để sử dụng với class Book kể trên.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>IoC.php</span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="x">class IoC {</span>
+</span><span class='line'><span class="x">   protected static $registry = array();&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;   // Register</span>
+</span><span class='line'><span class="x">   public static function register($name, Closure $resolve)</span>
+</span><span class='line'><span class="x">   {&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;pre&gt;&lt;code&gt;  static::$registry[$name] = $resolve;</span>
+</span><span class='line'><span class="x">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;   }&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;   // Resolve</span>
+</span><span class='line'><span class="x">   public static function resolve($name)</span>
+</span><span class='line'><span class="x">   {&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;pre&gt;&lt;code&gt;  if ( static::registered($name) )</span>
+</span><span class='line'><span class="x">  {</span>
+</span><span class='line'><span class="x">     $name = static::$registry[$name];</span>
+</span><span class='line'><span class="x">     return $name();</span>
+</span><span class='line'><span class="x">  }</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">  throw new Exception(&#39;Nothing registered with that name, fool.&#39;);</span>
+</span><span class='line'><span class="x">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;   }&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;   // Check resigtered or not</span>
+</span><span class='line'><span class="x">   public static function registered($name)</span>
+</span><span class='line'><span class="x">   {&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;pre&gt;&lt;code&gt;  return array_key_exists($name, static::$registry);</span>
+</span><span class='line'><span class="x">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;   }&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>WTH! Cái khỉ gì trông lằng nhằng quá phải không :D</p>
+
+<p>Đừng lo lắng, để hiểu đoạn code trên, trước hết, hãy để ý rằng ở đây chúng ta có rất nhiều các static function,
+nghĩa là các function có thể gọi trục tiếp trên class chứ không phải trên instance thông qua cách gọi "Class::StaticMethod()"
+Ngoài ra Closure là 1 anonymous function. Bạn sẽ hiểu ngay khi xem cách dùng dưới đây</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>Book.php</span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="x">IoC:register(&#39;book&#39;, function(){&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;pre&gt;&lt;code&gt;$book = new Book;</span>
+</span><span class='line'><span class="x">$book-&amp;gt;setTitle(new Title);</span>
+</span><span class='line'><span class="x">$book-&amp;gt;setAuthor(new Author);</span>
+</span><span class='line'><span class="x">$book-&amp;gt;setGenre(new Genre);</span>
+</span><span class='line'><span class="x">$book-&amp;gt;setPublishDate(new PublishDate);</span>
+</span><span class='line'><span class="x">$book-&amp;gt;setISBN(new ISBN);</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">return $book;</span>
+</span><span class='line'><span class="x">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;});</span>
+</span><span class='line'><span class="x">...&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;$book = IoC::resolve(&#39;book&#39;);&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Woo! Bây giở mỗi khi muốn tạo 1 instance của Book với đầy đủ các dependency, chỉ cần IoC:resolve('book').
+Cùng với đó, các dependency có thể inject thông qua register.
+Đến khi unit test, bạn có thể dùng IoC::register để mocking các dependency và test Book mà không khởi tạo Title,Author,....</p>
+
+<h2>Singleton pattern with IoC</h2>
+
+<p>Bạn thử tưởng tượng, nếu như phần register 'book' bên trên chiếm nhiều tài nguyên, có thể bạn sẽ không muốn mỗi lần resolve lại khởi tạo 1 instance mới.
+Nói cách khác, bạn chỉ muốn chỉ có 1 Book với đầy đủ Title, Author, ... được khởi tạo 1 lần, và lần sau muốn sử dụng thì gọi lại chính instance đã được tạo.</p>
+
+<p>Đây là đất diễn của Singleton design pattern :)
+Tôi sẽ viết thêm 1 static function cho IoC như sau:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>IoC.php</span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="x">class IoC {</span>
+</span><span class='line'><span class="x">  protected static $registry = array();</span>
+</span><span class='line'><span class="x">  protected static $shared = array();&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;...&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;  // Singleton</span>
+</span><span class='line'><span class="x">  public static function singleton($name, $resolve)</span>
+</span><span class='line'><span class="x">  {&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;pre&gt;&lt;code&gt;static::$shared[$name] = $resolve;</span>
+</span><span class='line'><span class="x">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;  }&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;  // Resolve, consider register or singleton here</span>
+</span><span class='line'><span class="x">  public static function resolve($name)</span>
+</span><span class='line'><span class="x">  {&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;pre&gt;&lt;code&gt;if ( static::registered($name) )</span>
+</span><span class='line'><span class="x">{</span>
+</span><span class='line'><span class="x">  $name = static::$registry[$name];</span>
+</span><span class='line'><span class="x">  return $name();</span>
+</span><span class='line'><span class="x">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">if ( static::singletoned($name) )</span>
+</span><span class='line'><span class="x">{</span>
+</span><span class='line'><span class="x">  $instance = static::$singleton[$name];</span>
+</span><span class='line'><span class="x">  return $instance;</span>
+</span><span class='line'><span class="x">} </span>
+</span><span class='line'>
+</span><span class='line'><span class="x">throw new Exception(&#39;Nothing registered with that name, fool.&#39;);</span>
+</span><span class='line'><span class="x">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;  }&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;...&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;  // Check singleton object or not</span>
+</span><span class='line'><span class="x">  public static function singletoned($name)</span>
+</span><span class='line'><span class="x">  {&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;pre&gt;&lt;code&gt;return array_key_exists($name, static::$shared);</span>
+</span><span class='line'><span class="x">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;  }&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Và bây giờ
+<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>Book.php</span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="x">IoC:singleton(&#39;book&#39;, function(){&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;pre&gt;&lt;code&gt;$book = new Book;</span>
+</span><span class='line'><span class="x">$book-&amp;gt;setTitle(new Title);</span>
+</span><span class='line'><span class="x">$book-&amp;gt;setAuthor(new Author);</span>
+</span><span class='line'><span class="x">$book-&amp;gt;setGenre(new Genre);</span>
+</span><span class='line'><span class="x">$book-&amp;gt;setPublishDate(new PublishDate);</span>
+</span><span class='line'><span class="x">$book-&amp;gt;setISBN(new ISBN);</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">return $book;</span>
+</span><span class='line'><span class="x">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;});</span>
+</span><span class='line'><span class="x">...&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;$book1 = IoC::resolve(&#39;book&#39;);</span>
+</span><span class='line'><span class="x">$book2 = IoC::resolve(&#39;book&#39;); // exactly same instance with $book1&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Have fun with IoC :)</p>
+
+<h2>Summary</h2>
+
+<ul>
+<li>Dependency Injection: Đưa các dependency vào class thông qua constructor hoặc setter, không khỏi tạo trực tiếp bên trong class</li>
+<li>Inversion of Control: bind object vào thời điểm run time, không phải vào thời điểm complile time.</li>
+<li>Singleton: Design pattern, cho phép trong 1 hệ thống chỉ có 1 instance duy nhất của class được tồn tại.</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

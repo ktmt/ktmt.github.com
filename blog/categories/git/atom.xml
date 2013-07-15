@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: git | Blog kỹ thuật máy tính]]></title>
-  <link href="http://ktmt.github.com/blog/categories/git/atom.xml" rel="self"/>
-  <link href="http://ktmt.github.com/"/>
-  <updated>2013-07-04T09:52:59+09:00</updated>
-  <id>http://ktmt.github.com/</id>
+  <link href="http://toandk.github.com/blog/categories/git/atom.xml" rel="self"/>
+  <link href="http://toandk.github.com/"/>
+  <updated>2013-07-15T13:17:46+09:00</updated>
+  <id>http://toandk.github.com/</id>
   <author>
     <name><![CDATA[kỹ thuật máy tính]]></name>
     
@@ -14,10 +14,163 @@
 
   
   <entry>
+    <title type="html"><![CDATA[Githook và server hook (tiếp)]]></title>
+    <link href="http://toandk.github.com/blog/2013/07/07/git-server-hook-dot-markdown/"/>
+    <updated>2013-07-07T22:54:00+09:00</updated>
+    <id>http://toandk.github.com/blog/2013/07/07/git-server-hook-dot-markdown</id>
+    <content type="html"><![CDATA[<p>Ở bài viết <a href="/blog/2013/06/25/using-githook-to-automatically-test-your-app/">trước</a>, tôi đã giới thiệu về githook, client hook và các user case hay sử dụng với client hook. Bài viết này, tôi sẽ giới thiệu thêm về server hook và các ứng dụng của chúng trong thực tế</p>
+
+<h1>Server-side hooks</h1>
+
+<p>Bên cạnh việc sử dụng các client-side hooks, bạn có thể sử dụng một vài server-side hook như là một hệ thống admin để áp đặt một cơ chế quán lý cho project của bạn. Những script này sẽ được chạy trước và sau khi commit được đẩy lên server. Những pre-hooks có thể trả về giá trị khác 0 ở bất cứ thời điểm nào để loại bỏ một push từ client, cũng như để in ra một error message cho client</p>
+
+<h2>pre-receive và post-receive</h2>
+
+<p>Script đầu tiên được chạy khi server nhận được một push từ client đó là <code>pre-receive</code>. Script này nhận một list các tham chiếu sẽ được push từ stdin. Nếu nó trả về giá trị khác 0, không có tham chiếu nào được chấp nhận. Bạn có thể sử dụng hook này để làm những việc như đảm bảo không có bất cứ tham chiếu nào là <code>non-fast-forwards</code>.</p>
+
+<p><code>post-receive</code> hook chạy sau khi toàn bộ quá trình được hoàn tất và có thể sử dụng để update các service khác hoặc để notify uer. Nó nhận cùng dữ liệu từ stdin như <code>pre-receive</code> hook. Ví dụ bao gồm gửi email chó một list các developer liên quan, notify CI server, hoặc update ticket tracking system. Bạn thậm chí có thể parse commit message để kiểm tra xem có bất cứ ticket nào cần open, modified hoặc update hay không. <code>post-receive</code> không thể làm ngừng lại quá trình push, nhưng client sẽ không đóng kết nối tới server cho đên khi <code>post-receive</code> kết thúc. Ví thế hãy cẩn thận khi bạn muốn làm những việc tốn thời gian. Cách tốt nhất là hãy sử dụng các background process để xử lý các tác vụ tốn thời gian.</p>
+
+<h2>update</h2>
+
+<p>Update script là tương tự với <code>pre-receive</code> script, ngoại trừ việc nó chỉ chạy một làn cho mỗi branch mà pusher muốn update. Nếu pusher muốn update nhiều branch, <code>pre-receive</code> chỉ chạy duy nhất một lần, nhưng update sẽ chạy một lần cho mỗi branch mà chúng được push. Thay vì đọc dữ liệu từ stdin, script này sẽ nhận 3 tham số đầu vào: tên của branch, SHA-1 trỏ đến commit trước khi được push, và SHA-1 user đang muốn push. Nếu update script trả về kết quả khác 0, chỉ branch ứng với script này bị reject, các branch khác vẫn được update bình thường</p>
+
+<h1>Ví dụ</h1>
+
+<p>Trong ví dụ này, chúng ta sẽ bắt buộc mỗi commit message phải có phần mở đầu của message tuân theo một định dạng. Cụ thể mỗi mesage phải có dạng "ref:1234" bởi vì mỗi một commit sẽ ứng với một ticket trong hệ thống.</p>
+
+<p>Để làm việc này, sẻver sẽ phải kiểm tra tất cả các commit được push để xem string trong commit message có đúng format hay không. Nếu commit message là không đúng format, trả về giá trị khác 0 và reject push.</p>
+
+<p>Chúng ta sẽ viết một update hook để làm việc này. Chú ý rắng, update hook nhận 3 giá trị đầu vào: tên của branch được update, SHA-1 của commit trước khi được push, và SHA-1 của commit sau khi được push. Các đoạn code dưới đây được minh hoạ bằng ruby, bạn có thể sử dụng ngôn ngữ lập trình khác nếu muốn</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>update </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>!/usr/bin/env ruby&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>$refname = ARGV[0]
+</span><span class='line'>$oldrev  = ARGV[1]
+</span><span class='line'>$newrev  = ARGV[2]&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Để lấy các commit từ <code>$oldrev</code> tới <code>$newrev</code>, chúng ta sử dụng lệnh <code>git rev-lít</code>. Lệnh này sẽ trả về danh sách các SHA-1 cho các commit nằm giữa 2 commit mà chúng ta truyền vào</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ git rev-list 538c33..d14fc7
+</span><span class='line'>d14fc7c847ab946ec39590d87783c69b031bdfb7
+</span><span class='line'>9f585da4401b0a3999e84113824d15245c13f0be
+</span><span class='line'>234071a1be950e2a8d078e6141f5cd20c1e61ad3
+</span><span class='line'>dfa04c9ef3d5197182f13fb5b9b1fb7717d2222a
+</span><span class='line'>17716ec0f1ff5c77eff40b7fe912f9f6cfd0e475</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Sau đó, chúng ta sử dụng lệnh <code>git cat-file</code> đẻ duyệt qua từng commit và lấy nội dụng của commit message.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ git cat-file commit ca82a6
+</span><span class='line'>tree cfda3bf379e4f8dba8717dee55aab78aef7f4daf
+</span><span class='line'>parent 085bb3bcb608e1e8451d4b2432f8ecbe6306e7e7
+</span><span class='line'>author kiennt &lt;a href="&#x6d;&#x61;&#105;&#108;&#x74;&#x6f;&#x3a;&#107;&#x69;&#x65;&#110;&#110;&#116;&#64;&#x67;&#x6d;&#97;&#105;&#108;&#x2e;&#99;&#111;&#x6d;">&#x6b;&#x69;&#101;&#110;&#110;&#116;&#64;&#103;&#109;&#x61;&#105;&#108;&#46;&#x63;&#x6f;&#x6d;&lt;/a> 1205815931 -0700
+</span><span class='line'>committer kiennt &lt;a href="&#109;&#97;&#x69;&#108;&#116;&#x6f;&#x3a;&#x73;&#x63;&#104;&#97;&#x63;&#111;&#110;&#64;&#x67;&#x6d;&#x61;&#x69;&#x6c;&#x2e;&#99;&#x6f;&#x6d;">&#x73;&#x63;&#x68;&#97;&#99;&#111;&#x6e;&#64;&#103;&#109;&#x61;&#x69;&#x6c;&#46;&#99;&#111;&#109;&lt;/a> 1240030591 -0700&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>Add new post about githook</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Cách đơn giản để lấy commit message từ một commit là khi có SHA-1 , chúng ta xác định dòng blank đầu tiên và lấy tất cả phần đằng sau nó. Chúng ta có thể sử dụng <code>sed</code> để làm điều này</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ git cat-file commit ca82a6 | sed '1,/&lt;sup>$/d'&lt;/sup>
+</span><span class='line'>Add new post about githook</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Sau đây là toàn bộ đoạn code ruby để hoàn thành tác vụ trên</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>update </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>!/usr/bin/env ruby&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>$refname = ARGV[0]
+</span><span class='line'>$oldrev  = ARGV[1]
+</span><span class='line'>$newrev  = ARGV[2]
+</span><span class='line'>$regex = /[ref: (\d+)]/&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>enforced custom commit message format&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>def check_message_format
+</span><span class='line'>  missed_revs = &lt;code>git rev-list #{$oldrev}..#{$newrev}&lt;/code>.split("\n")
+</span><span class='line'>  missed_revs.each do |rev|&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;pre>&lt;code>message = `git cat-file commit #{rev} | sed '1,/^$/d'`
+</span><span class='line'>if !$regex.match(message)
+</span><span class='line'>  puts "[POLICY] Your message is not formatted correctly"
+</span><span class='line'>  exit 1
+</span><span class='line'>end
+</span><span class='line'>&lt;/code>&lt;/pre>
+</span><span class='line'>
+</span><span class='line'>&lt;p>  end
+</span><span class='line'>end
+</span><span class='line'>check_message_format</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h1>Kết luận</h1>
+
+<p>Qua 2 bài viết về githook, bạn đã nắm được phần nào các hooks trong git, và các ứng dụng liên quan đến chúng. Giờ bạn có thể sử dụng githook để tạo nên workflow phù hợp nhất với git cho project của mình</p>
+
+<h1>Tham khảo</h1>
+
+<p><a href="http://git-scm.com/book/en/Customizing-Git-Git-Hooks">Githook documentation</a>
+<a href="http://git-scm.com/book/en/Customizing-Git-An-Example-Git-Enforced-Policy">Customizing Git</a></p>
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[Giới thiệu về Githook và Client side hook]]></title>
-    <link href="http://ktmt.github.com/blog/2013/06/25/using-githook-to-automatically-test-your-app/"/>
+    <link href="http://toandk.github.com/blog/2013/06/25/using-githook-to-automatically-test-your-app/"/>
     <updated>2013-06-25T21:07:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/06/25/using-githook-to-automatically-test-your-app</id>
+    <id>http://toandk.github.com/blog/2013/06/25/using-githook-to-automatically-test-your-app</id>
     <content type="html"><![CDATA[<h1>Githook là gì</h1>
 
 <p>Giống như các hệ thống quản lý version khác, Git cung cấp một cách để gọi những custom script khi một hành động đặc biệt được thực hiện trong git. Có 2 nhóm hook trong git: hook cho client, và hook cho server. Client hook là dành cho những hoạt động xảy ra ở client như commit và merge. Server hook là dành cho những hoạt động xảy ra ở Git server như nhận được một commit push lên từ client. Bài viết này giới thiệu một số cách sử dụng hook cả client side hook</p>
