@@ -7,7 +7,7 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jun 30th, 2013 hash, java,, programming,, thread, Comments Tutorial: Duplicate File Finder (Java) Mở đầu Trong quá trình dọn dẹp máy tính cá nhân, &hellip;">
+	<meta name="description" content="Jul 15th, 2013 DI, Design pattern, IoC, PHP Comments Inversion of Control and Dependency Injection Preface Trước khi đọc bài này, tôi có 1 vài &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -84,37 +84,189 @@
   
 
 
-<time datetime="2013-06-30T09:07:00+09:00" data-updated="true" itemprop="datePublished">Jun 30<span>th</span>, 2013</time></div>
+<time datetime="2013-07-15T02:02:00+09:00" data-updated="true" itemprop="datePublished">Jul 15<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/hash/'>hash</a>, <a class='category' href='/blog/categories/java/'>java,</a>, <a class='category' href='/blog/categories/programming/'>programming,</a>, <a class='category' href='/blog/categories/thread/'>thread,</a>
+	<a class='category' href='/blog/categories/di/'>DI</a>, <a class='category' href='/blog/categories/design-pattern/'>Design pattern</a>, <a class='category' href='/blog/categories/ioc/'>IoC</a>, <a class='category' href='/blog/categories/php/'>PHP</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/06/30/tutorial-duplicate-file-finder-java/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/07/15/inversion-of-control-and-dependency-injection/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/30/tutorial-duplicate-file-finder-java/" itemprop="url">Tutorial: Duplicate File Finder (Java)</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/07/15/inversion-of-control-and-dependency-injection/" itemprop="url">Inversion of Control and Dependency Injection</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h1>Mở đầu</h1>
+		<h2>Preface</h2>
 
-<p>Trong quá trình dọn dẹp máy tính cá nhân, tôi gặp phải vấn đề là quá nhiều file trùng lặp trong máy tính. Việc có quá nhiều file như vậy gây lãng phí ổ cứng, cộng thêm đôi lúc tôi không còn nhớ là file này đặt ở thư mục này có ý nghĩa gì nữa. Giá mà có công cụ nào đó để tìm tự động các file này cho tôi thì tốt quá nhỉ??</p>
+<p>Trước khi đọc bài này, tôi có 1 vài recommend cho độc giả :)</p>
 
-<p>Không cần phải giá mà nữa, không gì bằng làm ra cho mình một công cụ như vậy. Bài viết này sẽ trình bày những bước đầu tiên tôi prototype công cụ tìm kiếm các file trùng lặp. Thông qua bài viêt này, tôi cũng sẽ giới thiệu về những chủ đề sau trong Java: tính hash, thread pooling.</p>
+<ol>
+<li><p>Bạn nên đọc trước bài viết về <a href="http://ktmt.github.io/blog/2013/06/14/design-pattern-ap-dung-builder-pattern-trong-test-java/">Builder Pattern trong Java</a> cũng trong blog ktmt, sẽ có 1 cái nhìn tổng quát và hình dung dễ dàng hơn về ứng dụng của các pattern trong programming.</p></li>
+<li><p>Có hàng tá bài viết về Inversion Of Control và Dependency Injection. Try to google it first.</p></li>
+<li><p>Nếu không, nhớ google thêm sau khi đọc bài viết :D</p></li>
+</ol>
 
-<h1>MD5 checksum</h1>
 
-<p>MD5 là một thuật toán mã hóa thông điệp (message-digest), về bản chất là một hàm băm (hash) xuất ra một giá trị 128-bit (16-byte). MD5 được sử dụng rất nhiều trong các ứng dụng bảo mật, và cũng được sử dụng để kiểm tra tính toàn vẹn dữ liệu (ví dụ như bạn down một file từ Internet về, thường có một MD5 key đi kèm, để bạn kiểm tra xem file bạn down có chính xác giống nguồn down không.)</p>
+<h2>Dependency Injection</h2>
 
-<p>Tôi không có ý định đi sâu vào cách tính MD5, bạn có thể tham khảo trên google. Lưu ý là thuật toán MD5 vẫn có thể sinh ra cùng một giá trị hash với 2 file có nội dung khác nhau (tuy nhiên trường hợp này rất hiếm). Để chắc chắn tìm được 2 file có nội dung giống hệt nhau, ta sẽ so sánh theo thứ tự: so sánh giá trị hash, so sánh độ lớn của file, và cuối cùng là so sánh từng byte của hai file để chắc chắn chúng trùng nhau.</p>
+<p>Chúng ta sẽ bắt đầu với 1 ví dụ gần giống ví dụ trong bài viết về Builder Pattern ở trên. Xem đoạn code sau. Ngôn ngữ ở đây là PHP.</p>
 
-<p>Trong Java, hàm băm đã được đưa vào thư viện <em>java.security</em>, thông qua class <em>MessageDigest</em>. Bạn chỉ cần khai báo đối tượng <em>MessageDigest</em>, sau đó chọn phương thức mã hóa MD5, hoặc SHA. Việc bạn phải làm đối với từng file là chuyển file thành byte stream, và update dòng input này vào đối tượng <em>MessageDigest</em> trên, và bạn sẽ nhận được một dòng byte kết quả.</p>
+<figure class='code'><figcaption><span>Book.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Book</span> <span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">title</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Title</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Author</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">genre</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Genre</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">publishDate</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">PublishDate</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">ISBN</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ISBN</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>Chi tiết về class <em>MessageDigest</em>, bạn có thể tham khảo tại đây: <a href="http://docs.oracle.com/javase/6/docs/api/java/security/MessageDigest.html">http://docs.oracle.com/javase/6/docs/api/java/security/MessageDigest.html</a></p>
 
-<figure class='code'><figcaption><span>MD5.java </span></figcaption>
+<p>Ở đây giả sử Title, Author, Genre, PublishDate hay ISBN đều là các class đã được định nghĩa trước. Như vậy class Book có 5 <strong>dependency</strong> là 5 class kể trên.</p>
+
+<p>Về mặt technical, chẳng có gì là không ổn với 1 class như trên cả.
+Tuy nhiên programmer có kinh nghiệm sẽ dễ dàng nhận thấy chúng ta đã hardcoded 5 dependency trên vào trong Book.
+Nói cách khác nếu muốn Book chứa những dependency khác, chẳng có cách nào khác là sửa lại định nghĩa class.</p>
+
+<p>Như vậy, để tránh những phiền phức nói trên và tạo độ linh hoạt khi sử dụng, class Book nên được viết lại như sau:</p>
+
+<figure class='code'><figcaption><span>Book.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Book</span> <span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nv">$title</span><span class="p">,</span> <span class="nv">$author</span><span class="p">,</span> <span class="nv">$genre</span><span class="p">,</span> <span class="nv">$publishdate</span><span class="p">,</span> <span class="nv">$isbn</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">title</span> <span class="o">=</span> <span class="nv">$title</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">genre</span> <span class="o">=</span> <span class="nv">$genre</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">publishDate</span> <span class="o">=</span> <span class="nv">$publishdate</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">ISBN</span> <span class="o">=</span> <span class="nv">$isbn</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span> <span class="p">(</span><span class="k">new</span> <span class="nx">Title</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Author</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Genre</span><span class="p">,</span> <span class="k">new</span> <span class="nx">PublishDate</span><span class="p">,</span> <span class="k">new</span> <span class="nx">ISBN</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Bạn có thể thấy, ý tưởng của Dependency Injection(DI) thực ra rất đơn giản, chỉ là bạn vẫn thường sử dụng và không để ý.
+Dependency có thể được inject theo nhiều kiểu, ví dụ bên trên là constructor injection.
+Chúng ta còn có setter injection như sau:</p>
+
+<figure class='code'><figcaption><span>Book.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Book</span> <span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">setTitle</span><span class="p">(</span><span class="nv">$title</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">title</span> <span class="o">=</span> <span class="nv">$title</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="c1">// Here we have 4 more methods : setAuthor ,setGenre, setPublishDate, setISBN</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
+</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setTitle</span><span class="p">(</span><span class="k">new</span> <span class="nx">Title</span><span class="p">);</span>
+</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">);</span>
+</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setGenre</span><span class="p">(</span><span class="k">new</span> <span class="nx">Genre</span><span class="p">);</span>
+</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setPublishDate</span><span class="p">(</span><span class="k">new</span> <span class="nx">PublishDate</span><span class="p">);</span>
+</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setISBN</span><span class="p">(</span><span class="k">new</span> <span class="nx">ISBN</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Và vấn đề mới lại nảy sinh! Có quá nhiều setter và điều đó biến Book thành 1 class phức tạp khi sử dụng.
+Việc viết lại tất cả các setter khi khởi tạo 1 Book thật là painful !</p>
+
+<p>Để giải quyết vấn đề kể trên, chúng ta sẽ đến với design pattern tiếp theo: Inversion of Control (IoC)</p>
+
+<h2>Inversion of Control</h2>
+
+<blockquote><p>In software engineering, inversion of control (IoC) is a programming technique, expressed here in terms of object-oriented programming, in which object coupling is bound at run time by an assembler object and is typically not known at compile time using static analysis.</p></blockquote>
+
+<p>Giải thích lý thuyết về IoC có lẽ sẽ tốn nhiều công sức,
+như recommend trên đầu bài, bạn có thể google 1 chút về IoC.
+Ở đây tôi sẽ đưa ra luôn 1 implement để sử dụng với class Book kể trên.</p>
+
+<figure class='code'><figcaption><span>IoC.php </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -145,90 +297,95 @@
 <span class='line-number'>28</span>
 <span class='line-number'>29</span>
 <span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'> <span class="kd">public</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">getMD5</span><span class="o">(</span><span class="n">File</span> <span class="n">file</span><span class="o">)</span>
-</span><span class='line'>  <span class="o">{</span>
-</span><span class='line'>      <span class="k">if</span><span class="o">(!</span><span class="n">file</span><span class="o">.</span><span class="na">exists</span><span class="o">())</span>
-</span><span class='line'>          <span class="k">return</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
-</span><span class='line'>      <span class="k">try</span>
-</span><span class='line'>      <span class="o">{</span>
-</span><span class='line'>          <span class="n">MessageDigest</span>  <span class="n">md</span> <span class="o">=</span>  <span class="n">MessageDigest</span><span class="o">.</span><span class="na">getInstance</span><span class="o">(</span><span class="s">&quot;MD5&quot;</span><span class="o">);</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">IoC</span> <span class="p">{</span>
+</span><span class='line'>   <span class="k">protected</span> <span class="k">static</span> <span class="nv">$registry</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
 </span><span class='line'>
-</span><span class='line'>          <span class="c1">//read the file into a byte array</span>
-</span><span class='line'>          <span class="kt">byte</span><span class="o">[]</span> <span class="n">input</span> <span class="o">=</span> <span class="k">new</span> <span class="kt">byte</span><span class="o">[(</span><span class="kt">int</span><span class="o">)</span> <span class="n">file</span><span class="o">.</span><span class="na">length</span><span class="o">()];</span>
-</span><span class='line'>          <span class="n">InputStream</span> <span class="n">in</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FileInputStream</span><span class="o">(</span><span class="n">file</span><span class="o">);</span>
-</span><span class='line'>          <span class="n">in</span><span class="o">.</span><span class="na">read</span><span class="o">(</span><span class="n">input</span><span class="o">);</span>
-</span><span class='line'>          <span class="n">in</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
-</span><span class='line'>          
-</span><span class='line'>          <span class="c1">//update the MessageDigest and process</span>
-</span><span class='line'>          <span class="n">md</span><span class="o">.</span><span class="na">update</span><span class="o">(</span><span class="n">input</span><span class="o">);</span>
-</span><span class='line'>          <span class="kt">byte</span><span class="o">[]</span> <span class="n">fileDigest</span> <span class="o">=</span> <span class="n">md</span><span class="o">.</span><span class="na">digest</span><span class="o">();</span>
-</span><span class='line'>          
-</span><span class='line'>          <span class="k">return</span> <span class="nf">ByteArrayToString</span><span class="o">(</span><span class="n">fileDigest</span><span class="o">);</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>      <span class="k">catch</span><span class="o">(</span><span class="n">IOException</span> <span class="n">e</span> <span class="o">)</span>
-</span><span class='line'>      <span class="o">{</span>
-</span><span class='line'>          <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
-</span><span class='line'>          <span class="k">return</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>      <span class="k">catch</span><span class="o">(</span><span class="n">NoSuchAlgorithmException</span> <span class="n">e</span><span class="o">)</span>
-</span><span class='line'>      <span class="o">{</span>
-</span><span class='line'>          <span class="k">return</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'>  
-</span><span class='line'>  <span class="kd">private</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">ByteArrayToString</span><span class="o">(</span><span class="kt">byte</span><span class="o">[]</span> <span class="n">ba</span><span class="o">)</span>
-</span><span class='line'>  <span class="o">{</span>
-</span><span class='line'>     <span class="n">StringBuilder</span> <span class="n">sb</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StringBuilder</span><span class="o">();</span>
-</span><span class='line'>     <span class="k">for</span><span class="o">(</span><span class="kt">byte</span> <span class="nl">b:</span> <span class="n">ba</span><span class="o">)</span>
-</span><span class='line'>        <span class="n">sb</span><span class="o">.</span><span class="na">append</span><span class="o">(</span><span class="n">String</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">&quot;%02x&quot;</span><span class="o">,</span> <span class="n">b</span><span class="o">&amp;</span><span class="mh">0xff</span><span class="o">));</span>
-</span><span class='line'>     <span class="k">return</span> <span class="n">sb</span><span class="o">.</span><span class="na">toString</span><span class="o">();</span>
-</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>   <span class="c1">// Register</span>
+</span><span class='line'>   <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">register</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nx">Closure</span> <span class="nv">$resolve</span><span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>      <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">[</span><span class="nv">$name</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$resolve</span><span class="p">;</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>   <span class="c1">// Resolve</span>
+</span><span class='line'>   <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">resolve</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span> <span class="k">static</span><span class="o">::</span><span class="na">registered</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span> <span class="p">)</span>
+</span><span class='line'>      <span class="p">{</span>
+</span><span class='line'>         <span class="nv">$name</span> <span class="o">=</span> <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">[</span><span class="nv">$name</span><span class="p">];</span>
+</span><span class='line'>         <span class="k">return</span> <span class="nv">$name</span><span class="p">();</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">throw</span> <span class="k">new</span> <span class="nx">Exception</span><span class="p">(</span><span class="s1">&#39;Nothing registered with that name, fool.&#39;</span><span class="p">);</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>   <span class="c1">// Check resigtered or not</span>
+</span><span class='line'>   <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">registered</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nb">array_key_exists</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">);</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<h1>Theading</h1>
+<p>WTH! Cái khỉ gì trông lằng nhằng quá phải không :D</p>
 
-<p>Threading, hay concurrency, trong Java là một chủ đề khá phức tạp và tôi cũng chưa đủ khả năng nắm rõ được tất cả. Do vậy, trong bài viết này, tôi xin chỉ đề cập đến kĩ thuật thread pooling để phân bài toán ra thành nhiều tác vụ, chạy trên nhiều luồng khác nhau.</p>
+<p>Đừng lo lắng, để hiểu đoạn code trên trước hết hãy để ý rằng ở đây chúng ta có rất nhiều các static function.
+Static function có thể gọi trục tiếp trên class chứ không phải trên instance thông qua cách gọi &#8220;Class::StaticMethod()&#8221;.
+Ngoài ra Closure là 1 anonymous function.
+Bạn sẽ hiểu ngay khi xem cách dùng dưới đây</p>
 
-<p>Thread pool là gì? Bạn có thể hiểu nôm na là thay vì cứ gọi một luồng mới cho từng tác vụ khi cần thiết (phương pháp này gặp nhược điểm vì việc tạo thread mới sẽ gặp overhead), ta tạo sẵn một cái &#8220;bể&#8221; (pool) trong đó khởi động sẵn một loạt các luồng (thread). Các luồng này ngoi ngoi lên để đợi ta ném tác vụ vào để chúng thực hiện. Sau khi thực hiện xong, nó sẽ báo cáo lại kết quả, kết thúc tác vụ, và quay trở lại &#8220;bể&#8221; để tiếp tục ngoi ngoi chờ tác vụ mới. Chỉ khi nào đóng &#8220;bể&#8221;, thì các luồng mới bị mất đi.</p>
+<figure class='code'><figcaption><span>Book.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="nx">IoC</span><span class="o">::</span><span class="na">register</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">,</span> <span class="k">function</span><span class="p">(){</span>
+</span><span class='line'>    <span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
+</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setTitle</span><span class="p">(</span><span class="k">new</span> <span class="nx">Title</span><span class="p">);</span>
+</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">);</span>
+</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setGenre</span><span class="p">(</span><span class="k">new</span> <span class="nx">Genre</span><span class="p">);</span>
+</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setPublishDate</span><span class="p">(</span><span class="k">new</span> <span class="nx">PublishDate</span><span class="p">);</span>
+</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setISBN</span><span class="p">(</span><span class="k">new</span> <span class="nx">ISBN</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="nv">$book</span><span class="p">;</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="nx">IoC</span><span class="o">::</span><span class="na">resolve</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>Trong bài toán tìm file trùng lặp này, tôi sẽ áp dụng thread pooling như sau:</p>
 
-<ul>
-<li>Tạo một class DuppFind, implement Runnable class (đây là class ta có thể truyền vào cho pool), đại diện cho tác vụ tìm kiếm. Với mỗi object DuppFind, nó sẽ được truyền vào các tham số gồm có:</li>
-</ul>
+<p>Woo! Bây giở mỗi khi muốn tạo 1 instance của Book với đầy đủ các dependency, chỉ cần <code>IoC::resolve('book')</code>.
+Cùng với đó, các dependency có thể inject thông qua <code>IoC::register('book',function(){...})</code>.
+Đến khi unit test, bạn có thể dùng <code>IoC::register</code> để mocking các dependency và test Book mà không khởi tạo Title,Author&#8230;</p>
 
+<h2>Singleton pattern with IoC</h2>
 
-<p>&#8211; Thư mục bắt đầu tìm kiếm</p>
+<p>Bạn thử tưởng tượng, nếu như phần register &#8216;book&#8217; bên trên chiếm nhiều tài nguyên, có thể bạn sẽ không muốn mỗi lần resolve lại khởi tạo 1 instance mới.
+Nói cách khác, bạn chỉ muốn chỉ có 1 Book với đầy đủ Title, Author, &#8230; được khởi tạo 1 lần, và lần sau muốn sử dụng thì gọi lại chính instance đã được tạo.</p>
 
-<p>&#8211; Map&lt;String, List<String>>: là một map chứa key là md5 và value là một List chứa đường dẫn đến các file có md5 value như vậy</p>
+<p>Đây là đất diễn của Singleton design pattern :)
+Tôi sẽ thêm static function <code>singleton</code> cho IoC như sau:</p>
 
-<p>&#8211; pool, thuộc class ExcutorService.</p>
-
-<ul>
-<li>Mỗi tác vụ sau khi được luồng chọn để thực thi, nó sẽ làm gì? Nhiệm vụ của tác vụ là quét tất cả các file, thư mục có trong thư mục được chỉ định tìm kiếm. Nếu gặp file, nó sẽ tính MD5 cho file đó, và thêm vào Map. Nếu gặp thư mục, tác vụ này sẽ tạo ra một tác vụ DuppFind mới, chỉ định thư mục mới này cho tác vụ DuppFind mới, và ném vào pool (bây giờ bạn đã hiểu tại sao object DuppFind luôn được truyền pool vào rồi đấy:) )</li>
-</ul>
-
-
-<p>Một vài điểm lưu ý:</p>
-
-<ul>
-<li><p>Mỗi tác vụ phải có trách nhiệm đợi tất cả các tác vụ con nó tạo ra hoàn thành thì mới được chấm dứt. Tôi thực hiện điều này bằng cách sử dụng đối tượng Future được trả lại mỗi lần ném tác vụ mới vào pool. Sau đó chỉ cần gọi polling kết quả từ tác vụ con là được.</p></li>
-<li><p>Với những Collection dùng chung giữa các thread, cần phải dùng những Concurrecy Collection mà Java cung cấp. Cụ thể ở đây, tôi dùng ConcurrentHashMap cho Map và CopyOnWriteArrayList cho List.</p></li>
-</ul>
-
-
-<p>Dưới đây là đoạn code cho phần thread pooling:</p>
-
-<figure class='code'><figcaption><span>DuppFind.java </span></figcaption>
+<figure class='code'><figcaption><span>IoC.php </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -279,100 +436,174 @@
 <span class='line-number'>48</span>
 <span class='line-number'>49</span>
 <span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">DuppFind</span> <span class="kd">implements</span> <span class="n">Runnable</span><span class="o">{</span>
-</span><span class='line'>  <span class="kd">private</span> <span class="n">File</span> <span class="n">directory</span><span class="o">;</span>
-</span><span class='line'>  <span class="kd">private</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">md5FileMap</span><span class="o">;</span>
-</span><span class='line'>  <span class="kd">private</span> <span class="n">ExecutorService</span> <span class="n">pool</span><span class="o">;</span>
-</span><span class='line'>  
-</span><span class='line'>  <span class="kd">public</span> <span class="nf">DuppFind</span><span class="o">(</span><span class="n">File</span> <span class="n">directory</span><span class="o">,</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">md5FileMap</span><span class="o">,</span> <span class="n">ExecutorService</span> <span class="n">pool</span><span class="o">)</span>
-</span><span class='line'>  <span class="o">{</span>
-</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">directory</span> <span class="o">=</span> <span class="n">directory</span><span class="o">;</span>
-</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">md5FileMap</span> <span class="o">=</span> <span class="n">md5FileMap</span><span class="o">;</span>
-</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">pool</span> <span class="o">=</span> <span class="n">pool</span><span class="o">;</span>
-</span><span class='line'>  <span class="o">}</span>    
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">IoC</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">protected</span> <span class="k">static</span> <span class="nv">$registry</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
+</span><span class='line'>  <span class="k">protected</span> <span class="k">static</span> <span class="nv">$shared</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
 </span><span class='line'>
-</span><span class='line'>  <span class="nd">@Override</span>
-</span><span class='line'>  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span> <span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>      <span class="k">try</span>
-</span><span class='line'>      <span class="o">{</span>
-</span><span class='line'>          <span class="n">File</span><span class="o">[]</span> <span class="n">files</span> <span class="o">=</span> <span class="n">directory</span><span class="o">.</span><span class="na">listFiles</span><span class="o">();</span>
-</span><span class='line'>          <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">Future</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">results</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">Future</span><span class="o">&lt;?&gt;&gt;();</span>
-</span><span class='line'>          <span class="k">for</span><span class="o">(</span><span class="n">File</span> <span class="n">file</span> <span class="o">:</span> <span class="n">files</span><span class="o">)</span>
-</span><span class='line'>          <span class="o">{</span>
-</span><span class='line'>              <span class="k">if</span><span class="o">(</span><span class="n">file</span><span class="o">.</span><span class="na">isDirectory</span><span class="o">())</span>
-</span><span class='line'>              <span class="o">{</span>
-</span><span class='line'>                  <span class="c1">//System.out.println(&quot;Dir: &quot; + file.getAbsolutePath());</span>
-</span><span class='line'>                  <span class="n">DuppFind</span> <span class="n">df</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DuppFind</span><span class="o">(</span><span class="n">file</span><span class="o">,</span> <span class="n">md5FileMap</span><span class="o">,</span> <span class="n">pool</span><span class="o">);</span>
-</span><span class='line'>                  <span class="n">Future</span><span class="o">&lt;?&gt;</span> <span class="n">result</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">df</span><span class="o">);</span>
-</span><span class='line'>                  <span class="n">results</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">result</span><span class="o">);</span>
-</span><span class='line'>              <span class="o">}</span>
-</span><span class='line'>              <span class="k">else</span> <span class="nf">if</span><span class="o">(</span><span class="n">file</span><span class="o">.</span><span class="na">isFile</span><span class="o">())</span>
-</span><span class='line'>              <span class="o">{</span>
-</span><span class='line'>                  <span class="c1">//calculate md5</span>
-</span><span class='line'>                  <span class="n">String</span> <span class="n">md5</span> <span class="o">=</span> <span class="n">MD5Utils</span><span class="o">.</span><span class="na">getMD5</span><span class="o">(</span><span class="n">file</span><span class="o">);</span>
-</span><span class='line'>                  <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">listFile</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CopyOnWriteArrayList</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;();</span>
-</span><span class='line'>                  <span class="k">if</span><span class="o">(</span><span class="n">md5FileMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">md5</span><span class="o">)</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
-</span><span class='line'>                  <span class="o">{</span>
-</span><span class='line'>                      <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Duplicate md5: &quot;</span> <span class="o">+</span> <span class="n">md5</span> <span class="o">+</span> <span class="s">&quot;, size now: &quot;</span> <span class="o">+</span> <span class="n">md5FileMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">md5</span><span class="o">).</span><span class="na">size</span><span class="o">());</span>
-</span><span class='line'>                      <span class="n">listFile</span><span class="o">.</span><span class="na">addAll</span><span class="o">(</span><span class="n">md5FileMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">md5</span><span class="o">));</span>
-</span><span class='line'>                  <span class="o">}</span>
-</span><span class='line'>                  <span class="n">listFile</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">file</span><span class="o">.</span><span class="na">getAbsolutePath</span><span class="o">());</span>
-</span><span class='line'>                  <span class="n">md5FileMap</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="n">md5</span><span class="o">);</span>
-</span><span class='line'>                  <span class="n">md5FileMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">md5</span><span class="o">,</span> <span class="n">listFile</span><span class="o">);</span>
-</span><span class='line'>                  <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Add: File&quot;</span> <span class="o">+</span> <span class="n">file</span><span class="o">.</span><span class="na">getAbsolutePath</span><span class="o">()</span> <span class="o">+</span> <span class="s">&quot;, MD5: &quot;</span> <span class="o">+</span> <span class="n">md5</span><span class="o">);</span>
-</span><span class='line'>              <span class="o">}</span>
-</span><span class='line'>          <span class="o">}</span>
-</span><span class='line'>          
-</span><span class='line'>          <span class="c1">//wait until all sub-tasks complete</span>
-</span><span class='line'>          <span class="k">for</span><span class="o">(</span><span class="n">Future</span><span class="o">&lt;?&gt;</span> <span class="nl">result:</span> <span class="n">results</span><span class="o">)</span>
-</span><span class='line'>          <span class="o">{</span>
-</span><span class='line'>              <span class="n">result</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
-</span><span class='line'>          <span class="o">}</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>      <span class="k">catch</span><span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span>
-</span><span class='line'>      <span class="o">{</span>
-</span><span class='line'>          <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>      <span class="k">catch</span><span class="o">(</span><span class="n">ExecutionException</span> <span class="n">e</span><span class="o">)</span>
-</span><span class='line'>      <span class="o">{</span>
-</span><span class='line'>          <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'><span class="o">}</span>
+</span><span class='line'>  <span class="c1">// Register, here save the Closure to static::$registry</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">register</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nx">Closure</span> <span class="nv">$resolve</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>     <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">[</span><span class="nv">$name</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$resolve</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Singleton, Note that here we save the result of Closure, not the Closure</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">singleton</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nx">Closure</span> <span class="nv">$resolve</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="k">static</span><span class="o">::</span><span class="nv">$shared</span><span class="p">[</span><span class="nv">$name</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$resolve</span><span class="p">();</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Resolve, consider register or singleton here</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">resolve</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span> <span class="k">static</span><span class="o">::</span><span class="na">registered</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span> <span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="nv">$name</span> <span class="o">=</span> <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">[</span><span class="nv">$name</span><span class="p">];</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nv">$name</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span> <span class="k">static</span><span class="o">::</span><span class="na">singletoned</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span> <span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="nv">$instance</span> <span class="o">=</span> <span class="k">static</span><span class="o">::</span><span class="nv">$shared</span><span class="p">[</span><span class="nv">$name</span><span class="p">];</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nv">$instance</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">throw</span> <span class="k">new</span> <span class="nx">Exception</span><span class="p">(</span><span class="s1">&#39;Nothing registered with that name, fool.&#39;</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Check resigtered or not</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">registered</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>     <span class="k">return</span> <span class="nb">array_key_exists</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Check singleton object or not</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">singletoned</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nb">array_key_exists</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="k">static</span><span class="o">::</span><span class="nv">$shared</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Toàn bộ code đã ở trên github: <a href="https://github.com/viethnguyen/DuppFind">https://github.com/viethnguyen/DuppFind</a></p>
+<p>Và bây giờ</p>
 
-<h1>Đánh giá</h1>
+<figure class='code'><figcaption><span>Book.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="nx">IoC</span><span class="o">::</span><span class="na">singleton</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">,</span> <span class="k">function</span><span class="p">(){</span>
+</span><span class='line'>    <span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
+</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setTitle</span><span class="p">(</span><span class="k">new</span> <span class="nx">Title</span><span class="p">);</span>
+</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">);</span>
+</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setGenre</span><span class="p">(</span><span class="k">new</span> <span class="nx">Genre</span><span class="p">);</span>
+</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setPublishDate</span><span class="p">(</span><span class="k">new</span> <span class="nx">PublishDate</span><span class="p">);</span>
+</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setISBN</span><span class="p">(</span><span class="k">new</span> <span class="nx">ISBN</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="nv">$book</span><span class="p">;</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$book1</span> <span class="o">=</span> <span class="nx">IoC</span><span class="o">::</span><span class="na">resolve</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">);</span>
+</span><span class='line'><span class="nv">$book2</span> <span class="o">=</span> <span class="nx">IoC</span><span class="o">::</span><span class="na">resolve</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">);</span> <span class="c1">// exactly same instance with $book1</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Bạn có thể lấy <a href="https://gist.github.com/DTVD/5997723">đoạn code sample trên Gist</a> về chạy thử.
+Have fun with IoC :)</p>
+
+<h2>Real-World Use Case</h2>
+
+<p>Đọc đến đây có thể bạn sẽ hỏi tôi, việc quái gì phải xoắn cái IoC này thế, nó có thực sự hữu dụng hay chỉ là 1 cái pattern mang tính demo biếu diễn ?</p>
+
+<p>Chúng ta hãy cùng ghé qua <a href="http://laravel.com/docs/ioc">Laravel</a>, 1 framework hiện đại của PHP.</p>
+
+<p>Ở Laravel, <a href="http://laravel.com/docs/ioc">IoC</a> đã được chuẩn bị sẵn và không chỉ dùng 1 mình, còn kết hợp với <a href="http://laravel.com/docs/ioc#service-providers">ServiceProviders</a> và <a href="http://laravel.com/docs/facades">Facades</a> để tăng tối đa độ linh hoạt của code base.
+Một Facades (lại là 1 design pattern khác - hãy google sau khi đọc bài này :) ) có thể được kết nối với IoC và UnitTest như sau :</p>
+
+<figure class='code'><figcaption><span>Facades.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// binding IoC</span>
+</span><span class='line'><span class="nx">App</span><span class="o">::</span><span class="na">bind</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">,</span> <span class="k">function</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// binding facades to IoC</span>
+</span><span class='line'><span class="k">use</span> <span class="nx">Illuminate\Support\Facades\Facade</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">FacadesBook</span> <span class="k">extends</span> <span class="nx">Facade</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">protected</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">getFacadeAccessor</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="s1">&#39;book&#39;</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Tại sao đã bind class Book vào IoC <code>book</code> rồi, lại còn tiếp tục bind IoC <code>book</code> và Facades <code>FacadesBook</code> lần nữa?</p>
+
+<p>Facades trong Laravel có thể &#8220;biến thành&#8221; Mock object sau khi gọi method <code>shouldReceive</code> (a magic method :D)</p>
+
+<figure class='code'><figcaption><span>Facades.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="c1">//Use Book as usual:</span>
+</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="nx">FacadesBook</span><span class="o">::</span><span class="na">AnInstanceMethodOfBookClass</span><span class="p">(</span><span class="nv">$AParams</span><span class="p">);</span>
+</span><span class='line'><span class="c1">//Mocking for UnitTest:</span>
+</span><span class='line'><span class="nx">FacadesBook</span><span class="o">::</span><span class="na">shouldReceive</span><span class="p">(</span><span class="s1">&#39;AnInstanceMethodOfBookClass&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">once</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">with</span><span class="p">(</span><span class="nv">$AParams</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">andReturn</span><span class="p">(</span><span class="nv">$FakeValue</span><span class="p">);</span>
+</span><span class='line'><span class="nv">$mockBook</span> <span class="o">=</span> <span class="nx">FacadesBook</span><span class="o">::</span><span class="na">AnInstanceMethodOfBookClass</span><span class="p">(</span><span class="nv">$AParams</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>$book</code> sẽ trả về giá trị thực khi thực hiện method <code>AnInstanceMethodOfBookClass</code> của class Book, trong khi đó <code>$mockBook</code> sẽ trả về <code>$FakeValue</code>.</p>
+
+<h2>Summary</h2>
 
 <ul>
-<li><p>Đoạn code trên chạy chính xác với những thư mục nhỏ, không có quá nhiều thư mục con, cháu&#8230; Tuy nhiên, với những thư mục chứa nhiều thư mục con, vì có quá nhiều tác vụ vào thread pool, nên hay xảy ra exception out of memory - heap.</p></li>
-<li><p>Mới chỉ kiểm tra xem 2 file có MD5 trùng nhau không. Nếu trùng nhau rồi, ta cần kiểm tra thêm độ dài 2 file có trùng nhau không, rồi nếu trùng tiếp thì phải check từng byte để chắc chắn nhất có thể (xóa đi khỏi hối hận :P)</p></li>
-<li><p>Ở trên mới hiển thị ra những file nào trùng lặp. Cần cho phép user xóa file trùng lặp trong chương trình.</p></li>
-<li><p>Cần thiết kế GUI!</p></li>
+<li><strong>Dependency Injection</strong>: Đưa các dependency vào class thông qua constructor hoặc setter, không khỏi tạo trực tiếp bên trong class.</li>
+<li><strong>Inversion of Control</strong>: bind object vào thời điểm run time, không phải vào thời điểm compile time.</li>
+<li><strong>Singleton</strong>: Design pattern, cho phép trong 1 hệ thống chỉ có 1 instance duy nhất của class được tồn tại.</li>
 </ul>
-
-
-<p>Bạn thấy đó, còn khá nhiều vấn đề cần giải quyết để có một tool hoàn chỉnh. Những vấn đề này sẽ được cải tiến và được report lại trong một ngày không xa :) Nếu bạn cảm thấy hứng thú, rất welcome contribute :)</p>
-
-<h1>Tham khảo</h1>
-
-<ol>
-<li>Core Java</li>
-<li>Java Concurrency in Practice</li>
-<li>Effective Java</li>
-</ol>
 
 
 		
@@ -396,7 +627,290 @@
   
 
 
-<time datetime="2013-06-25T21:07:00+09:00" data-updated="true" itemprop="datePublished">Jun 25<span>th</span>, 2013</time></div>
+<time datetime="2013-07-10T15:24:00+09:00" data-updated="true" itemprop="datePublished">Jul 10<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/redis/'>redis</a>, <a class='category' href='/blog/categories/sinatra/'>sinatra</a>, <a class='category' href='/blog/categories/tutorial/'>tutorial</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/07/10/tu-tao-dich-vu-thu-gon-url-voi-sinatra-va-redis/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/07/10/tu-tao-dich-vu-thu-gon-url-voi-sinatra-va-redis/" itemprop="url">Tự tạo Dịch vụ Thu Gọn Url Với Sinatra và Redis</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h2>Mở đầu</h2>
+
+<p>Chắc hẳn các bạn đã biết về các dịch vụ rút gọn url, điển hình là bit.ly. Mục đích của dịch vụ này là nhằm thu gọn là những url rất dài để tiết kiệm chữ (cho những dịch vụ giới hạn về số kí tự như twitter chẳng hạn) và để cho url nhìn gọn hơn.
+Cơ chế của một dịch vụ rút gọn url khá đơn giản, vậy tại sao không tự làm một dịch vụ cho chính mình. Bài này mình sẽ hướng dẫn cách làm một url shorten service đơn giản dựa trên sinatra và redis.</p>
+
+<h2>Cài đặt</h2>
+
+<p>Để cài đặt sinatra thì bạn phải có ruby đã cài sẵn trên máy, việc cài đặt sinatra khá đơn giản thông qua <strong>gem</strong>:</p>
+
+<figure class='code'><figcaption><span>sinatra_install.sh </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>  gem install sinatra
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Tiếp đến là redis, để cài đặt redis thì tùy thuộc vào hệ điều hành, trên mac-osx các bạn có thể cài đặt rất dễ dàng thông qua <strong>brew</strong>:</p>
+
+<figure class='code'><figcaption><span>redis_install.sh </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>  brew install redis
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Trên linux hoặc windows các bạn có thể google để tìm ra hướng dẫn  cài tương ứng.
+Các bạn khởi động redis thông qua, khi khởi động redis mà không set option với config gì cả thì redis sẽ chạy trên localhost và port là 6789:</p>
+
+<figure class='code'><figcaption><span>redis_install.sh </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>  redis-server
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Giới thiệu qua về sinatra và redis</h2>
+
+<p>Sinatra là một mini webframework based trên Rack(Rack là web server interface rút gọn nhất có thể rất nổi tiếng trên ruby). Sinatra cung cấp cho bạn một DSL(Domain specific language) để có thể build một web app một cách dễ dàng nhất. Các bạn có thể tìm hiểu về sinatra ở <a href="http://www.sinatrarb.com/intro.html">trang chủ của sinatra</a>.</p>
+
+<p>Redis là hệ thống lưu trữ key-value với rất nhiều tính năng và được sử dụng rộng rãi. KTMT blog đã có <a href="http://ktmt.github.io/blog/2013/07/02/tim-hieu-redis/">một bài viết về redis</a> cách đây không lâu, các bạn có thể tham khảo lại. Về cách sử dụng redis, các bạn có thể tham khảo tại <a href="http://redis.io/documentation">trang chủ redis</a></p>
+
+<h2>Thiết kế chương trình</h2>
+
+<p>Cơ chế của một dịch vụ thu gọn hết sức đơn giản, được thể hiện ở diagram dưới đây:</p>
+
+<p><img src="/images/urlshorten/url-shorten-flow.png"></p>
+
+<p>Chắc bạn nào đã dùng bit.ly sẽ tưởng tượng ra usage flow một dịch vụ rút gọn url nên có. Cơ chế chúng ta dùng ở bài viết này như sau: đầu tiên user sẽ gửi url cần rút gọn thông qua form input. Web server nhận được request này sẽ hash url lại thành một chuỗi ngắn hơn, thông thường từ 5~10 kí tự, webserver sẽ lưu lại cặp &lt;hash, origin url> vào redis, và trả lại chuỗi hash đó được ghép vào url của dịch vụ : http://your-service.com/hash.</p>
+
+<p>Khi user click vào http://your-service.com/hash, đầu tiên server sẽ dùng chuỗi hash tìm original url trên redis, sau đó sẽ trả về response 301 (redirect) với location mới là original url, nhờ vậy mà user sẽ được redirect đến original url.</p>
+
+<p>Như vậy là đã định hình ý tưởng nên làm gì, chúng ta sẽ bắt tay vào code</p>
+
+<h2>Coding</h2>
+
+<ol>
+<li>Tạo khung
+Đầu tiên là sườn của một Sinatra app, có get, post. Chúng ta tạo folder cho app của chúng ta và tạo 1 file là app.rb chính là sinatra app:</li>
+</ol>
+
+
+<figure class='code'><figcaption><span>make.sh </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>mkdir url_shorten <span class="o">&amp;&amp;</span> <span class="nb">cd </span>url_shorten
+</span><span class='line'>touch app.rb <span class="o">&amp;&amp;</span> vim app.rb
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Sau đó chúng ta sẽ tạo cái khung cho sinatra app như dưới đây:</p>
+
+<figure class='code'><figcaption><span>url_shorten.rb </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='rb'><span class='line'><span class="nb">require</span> <span class="s1">&#39;sinatra/base&#39;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;redis&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">UrlShort</span> <span class="o">&lt;</span> <span class="ss">Sinatra</span><span class="p">:</span><span class="ss">:Base</span>
+</span><span class='line'>  <span class="n">set</span> <span class="ss">:public_dir</span><span class="p">,</span> <span class="no">File</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">__FILE__</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;/static&#39;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">get</span> <span class="s1">&#39;/&#39;</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">erb</span> <span class="ss">:index</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">UrlShort</span><span class="o">.</span><span class="n">run!</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Sinatra có syntax dạng DSL: get &#8216;some info&#8217; do &#8216;something&#8217; để represent cho &#8216;get&#8217; request rất dễ hiểu. Đoạn code trên có nghĩa là khi request đến &#8216;/&#8217; (root) thì sẽ render file index nằm trong views.
+Như vậy chúng ta đã có cái khung đơn giản nhất của một web service, nhận request, trả về view. (erb là template engine có sẵn của ruby, nó sẽ render file có đuôi erb ra html)</p>
+
+<p>Tiếp đến chúng ta sẽ thực hiện xử lý hash url. Về mặt lý thuyết thì gọi là hash không đúng lắm vì hash phải là nhận đầu vào X và trả lại Y là kết quả của việc hash X, bài toán của chúng ta ở đây chỉ đơn thuần là generate ra một chuỗi random để represent cho một cái url, như vậy bài toán của chúng ta sẽ là một hàm random_hash(N) nhận đầu vào N là độ dài của chuỗi input và đầu ra là một chuỗi random (cả chữ cả số) có độ dài N, ví dụ như sau:</p>
+
+<figure class='code'><figcaption><span>hash.rb </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='rb'><span class='line'>  <span class="n">rand_hash</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span> <span class="c1">#=&gt; &quot;s4xA6&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Để giải quyết bài toán này thì có khá nhiều hướng đi:</p>
+
+<ol>
+<li>Loop từ 1 đến 5 rồi với mỗi lần loop bạn random ra một số hoặc chữ cái.</li>
+<li>Tạo ra 1 array có độ dài 64 gồm từ [0..9] [a..z] và [A..Z] và random ra 5 vị trí trong đó (việc này có thể thực hiện rất dễ dàng thông qua Array#sample của ruby).</li>
+<li>Sử dụng base64. base64 có một đặc điểm là sẽ biến 1 số M thành 1 chuỗi cả chữ cả số có độ dài max là log(64)(M). Do đó để tạo ra một chuỗi random có length N thì chúng ta chỉ cần random một số M nằm trong khoảng 64<sup>(N-1)</sup> đến 64<sup>(N)</sup> và chuyển nó về base 64.</li>
+<li>Sử dụng một số kĩ thuật generate 64bit (mà đã được giới thiệu ở <a href="http://ktmt.github.io/blog/2013/06/09/xay-dung-he-thong-sinh-64bit-unique-id/">bài viết về generate 64bit uid</a> trên KTMT gần đây.</li>
+</ol>
+
+
+<p>Ở bài viết này chúng ta sẽ sử dụng kĩ thuật số (3). Chúng ta đưa hàm generate hash vào trong helper của sinatra thông qua hàm helpers như sau:</p>
+
+<figure class='code'><figcaption><span>hash.rb </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='rb'><span class='line'><span class="k">class</span> <span class="nc">UrlShort</span> <span class="o">&lt;</span> <span class="ss">Sinatra</span><span class="p">:</span><span class="ss">:Base</span>
+</span><span class='line'>  <span class="o">.</span><span class="n">.</span>
+</span><span class='line'>  <span class="n">helpers</span> <span class="k">do</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">rand_hash</span><span class="p">(</span><span class="n">length</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">gap</span> <span class="o">=</span> <span class="mi">64</span><span class="o">**</span><span class="p">(</span><span class="n">length</span><span class="p">)</span> <span class="o">-</span> <span class="mi">64</span><span class="o">**</span><span class="p">(</span><span class="n">length</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>      <span class="p">(</span><span class="nb">rand</span><span class="p">(</span><span class="n">gap</span><span class="p">)</span> <span class="o">+</span> <span class="mi">64</span><span class="o">**</span><span class="p">(</span><span class="n">length</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">to_s</span><span class="p">(</span><span class="mi">64</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Tiếp theo chúng ta sẽ làm nhiệm vụ gắn hash thu được với url thành một cặp key-value và ghi vào redis. Để làm nhiệm vụ này thì đầu tiên chúng ta cần khởi tạo redis, mình khởi tạo redis bằng cách overwrite constructor của app và đưa redis instance vào thành 1 instance property. Ngoài ra, chúng ta cũng không muốn 1 url mà mỗi lần request lại tạo một hash khác nhau , rất tốn tài nguyên, do đó mỗi lần gen hash mình sẽ lưu duplicate thành 2 cặp key-value. Một cặp chứa url làm key và hash làm value, và một cặp chứ hash làm key và url là value, điều này đảm bảo mối liên hệ giữa url/hash là 1/1.</p>
+
+<figure class='code'><figcaption><span>implement.rb </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='rb'><span class='line'><span class="n">post</span> <span class="s1">&#39;/&#39;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="vi">@error</span> <span class="o">=</span> <span class="kp">nil</span>
+</span><span class='line'>  <span class="vi">@error</span> <span class="o">=</span> <span class="s1">&#39;please enter url&#39;</span> <span class="k">if</span> <span class="no">URI</span><span class="o">.</span><span class="n">regexp</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">params</span><span class="o">[</span><span class="ss">:url</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">nil?</span>
+</span><span class='line'>  <span class="vi">@success</span> <span class="o">=</span> <span class="kp">false</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">unless</span> <span class="vi">@error</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">params</span><span class="o">[</span><span class="ss">:url</span><span class="o">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">params</span><span class="o">[</span><span class="ss">:url</span><span class="o">].</span><span class="n">empty?</span>
+</span><span class='line'>      <span class="vi">@url</span> <span class="o">=</span> <span class="n">params</span><span class="o">[</span><span class="ss">:url</span><span class="o">]</span>
+</span><span class='line'>      <span class="vi">@hash</span> <span class="o">=</span> <span class="n">rand_hash</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">exist</span> <span class="o">=</span> <span class="vi">@redis</span><span class="o">.</span><span class="n">setnx</span> <span class="s2">&quot;url:</span><span class="si">#{</span><span class="vi">@url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="vi">@hash</span>
+</span><span class='line'>      <span class="k">if</span> <span class="n">exist</span> <span class="c1">#key not set</span>
+</span><span class='line'>        <span class="vi">@redis</span><span class="o">.</span><span class="n">setnx</span> <span class="s2">&quot;hash:</span><span class="si">#{</span><span class="vi">@hash</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="vi">@url</span>
+</span><span class='line'>      <span class="k">else</span>
+</span><span class='line'>        <span class="vi">@hash</span> <span class="o">=</span> <span class="vi">@redis</span><span class="o">.</span><span class="n">get</span> <span class="s2">&quot;url:</span><span class="si">#{</span><span class="vi">@url</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>      <span class="vi">@success</span> <span class="o">=</span> <span class="kp">true</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">erb</span> <span class="ss">:index</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Như vậy chúng ta đã có @hash để trả về cho user, chúng ta sẽ ghep hash vào trong views để hiển thị cho user (views/index.rb)</p>
+
+<figure class='code'><figcaption><span>index.erb </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='erb'><span class='line'><span class="x">&lt;form id=&quot;form&quot; method=&quot;post&quot;&gt;</span>
+</span><span class='line'><span class="x">  &lt;input type=&quot;text&quot; value=&quot;&quot; name=&quot;url&quot; id=&quot;url&quot;/&gt;</span>
+</span><span class='line'><span class="x">  &lt;input type=&quot;submit&quot; value=&quot;shorten&quot; id=&quot;submit&quot; class=&quot;submit&quot;/&gt;</span>
+</span><span class='line'><span class="x">&lt;/form&gt;</span>
+</span><span class='line'><span class="x">&lt;hr/&gt;</span>
+</span><span class='line'><span class="x">&lt;div class=&quot;mes&quot;&gt;Result&lt;/div&gt;</span>
+</span><span class='line'><span class="cp">&lt;%</span> <span class="k">if</span> <span class="vi">@error</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'><span class="x">  &lt;div id=&#39;error&#39;&gt;</span>
+</span><span class='line'><span class="x">    </span><span class="cp">&lt;%=</span> <span class="vi">@error</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'><span class="x">  &lt;/div&gt;</span>
+</span><span class='line'><span class="cp">&lt;%</span> <span class="k">else</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'><span class="x">  </span><span class="cp">&lt;%</span> <span class="k">if</span> <span class="vi">@success</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'><span class="x">    &lt;a id=&quot;result&quot; href=&#39;</span><span class="cp">&lt;%=</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">escape_html</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="si">}#{</span><span class="vi">@hash</span><span class="si">}</span><span class="s2">&quot;</span> <span class="cp">%&gt;</span><span class="x">&#39;&gt;</span><span class="cp">&lt;%=</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">escape_html</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="si">}#{</span><span class="vi">@hash</span><span class="si">}</span><span class="s2">&quot;</span> <span class="cp">%&gt;</span><span class="x">&lt;/a&gt;</span>
+</span><span class='line'><span class="x">    &lt;input data-clipboard-text=&#39;</span><span class="cp">&lt;%=</span><span class="s2">&quot;</span><span class="si">#{</span><span class="n">escape_html</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="si">}#{</span><span class="vi">@hash</span><span class="si">}</span><span class="s2">&quot;</span> <span class="cp">%&gt;</span><span class="x">&#39; type=&quot;button&quot; id=&quot;yank&quot; class=&quot;submit&quot; value=&quot;yank&quot;/&gt;</span>
+</span><span class='line'><span class="x">  </span><span class="cp">&lt;%</span> <span class="k">end</span> <span class="cp">%&gt;</span><span class="x">  </span>
+</span><span class='line'><span class="cp">&lt;%</span> <span class="k">end</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Phần việc còn lại chúng ta phải giải quyết là khi user click vào link. Link của chúng ta có dạng là www.my-application.com/#{hash}, với sinatra để lọc phần hash hết sức đon giản vì sinatra đã tự động lọc hộ chúng ta và đưa vào biến global params, do đó chúng ta chỉ cần lấy hash từ params, tìm trong redis, và redirect user là ok:</p>
+
+<figure class='code'><figcaption><span>redirect.rb </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='rb'><span class='line'>  <span class="n">get</span> <span class="s1">&#39;/:hash&#39;</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">url</span> <span class="o">=</span> <span class="vi">@redis</span><span class="o">.</span><span class="n">get</span> <span class="s2">&quot;hash:</span><span class="si">#{</span><span class="n">params</span><span class="o">[</span><span class="ss">:hash</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>    <span class="n">redirect</span> <span class="n">url</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Như vậy chúng ta đã có một flow hoàn chỉnh rồi, thêm tí css và sử dụng <a href="https://github.com/zeroclipboard/ZeroClipboard">ZeroClipboard</a> để có nút yank để copy url vào clipboard, chúng ta đã có một dịch vụ rút gọn url cho riêng mình!</p>
+
+<p><img src="/images/urlshorten/background.png"></p>
+
+<p>Toàn bộ source code cho tutorial này mình đang để ở đây, mọi người có thể sử dụng tùy ý :).
+<a href="https://github.com/ktmt/link_shorttener">https://github.com/ktmt/link_shorttener</a></p>
+
+		
+		
+	</div>
+
+</article>
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-07T22:54:00+09:00" data-updated="true" itemprop="datePublished">Jul 7<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
@@ -405,285 +919,146 @@
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/06/25/using-githook-to-automatically-test-your-app/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/07/07/git-server-hook-dot-markdown/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/25/using-githook-to-automatically-test-your-app/" itemprop="url">Giới Thiệu về Githook và Client Side Hook</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/07/07/git-server-hook-dot-markdown/" itemprop="url">Githook và Server Hook (Tiếp)</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h1>Githook là gì</h1>
+		<p>Ở bài viết <a href="/blog/2013/06/25/using-githook-to-automatically-test-your-app/">trước</a>, tôi đã giới thiệu về githook, client hook và các user case hay sử dụng với client hook. Bài viết này, tôi sẽ giới thiệu thêm về server hook và các ứng dụng của chúng trong thực tế</p>
 
-<p>Giống như các hệ thống quản lý version khác, Git cung cấp một cách để gọi những custom script khi một hành động đặc biệt được thực hiện trong git. Có 2 nhóm hook trong git: hook cho client, và hook cho server. Client hook là dành cho những hoạt động xảy ra ở client như commit và merge. Server hook là dành cho những hoạt động xảy ra ở Git server như nhận được một commit push lên từ client. Bài viết này giới thiệu một số cách sử dụng hook cả client side hook</p>
+<h1>Server-side hooks</h1>
 
-<h1>Install hook</h1>
+<p>Bên cạnh việc sử dụng các client-side hooks, bạn có thể sử dụng một vài server-side hook như là một hệ thống admin để áp đặt một cơ chế quán lý cho project của bạn. Những script này sẽ được chạy trước và sau khi commit được đẩy lên server. Những pre-hooks có thể trả về giá trị khác 0 ở bất cứ thời điểm nào để loại bỏ một push từ client, cũng như để in ra một error message cho client</p>
 
-<p>Các hooks được lưu trong thư mục <code>hooks</code> của <code>.git</code> folder. Trong phần lớn các project, nó là <code>.git/hooks</code>. Ở chế độ mặc định, Git cung cấp một loạt các examples cho các hooks, các ví dụ này đưa ra khá nhiều chỉ dẫn về inputs của mỗi hook. Tất cả các examples được viết bằng shell script, với một vài mã lệnh Perl, tuy nhiên bạn có thể viết các script này bằng bất cứ ngôn ngữ nào (ví dụ như Python, Ruby). Tất cả các examples đều có tên kết thúc bằng <code>.sample</code>, bạn cần đổi tên các script trước khi chạy</p>
+<h2>pre-receive và post-receive</h2>
 
-<p>Để enable các hook script, đặt một file trong thư mục <code>hooks</code> với tên tương ứng với tên của hook, và set quyền cho script đó là executable.</p>
+<p>Script đầu tiên được chạy khi server nhận được một push từ client đó là <code>pre-receive</code>. Script này nhận một list các tham chiếu sẽ được push từ stdin. Nếu nó trả về giá trị khác 0, không có tham chiếu nào được chấp nhận. Bạn có thể sử dụng hook này để làm những việc như đảm bảo không có bất cứ tham chiếu nào là <code>non-fast-forwards</code>.</p>
 
-<h1>Client side hooks</h1>
+<p><code>post-receive</code> hook chạy sau khi toàn bộ quá trình được hoàn tất và có thể sử dụng để update các service khác hoặc để notify uer. Nó nhận cùng dữ liệu từ stdin như <code>pre-receive</code> hook. Ví dụ bao gồm gửi email chó một list các developer liên quan, notify CI server, hoặc update ticket tracking system. Bạn thậm chí có thể parse commit message để kiểm tra xem có bất cứ ticket nào cần open, modified hoặc update hay không. <code>post-receive</code> không thể làm ngừng lại quá trình push, nhưng client sẽ không đóng kết nối tới server cho đên khi <code>post-receive</code> kết thúc. Ví thế hãy cẩn thận khi bạn muốn làm những việc tốn thời gian. Cách tốt nhất là hãy sử dụng các background process để xử lý các tác vụ tốn thời gian.</p>
 
-<p>Có rất nhiều loại client side hooks, chúng ta chia chúng theo work flow</p>
+<h2>update</h2>
 
-<h2>Committing-Workflow Hooks</h2>
+<p>Update script là tương tự với <code>pre-receive</code> script, ngoại trừ việc nó chỉ chạy một làn cho mỗi branch mà pusher muốn update. Nếu pusher muốn update nhiều branch, <code>pre-receive</code> chỉ chạy duy nhất một lần, nhưng update sẽ chạy một lần cho mỗi branch mà chúng được push. Thay vì đọc dữ liệu từ stdin, script này sẽ nhận 3 tham số đầu vào: tên của branch, SHA-1 trỏ đến commit trước khi được push, và SHA-1 user đang muốn push. Nếu update script trả về kết quả khác 0, chỉ branch ứng với script này bị reject, các branch khác vẫn được update bình thường</p>
 
-<p><code>pre-commit</code> hook được gọi đầu tiên, trước khi bạn gõ nội dung của một commit message. Hook này được sử dụng để kiểm tra nội dụng các files được commit. Bạn có thể viết script để kiểm tra coding convetion, hoặc để run test, để chạy static analysis trước khi commit. Nếu script trả về kết quả khác 0, commit sẽ bị loại bỏ. Tuy nhiên bạn có thể bỏ qua chạy hook này khi commit với lệnh <code>git commit --no-verify</code></p>
+<h1>Ví dụ</h1>
 
-<p><code>prepare-commit-msg</code> là hook được chạy trước khi trình soạn thảo commit message được gọi đế và sau khi message mặc định được tạo ra. Hook này giúp bạn thay đổi default message trước khi commit author thấy nó. Hook này về cơ bản là ít khi hữu dụng, chỉ trừ khi các commit message được sinh ra tự động.</p>
+<p>Trong ví dụ này, chúng ta sẽ bắt buộc mỗi commit message phải có phần mở đầu của message tuân theo một định dạng. Cụ thể mỗi mesage phải có dạng &#8220;ref:1234&#8221; bởi vì mỗi một commit sẽ ứng với một ticket trong hệ thống.</p>
 
-<p><code>commit-msg</code> hook nhận duy nhất một input là đường dẫn của file chứa commit message. Nếu script này trả về kết quả khác 0, commit sẽ bị loại bỏ. Hook này có tác dụng giúp bạn chuẩn hoá mesage trước khi commit</p>
+<p>Để làm việc này, sẻver sẽ phải kiểm tra tất cả các commit được push để xem string trong commit message có đúng format hay không. Nếu commit message là không đúng format, trả về giá trị khác 0 và reject push.</p>
 
-<p>Sau khi toàn bộ quá trình commit được hoàn tất, <code>post-commit</code> hook sẽ chạy. hook này không nhận tham số đầu vào, nhưng bạn có thể dễ dàng lầy last commit bằng cách gọi <code>git log -1 HEAD</code>. Thông thường, hook này dụng để notification.</p>
+<p>Chúng ta sẽ viết một update hook để làm việc này. Chú ý rắng, update hook nhận 3 giá trị đầu vào: tên của branch được update, SHA-1 của commit trước khi được push, và SHA-1 của commit sau khi được push. Các đoạn code dưới đây được minh hoạ bằng ruby, bạn có thể sử dụng ngôn ngữ lập trình khác nếu muốn</p>
 
-<p>Committing-workflow client side scripts được sử dụng và setup bới chính các developer tại máy local của họ. Các developers phải tự maintain chúng, tuy nhiên họ có thể thay đổi chúng bất cứ lúc nào</p>
+<figure class='code'><figcaption><span>update </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1">#!/usr/bin/env ruby</span>
+</span><span class='line'>
+</span><span class='line'><span class="vg">$refname</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span>
+</span><span class='line'><span class="vg">$oldrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span>
+</span><span class='line'><span class="vg">$newrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<h2>Email workflow hooks</h2>
 
-<p>Bạn có thể set up 3 client side hooks cho email workflow. Tất cả các hooks này đều liên quan đến <code>git am</code> command. Nếu bạn không sử dụng câu lệnh này trong workflow của bạn, bạn có thể bỏ qua phần này. Nếu bạn nhận patch qua email được chuẩn bị bới lệnh <code>git format-patch</code>, thì có thể những hook này sẽ có ích với bạn</p>
+<p>Để lấy các commit từ <code>$oldrev</code> tới <code>$newrev</code>, chúng ta sử dụng lệnh <code>git rev-lít</code>. Lệnh này sẽ trả về danh sách các SHA-1 cho các commit nằm giữa 2 commit mà chúng ta truyền vào</p>
 
-<p>Hook đầu tiên là <code>applypatch-msg</code>. Nó nhận một tham số: tên của file tạm chứ nội dụng của commit message. Git sẽ bỏ qua patch nếu hook này trả về giá trị khác 0. Bạn có thể sử dụng hook này để đảm bảo commit message là đúng chuẩn.</p>
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>git rev-list 538c33..d14fc7
+</span><span class='line'>d14fc7c847ab946ec39590d87783c69b031bdfb7
+</span><span class='line'>9f585da4401b0a3999e84113824d15245c13f0be
+</span><span class='line'>234071a1be950e2a8d078e6141f5cd20c1e61ad3
+</span><span class='line'>dfa04c9ef3d5197182f13fb5b9b1fb7717d2222a
+</span><span class='line'>17716ec0f1ff5c77eff40b7fe912f9f6cfd0e475
+</span></code></pre></td></tr></table></div></figure>
 
-<p>Hook tiếp theo khi apply patches thông qua <code>git am</code> là <code>pre-applypatch</code>. Hook không nhận giá trị đầu vào và được chay sau khi patch được applied. Vì thế bạn có thể sử dụng hook này để kiểm tra toàn bộ mã nguồn trước khi make commit. VD: chạy test, chạy static analysis, kiểm tra style (hook này tương đối giống <code>pre-commit</code> trong phần trước)</p>
 
-<p>Hook cuối cùng được chạy trong process của <code>git am</code> là <code>post-applypatch</code>. Bạn có thể sử dụng nó để notify cho một group hoặc một author về patch này.</p>
+<p>Sau đó, chúng ta sử dụng lệnh <code>git cat-file</code> đẻ duyệt qua từng commit và lấy nội dụng của commit message.</p>
 
-<h2>Một vài client hooks khác</h2>
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>git cat-file commit ca82a6
+</span><span class='line'>tree cfda3bf379e4f8dba8717dee55aab78aef7f4daf
+</span><span class='line'>parent 085bb3bcb608e1e8451d4b2432f8ecbe6306e7e7
+</span><span class='line'>author kiennt &lt;kiennt@gmail.com&gt; 1205815931 -0700
+</span><span class='line'>committer kiennt &lt;schacon@gmail.com&gt; 1240030591 -0700
+</span><span class='line'>
+</span><span class='line'>Add new post about githook
+</span></code></pre></td></tr></table></div></figure>
 
-<p><code>pre-rebase</code> hooks run trước khi bạn rebase bất cứ commit nào, và sẽ cả process lại nếu hook trả về giái trị khác 0.</p>
 
-<p><code>post-checkout</code> được gọi sau khi bạn chạy lệnh <code>git checkout</code> thành công. Bạn có thể sử dụng nó để setup environment, hoặc tự động sinh document sau khi checkout</p>
+<p>Cách đơn giản để lấy commit message từ một commit là khi có SHA-1 , chúng ta xác định dòng blank đầu tiên và lấy tất cả phần đằng sau nó. Chúng ta có thể sử dụng <code>sed</code> để làm điều này</p>
 
-<p><code>post-merge</code> hook được chạy sau khi bạn chạy lệnh <code>git merge</code>. Bạn có thể sử dụng để phục hồi lại dữ liệu trong thư mục làm việc mà Git không thể kiểm tra ví dụ như dữ liệu liên quan đến permission.</p>
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>git cat-file commit ca82a6 | sed <span class="s1">&#39;1,/^$/d&#39;</span>
+</span><span class='line'>Add new post about githook
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Sau đây là toàn bộ đoạn code ruby để hoàn thành tác vụ trên</p>
+
+<figure class='code'><figcaption><span>update </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1">#!/usr/bin/env ruby</span>
+</span><span class='line'>
+</span><span class='line'><span class="vg">$refname</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span>
+</span><span class='line'><span class="vg">$oldrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span>
+</span><span class='line'><span class="vg">$newrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span>
+</span><span class='line'><span class="vg">$regex</span> <span class="o">=</span> <span class="sr">/\[ref: (\d+)\]/</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># enforced custom commit message format</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">check_message_format</span>
+</span><span class='line'>  <span class="n">missed_revs</span> <span class="o">=</span> <span class="sb">`git rev-list </span><span class="si">#{</span><span class="vg">$oldrev</span><span class="si">}</span><span class="sb">..</span><span class="si">#{</span><span class="vg">$newrev</span><span class="si">}</span><span class="sb">`</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">missed_revs</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">rev</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">message</span> <span class="o">=</span> <span class="sb">`git cat-file commit </span><span class="si">#{</span><span class="n">rev</span><span class="si">}</span><span class="sb"> | sed &#39;1,/^$/d&#39;`</span>
+</span><span class='line'>    <span class="k">if</span> <span class="o">!</span><span class="vg">$regex</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+</span><span class='line'>      <span class="nb">puts</span> <span class="s2">&quot;[POLICY] Your message is not formatted correctly&quot;</span>
+</span><span class='line'>      <span class="nb">exit</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="n">check_message_format</span>
+</span></code></pre></td></tr></table></div></figure>
+
 
 <h1>Kết luận</h1>
 
-<p>Bài viết giới thiệu về githooks và một số client hooks thường dùng. Hy vọng bạn tìm thấy một vài thông tin hữu ích giúp bạn tự động hoá một số công việc hàng ngày khi làm việc với git.</p>
+<p>Qua 2 bài viết về githook, bạn đã nắm được phần nào các hooks trong git, và các ứng dụng liên quan đến chúng. Giờ bạn có thể sử dụng githook để tạo nên workflow phù hợp nhất với git cho project của mình</p>
 
 <h1>Tham khảo</h1>
 
-<p><a href="http://git-scm.com/book/en/Customizing-Git-Git-Hooks">Githook documentation</a></p>
-
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-06-21T23:07:00+09:00" data-updated="true" itemprop="datePublished">Jun 21<span>st</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/html5/'>html5</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/06/21/playing-with-web-audio-api-part-2/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/21/playing-with-web-audio-api-part-2/" itemprop="url">Playing With Web Audio Api (Part 2)</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h3>Playing audio with multisource and precise timing</h3>
-
-<p>Để làm game một game hay trên html5 thì âm thanh là một thứ không thể thiếu. Đầu tiên hãy đến với một game rất nổi tiếng:
-<a href="http://chrome.angrybirds.com/">Angry bird chrome</a></p>
-
-<p>Các bạn có thể để ý khi play một màn game bất kì nào đấy thì sẽ thấy rất nhiều âm thanh với các lớp (layer) khác nhau,
-được play vào các thời điểm khác nhau một cách hợp lý. Nếu chỉ đơn thuần dùng audio tag thì việc control các layer âm
-thanh khác nhau được play vào thời điểm nào sẽ rất khó.</p>
-
-<p>Nhờ có web audio api mà việc này trở nên dễ dàng hơn rất nhiều.</p>
-
-<p>Như mình đã nói ở bài trước, web audio api xoay quanh audio context. Điều đặc biệt là <strong>một context có thể load cùng một lúc
-nhiều audio source</strong>, và <strong>play mỗi audio source tại các thời điểm khác nhau</strong>, với một interface rất dễ hiểu.
-Đầu tiên là việc load nhiều audio source vào cùng một context. Dưới đây là module <strong><em>BufferLoader</em></strong> có nhiệm vụ load các file audio từ
-nhiều source khác nhau và quản lý thông qua bufferList.</p>
-
-<figure class='code'><figcaption><span>loadfile.js </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">BufferLoader</span><span class="p">(</span><span class="nx">context</span><span class="p">,</span> <span class="nx">urlList</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">context</span> <span class="o">=</span> <span class="nx">context</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">urlList</span> <span class="o">=</span> <span class="nx">urlList</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">onload</span> <span class="o">=</span> <span class="nx">callback</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">bufferList</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">();</span>
-</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">loadCount</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="nx">BufferLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadBuffer</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">url</span><span class="p">,</span> <span class="nx">index</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="c1">// Load buffer asynchronously</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">request</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">XMLHttpRequest</span><span class="p">();</span>
-</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">open</span><span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="nx">url</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
-</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">responseType</span> <span class="o">=</span> <span class="s2">&quot;arraybuffer&quot;</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">loader</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">onload</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>    <span class="c1">// Asynchronously decode the audio file data in request.response</span>
-</span><span class='line'>    <span class="nx">loader</span><span class="p">.</span><span class="nx">context</span><span class="p">.</span><span class="nx">decodeAudioData</span><span class="p">(</span>
-</span><span class='line'>      <span class="nx">request</span><span class="p">.</span><span class="nx">response</span><span class="p">,</span>
-</span><span class='line'>      <span class="kd">function</span><span class="p">(</span><span class="nx">buffer</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">buffer</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>          <span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;error decoding file data: &#39;</span> <span class="o">+</span> <span class="nx">url</span><span class="p">);</span>
-</span><span class='line'>          <span class="k">return</span><span class="p">;</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>        <span class="nx">loader</span><span class="p">.</span><span class="nx">bufferList</span><span class="p">[</span><span class="nx">index</span><span class="p">]</span> <span class="o">=</span> <span class="nx">buffer</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="o">++</span><span class="nx">loader</span><span class="p">.</span><span class="nx">loadCount</span> <span class="o">==</span> <span class="nx">loader</span><span class="p">.</span><span class="nx">urlList</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span>
-</span><span class='line'>          <span class="nx">loader</span><span class="p">.</span><span class="nx">onload</span><span class="p">(</span><span class="nx">loader</span><span class="p">.</span><span class="nx">bufferList</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">},</span>
-</span><span class='line'>      <span class="kd">function</span><span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;decodeAudioData error&#39;</span><span class="p">,</span> <span class="nx">error</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>    <span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">onerror</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;BufferLoader: XHR error&#39;</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">send</span><span class="p">();</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="nx">BufferLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">load</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">urlList</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="o">++</span><span class="nx">i</span><span class="p">)</span>
-</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="nx">loadBuffer</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">urlList</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span> <span class="nx">i</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Giải thích đoạn code trên một chút, module BufferLoader sẽ có properties là <strong>urllist</strong> chứa một list url của các audio source,
-BufferList là một <strong>array các buffer</strong> tương ứng với từng source đã load.</p>
-
-<p>Hàm <strong>load</strong> sẽ chạy từng file trong urllist, gọi hàm <strong><em>loadBuffer</em></strong> để load từng file thông qua <strong>XHR</strong>, sau khi load được qua XHR
-thì buffer được tạo ra và cho vào <strong>bufferList</strong>
-Như vậy là chúng ta đã có thể control multiple audio source thông qua <strong><em>BufferLoader</em></strong></p>
-
-<p>Giờ đến việc play theo precise timing, như bài lần trước chúng ta đã biết để play thì chúng ta sẽ dùng hàm noteOn(t), để play từ đầu
-thì t = 0, thế nên để play tại một thời điểm bất kì thì chúng ta sẽ chỉ cần set t(với đơn vị là second và relative theo thời điêm bắt đầu
-của audio).</p>
-
-<p>Hãy thử bằng một ví dụ đơn giản :D, bạn muốn làm 1 game bắn súng, trong đấy có một khẩu súng rất cool, giả sử là m4a1 đi :D. Chắc hẳn bạn
-nào đã chơi counter strike rồi thì sẽ biết là m4a1 thì phải bắt phát một được, hoặc bắn 3 viên một, hoặc bắn liên thanh. Cơ mà bạn chỉ có
-1 file âm thanh chứa ngắn chứa một tiếng súng, vậy bạn phải làm sao? Rất đơn giản, bạn chỉ cần timing để playback lại cái source của bạn là ok
-. Hãy tham khảo đoạn code dưới đây:</p>
-
-<figure class='code'><figcaption><span>loadfile.js </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">MachineGun</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">shootRound</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">type</span><span class="p">,</span> <span class="nx">rounds</span><span class="p">,</span> <span class="nx">interval</span><span class="p">,</span> <span class="nx">random</span><span class="p">,</span> <span class="nx">random2</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="k">typeof</span> <span class="nx">random</span> <span class="o">==</span> <span class="s1">&#39;undefined&#39;</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nx">random</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">time</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">currentTime</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">rounds</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="kd">var</span> <span class="nx">source</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">makeSource</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">buffers</span><span class="p">[</span><span class="nx">type</span><span class="p">]);</span>
-</span><span class='line'>        <span class="nx">source</span><span class="p">.</span><span class="nx">playbackRate</span><span class="p">.</span><span class="nx">value</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="nx">random2</span><span class="p">;</span>
-</span><span class='line'>        <span class="nx">source</span><span class="p">.</span><span class="nx">noteOn</span><span class="p">(</span><span class="nx">time</span> <span class="o">+</span> <span class="nx">i</span> <span class="o">*</span> <span class="nx">interval</span> <span class="o">+</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="nx">random</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="nx">MachineGun</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">makeSource</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">buffer</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">source</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">createBufferSource</span><span class="p">();</span>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">compressor</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">createDynamicsCompressor</span><span class="p">();</span>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">gain</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">createGainNode</span><span class="p">();</span>
-</span><span class='line'>    <span class="nx">gain</span><span class="p">.</span><span class="nx">gain</span><span class="p">.</span><span class="nx">value</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">;</span>
-</span><span class='line'>    <span class="nx">source</span><span class="p">.</span><span class="nx">buffer</span> <span class="o">=</span> <span class="nx">buffer</span><span class="p">;</span>
-</span><span class='line'>    <span class="nx">source</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">gain</span><span class="p">);</span>
-</span><span class='line'>    <span class="nx">gain</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">compressor</span><span class="p">);</span>
-</span><span class='line'>    <span class="nx">compressor</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">destination</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">return</span> <span class="nx">source</span><span class="p">;</span>
-</span><span class='line'><span class="p">};</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Đoạn code trên có 2 hàm là <strong>shootRound</strong> và <strong>makeSource</strong>.
-Hàm <strong>makeSource</strong> nhận đầu vào là buffer , chỉnh lại âm thanh cho nhỏ đi một chút thông qua việc set gain = 0.2, sử dụng compressor Node
-để smoothing data đi một chút trước khi kết nối với destination node.
-Hàm <strong>shootRound</strong> có mục đích đúng như cái tên của nó, dùng để bắn, hay chính xác là timing buffer có sẵn theo các paramter đầu vào.
-Các parameter ở đây gồm có rounds ( là số lần lặp lại, ví dụ súng của bạn bắn 3 phát một thì rounds sẽ là 3), interval (khoảng cách giữa 2 lần bắn), 2 biến random và random2 dùng để set xem nên bắn đều đều hay bắn một cách random cho nó thật :D.</p>
-
-<p>Chỉ nói lý thuyết không hơi khó hiểu, các bạn có thể xem ví dụ trực quan ở:
-<a href="https://github.com/huydx/html5collection.git">https://github.com/huydx/html5collection.git</a>
-Ví dụ ở trên mình đặt ở html5collection / webaudioapi / guneffect.html. Lưu ý một chút là mình dùng XHR để load file nên các bạn sẽ phải sử dụng thông qua web server (đơn giản nhất là XAMPP) và xem thông qua localhost.</p>
+<p><a href="http://git-scm.com/book/en/Customizing-Git-Git-Hooks">Githook documentation</a>
+<a href="http://git-scm.com/book/en/Customizing-Git-An-Example-Git-Enforced-Policy">Customizing Git</a></p>
 
 		
 		

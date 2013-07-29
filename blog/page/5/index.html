@@ -7,7 +7,7 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jun 9th, 2013 programming, python, Comments Giới Thiệu Một Số Phương Pháp Sinh 64 Bit Unique ID Bài toán sinh unique ID Unique ID được sử dụng để &hellip;">
+	<meta name="description" content="Jun 30th, 2013 hash, java,, programming,, thread, Comments Tutorial: Duplicate File Finder (Java) Mở đầu Trong quá trình dọn dẹp máy tính cá nhân, &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -84,86 +84,151 @@
   
 
 
-<time datetime="2013-06-09T21:15:00+09:00" data-updated="true" itemprop="datePublished">Jun 9<span>th</span>, 2013</time></div>
+<time datetime="2013-06-30T09:07:00+09:00" data-updated="true" itemprop="datePublished">Jun 30<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/programming/'>programming</a>, <a class='category' href='/blog/categories/python/'>python,</a>
+	<a class='category' href='/blog/categories/hash/'>hash</a>, <a class='category' href='/blog/categories/java/'>java,</a>, <a class='category' href='/blog/categories/programming/'>programming,</a>, <a class='category' href='/blog/categories/thread/'>thread,</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/06/09/xay-dung-he-thong-sinh-64bit-unique-id/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/06/30/tutorial-duplicate-file-finder-java/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/09/xay-dung-he-thong-sinh-64bit-unique-id/" itemprop="url">Giới Thiệu Một Số Phương Pháp Sinh 64 Bit Unique ID</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/06/30/tutorial-duplicate-file-finder-java/" itemprop="url">Tutorial: Duplicate File Finder (Java)</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h1>Bài toán sinh unique ID</h1>
+		<h1>Mở đầu</h1>
 
-<p>Unique ID được sử dụng để phân biệt các đối tượng khác nhau.
-Ví dụ primary key là một unique key đặc biệt dùng để phân biệt các row trong table.</p>
+<p>Trong quá trình dọn dẹp máy tính cá nhân, tôi gặp phải vấn đề là quá nhiều file trùng lặp trong máy tính. Việc có quá nhiều file như vậy gây lãng phí ổ cứng, cộng thêm đôi lúc tôi không còn nhớ là file này đặt ở thư mục này có ý nghĩa gì nữa. Giá mà có công cụ nào đó để tìm tự động các file này cho tôi thì tốt quá nhỉ??</p>
 
-<p>Bài viết giới thiệu một số phương pháp sinh 64 bit unique ID.</p>
+<p>Không cần phải giá mà nữa, không gì bằng làm ra cho mình một công cụ như vậy. Bài viết này sẽ trình bày những bước đầu tiên tôi prototype công cụ tìm kiếm các file trùng lặp. Thông qua bài viêt này, tôi cũng sẽ giới thiệu về những chủ đề sau trong Java: tính hash, thread pooling.</p>
 
-<h1>Một số giải pháp sinh unique ID</h1>
+<h1>MD5 checksum</h1>
+
+<p>MD5 là một thuật toán mã hóa thông điệp (message-digest), về bản chất là một hàm băm (hash) xuất ra một giá trị 128-bit (16-byte). MD5 được sử dụng rất nhiều trong các ứng dụng bảo mật, và cũng được sử dụng để kiểm tra tính toàn vẹn dữ liệu (ví dụ như bạn down một file từ Internet về, thường có một MD5 key đi kèm, để bạn kiểm tra xem file bạn down có chính xác giống nguồn down không.)</p>
+
+<p>Tôi không có ý định đi sâu vào cách tính MD5, bạn có thể tham khảo trên google. Lưu ý là thuật toán MD5 vẫn có thể sinh ra cùng một giá trị hash với 2 file có nội dung khác nhau (tuy nhiên trường hợp này rất hiếm). Để chắc chắn tìm được 2 file có nội dung giống hệt nhau, ta sẽ so sánh theo thứ tự: so sánh giá trị hash, so sánh độ lớn của file, và cuối cùng là so sánh từng byte của hai file để chắc chắn chúng trùng nhau.</p>
+
+<p>Trong Java, hàm băm đã được đưa vào thư viện <em>java.security</em>, thông qua class <em>MessageDigest</em>. Bạn chỉ cần khai báo đối tượng <em>MessageDigest</em>, sau đó chọn phương thức mã hóa MD5, hoặc SHA. Việc bạn phải làm đối với từng file là chuyển file thành byte stream, và update dòng input này vào đối tượng <em>MessageDigest</em> trên, và bạn sẽ nhận được một dòng byte kết quả.</p>
+
+<p>Chi tiết về class <em>MessageDigest</em>, bạn có thể tham khảo tại đây: <a href="http://docs.oracle.com/javase/6/docs/api/java/security/MessageDigest.html">http://docs.oracle.com/javase/6/docs/api/java/security/MessageDigest.html</a></p>
+
+<figure class='code'><figcaption><span>MD5.java </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'> <span class="kd">public</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">getMD5</span><span class="o">(</span><span class="n">File</span> <span class="n">file</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">{</span>
+</span><span class='line'>      <span class="k">if</span><span class="o">(!</span><span class="n">file</span><span class="o">.</span><span class="na">exists</span><span class="o">())</span>
+</span><span class='line'>          <span class="k">return</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
+</span><span class='line'>      <span class="k">try</span>
+</span><span class='line'>      <span class="o">{</span>
+</span><span class='line'>          <span class="n">MessageDigest</span>  <span class="n">md</span> <span class="o">=</span>  <span class="n">MessageDigest</span><span class="o">.</span><span class="na">getInstance</span><span class="o">(</span><span class="s">&quot;MD5&quot;</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="c1">//read the file into a byte array</span>
+</span><span class='line'>          <span class="kt">byte</span><span class="o">[]</span> <span class="n">input</span> <span class="o">=</span> <span class="k">new</span> <span class="kt">byte</span><span class="o">[(</span><span class="kt">int</span><span class="o">)</span> <span class="n">file</span><span class="o">.</span><span class="na">length</span><span class="o">()];</span>
+</span><span class='line'>          <span class="n">InputStream</span> <span class="n">in</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FileInputStream</span><span class="o">(</span><span class="n">file</span><span class="o">);</span>
+</span><span class='line'>          <span class="n">in</span><span class="o">.</span><span class="na">read</span><span class="o">(</span><span class="n">input</span><span class="o">);</span>
+</span><span class='line'>          <span class="n">in</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
+</span><span class='line'>          
+</span><span class='line'>          <span class="c1">//update the MessageDigest and process</span>
+</span><span class='line'>          <span class="n">md</span><span class="o">.</span><span class="na">update</span><span class="o">(</span><span class="n">input</span><span class="o">);</span>
+</span><span class='line'>          <span class="kt">byte</span><span class="o">[]</span> <span class="n">fileDigest</span> <span class="o">=</span> <span class="n">md</span><span class="o">.</span><span class="na">digest</span><span class="o">();</span>
+</span><span class='line'>          
+</span><span class='line'>          <span class="k">return</span> <span class="nf">ByteArrayToString</span><span class="o">(</span><span class="n">fileDigest</span><span class="o">);</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      <span class="k">catch</span><span class="o">(</span><span class="n">IOException</span> <span class="n">e</span> <span class="o">)</span>
+</span><span class='line'>      <span class="o">{</span>
+</span><span class='line'>          <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>          <span class="k">return</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      <span class="k">catch</span><span class="o">(</span><span class="n">NoSuchAlgorithmException</span> <span class="n">e</span><span class="o">)</span>
+</span><span class='line'>      <span class="o">{</span>
+</span><span class='line'>          <span class="k">return</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="kd">private</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">ByteArrayToString</span><span class="o">(</span><span class="kt">byte</span><span class="o">[]</span> <span class="n">ba</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">{</span>
+</span><span class='line'>     <span class="n">StringBuilder</span> <span class="n">sb</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StringBuilder</span><span class="o">();</span>
+</span><span class='line'>     <span class="k">for</span><span class="o">(</span><span class="kt">byte</span> <span class="nl">b:</span> <span class="n">ba</span><span class="o">)</span>
+</span><span class='line'>        <span class="n">sb</span><span class="o">.</span><span class="na">append</span><span class="o">(</span><span class="n">String</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">&quot;%02x&quot;</span><span class="o">,</span> <span class="n">b</span><span class="o">&amp;</span><span class="mh">0xff</span><span class="o">));</span>
+</span><span class='line'>     <span class="k">return</span> <span class="n">sb</span><span class="o">.</span><span class="na">toString</span><span class="o">();</span>
+</span><span class='line'>  <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>Theading</h1>
+
+<p>Threading, hay concurrency, trong Java là một chủ đề khá phức tạp và tôi cũng chưa đủ khả năng nắm rõ được tất cả. Do vậy, trong bài viết này, tôi xin chỉ đề cập đến kĩ thuật thread pooling để phân bài toán ra thành nhiều tác vụ, chạy trên nhiều luồng khác nhau.</p>
+
+<p>Thread pool là gì? Bạn có thể hiểu nôm na là thay vì cứ gọi một luồng mới cho từng tác vụ khi cần thiết (phương pháp này gặp nhược điểm vì việc tạo thread mới sẽ gặp overhead), ta tạo sẵn một cái &#8220;bể&#8221; (pool) trong đó khởi động sẵn một loạt các luồng (thread). Các luồng này ngoi ngoi lên để đợi ta ném tác vụ vào để chúng thực hiện. Sau khi thực hiện xong, nó sẽ báo cáo lại kết quả, kết thúc tác vụ, và quay trở lại &#8220;bể&#8221; để tiếp tục ngoi ngoi chờ tác vụ mới. Chỉ khi nào đóng &#8220;bể&#8221;, thì các luồng mới bị mất đi.</p>
+
+<p>Trong bài toán tìm file trùng lặp này, tôi sẽ áp dụng thread pooling như sau:</p>
 
 <ul>
-<li>Nếu số lượng dữ liệu nhỏ, ta có thể sử dụng ID kiểu Integer và set cho nó thuộc tính auto increment.</li>
+<li>Tạo một class DuppFind, implement Runnable class (đây là class ta có thể truyền vào cho pool), đại diện cho tác vụ tìm kiếm. Với mỗi object DuppFind, nó sẽ được truyền vào các tham số gồm có:</li>
 </ul>
 
 
-<p> Ưu điểm: đơn giản, dễ làm.</p>
+<p>&#8211; Thư mục bắt đầu tìm kiếm</p>
 
-<p> Nhược điểm: số lượng ID bị giới hạn (2 ^ 32 = 4294967296) và đặc biệt cách làm này không scale. Để đảm bảo tính duy nhất, tại một thời điểm, chỉ có thể sinh ra đúng một ID mà thôi.</p>
+<p>&#8211; Map&lt;String, List<String>>: là một map chứa key là md5 và value là một List chứa đường dẫn đến các file có md5 value như vậy</p>
+
+<p>&#8211; pool, thuộc class ExcutorService.</p>
 
 <ul>
-<li>Sử dụng <a href="http://en.wikipedia.org/wiki/Uuid">UUID</a> - UUID là một giá trị 128bit, tuỳ vào thuật toán xây dựng UUID, có thể dựa trên Mac Address của máy.</li>
+<li>Mỗi tác vụ sau khi được luồng chọn để thực thi, nó sẽ làm gì? Nhiệm vụ của tác vụ là quét tất cả các file, thư mục có trong thư mục được chỉ định tìm kiếm. Nếu gặp file, nó sẽ tính MD5 cho file đó, và thêm vào Map. Nếu gặp thư mục, tác vụ này sẽ tạo ra một tác vụ DuppFind mới, chỉ định thư mục mới này cho tác vụ DuppFind mới, và ném vào pool (bây giờ bạn đã hiểu tại sao object DuppFind luôn được truyền pool vào rồi đấy:) )</li>
 </ul>
 
 
-<p> Ưu điểm: scalable, distributed. Tại một thời điểm có thể sinh ra nhiều ID khác nhau, thậm chí client cũng có thể sinh ID mà vẫn đảm bảo không bị trùng lặp với server</p>
-
-<p> Nhược điểm: sử dụng 128 bit, một số hệ thống phải lưu trữ dưới dạng char, tốn tài nguyên và index</p>
-
-<p> 64 bit unique ID trùng hoà giữa 2 cách trên, đảm bảo số lượng ID sinh ra là đủ lớn, đồng thời có thể lưu trữ dưới dạng dạng Big Int</p>
-
-<h1>Một số phương pháp sinh 64 bit unique ID</h1>
-
-<ol>
-<li>Twitter <a href="https://github.com/twitter/snowflake/">snowflake</a>
-Snowflake là thrift service sử dụng Apache ZooKeeper để liên kết các node và sinh ra 64bit unique ID.
-Mỗi node là một worker, các worker được đánh số khác nhau</li>
-</ol>
-
-
-<p> ID được sinh ra theo công thức</p>
+<p>Một vài điểm lưu ý:</p>
 
 <ul>
-<li> time - 42bit (được tính bằng epoch)</li>
-<li> worker id - 10 bit (số worker có thể lên đến 1024)</li>
-<li> sequence number - 12 bit (number được tăng liên tiếp, đảm bảo tại một thời điểm, mỗi worker có thể sinh được 4096 ID)</li>
+<li><p>Mỗi tác vụ phải có trách nhiệm đợi tất cả các tác vụ con nó tạo ra hoàn thành thì mới được chấm dứt. Tôi thực hiện điều này bằng cách sử dụng đối tượng Future được trả lại mỗi lần ném tác vụ mới vào pool. Sau đó chỉ cần gọi polling kết quả từ tác vụ con là được.</p></li>
+<li><p>Với những Collection dùng chung giữa các thread, cần phải dùng những Concurrecy Collection mà Java cung cấp. Cụ thể ở đây, tôi dùng ConcurrentHashMap cho Map và CopyOnWriteArrayList cho List.</p></li>
 </ul>
 
 
-<p> Ở phần tiếp theo, chúng ta sẽ implement thuật một service sử dụng thuật toán trên để sinh ID</p>
+<p>Dưới đây là đoạn code cho phần thread pooling:</p>
 
-<ol>
-<li><a href="http://instagram-engineering.tumblr.com/post/10853187575/sharding-ids-at-instagram">Instagram 64bt ID</a></li>
-</ol>
-
-
-<p> Instagram sinh ID dựa vào posgresql schema. Thuật toán sinh ID tương tự như snowflake, mỗi ID 64 bit bao gồm</p>
-
-<ul>
-<li> time - 41 bit (time epoch)</li>
-<li> shard_id - 13 bit (so shard id lên tới 8192)</li>
-<li> sequence number - 10 bit</li>
-</ul>
-
-
-<h1>Implement thuật toán sinh 64 bit uniqueID của snowflake bằng python</h1>
-
-<figure class='code'><figcaption><span>flake.py </span></figcaption>
+<figure class='code'><figcaption><span>DuppFind.java </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -224,87 +289,91 @@ Mỗi node là một worker, các worker được đánh số khác nhau</li>
 <span class='line-number'>58</span>
 <span class='line-number'>59</span>
 <span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-<span class='line-number'>64</span>
-<span class='line-number'>65</span>
-<span class='line-number'>66</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="kn">import</span> <span class="nn">simplejson</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">sys</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">tornado.httpserver</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">tornado.ioloop</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">tornado.options</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">tornado.web</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">DuppFind</span> <span class="kd">implements</span> <span class="n">Runnable</span><span class="o">{</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">File</span> <span class="n">directory</span><span class="o">;</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">md5FileMap</span><span class="o">;</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">ExecutorService</span> <span class="n">pool</span><span class="o">;</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="kd">public</span> <span class="nf">DuppFind</span><span class="o">(</span><span class="n">File</span> <span class="n">directory</span><span class="o">,</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">md5FileMap</span><span class="o">,</span> <span class="n">ExecutorService</span> <span class="n">pool</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">{</span>
+</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">directory</span> <span class="o">=</span> <span class="n">directory</span><span class="o">;</span>
+</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">md5FileMap</span> <span class="o">=</span> <span class="n">md5FileMap</span><span class="o">;</span>
+</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">pool</span> <span class="o">=</span> <span class="n">pool</span><span class="o">;</span>
+</span><span class='line'>  <span class="o">}</span>    
 </span><span class='line'>
-</span><span class='line'><span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
-</span><span class='line'><span class="kn">from</span> <span class="nn">tornado.options</span> <span class="kn">import</span> <span class="n">define</span><span class="p">,</span> <span class="n">options</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">define</span><span class="p">(</span><span class="s">&quot;port&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">8888</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;run on the given port&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-</span><span class='line'><span class="n">define</span><span class="p">(</span><span class="s">&quot;worker_id&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;globally unique worker_id between 0 and 1023&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">IDHandler</span><span class="p">(</span><span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">RequestHandler</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">max_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="p">()</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">sequence</span> <span class="o">=</span> <span class="mi">0</span>
-</span><span class='line'>    <span class="n">worker_id</span> <span class="o">=</span> <span class="bp">False</span>
-</span><span class='line'>    <span class="n">epoch</span> <span class="o">=</span> <span class="mi">137079712900000</span> <span class="c"># 2013-06-09</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span class='line'>        <span class="n">curr_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="p">()</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">if</span> <span class="n">curr_time</span> <span class="o">&lt;</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">max_time</span><span class="p">:</span>
-</span><span class='line'>            <span class="c"># stop handling requests til we&#39;ve caught back up</span>
-</span><span class='line'>            <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="s">&#39;Clock went backwards! </span><span class="si">%d</span><span class="s"> &lt; </span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">curr_time</span><span class="p">,</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">max_time</span><span class="p">))</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">if</span> <span class="n">curr_time</span> <span class="o">&gt;</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">max_time</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span> <span class="o">=</span> <span class="mi">0</span>
-</span><span class='line'>            <span class="n">IDHandler</span><span class="o">.</span><span class="n">max_time</span> <span class="o">=</span> <span class="n">curr_time</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span> <span class="o">+=</span> <span class="mi">1</span>
-</span><span class='line'>        <span class="k">if</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span> <span class="o">&gt;</span> <span class="mi">4095</span><span class="p">:</span>
-</span><span class='line'>            <span class="c"># Sequence overflow, bail out</span>
-</span><span class='line'>            <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="s">&#39;Sequence Overflow: </span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="n">generated_id</span> <span class="o">=</span> <span class="p">((</span><span class="n">curr_time</span> <span class="o">-</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">epoch</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">22</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">IDHandler</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">&lt;&lt;</span> <span class="mi">12</span><span class="p">)</span> <span class="o">+</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">set_header</span><span class="p">(</span><span class="s">&quot;Content-Type&quot;</span><span class="p">,</span> <span class="s">&quot;text/plain&quot;</span><span class="p">)</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">generated_id</span><span class="p">))</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span> <span class="c"># avoid ETag, etc generation</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
-</span><span class='line'>    <span class="n">tornado</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">parse_command_line</span><span class="p">()</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">if</span> <span class="s">&#39;worker_id&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
-</span><span class='line'>        <span class="k">print</span> <span class="s">&#39;missing --worker_id argument, see </span><span class="si">%s</span><span class="s"> --help&#39;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-</span><span class='line'>        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">options</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">&lt;</span> <span class="mi">1024</span><span class="p">:</span>
-</span><span class='line'>        <span class="k">print</span> <span class="s">&#39;invalid worker id, must be between 0 and 1023&#39;</span>
-</span><span class='line'>        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">IDHandler</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">worker_id</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">application</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">Application</span><span class="p">([</span>
-</span><span class='line'>        <span class="p">(</span><span class="s">r&quot;/&quot;</span><span class="p">,</span> <span class="n">IDHandler</span><span class="p">),</span>
-</span><span class='line'>    <span class="p">],</span> <span class="n">static_path</span><span class="o">=</span><span class="s">&quot;./static&quot;</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">http_server</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">httpserver</span><span class="o">.</span><span class="n">HTTPServer</span><span class="p">(</span><span class="n">application</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">http_server</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">port</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">tornado</span><span class="o">.</span><span class="n">ioloop</span><span class="o">.</span><span class="n">IOLoop</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
-</span><span class='line'>    <span class="n">main</span><span class="p">()</span>
+</span><span class='line'>  <span class="nd">@Override</span>
+</span><span class='line'>  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span> <span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>      <span class="k">try</span>
+</span><span class='line'>      <span class="o">{</span>
+</span><span class='line'>          <span class="n">File</span><span class="o">[]</span> <span class="n">files</span> <span class="o">=</span> <span class="n">directory</span><span class="o">.</span><span class="na">listFiles</span><span class="o">();</span>
+</span><span class='line'>          <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">Future</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">results</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">Future</span><span class="o">&lt;?&gt;&gt;();</span>
+</span><span class='line'>          <span class="k">for</span><span class="o">(</span><span class="n">File</span> <span class="n">file</span> <span class="o">:</span> <span class="n">files</span><span class="o">)</span>
+</span><span class='line'>          <span class="o">{</span>
+</span><span class='line'>              <span class="k">if</span><span class="o">(</span><span class="n">file</span><span class="o">.</span><span class="na">isDirectory</span><span class="o">())</span>
+</span><span class='line'>              <span class="o">{</span>
+</span><span class='line'>                  <span class="c1">//System.out.println(&quot;Dir: &quot; + file.getAbsolutePath());</span>
+</span><span class='line'>                  <span class="n">DuppFind</span> <span class="n">df</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DuppFind</span><span class="o">(</span><span class="n">file</span><span class="o">,</span> <span class="n">md5FileMap</span><span class="o">,</span> <span class="n">pool</span><span class="o">);</span>
+</span><span class='line'>                  <span class="n">Future</span><span class="o">&lt;?&gt;</span> <span class="n">result</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">df</span><span class="o">);</span>
+</span><span class='line'>                  <span class="n">results</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">result</span><span class="o">);</span>
+</span><span class='line'>              <span class="o">}</span>
+</span><span class='line'>              <span class="k">else</span> <span class="nf">if</span><span class="o">(</span><span class="n">file</span><span class="o">.</span><span class="na">isFile</span><span class="o">())</span>
+</span><span class='line'>              <span class="o">{</span>
+</span><span class='line'>                  <span class="c1">//calculate md5</span>
+</span><span class='line'>                  <span class="n">String</span> <span class="n">md5</span> <span class="o">=</span> <span class="n">MD5Utils</span><span class="o">.</span><span class="na">getMD5</span><span class="o">(</span><span class="n">file</span><span class="o">);</span>
+</span><span class='line'>                  <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">listFile</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CopyOnWriteArrayList</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;();</span>
+</span><span class='line'>                  <span class="k">if</span><span class="o">(</span><span class="n">md5FileMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">md5</span><span class="o">)</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+</span><span class='line'>                  <span class="o">{</span>
+</span><span class='line'>                      <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Duplicate md5: &quot;</span> <span class="o">+</span> <span class="n">md5</span> <span class="o">+</span> <span class="s">&quot;, size now: &quot;</span> <span class="o">+</span> <span class="n">md5FileMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">md5</span><span class="o">).</span><span class="na">size</span><span class="o">());</span>
+</span><span class='line'>                      <span class="n">listFile</span><span class="o">.</span><span class="na">addAll</span><span class="o">(</span><span class="n">md5FileMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">md5</span><span class="o">));</span>
+</span><span class='line'>                  <span class="o">}</span>
+</span><span class='line'>                  <span class="n">listFile</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">file</span><span class="o">.</span><span class="na">getAbsolutePath</span><span class="o">());</span>
+</span><span class='line'>                  <span class="n">md5FileMap</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="n">md5</span><span class="o">);</span>
+</span><span class='line'>                  <span class="n">md5FileMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">md5</span><span class="o">,</span> <span class="n">listFile</span><span class="o">);</span>
+</span><span class='line'>                  <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Add: File&quot;</span> <span class="o">+</span> <span class="n">file</span><span class="o">.</span><span class="na">getAbsolutePath</span><span class="o">()</span> <span class="o">+</span> <span class="s">&quot;, MD5: &quot;</span> <span class="o">+</span> <span class="n">md5</span><span class="o">);</span>
+</span><span class='line'>              <span class="o">}</span>
+</span><span class='line'>          <span class="o">}</span>
+</span><span class='line'>          
+</span><span class='line'>          <span class="c1">//wait until all sub-tasks complete</span>
+</span><span class='line'>          <span class="k">for</span><span class="o">(</span><span class="n">Future</span><span class="o">&lt;?&gt;</span> <span class="nl">result:</span> <span class="n">results</span><span class="o">)</span>
+</span><span class='line'>          <span class="o">{</span>
+</span><span class='line'>              <span class="n">result</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+</span><span class='line'>          <span class="o">}</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      <span class="k">catch</span><span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span>
+</span><span class='line'>      <span class="o">{</span>
+</span><span class='line'>          <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      <span class="k">catch</span><span class="o">(</span><span class="n">ExecutionException</span> <span class="n">e</span><span class="o">)</span>
+</span><span class='line'>      <span class="o">{</span>
+</span><span class='line'>          <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Đoạn code trên được trích từ repository <a href="https://github.com/formspring/flake/blob/master/flake.py">flake</a>
-Sử dụng <a href="http://www.tornadoweb.org/en/stable/">tornado</a> - Python web framework and asynchronous networking library, ở một thời điểm (độ chính xác tới millisecond), một node có thể handle được nhiều request, mỗi một request sẽ được trả về một số là ID được sinh ra. Số lượng ID được sinh ra bởi một node, tại một thời điểm bị giới hạn bởi 4096, nếu lớn hơn, request sẽ bị báo lỗi</p>
+<p>Toàn bộ code đã ở trên github: <a href="https://github.com/viethnguyen/DuppFind">https://github.com/viethnguyen/DuppFind</a></p>
 
-<h1>Kết luận</h1>
+<h1>Đánh giá</h1>
 
-<p>Bài viết trình bày một số phương pháp sinh ID 64 bit, kèm code minh hoạ. Tuỳ vào hệ thống của bạn, bạn có thể sử dụng ID 64 bit cho những mục đích khác nhau. Ví dụ như đánh số tất cả các đối tượng trong database (giống như FB làm với graph API), hoặc sử dụng 64 bit ID như một bước đệm và áp dụng thêm một bước mã hoá để sinh ID cho một loại đối tượng (giống như youtube đánh số các video).</p>
+<ul>
+<li><p>Đoạn code trên chạy chính xác với những thư mục nhỏ, không có quá nhiều thư mục con, cháu&#8230; Tuy nhiên, với những thư mục chứa nhiều thư mục con, vì có quá nhiều tác vụ vào thread pool, nên hay xảy ra exception out of memory - heap.</p></li>
+<li><p>Mới chỉ kiểm tra xem 2 file có MD5 trùng nhau không. Nếu trùng nhau rồi, ta cần kiểm tra thêm độ dài 2 file có trùng nhau không, rồi nếu trùng tiếp thì phải check từng byte để chắc chắn nhất có thể (xóa đi khỏi hối hận :P)</p></li>
+<li><p>Ở trên mới hiển thị ra những file nào trùng lặp. Cần cho phép user xóa file trùng lặp trong chương trình.</p></li>
+<li><p>Cần thiết kế GUI!</p></li>
+</ul>
+
+
+<p>Bạn thấy đó, còn khá nhiều vấn đề cần giải quyết để có một tool hoàn chỉnh. Những vấn đề này sẽ được cải tiến và được report lại trong một ngày không xa :) Nếu bạn cảm thấy hứng thú, rất welcome contribute :)</p>
+
+<h1>Tham khảo</h1>
+
+<ol>
+<li>Core Java</li>
+<li>Java Concurrency in Practice</li>
+<li>Effective Java</li>
+</ol>
+
 
 		
 		
@@ -327,68 +396,122 @@ Sử dụng <a href="http://www.tornadoweb.org/en/stable/">tornado</a> - Python 
   
 
 
-<time datetime="2013-06-08T23:46:00+09:00" data-updated="true" itemprop="datePublished">Jun 8<span>th</span>, 2013</time></div>
+<time datetime="2013-06-25T21:07:00+09:00" data-updated="true" itemprop="datePublished">Jun 25<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/html5/'>html5</a>, <a class='category' href='/blog/categories/introduction/'>introduction</a>
+	<a class='category' href='/blog/categories/git/'>git</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/06/08/playing-with-web-audio-api/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/06/25/using-githook-to-automatically-test-your-app/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/08/playing-with-web-audio-api/" itemprop="url">Playing With Web Audio Api</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/06/25/using-githook-to-automatically-test-your-app/" itemprop="url">Giới Thiệu về Githook và Client Side Hook</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h3>Web audio api là gì?</h3>
+		<h1>Githook là gì</h1>
 
-<p>Web audio api là là javascript API dành cho xử lý (processing) và tái tạo(synthesizing) âm thanh. Mới được ra đời vào thời gian gần đây (first draft vào 2011/05/12), mặc dù chưa được sử dụng nhiều ( do phần nhiều là chưa được support rộng rãi, tình trạng support các bạn có thể xem ở <a href="http://caniuse.com/audio-api">đây</a> ), nhưng cá nhân mình thấy web audio api có tiềm năng ứng dụng không nhỏ, nằm ở các lý do dưới đây:</p>
+<p>Giống như các hệ thống quản lý version khác, Git cung cấp một cách để gọi những custom script khi một hành động đặc biệt được thực hiện trong git. Có 2 nhóm hook trong git: hook cho client, và hook cho server. Client hook là dành cho những hoạt động xảy ra ở client như commit và merge. Server hook là dành cho những hoạt động xảy ra ở Git server như nhận được một commit push lên từ client. Bài viết này giới thiệu một số cách sử dụng hook cả client side hook</p>
 
-<ul>
-<li>Web audio cung cấp api ở tầng cao, giúp cho việc xử lý âm thanh trở nên dễ dàng hơn rất nhiều, đặc biệt bạn không phải quan tâm nhiều đến những công đoạn như xử lý binary data, phân tích FFT, encode/decode, input/output.</li>
-<li>Engine để xử lý âm thanh của web audio api chạy trên một thread riêng biệt, chính vì thế một số xử lý nặng như convolve, filter sẽ không làm ảnh hưởng đến GUI thread, chính vì vậy bạn sẽ đỡ phải quan tâm nhiều đến việc phải xử lý thế nào cho nhẹ, hay cho không block UI.</li>
-<li>Việc xử lý âm thanh (đặc biệt là play vào thời điểm nào- timing control) là rất quan trọng với việc làm game. Xu hướng làm rich game trên browser ngày càng phát triển, khiến cho việc sử dụng và phát triên web audio api là không thể tránh khỏi.</li>
-</ul>
+<h1>Install hook</h1>
+
+<p>Các hooks được lưu trong thư mục <code>hooks</code> của <code>.git</code> folder. Trong phần lớn các project, nó là <code>.git/hooks</code>. Ở chế độ mặc định, Git cung cấp một loạt các examples cho các hooks, các ví dụ này đưa ra khá nhiều chỉ dẫn về inputs của mỗi hook. Tất cả các examples được viết bằng shell script, với một vài mã lệnh Perl, tuy nhiên bạn có thể viết các script này bằng bất cứ ngôn ngữ nào (ví dụ như Python, Ruby). Tất cả các examples đều có tên kết thúc bằng <code>.sample</code>, bạn cần đổi tên các script trước khi chạy</p>
+
+<p>Để enable các hook script, đặt một file trong thư mục <code>hooks</code> với tên tương ứng với tên của hook, và set quyền cho script đó là executable.</p>
+
+<h1>Client side hooks</h1>
+
+<p>Có rất nhiều loại client side hooks, chúng ta chia chúng theo work flow</p>
+
+<h2>Committing-Workflow Hooks</h2>
+
+<p><code>pre-commit</code> hook được gọi đầu tiên, trước khi bạn gõ nội dung của một commit message. Hook này được sử dụng để kiểm tra nội dụng các files được commit. Bạn có thể viết script để kiểm tra coding convetion, hoặc để run test, để chạy static analysis trước khi commit. Nếu script trả về kết quả khác 0, commit sẽ bị loại bỏ. Tuy nhiên bạn có thể bỏ qua chạy hook này khi commit với lệnh <code>git commit --no-verify</code></p>
+
+<p><code>prepare-commit-msg</code> là hook được chạy trước khi trình soạn thảo commit message được gọi đế và sau khi message mặc định được tạo ra. Hook này giúp bạn thay đổi default message trước khi commit author thấy nó. Hook này về cơ bản là ít khi hữu dụng, chỉ trừ khi các commit message được sinh ra tự động.</p>
+
+<p><code>commit-msg</code> hook nhận duy nhất một input là đường dẫn của file chứa commit message. Nếu script này trả về kết quả khác 0, commit sẽ bị loại bỏ. Hook này có tác dụng giúp bạn chuẩn hoá mesage trước khi commit</p>
+
+<p>Sau khi toàn bộ quá trình commit được hoàn tất, <code>post-commit</code> hook sẽ chạy. hook này không nhận tham số đầu vào, nhưng bạn có thể dễ dàng lầy last commit bằng cách gọi <code>git log -1 HEAD</code>. Thông thường, hook này dụng để notification.</p>
+
+<p>Committing-workflow client side scripts được sử dụng và setup bới chính các developer tại máy local của họ. Các developers phải tự maintain chúng, tuy nhiên họ có thể thay đổi chúng bất cứ lúc nào</p>
+
+<h2>Email workflow hooks</h2>
+
+<p>Bạn có thể set up 3 client side hooks cho email workflow. Tất cả các hooks này đều liên quan đến <code>git am</code> command. Nếu bạn không sử dụng câu lệnh này trong workflow của bạn, bạn có thể bỏ qua phần này. Nếu bạn nhận patch qua email được chuẩn bị bới lệnh <code>git format-patch</code>, thì có thể những hook này sẽ có ích với bạn</p>
+
+<p>Hook đầu tiên là <code>applypatch-msg</code>. Nó nhận một tham số: tên của file tạm chứ nội dụng của commit message. Git sẽ bỏ qua patch nếu hook này trả về giá trị khác 0. Bạn có thể sử dụng hook này để đảm bảo commit message là đúng chuẩn.</p>
+
+<p>Hook tiếp theo khi apply patches thông qua <code>git am</code> là <code>pre-applypatch</code>. Hook không nhận giá trị đầu vào và được chay sau khi patch được applied. Vì thế bạn có thể sử dụng hook này để kiểm tra toàn bộ mã nguồn trước khi make commit. VD: chạy test, chạy static analysis, kiểm tra style (hook này tương đối giống <code>pre-commit</code> trong phần trước)</p>
+
+<p>Hook cuối cùng được chạy trong process của <code>git am</code> là <code>post-applypatch</code>. Bạn có thể sử dụng nó để notify cho một group hoặc một author về patch này.</p>
+
+<h2>Một vài client hooks khác</h2>
+
+<p><code>pre-rebase</code> hooks run trước khi bạn rebase bất cứ commit nào, và sẽ cả process lại nếu hook trả về giái trị khác 0.</p>
+
+<p><code>post-checkout</code> được gọi sau khi bạn chạy lệnh <code>git checkout</code> thành công. Bạn có thể sử dụng nó để setup environment, hoặc tự động sinh document sau khi checkout</p>
+
+<p><code>post-merge</code> hook được chạy sau khi bạn chạy lệnh <code>git merge</code>. Bạn có thể sử dụng để phục hồi lại dữ liệu trong thư mục làm việc mà Git không thể kiểm tra ví dụ như dữ liệu liên quan đến permission.</p>
+
+<h1>Kết luận</h1>
+
+<p>Bài viết giới thiệu về githooks và một số client hooks thường dùng. Hy vọng bạn tìm thấy một vài thông tin hữu ích giúp bạn tự động hoá một số công việc hàng ngày khi làm việc với git.</p>
+
+<h1>Tham khảo</h1>
+
+<p><a href="http://git-scm.com/book/en/Customizing-Git-Git-Hooks">Githook documentation</a></p>
+
+		
+		
+	</div>
+
+</article>
 
 
-<p>Để tìm hiểu và sử dụng web audio api thì bài viết này mình sẽ chia làm 2 ý, đầu tiên là kiến thức cơ bản về xử lý âm thanh, và thứ hai là web audio cung cấp những gì, và sử dụng nó ra sao.</p>
-
-<h3>Cơ bản về xử lý âm thanh</h3>
-
-<p>Bài viết này sẽ không đi quá sâu về xử lý âm thanh, mình sẽ đi qua một số khái niệm cơ bản để giúp cho việc sử dụng web audio api dễ dàng hơn. Đầu tiên các bạn nên tham khảo trước ở một số tài liệu cơ bản về digital audio processing. Mình có google thì nó ra một cái tài liệu khá dễ hiểu ở <a href="http://smc.dei.unipd.it/education/algo4smc_ch1.pdf">đây</a>. Sau khi đọc tài liệu trên thì mình mong muốn các bạn nắm rõ được các khái niệm</p>
-
-<ol>
-<li><strong>Khái niệm âm thanh là gì và được biểu diễn thế nào trên máy tính?</strong> Âm thanh là các dao động cơ học  được truyền trong không khí, va đập vào màng nhĩ , làm rung màng nhĩ và kích thích não người. Trên máy tính ở dạng raw thì âm thanh thường được biểu diễn dưới dạng đồ thị dạng time-series data, tức là có 1 trục là thời gian , và một trục là độ lớn (amplitude)</li>
-</ol>
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
 
 
-<p><img src="/images/webaudioapi/sound1.png"></p>
-
-<p>Để biểu diễn được trên máy tính thì sẽ cần làm 2 việc, 1 là sampling (tức là một khoảng thời gian bao nhiêu lại lấy dữ liệu một lần) và 2 là quantitize , tức là với sóng có biên độ là X thì bạn phải biểu diễn X dưới dạng bit để máy tính có thể hiểu được. Như hình vẽ dưới đây thì data được sampling với thời gian là 0.1s và được sử dụng 8bit để quantitize.</p>
-
-<p><img src="/images/webaudioapi/sound2.png"></p>
-
-<ol>
-<li><strong>Khái niệm về tần số (frequency) và biến đổi Fourier(Fourier transform)</strong>. Khái niệm về tần số các bạn có thể tìm hiểu thông qua google. Về Fourier transform, hay viết tắt là FT, thì FT giúp biên dữ liệu time series data nói chung ( ở đây là sound wave ) từ dạng ban đầu là trục độ lớn(x)/trục thời gian(y) trở thành trục độ lớn(x)/trục tần số(y). Việc biến đổi này có ích ở việc là giúp phân tích thành phần của sound wave, giúp cho ta biết trong data đó có những sóng có tần số thế nào, độ lớn ra sao. Điều này sẽ giúp cho việc nhận diện/ biểu diễn sound wave được thực hiện một cách dễ dàng hơn rất nhiều.</li>
-</ol>
 
 
-<p><img src="/images/webaudioapi/ft.gif"></p>
 
-<p>Nắm được các khái niệm trên một cách rõ ràng, chúng ta đã có thể sử dụng web audio api để làm một số việc từ đơn giản đến tương đối phức tạp rồi :).</p>
 
-<h3>Cấu trúc cơ bản của web audio api</h3>
 
-<p>Web audio api có thiết kế dưới dạng <strong>graph</strong>, được cấu thành bởi các <strong>node</strong> ( kiến trúc này còn được gọi là <strong>modular routing</strong> ). Mỗi node có thể có nhiều inputs và/hoặc nhiều outputs.</p>
 
-<p><img src="/images/webaudioapi/graph.png"></p>
+  
 
-<p>Tại sao lại là dưới dạng graph? Vì audio processing thường qua nhiều công đoạn, mỗi công đoạn xử lý lại có thể có nhiều output ( giống như hình trên ), do đó mà việc biểu diễn dưới dạng graph và connection giữa các node giúp cho việc tách các xử lý ra/ tổng hợp kết quả xử lý lại được thực hiện một cách dễ dàng và clean hơn.</p>
 
-<h3>Load audio file một cách đơn giản</h3>
+<time datetime="2013-06-21T23:07:00+09:00" data-updated="true" itemprop="datePublished">Jun 21<span>st</span>, 2013</time></div>
+		<div class="tags">
 
-<p>Chúng ta sẽ bắt đầu sử dụng web audio api bằng cách load và play một file audio đơn giản:</p>
+
+	<a class='category' href='/blog/categories/html5/'>html5</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/06/21/playing-with-web-audio-api-part-2/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/06/21/playing-with-web-audio-api-part-2/" itemprop="url">Playing With Web Audio Api (Part 2)</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h3>Playing audio with multisource and precise timing</h3>
+
+<p>Để làm game một game hay trên html5 thì âm thanh là một thứ không thể thiếu. Đầu tiên hãy đến với một game rất nổi tiếng:
+<a href="http://chrome.angrybirds.com/">Angry bird chrome</a></p>
+
+<p>Các bạn có thể để ý khi play một màn game bất kì nào đấy thì sẽ thấy rất nhiều âm thanh với các lớp (layer) khác nhau,
+được play vào các thời điểm khác nhau một cách hợp lý. Nếu chỉ đơn thuần dùng audio tag thì việc control các layer âm
+thanh khác nhau được play vào thời điểm nào sẽ rất khó.</p>
+
+<p>Nhờ có web audio api mà việc này trở nên dễ dàng hơn rất nhiều.</p>
+
+<p>Như mình đã nói ở bài trước, web audio api xoay quanh audio context. Điều đặc biệt là <strong>một context có thể load cùng một lúc
+nhiều audio source</strong>, và <strong>play mỗi audio source tại các thời điểm khác nhau</strong>, với một interface rất dễ hiểu.
+Đầu tiên là việc load nhiều audio source vào cùng một context. Dưới đây là module <strong><em>BufferLoader</em></strong> có nhiệm vụ load các file audio từ
+nhiều source khác nhau và quản lý thông qua bufferList.</p>
 
 <figure class='code'><figcaption><span>loadfile.js </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
@@ -412,210 +535,155 @@ Sử dụng <a href="http://www.tornadoweb.org/en/stable/">tornado</a> - Python 
 <span class='line-number'>19</span>
 <span class='line-number'>20</span>
 <span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">context</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">webkitAudioContext</span><span class="p">();</span>
-</span><span class='line'><span class="nx">sourceNode</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">createBufferSource</span><span class="p">();</span>
-</span><span class='line'><span class="nx">sourceNode</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">destination</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">function</span> <span class="nx">loadSound</span><span class="p">(</span><span class="nx">source</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">req</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">XMLHttpRequest</span><span class="p">();</span>
-</span><span class='line'>    <span class="nx">req</span><span class="p">.</span><span class="nx">open</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="nx">source</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
-</span><span class='line'>    <span class="nx">req</span><span class="p">.</span><span class="nx">responseType</span> <span class="o">=</span> <span class="s1">&#39;arraybuffer&#39;</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nx">req</span><span class="p">.</span><span class="nx">onload</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nx">context</span><span class="p">.</span><span class="nx">decodeAudioData</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">response</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">buffer</span><span class="p">){</span>
-</span><span class='line'>        <span class="nx">playSound</span><span class="p">(</span><span class="nx">buffer</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">},</span> <span class="kd">function</span><span class="p">(){});</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="nx">req</span><span class="p">.</span><span class="nx">send</span><span class="p">();</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">BufferLoader</span><span class="p">(</span><span class="nx">context</span><span class="p">,</span> <span class="nx">urlList</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">context</span> <span class="o">=</span> <span class="nx">context</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">urlList</span> <span class="o">=</span> <span class="nx">urlList</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">onload</span> <span class="o">=</span> <span class="nx">callback</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">bufferList</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">();</span>
+</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">loadCount</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
 </span><span class='line'><span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'><span class="kd">function</span> <span class="nx">playSound</span><span class="p">(</span> <span class="nx">buffer</span> <span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="nx">sourceNode</span><span class="p">.</span><span class="nx">buffer</span> <span class="o">=</span> <span class="nx">buffer</span><span class="p">;</span>
-</span><span class='line'>  <span class="nx">sourceNode</span><span class="p">.</span><span class="nx">noteOn</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+</span><span class='line'><span class="nx">BufferLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadBuffer</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">url</span><span class="p">,</span> <span class="nx">index</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">// Load buffer asynchronously</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">request</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">XMLHttpRequest</span><span class="p">();</span>
+</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">open</span><span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="nx">url</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">responseType</span> <span class="o">=</span> <span class="s2">&quot;arraybuffer&quot;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">loader</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">onload</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Asynchronously decode the audio file data in request.response</span>
+</span><span class='line'>    <span class="nx">loader</span><span class="p">.</span><span class="nx">context</span><span class="p">.</span><span class="nx">decodeAudioData</span><span class="p">(</span>
+</span><span class='line'>      <span class="nx">request</span><span class="p">.</span><span class="nx">response</span><span class="p">,</span>
+</span><span class='line'>      <span class="kd">function</span><span class="p">(</span><span class="nx">buffer</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">buffer</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;error decoding file data: &#39;</span> <span class="o">+</span> <span class="nx">url</span><span class="p">);</span>
+</span><span class='line'>          <span class="k">return</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>        <span class="nx">loader</span><span class="p">.</span><span class="nx">bufferList</span><span class="p">[</span><span class="nx">index</span><span class="p">]</span> <span class="o">=</span> <span class="nx">buffer</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="o">++</span><span class="nx">loader</span><span class="p">.</span><span class="nx">loadCount</span> <span class="o">==</span> <span class="nx">loader</span><span class="p">.</span><span class="nx">urlList</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span>
+</span><span class='line'>          <span class="nx">loader</span><span class="p">.</span><span class="nx">onload</span><span class="p">(</span><span class="nx">loader</span><span class="p">.</span><span class="nx">bufferList</span><span class="p">);</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="kd">function</span><span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;decodeAudioData error&#39;</span><span class="p">,</span> <span class="nx">error</span><span class="p">);</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>    <span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">onerror</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;BufferLoader: XHR error&#39;</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">send</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">BufferLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">load</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">urlList</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="o">++</span><span class="nx">i</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="nx">loadBuffer</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">urlList</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span> <span class="nx">i</span><span class="p">);</span>
 </span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Các bạn sẽ thấy để thao tác với web audio api thì đầu tiên các bạn sẽ phải tạo ra một object gọi là AudioContext ( trên chrome sẽ gọi là WebkitAudioContext ). Toàn bộ các thao tác như tạo node mới sẽ quay quanh object này</p>
+<p>Giải thích đoạn code trên một chút, module BufferLoader sẽ có properties là <strong>urllist</strong> chứa một list url của các audio source,
+BufferList là một <strong>array các buffer</strong> tương ứng với từng source đã load.</p>
 
-<p>Sau khi đã có context rồi thì các bước tiếp theo sẽ là :</p>
+<p>Hàm <strong>load</strong> sẽ chạy từng file trong urllist, gọi hàm <strong><em>loadBuffer</em></strong> để load từng file thông qua <strong>XHR</strong>, sau khi load được qua XHR
+thì buffer được tạo ra và cho vào <strong>bufferList</strong>
+Như vậy là chúng ta đã có thể control multiple audio source thông qua <strong><em>BufferLoader</em></strong></p>
 
-<ol>
-<li>Tạo ra sourceNode (sourceNode còn là Node dùng để input data)</li>
-<li>Tạo ra destinationNode (là Node dùng để output data)</li>
-<li>Load data thông qua XHR</li>
-<li>play thông qua hàm noteOn của sourceNode (noteOn(0) tức là play tại thời điểm 0 là thời điểm bắt đầu của audio data)</li>
-</ol>
+<p>Giờ đến việc play theo precise timing, như bài lần trước chúng ta đã biết để play thì chúng ta sẽ dùng hàm noteOn(t), để play từ đầu
+thì t = 0, thế nên để play tại một thời điểm bất kì thì chúng ta sẽ chỉ cần set t(với đơn vị là second và relative theo thời điêm bắt đầu
+của audio).</p>
 
+<p>Hãy thử bằng một ví dụ đơn giản :D, bạn muốn làm 1 game bắn súng, trong đấy có một khẩu súng rất cool, giả sử là m4a1 đi :D. Chắc hẳn bạn
+nào đã chơi counter strike rồi thì sẽ biết là m4a1 thì phải bắt phát một được, hoặc bắn 3 viên một, hoặc bắn liên thanh. Cơ mà bạn chỉ có
+1 file âm thanh chứa ngắn chứa một tiếng súng, vậy bạn phải làm sao? Rất đơn giản, bạn chỉ cần timing để playback lại cái source của bạn là ok
+. Hãy tham khảo đoạn code dưới đây:</p>
 
-<p>Các bạn có thể thấy ở trên một graph đơn giản nhất đã được tạo ra với 2 node là Source và Destination được connect với nhau.</p>
-
-<h3>Kết luận</h3>
-
-<p>Như vậy các bạn đã có hình dung cơ bản về web audio api.</p>
-
-<p>Ở bài viết tiếp theo mình sẽ nói về các node xử lý cơ bản như AnalyzerNode, ConvolverNode, OscillatorNode và các ứng dụng của chúng.</p>
-
-<p>Các bạn có thể xem bài trình bày của mình tại osaka htmlday (bài viết bằng tiếng Nhật :D):</p>
-
-<script async class="speakerdeck-embed" data-id="8575d620b2e30130eaf25236bfdba4c0" data-ratio="1.33333333333333" src="//speakerdeck.com/assets/embed.js"></script>
-
-
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-06-03T22:15:00+09:00" data-updated="true" itemprop="datePublished">Jun 3<span>rd</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/unix/'>unix</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/06/03/unix-tools-2/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/03/unix-tools-2/" itemprop="url">Unix Tools Phần 2</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h3>Giới thiệu</h3>
-
-<p>Hàng ngày chúng ta gặp phải rất nhiều bài toán thống kê khác nhau. Bài toán thống kê số liệu cũng có thể xuất hiện dưới nhiều dạng khác nhau như: bằng việc kiểm apache acccess log thống kê xem có tổng số truy cập vào 1 API trong 1 phút, hay 1 API cụ thể được truy cập từ những địa điểm nào và cụ thể là bao nhiều lần. Xử lý số liệu là một bài toán khó, và việc bóc tách dữ liệu nhiều khi cũng không hể đơn giản. Tuy vậy, bằng việc sử dụng thành thạo các công cụ command line của linux, nhiều khi ta có thể giải quyết những bài toán trên một cách nhanh chóng chỉ bằng 1, 2 dòng lệnh. Bài viết này sẽ đưa ra 1 bài toán cụ thể và cách sử dụng các unix command line tool để giải quyết các bài toán đó.</p>
-
-<h3>Khái lược các tool dùng trong bài</h3>
-
-<ul>
-<li>Grep: Cho phép tìm một chuỗi bất kỳ trong một file. Chuỗi có thể được mô tả bằng regular expression.</li>
-<li>uniq: công cụ giúp loại bỏ</li>
-<li>sort: sắp xếp các record trong 1 file</li>
-<li>wc: đếm từ và dòng trong 1 file</li>
-<li>awk: công cụ để in các cột dữ liệu, cũng như xử lý dữ liệu trên từng cột</li>
-</ul>
+<figure class='code'><figcaption><span>loadfile.js </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">MachineGun</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">shootRound</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">type</span><span class="p">,</span> <span class="nx">rounds</span><span class="p">,</span> <span class="nx">interval</span><span class="p">,</span> <span class="nx">random</span><span class="p">,</span> <span class="nx">random2</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="k">typeof</span> <span class="nx">random</span> <span class="o">==</span> <span class="s1">&#39;undefined&#39;</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">random</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">time</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">currentTime</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">rounds</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="kd">var</span> <span class="nx">source</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">makeSource</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">buffers</span><span class="p">[</span><span class="nx">type</span><span class="p">]);</span>
+</span><span class='line'>        <span class="nx">source</span><span class="p">.</span><span class="nx">playbackRate</span><span class="p">.</span><span class="nx">value</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="nx">random2</span><span class="p">;</span>
+</span><span class='line'>        <span class="nx">source</span><span class="p">.</span><span class="nx">noteOn</span><span class="p">(</span><span class="nx">time</span> <span class="o">+</span> <span class="nx">i</span> <span class="o">*</span> <span class="nx">interval</span> <span class="o">+</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="nx">random</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">MachineGun</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">makeSource</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">buffer</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">source</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">createBufferSource</span><span class="p">();</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">compressor</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">createDynamicsCompressor</span><span class="p">();</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">gain</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">createGainNode</span><span class="p">();</span>
+</span><span class='line'>    <span class="nx">gain</span><span class="p">.</span><span class="nx">gain</span><span class="p">.</span><span class="nx">value</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">;</span>
+</span><span class='line'>    <span class="nx">source</span><span class="p">.</span><span class="nx">buffer</span> <span class="o">=</span> <span class="nx">buffer</span><span class="p">;</span>
+</span><span class='line'>    <span class="nx">source</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">gain</span><span class="p">);</span>
+</span><span class='line'>    <span class="nx">gain</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">compressor</span><span class="p">);</span>
+</span><span class='line'>    <span class="nx">compressor</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">destination</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nx">source</span><span class="p">;</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
-<h3>Bài toán</h3>
+<p>Đoạn code trên có 2 hàm là <strong>shootRound</strong> và <strong>makeSource</strong>.
+Hàm <strong>makeSource</strong> nhận đầu vào là buffer , chỉnh lại âm thanh cho nhỏ đi một chút thông qua việc set gain = 0.2, sử dụng compressor Node
+để smoothing data đi một chút trước khi kết nối với destination node.
+Hàm <strong>shootRound</strong> có mục đích đúng như cái tên của nó, dùng để bắn, hay chính xác là timing buffer có sẵn theo các paramter đầu vào.
+Các parameter ở đây gồm có rounds ( là số lần lặp lại, ví dụ súng của bạn bắn 3 phát một thì rounds sẽ là 3), interval (khoảng cách giữa 2 lần bắn), 2 biến random và random2 dùng để set xem nên bắn đều đều hay bắn một cách random cho nó thật :D.</p>
 
-<p>Để dễ hình dung cũng như dễ kiểm tra tính đúng đắn, ta giả sử 1 bài toán tưởng tượng như sau:</p>
-
-<p>Có log file:</p>
-
-<pre><code>    IP1 2 20:00:01 Get /A 
-    IP2 2 20:00:02 Get /B
-    IP2 3 20:00:03 Get /C
-    IP4 2 20:02:01 Get /A 
-    IP5 2 20:03:01 Get /B
-    IP2 3 20:03:02 Get /A
-    IP3 2 20:03:04 Get /B 
-    IP2 2 20:04:01 Get /B
-    IP1 3 20:05:12 Get /C
-    IP6 2 20:05:31 Get /C 
-    IP5 2 20:06:02 Get /B
-    IP4 3 20:07:03 Get /A
-</code></pre>
-
-<p>Bài toán: Hãy đếm xem trong 1 phút có bao nhiêu requests và thử đếm xem có bao nhiêu request đến A, B.</p>
-
-<h3>Phương pháp giải quyết</h3>
-
-<p>Theo đề bài, ta có 2 bài toán
-* Thống kê requests theo từng phút.
-* Thống kê requests đến A, B.</p>
-
-<p>Ta sẽ lần lượt giải từng bài toán 1.</p>
-
-<h4>Thống kê requests đến A, B</h4>
-
-<p>Bài toán này thực chất khá dễ và ta có thể giải quyết bằng grep và wc. Để ý rằng mỗi dòng là 1 requests đến A, B hoặc C vì vậy bài toán có thể chuyển về là: đếm số dòng có ký tự A và ký tự B. Để lọc ký tự ta có thể dùng grep, để đếm số dòng ta có thể dùng wc. Như vậy bài toán có thể được giải quyết bằng cách pipe kết quả grep sang wc.</p>
-
-<p>Lời giải:</p>
-
-<div>
-  <pre><code class='bash'>grep A data.dat | wc -l
-4
-grep B data.dat | wc -l
-5</code></pre>
-</div>
-
-
-<p>Như vậy có 4 requests đến A và 5 requests đến B trong log file.
-Bằng 1 câu lệnh, ta có thể đưa ngay ra được kết quả. Dễ như ăn kẹo!</p>
-
-<h4>Đếm số request trong 1 phút.</h4>
-
-<p>Bài toán này khó hơn 1 chút do ta chỉ có trong log các request theo từng giây, trong khi ta cần thống kê theo phút. Liệu có cách nào biến bài toán về bài toán đếm số dòng như ở trên không? Nếu như ta có thể nhóm các dòng dữ liệu theo phút, bài toán có thể được giải quyết tương tự như bài toán trên.</p>
-
-<p>Trước tiên, làm thế nào để nhóm dòng theo phút? Muốn nhóm dòng theo phút ta phải tách được phần phút ra. Để ý giờ:phút là trường thứ 3 trong file. Do vậy nếu tách được cột thứ 3 và lấy 5 ký tự đầu tiên, ta có thể lấy phút của từng request. Tách cột là việc của awk!</p>
-
-<div>
-  <pre><code class='bash'>awk '{print substr($3, 1, 5)}' data.dat
-20:00
-20:00
-20:00
-20:02
-20:03
-20:03
-20:03
-20:04
-20:05
-20:05
-20:06
-20:07</code></pre>
-</div>
-
-
-<p>Ồ, ta đã tiến được 1 bước! Bước tiếp theo, nếu như ta có thể nhóm các phần tử giống nhau và đếm các phần tử đó, ta sẽ có kết quả mong muốn. Nhóm các giá trị giống nhau là nhiệm vụ của uniq!</p>
-
-<div>
-  <pre><code class='bash'>awk '{print substr($3, 1, 5)}' data.dat | uniq -c
-3 20:00
-2 20:02
-3 20:03
-1 20:04
-2 20:05
-1 20:06
-1 20:07</code></pre>
-</div>
-
-
-<p>Tuyệt! Như vậy bằng 1 dòng lệnh, ta đã nhóm được các API trong cùng 1 phút, cũng như số lượng API trong thời điểm đấy. Nếu số lượng request nhiều, số dòng kết quả lớn và ta chỉ muốn biết thời điểm có truy cập lớn nhất, ta có thể sắp xếp theo số lượng truy cập. Sắp xếp các dòng theo giá trị cột là công việc của sort! Bằng câu lệnh sort ta có kết quả như dưới đây:</p>
-
-<div>
-  <pre><code class='bash'>awk '{print substr($3, 1, 5)}' data.dat | uniq -c | sort -nk1 -r
-3 20:03
-3 20:00
-2 20:05
-1 20:07
-1 20:06
-1 20:04
-1 20:02</code></pre>
-</div>
-
-
-<p>Bài toán đầu tiên cũng đã được giải quyết chỉ với 1 dòng lệnh!</p>
-
-<h3>Kết luận</h3>
-
-<p>Bài viết đã giới thiệu qua các công cụ commandline của unix cũng như cách áp dụng công cụ đó vào bài toán cụ thể. Hy vọng qua bài viết bạn đã thấy được phần nào tầm quan trọng cũng như sức mạng của các chương trình tiện ích như awk, wc, grep, uniq, sort. Và để hiểu rõ công cụ thì không cách nào khác là áp dụng thật sáng tạo chúng vào công việc hàng ngày, do vậy bạn hãy thử áp dụng các công cụ trên vào bài toán sau nhé:</p>
-
-<p><strong>Với log file trên, đếm xem có bao nhiêu nguồn truy cập, và nguồn truy cập nào có số lượng truy cập lớn nhất</strong> ;)</p>
+<p>Chỉ nói lý thuyết không hơi khó hiểu, các bạn có thể xem ví dụ trực quan ở:
+<a href="https://github.com/huydx/html5collection.git">https://github.com/huydx/html5collection.git</a>
+Ví dụ ở trên mình đặt ở html5collection / webaudioapi / guneffect.html. Lưu ý một chút là mình dùng XHR để load file nên các bạn sẽ phải sử dụng thông qua web server (đơn giản nhất là XAMPP) và xem thông qua localhost.</p>
 
 		
 		

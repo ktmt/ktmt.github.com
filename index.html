@@ -7,7 +7,7 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jul 15th, 2013 DI, Design pattern, IoC, PHP Comments Inversion of Control and Dependency Injection Preface Trước khi đọc bài này, tôi có 1 vài &hellip;">
+	<meta name="description" content="Jul 28th, 2013 PHP, Reflection Comments Reflection and Reverse Engineer in PHP Giới thiệu Reflection class trong PHP Kể từ PHP 5 trở đi, Programmer &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -84,122 +84,32 @@
   
 
 
-<time datetime="2013-07-15T02:02:00+09:00" data-updated="true" itemprop="datePublished">Jul 15<span>th</span>, 2013</time></div>
+<time datetime="2013-07-28T23:45:00+09:00" data-updated="true" itemprop="datePublished">Jul 28<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/di/'>DI</a>, <a class='category' href='/blog/categories/design-pattern/'>Design pattern</a>, <a class='category' href='/blog/categories/ioc/'>IoC</a>, <a class='category' href='/blog/categories/php/'>PHP</a>
+	<a class='category' href='/blog/categories/php/'>PHP</a>, <a class='category' href='/blog/categories/reflection/'>Reflection</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/07/15/inversion-of-control-and-dependency-injection/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/07/28/reflection-and-reverse-engineer-in-php/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/15/inversion-of-control-and-dependency-injection/" itemprop="url">Inversion of Control and Dependency Injection</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/07/28/reflection-and-reverse-engineer-in-php/" itemprop="url">Reflection and Reverse Engineer in PHP</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h2>Preface</h2>
+		<h2>Giới thiệu Reflection class trong PHP</h2>
 
-<p>Trước khi đọc bài này, tôi có 1 vài recommend cho độc giả :)</p>
+<p>Kể từ PHP 5 trở đi, Programmer PHP đã có bộ API Reflection rất hữu dụng để reverse-engineer các class, interfaces, function hay các extension.
+Bài viết này sẽ giới thiệu tính năng, ý nghĩa và ứng dụng của Reflection trong PHP.</p>
 
-<ol>
-<li><p>Bạn nên đọc trước bài viết về <a href="http://ktmt.github.io/blog/2013/06/14/design-pattern-ap-dung-builder-pattern-trong-test-java/">Builder Pattern trong Java</a> cũng trong blog ktmt, sẽ có 1 cái nhìn tổng quát và hình dung dễ dàng hơn về ứng dụng của các pattern trong programming.</p></li>
-<li><p>Có hàng tá bài viết về Inversion Of Control và Dependency Injection. Try to google it first.</p></li>
-<li><p>Nếu không, nhớ google thêm sau khi đọc bài viết :D</p></li>
-</ol>
+<h2>Thế nào là dynamically-typed language ?</h2>
 
+<p>Cũng giống như Python hay Ruby, PHP là 1 dynamically-typed language.</p>
 
-<h2>Dependency Injection</h2>
+<p>Chúng ta hãy cùng xem xét 2 class sau:</p>
 
-<p>Chúng ta sẽ bắt đầu với 1 ví dụ gần giống ví dụ trong bài viết về Builder Pattern ở trên. Xem đoạn code sau. Ngôn ngữ ở đây là PHP.</p>
-
-<figure class='code'><figcaption><span>Book.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">Book</span> <span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">title</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Title</span><span class="p">;</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Author</span><span class="p">;</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">genre</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Genre</span><span class="p">;</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">publishDate</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">PublishDate</span><span class="p">;</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">ISBN</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ISBN</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'>
-</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Ở đây giả sử Title, Author, Genre, PublishDate hay ISBN đều là các class đã được định nghĩa trước. Như vậy class Book có 5 <strong>dependency</strong> là 5 class kể trên.</p>
-
-<p>Về mặt technical, chẳng có gì là không ổn với 1 class như trên cả.
-Tuy nhiên programmer có kinh nghiệm sẽ dễ dàng nhận thấy chúng ta đã hardcoded 5 dependency trên vào trong Book.
-Nói cách khác nếu muốn Book chứa những dependency khác, chẳng có cách nào khác là sửa lại định nghĩa class.</p>
-
-<p>Như vậy, để tránh những phiền phức nói trên và tạo độ linh hoạt khi sử dụng, class Book nên được viết lại như sau:</p>
-
-<figure class='code'><figcaption><span>Book.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">Book</span> <span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nv">$title</span><span class="p">,</span> <span class="nv">$author</span><span class="p">,</span> <span class="nv">$genre</span><span class="p">,</span> <span class="nv">$publishdate</span><span class="p">,</span> <span class="nv">$isbn</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">title</span> <span class="o">=</span> <span class="nv">$title</span><span class="p">;</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="nv">$author</span><span class="p">;</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">genre</span> <span class="o">=</span> <span class="nv">$genre</span><span class="p">;</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">publishDate</span> <span class="o">=</span> <span class="nv">$publishdate</span><span class="p">;</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">ISBN</span> <span class="o">=</span> <span class="nv">$isbn</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'>
-</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span> <span class="p">(</span><span class="k">new</span> <span class="nx">Title</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Author</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Genre</span><span class="p">,</span> <span class="k">new</span> <span class="nx">PublishDate</span><span class="p">,</span> <span class="k">new</span> <span class="nx">ISBN</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Bạn có thể thấy, ý tưởng của Dependency Injection(DI) thực ra rất đơn giản, chỉ là bạn vẫn thường sử dụng và không để ý.
-Dependency có thể được inject theo nhiều kiểu, ví dụ bên trên là constructor injection.
-Chúng ta còn có setter injection như sau:</p>
-
-<figure class='code'><figcaption><span>Book.php </span></figcaption>
+<figure class='code'><figcaption><span>Author.php </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -224,49 +134,147 @@ Chúng ta còn có setter injection như sau:</p>
 <span class='line-number'>22</span>
 <span class='line-number'>23</span>
 <span class='line-number'>24</span>
-<span class='line-number'>25</span>
 </pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">Book</span> <span class="p">()</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Author</span>
 </span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="k">private</span> <span class="nv">$name</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">private</span> <span class="nv">$birth</span><span class="p">;</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">setTitle</span><span class="p">(</span><span class="nv">$title</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">title</span> <span class="o">=</span> <span class="nv">$title</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nv">$birth</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">name</span> <span class="o">=</span> <span class="nv">$name</span><span class="p">;</span>
+</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">birth</span> <span class="o">=</span> <span class="nv">$birth</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'><span class="c1">// Here we have 4 more methods : setAuthor ,setGenre, setPublishDate, setISBN</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">function</span> <span class="nf">getName</span><span class="p">()</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">name</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">public</span> <span class="k">function</span> <span class="nf">getBirth</span><span class="p">()</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">birth</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
 </span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'>
-</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
-</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setTitle</span><span class="p">(</span><span class="k">new</span> <span class="nx">Title</span><span class="p">);</span>
-</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">);</span>
-</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setGenre</span><span class="p">(</span><span class="k">new</span> <span class="nx">Genre</span><span class="p">);</span>
-</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setPublishDate</span><span class="p">(</span><span class="k">new</span> <span class="nx">PublishDate</span><span class="p">);</span>
-</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setISBN</span><span class="p">(</span><span class="k">new</span> <span class="nx">ISBN</span><span class="p">);</span>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>Book.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Book</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">private</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">setAuthor</span><span class="p">(</span><span class="nv">$author</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">getAuthor</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
 </span><span class='line'>
 </span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Và vấn đề mới lại nảy sinh! Có quá nhiều setter và điều đó biến Book thành 1 class phức tạp khi sử dụng.
-Việc viết lại tất cả các setter khi khởi tạo 1 Book thật là painful !</p>
+<p>2 class rất đơn giản phải không :) Book hoàn toàn có thể được setAuthor() là 1 string hay là 1 instance của class Author.</p>
 
-<p>Để giải quyết vấn đề kể trên, chúng ta sẽ đến với design pattern tiếp theo: Inversion of Control (IoC)</p>
+<p>Không khó để hình dung ra kết quả của đoạn code dưới đây.</p>
 
-<h2>Inversion of Control</h2>
+<figure class='code'><figcaption><span>sample.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="nv">$book1</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
+</span><span class='line'><span class="nv">$book1</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="s2">&quot;Nam Cao&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="nb">var_dump</span><span class="p">(</span><span class="nv">$book1</span><span class="o">-&gt;</span><span class="na">getAuthor</span><span class="p">());</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$book2</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
+</span><span class='line'><span class="nv">$book2</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">(</span><span class="s2">&quot;Nam Cao&quot;</span><span class="p">,</span><span class="s2">&quot;29-10-1915&quot;</span><span class="p">));</span>
+</span><span class='line'><span class="nb">var_dump</span><span class="p">(</span><span class="nv">$book1</span><span class="o">-&gt;</span><span class="na">getAuthor</span><span class="p">());</span>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure>
 
-<blockquote><p>In software engineering, inversion of control (IoC) is a programming technique, expressed here in terms of object-oriented programming, in which object coupling is bound at run time by an assembler object and is typically not known at compile time using static analysis.</p></blockquote>
 
-<p>Giải thích lý thuyết về IoC có lẽ sẽ tốn nhiều công sức,
-như recommend trên đầu bài, bạn có thể google 1 chút về IoC.
-Ở đây tôi sẽ đưa ra luôn 1 implement để sử dụng với class Book kể trên.</p>
+<p>Nếu chỉ dừng ở đây thì tôi với bạn chẳng có gì để nói với nhau :D
+Nhưng bạn hãy thử để ý, 1 instance của 1 class Book khi gọi đến hàm <code>setAuthor</code> hoàn toàn không có 1 khái niệm nào về <code>$author</code> cả.
+Nói cách khác, $author có thể là bất cứ 1 object nào.
+Điều gì sẽ xảy ra khi tôi modify class Book 1 chút như sau:</p>
 
-<figure class='code'><figcaption><span>IoC.php </span></figcaption>
+<figure class='code'><figcaption><span>Book.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Book</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">private</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">setAuthor</span><span class="p">(</span><span class="nv">$author</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>      <span class="nb">var_dump</span><span class="p">(</span><span class="nv">$author</span><span class="o">-&gt;</span><span class="na">getName</span><span class="p">());</span> <span class="c1">// Attention here! Now we try to call getName() of variable $author</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">getAuthor</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Bạn thử chạy lại đoạn code sample.php bên trên, bạn sẽ thấy $book1 trả về Fatal Error nhưng $book2 sẽ chạy qua bình thường!</p>
+
+<p>Vào thời điểm runtime $book2, PHP sẽ &#8220;inspect&#8221; object $author truyền vào cho <code>setAuthor</code> và tự hiểu $author là 1 instance của class Author và có 1 method là <code>getName()</code>.</p>
+
+<h2>Reverse engineer example</h2>
+
+<p>Vậy PHP nói riêng và các dynamically-typed language nói chung làm thế nào để nhận biết được type của object truyền vào function hay class ?</p>
+
+<p>Câu trả lời là reflection class! Bạn đã nhận ra PHP dùng reflection như thế nào qua ví dụ bên trên, bạn thậm chí có thể tự sử dụng reflection class.</p>
+
+<figure class='code'><figcaption><span>Book.php </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -289,320 +297,62 @@ như recommend trên đầu bài, bạn có thể google 1 chút về IoC.
 <span class='line-number'>20</span>
 <span class='line-number'>21</span>
 <span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
 </pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">IoC</span> <span class="p">{</span>
-</span><span class='line'>   <span class="k">protected</span> <span class="k">static</span> <span class="nv">$registry</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
-</span><span class='line'>
-</span><span class='line'>   <span class="c1">// Register</span>
-</span><span class='line'>   <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">register</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nx">Closure</span> <span class="nv">$resolve</span><span class="p">)</span>
-</span><span class='line'>   <span class="p">{</span>
-</span><span class='line'>      <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">[</span><span class="nv">$name</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$resolve</span><span class="p">;</span>
-</span><span class='line'>   <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>   <span class="c1">// Resolve</span>
-</span><span class='line'>   <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">resolve</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
-</span><span class='line'>   <span class="p">{</span>
-</span><span class='line'>      <span class="k">if</span> <span class="p">(</span> <span class="k">static</span><span class="o">::</span><span class="na">registered</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span> <span class="p">)</span>
-</span><span class='line'>      <span class="p">{</span>
-</span><span class='line'>         <span class="nv">$name</span> <span class="o">=</span> <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">[</span><span class="nv">$name</span><span class="p">];</span>
-</span><span class='line'>         <span class="k">return</span> <span class="nv">$name</span><span class="p">();</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>      <span class="k">throw</span> <span class="k">new</span> <span class="nx">Exception</span><span class="p">(</span><span class="s1">&#39;Nothing registered with that name, fool.&#39;</span><span class="p">);</span>
-</span><span class='line'>   <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>   <span class="c1">// Check resigtered or not</span>
-</span><span class='line'>   <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">registered</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
-</span><span class='line'>   <span class="p">{</span>
-</span><span class='line'>      <span class="k">return</span> <span class="nb">array_key_exists</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">);</span>
-</span><span class='line'>   <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>WTH! Cái khỉ gì trông lằng nhằng quá phải không :D</p>
-
-<p>Đừng lo lắng, để hiểu đoạn code trên trước hết hãy để ý rằng ở đây chúng ta có rất nhiều các static function.
-Static function có thể gọi trục tiếp trên class chứ không phải trên instance thông qua cách gọi &#8220;Class::StaticMethod()&#8221;.
-Ngoài ra Closure là 1 anonymous function.
-Bạn sẽ hiểu ngay khi xem cách dùng dưới đây</p>
-
-<figure class='code'><figcaption><span>Book.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="nx">IoC</span><span class="o">::</span><span class="na">register</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">,</span> <span class="k">function</span><span class="p">(){</span>
-</span><span class='line'>    <span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setTitle</span><span class="p">(</span><span class="k">new</span> <span class="nx">Title</span><span class="p">);</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">);</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setGenre</span><span class="p">(</span><span class="k">new</span> <span class="nx">Genre</span><span class="p">);</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setPublishDate</span><span class="p">(</span><span class="k">new</span> <span class="nx">PublishDate</span><span class="p">);</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setISBN</span><span class="p">(</span><span class="k">new</span> <span class="nx">ISBN</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">return</span> <span class="nv">$book</span><span class="p">;</span>
-</span><span class='line'><span class="p">});</span>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'>
-</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="nx">IoC</span><span class="o">::</span><span class="na">resolve</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Woo! Bây giở mỗi khi muốn tạo 1 instance của Book với đầy đủ các dependency, chỉ cần <code>IoC::resolve('book')</code>.
-Cùng với đó, các dependency có thể inject thông qua <code>IoC::register('book',function(){...})</code>.
-Đến khi unit test, bạn có thể dùng <code>IoC::register</code> để mocking các dependency và test Book mà không khởi tạo Title,Author&#8230;</p>
-
-<h2>Singleton pattern with IoC</h2>
-
-<p>Bạn thử tưởng tượng, nếu như phần register &#8216;book&#8217; bên trên chiếm nhiều tài nguyên, có thể bạn sẽ không muốn mỗi lần resolve lại khởi tạo 1 instance mới.
-Nói cách khác, bạn chỉ muốn chỉ có 1 Book với đầy đủ Title, Author, &#8230; được khởi tạo 1 lần, và lần sau muốn sử dụng thì gọi lại chính instance đã được tạo.</p>
-
-<p>Đây là đất diễn của Singleton design pattern :)
-Tôi sẽ thêm static function <code>singleton</code> cho IoC như sau:</p>
-
-<figure class='code'><figcaption><span>IoC.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">IoC</span> <span class="p">{</span>
-</span><span class='line'>  <span class="k">protected</span> <span class="k">static</span> <span class="nv">$registry</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
-</span><span class='line'>  <span class="k">protected</span> <span class="k">static</span> <span class="nv">$shared</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="c1">// Register, here save the Closure to static::$registry</span>
-</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">register</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nx">Closure</span> <span class="nv">$resolve</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>     <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">[</span><span class="nv">$name</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$resolve</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="c1">// Singleton, Note that here we save the result of Closure, not the Closure</span>
-</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">singleton</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nx">Closure</span> <span class="nv">$resolve</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>    <span class="k">static</span><span class="o">::</span><span class="nv">$shared</span><span class="p">[</span><span class="nv">$name</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$resolve</span><span class="p">();</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="c1">// Resolve, consider register or singleton here</span>
-</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">resolve</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span> <span class="k">static</span><span class="o">::</span><span class="na">registered</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span> <span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="nv">$name</span> <span class="o">=</span> <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">[</span><span class="nv">$name</span><span class="p">];</span>
-</span><span class='line'>      <span class="k">return</span> <span class="nv">$name</span><span class="p">();</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span> <span class="k">static</span><span class="o">::</span><span class="na">singletoned</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span> <span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="nv">$instance</span> <span class="o">=</span> <span class="k">static</span><span class="o">::</span><span class="nv">$shared</span><span class="p">[</span><span class="nv">$name</span><span class="p">];</span>
-</span><span class='line'>      <span class="k">return</span> <span class="nv">$instance</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">throw</span> <span class="k">new</span> <span class="nx">Exception</span><span class="p">(</span><span class="s1">&#39;Nothing registered with that name, fool.&#39;</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="c1">// Check resigtered or not</span>
-</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">registered</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>     <span class="k">return</span> <span class="nb">array_key_exists</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'>  <span class="c1">// Check singleton object or not</span>
-</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">singletoned</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="nb">array_key_exists</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="k">static</span><span class="o">::</span><span class="nv">$shared</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Và bây giờ</p>
-
-<figure class='code'><figcaption><span>Book.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="nx">IoC</span><span class="o">::</span><span class="na">singleton</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">,</span> <span class="k">function</span><span class="p">(){</span>
-</span><span class='line'>    <span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setTitle</span><span class="p">(</span><span class="k">new</span> <span class="nx">Title</span><span class="p">);</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">);</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setGenre</span><span class="p">(</span><span class="k">new</span> <span class="nx">Genre</span><span class="p">);</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setPublishDate</span><span class="p">(</span><span class="k">new</span> <span class="nx">PublishDate</span><span class="p">);</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setISBN</span><span class="p">(</span><span class="k">new</span> <span class="nx">ISBN</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">return</span> <span class="nv">$book</span><span class="p">;</span>
-</span><span class='line'><span class="p">});</span>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'>
-</span><span class='line'><span class="nv">$book1</span> <span class="o">=</span> <span class="nx">IoC</span><span class="o">::</span><span class="na">resolve</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">);</span>
-</span><span class='line'><span class="nv">$book2</span> <span class="o">=</span> <span class="nx">IoC</span><span class="o">::</span><span class="na">resolve</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">);</span> <span class="c1">// exactly same instance with $book1</span>
-</span><span class='line'>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Bạn có thể lấy <a href="https://gist.github.com/DTVD/5997723">đoạn code sample trên Gist</a> về chạy thử.
-Have fun with IoC :)</p>
-
-<h2>Real-World Use Case</h2>
-
-<p>Đọc đến đây có thể bạn sẽ hỏi tôi, việc quái gì phải xoắn cái IoC này thế, nó có thực sự hữu dụng hay chỉ là 1 cái pattern mang tính demo biếu diễn ?</p>
-
-<p>Chúng ta hãy cùng ghé qua <a href="http://laravel.com/docs/ioc">Laravel</a>, 1 framework hiện đại của PHP.</p>
-
-<p>Ở Laravel, <a href="http://laravel.com/docs/ioc">IoC</a> đã được chuẩn bị sẵn và không chỉ dùng 1 mình, còn kết hợp với <a href="http://laravel.com/docs/ioc#service-providers">ServiceProviders</a> và <a href="http://laravel.com/docs/facades">Facades</a> để tăng tối đa độ linh hoạt của code base.
-Một Facades (lại là 1 design pattern khác - hãy google sau khi đọc bài này :) ) có thể được kết nối với IoC và UnitTest như sau :</p>
-
-<figure class='code'><figcaption><span>Facades.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1">// binding IoC</span>
-</span><span class='line'><span class="nx">App</span><span class="o">::</span><span class="na">bind</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">,</span> <span class="k">function</span><span class="p">()</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Book</span>
 </span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
-</span><span class='line'><span class="p">});</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1">// binding facades to IoC</span>
-</span><span class='line'><span class="k">use</span> <span class="nx">Illuminate\Support\Facades\Facade</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">FacadesBook</span> <span class="k">extends</span> <span class="nx">Facade</span> <span class="p">{</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">protected</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">getFacadeAccessor</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="s1">&#39;book&#39;</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>  <span class="k">private</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">setAuthor</span><span class="p">(</span><span class="nv">$author</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>      <span class="nb">var_dump</span><span class="p">(</span><span class="nv">$author</span><span class="o">-&gt;</span><span class="na">getName</span><span class="p">());</span> <span class="c1">// original name</span>
+</span><span class='line'>      <span class="nv">$reflector</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ReflectionClass</span><span class="p">(</span><span class="nv">$author</span><span class="p">);</span> <span class="c1">// Here we start to inspect $author</span>
+</span><span class='line'>      <span class="nv">$authorName</span> <span class="o">=</span> <span class="nv">$reflector</span><span class="o">-&gt;</span><span class="na">getProperty</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">);</span> <span class="c1">// Get local variable &#39;name&#39;</span>
+</span><span class='line'>      <span class="nv">$authorName</span><span class="o">-&gt;</span><span class="na">setAccessible</span><span class="p">(</span><span class="k">true</span><span class="p">);</span> <span class="c1">// since &#39;name&#39; is a private local variable of class Author, we need access here to modify </span>
+</span><span class='line'>      <span class="nv">$authorName</span><span class="o">-&gt;</span><span class="na">setValue</span><span class="p">(</span><span class="nv">$author</span><span class="p">,</span><span class="s1">&#39;Ngo Tat To&#39;</span><span class="p">);</span> <span class="c1">// now hack the &#39;name&#39; of $author :))</span>
+</span><span class='line'>      <span class="nb">var_dump</span><span class="p">(</span><span class="nv">$author</span><span class="o">-&gt;</span><span class="na">getName</span><span class="p">());</span> <span class="c1">// Guess what will be output here :D </span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">getAuthor</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
 </span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Tại sao đã bind class Book vào IoC <code>book</code> rồi, lại còn tiếp tục bind IoC <code>book</code> và Facades <code>FacadesBook</code> lần nữa?</p>
+<p>Bạn thử đoán xem đoạn var_dump sau sẽ ra kết quả gì :D</p>
 
-<p>Facades trong Laravel có thể &#8220;biến thành&#8221; Mock object sau khi gọi method <code>shouldReceive</code> (a magic method :D)</p>
-
-<figure class='code'><figcaption><span>Facades.php </span></figcaption>
+<figure class='code'><figcaption><span>Book.php </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
-<span class='line-number'>6</span>
 </pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="c1">//Use Book as usual:</span>
-</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="nx">FacadesBook</span><span class="o">::</span><span class="na">AnInstanceMethodOfBookClass</span><span class="p">(</span><span class="nv">$AParams</span><span class="p">);</span>
-</span><span class='line'><span class="c1">//Mocking for UnitTest:</span>
-</span><span class='line'><span class="nx">FacadesBook</span><span class="o">::</span><span class="na">shouldReceive</span><span class="p">(</span><span class="s1">&#39;AnInstanceMethodOfBookClass&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">once</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">with</span><span class="p">(</span><span class="nv">$AParams</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">andReturn</span><span class="p">(</span><span class="nv">$FakeValue</span><span class="p">);</span>
-</span><span class='line'><span class="nv">$mockBook</span> <span class="o">=</span> <span class="nx">FacadesBook</span><span class="o">::</span><span class="na">AnInstanceMethodOfBookClass</span><span class="p">(</span><span class="nv">$AParams</span><span class="p">);</span>
+</span><span class='line'><span class="nv">$book2</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
+</span><span class='line'><span class="nv">$book2</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">(</span><span class="s2">&quot;Nam Cao&quot;</span><span class="p">,</span><span class="s2">&quot;29-10-1915&quot;</span><span class="p">));</span>
+</span><span class='line'><span class="nb">var_dump</span><span class="p">(</span><span class="nv">$book1</span><span class="o">-&gt;</span><span class="na">getAuthor</span><span class="p">());</span> <span class="c1">// Suprisingly, &#39;Ngo Tat To&#39; and not &#39;Nam Cao&#39; here </span>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p><code>$book</code> sẽ trả về giá trị thực khi thực hiện method <code>AnInstanceMethodOfBookClass</code> của class Book, trong khi đó <code>$mockBook</code> sẽ trả về <code>$FakeValue</code>.</p>
+<h2>Reflection class dùng để làm gì ?</h2>
+
+<p>Đến đây có lẽ bạn đọc đã hình dung ra phần nào cách thức hoạt động của reflection class, các ngôn ngữ dynamically-typed &#8220;hiểu&#8221; các object như thế nào.
+Reflection thực tế tồn tại trong PHPUnit hay các mocking framework, các code analysis framwworks hay metaprogramming.</p>
+
+<p>Reflection class trong PHP là 1 tool mạnh mẽ cung cấp cho programmer chính những sức mạnh mà ngôn ngữ sở hữu.
+Tuy nhiên reflection class không hề được khuyến khích dùng rộng rãi, vì với bản chất là tool của quá trình reverse engineering, nó hoàn toàn có thể làm design của hệ thống trở nên mess up và khó kiểm soát.</p>
+
+<p>Reflection chỉ nên dùng khi nào thực sự cần thiết, ứng dụng nhìn thấy rõ nhất là khi bạn phải &#8220;đối đầu&#8221; với 1 project mà document ko đầy đủ hay không được upadte thường xuyên. <a href="https://github.com/cakephp/api_generator">Cake Api Generator</a> là ví dụ điển hình nhất.</p>
 
 <h2>Summary</h2>
 
 <ul>
-<li><strong>Dependency Injection</strong>: Đưa các dependency vào class thông qua constructor hoặc setter, không khỏi tạo trực tiếp bên trong class.</li>
-<li><strong>Inversion of Control</strong>: bind object vào thời điểm run time, không phải vào thời điểm compile time.</li>
-<li><strong>Singleton</strong>: Design pattern, cho phép trong 1 hệ thống chỉ có 1 instance duy nhất của class được tồn tại.</li>
+<li><strong>Dynamically-typed language</strong>: Là ngôn ngữ có thể tự hiểu được object tại thời điểm runtime, không cần tại compile time. PHP, Ruby, Python là dynamically-typed language. Ngược lại C hay Java là statically typed language.</li>
+<li><strong>Reflection Class</strong> Là 1 bộ API được PHP cung cấp để sử dụng kỹ thuật reverse engineer, hữu dụng khi tạo document tự động.</li>
 </ul>
 
 
@@ -627,89 +377,43 @@ Một Facades (lại là 1 design pattern khác - hãy google sau khi đọc bà
   
 
 
-<time datetime="2013-07-10T15:24:00+09:00" data-updated="true" itemprop="datePublished">Jul 10<span>th</span>, 2013</time></div>
+<time datetime="2013-07-24T10:05:00+09:00" data-updated="true" itemprop="datePublished">Jul 24<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/redis/'>redis</a>, <a class='category' href='/blog/categories/sinatra/'>sinatra</a>, <a class='category' href='/blog/categories/tutorial/'>tutorial</a>
+	<a class='category' href='/blog/categories/sysadmin/'>sysadmin</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/07/10/tu-tao-dich-vu-thu-gon-url-voi-sinatra-va-redis/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/07/24/install-memcached-with-sasl/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/10/tu-tao-dich-vu-thu-gon-url-voi-sinatra-va-redis/" itemprop="url">Tự tạo Dịch vụ Thu Gọn Url Với Sinatra và Redis</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/07/24/install-memcached-with-sasl/" itemprop="url">Cài đặt Memcached Với Sasl</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h2>Mở đầu</h2>
+		<h1>Giới thiệu</h1>
 
-<p>Chắc hẳn các bạn đã biết về các dịch vụ rút gọn url, điển hình là bit.ly. Mục đích của dịch vụ này là nhằm thu gọn là những url rất dài để tiết kiệm chữ (cho những dịch vụ giới hạn về số kí tự như twitter chẳng hạn) và để cho url nhìn gọn hơn.
-Cơ chế của một dịch vụ rút gọn url khá đơn giản, vậy tại sao không tự làm một dịch vụ cho chính mình. Bài này mình sẽ hướng dẫn cách làm một url shorten service đơn giản dựa trên sinatra và redis.</p>
+<p>Memcached là cơ sở dữ liệu được lưu trong memory. Thông thường chúng ta sử dụng memcached trong mạng nội bộ, hoặc sử dụng private IP để kết nối tới memcached, tuy nhiên trong một số trường hợp, IP của memcached server cần public ra ngoài (ví dụ toàn bộ các server đều đặt trên AWS). Trong trường hợp này, chúng ta cần bảo mật kết nối của memcached server.</p>
 
-<h2>Cài đặt</h2>
+<p>Từ phiên bản 1.4.3, memcached đã support sử dụng <a href="http://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer">SASL</a></p>
 
-<p>Để cài đặt sinatra thì bạn phải có ruby đã cài sẵn trên máy, việc cài đặt sinatra khá đơn giản thông qua <strong>gem</strong>:</p>
+<p>Bài viết này sẽ giới thiệu với các bạn cách cài đặt memcached với SASL cũng như giới thiệu cơ chế, cách làm việc của SASL</p>
 
-<figure class='code'><figcaption><span>sinatra_install.sh </span></figcaption>
+<h1>Cách cài đặt SASL với memcached</h1>
+
+<p>Đầu tiên bạn cần cài đặt phiên bản mới nhất của memcached. Bạn sẽ cần một số gói và thư viện khác để support SASL.</p>
+
+<figure class='code'><figcaption><span>install.sh </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>  gem install sinatra
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> sudo apt-get install libsasl2-2 sasl2-bin libsasl2-2 libsasl2-dev libsasl2-modules
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Tiếp đến là redis, để cài đặt redis thì tùy thuộc vào hệ điều hành, trên mac-osx các bạn có thể cài đặt rất dễ dàng thông qua <strong>brew</strong>:</p>
+<p>Đừng quên, để cài đặt memcached, bạn cùng sẽ cần cài <code>libevent</code></p>
 
-<figure class='code'><figcaption><span>redis_install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>  brew install redis
-</span></code></pre></td></tr></table></div></figure>
+<p>Cài đặt memcached</p>
 
-
-<p>Trên linux hoặc windows các bạn có thể google để tìm ra hướng dẫn  cài tương ứng.
-Các bạn khởi động redis thông qua, khi khởi động redis mà không set option với config gì cả thì redis sẽ chạy trên localhost và port là 6789:</p>
-
-<figure class='code'><figcaption><span>redis_install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>  redis-server
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>Giới thiệu qua về sinatra và redis</h2>
-
-<p>Sinatra là một mini webframework based trên Rack(Rack là web server interface rút gọn nhất có thể rất nổi tiếng trên ruby). Sinatra cung cấp cho bạn một DSL(Domain specific language) để có thể build một web app một cách dễ dàng nhất. Các bạn có thể tìm hiểu về sinatra ở <a href="http://www.sinatrarb.com/intro.html">trang chủ của sinatra</a>.</p>
-
-<p>Redis là hệ thống lưu trữ key-value với rất nhiều tính năng và được sử dụng rộng rãi. KTMT blog đã có <a href="http://ktmt.github.io/blog/2013/07/02/tim-hieu-redis/">một bài viết về redis</a> cách đây không lâu, các bạn có thể tham khảo lại. Về cách sử dụng redis, các bạn có thể tham khảo tại <a href="http://redis.io/documentation">trang chủ redis</a></p>
-
-<h2>Thiết kế chương trình</h2>
-
-<p>Cơ chế của một dịch vụ thu gọn hết sức đơn giản, được thể hiện ở diagram dưới đây:</p>
-
-<p><img src="/images/urlshorten/url-shorten-flow.png"></p>
-
-<p>Chắc bạn nào đã dùng bit.ly sẽ tưởng tượng ra usage flow một dịch vụ rút gọn url nên có. Cơ chế chúng ta dùng ở bài viết này như sau: đầu tiên user sẽ gửi url cần rút gọn thông qua form input. Web server nhận được request này sẽ hash url lại thành một chuỗi ngắn hơn, thông thường từ 5~10 kí tự, webserver sẽ lưu lại cặp &lt;hash, origin url> vào redis, và trả lại chuỗi hash đó được ghép vào url của dịch vụ : http://your-service.com/hash.</p>
-
-<p>Khi user click vào http://your-service.com/hash, đầu tiên server sẽ dùng chuỗi hash tìm original url trên redis, sau đó sẽ trả về response 301 (redirect) với location mới là original url, nhờ vậy mà user sẽ được redirect đến original url.</p>
-
-<p>Như vậy là đã định hình ý tưởng nên làm gì, chúng ta sẽ bắt tay vào code</p>
-
-<h2>Coding</h2>
-
-<ol>
-<li>Tạo khung
-Đầu tiên là sườn của một Sinatra app, có get, post. Chúng ta tạo folder cho app của chúng ta và tạo 1 file là app.rb chính là sinatra app:</li>
-</ol>
-
-
-<figure class='code'><figcaption><span>make.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>mkdir url_shorten <span class="o">&amp;&amp;</span> <span class="nb">cd </span>url_shorten
-</span><span class='line'>touch app.rb <span class="o">&amp;&amp;</span> vim app.rb
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Sau đó chúng ta sẽ tạo cái khung cho sinatra app như dưới đây:</p>
-
-<figure class='code'><figcaption><span>url_shorten.rb </span></figcaption>
+<figure class='code'><figcaption><span>install.sh </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -717,177 +421,79 @@ Các bạn khởi động redis thông qua, khi khởi động redis mà không 
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
 <span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'><span class="nb">require</span> <span class="s1">&#39;sinatra/base&#39;</span>
-</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;redis&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">UrlShort</span> <span class="o">&lt;</span> <span class="ss">Sinatra</span><span class="p">:</span><span class="ss">:Base</span>
-</span><span class='line'>  <span class="n">set</span> <span class="ss">:public_dir</span><span class="p">,</span> <span class="no">File</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">__FILE__</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;/static&#39;</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="n">get</span> <span class="s1">&#39;/&#39;</span> <span class="k">do</span>
-</span><span class='line'>    <span class="n">erb</span> <span class="ss">:index</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="no">UrlShort</span><span class="o">.</span><span class="n">run!</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> wget http://memcached.googlecode.com/files/memcached-1.4.3.tar.gz
+</span><span class='line'><span class="nv">$&gt;</span> tar xvf memcached-1.4.3.tar.gz
+</span><span class='line'><span class="nv">$&gt;</span> <span class="nb">cd </span>memcached-1.4.3
+</span><span class='line'><span class="nv">$&gt;</span> ./configure --enable-sasl
+</span><span class='line'><span class="nv">$&gt;</span> sed -i <span class="s1">&#39;s/-Werror//g&#39;</span> Makefile
+</span><span class='line'><span class="nv">$&gt;</span> make
+</span><span class='line'><span class="nv">$&gt;</span> sudo make install
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Sinatra có syntax dạng DSL: get &#8216;some info&#8217; do &#8216;something&#8217; để represent cho &#8216;get&#8217; request rất dễ hiểu. Đoạn code trên có nghĩa là khi request đến &#8216;/&#8217; (root) thì sẽ render file index nằm trong views.
-Như vậy chúng ta đã có cái khung đơn giản nhất của một web service, nhận request, trả về view. (erb là template engine có sẵn của ruby, nó sẽ render file có đuôi erb ra html)</p>
+<p>Cài đặt libmemcached</p>
 
-<p>Tiếp đến chúng ta sẽ thực hiện xử lý hash url. Về mặt lý thuyết thì gọi là hash không đúng lắm vì hash phải là nhận đầu vào X và trả lại Y là kết quả của việc hash X, bài toán của chúng ta ở đây chỉ đơn thuần là generate ra một chuỗi random để represent cho một cái url, như vậy bài toán của chúng ta sẽ là một hàm random_hash(N) nhận đầu vào N là độ dài của chuỗi input và đầu ra là một chuỗi random (cả chữ cả số) có độ dài N, ví dụ như sau:</p>
-
-<figure class='code'><figcaption><span>hash.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'>  <span class="n">rand_hash</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span> <span class="c1">#=&gt; &quot;s4xA6&quot;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Để giải quyết bài toán này thì có khá nhiều hướng đi:</p>
-
-<ol>
-<li>Loop từ 1 đến 5 rồi với mỗi lần loop bạn random ra một số hoặc chữ cái.</li>
-<li>Tạo ra 1 array có độ dài 64 gồm từ [0..9] [a..z] và [A..Z] và random ra 5 vị trí trong đó (việc này có thể thực hiện rất dễ dàng thông qua Array#sample của ruby).</li>
-<li>Sử dụng base64. base64 có một đặc điểm là sẽ biến 1 số M thành 1 chuỗi cả chữ cả số có độ dài max là log(64)(M). Do đó để tạo ra một chuỗi random có length N thì chúng ta chỉ cần random một số M nằm trong khoảng 64<sup>(N-1)</sup> đến 64<sup>(N)</sup> và chuyển nó về base 64.</li>
-<li>Sử dụng một số kĩ thuật generate 64bit (mà đã được giới thiệu ở <a href="http://ktmt.github.io/blog/2013/06/09/xay-dung-he-thong-sinh-64bit-unique-id/">bài viết về generate 64bit uid</a> trên KTMT gần đây.</li>
-</ol>
-
-
-<p>Ở bài viết này chúng ta sẽ sử dụng kĩ thuật số (3). Chúng ta đưa hàm generate hash vào trong helper của sinatra thông qua hàm helpers như sau:</p>
-
-<figure class='code'><figcaption><span>hash.rb </span></figcaption>
+<figure class='code'><figcaption><span>install.sh </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'><span class="k">class</span> <span class="nc">UrlShort</span> <span class="o">&lt;</span> <span class="ss">Sinatra</span><span class="p">:</span><span class="ss">:Base</span>
-</span><span class='line'>  <span class="o">.</span><span class="n">.</span>
-</span><span class='line'>  <span class="n">helpers</span> <span class="k">do</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">rand_hash</span><span class="p">(</span><span class="n">length</span><span class="p">)</span>
-</span><span class='line'>      <span class="n">gap</span> <span class="o">=</span> <span class="mi">64</span><span class="o">**</span><span class="p">(</span><span class="n">length</span><span class="p">)</span> <span class="o">-</span> <span class="mi">64</span><span class="o">**</span><span class="p">(</span><span class="n">length</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>      <span class="p">(</span><span class="nb">rand</span><span class="p">(</span><span class="n">gap</span><span class="p">)</span> <span class="o">+</span> <span class="mi">64</span><span class="o">**</span><span class="p">(</span><span class="n">length</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">to_s</span><span class="p">(</span><span class="mi">64</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>  <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> wget https://launchpad.net/libmemcached/1.0/1.0.17/+download/libmemcached-1.0.17.tar.gz
+</span><span class='line'><span class="nv">$&gt;</span> tar xvf libmemcached-1.0.17.tar.gz
+</span><span class='line'><span class="nv">$&gt;</span> <span class="nb">cd </span>libmemcached-1.0.17
+</span><span class='line'><span class="nv">$&gt;</span> ./configure
+</span><span class='line'><span class="nv">$&gt;</span> make
+</span><span class='line'><span class="nv">$&gt;</span> sudo make install
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Tiếp theo chúng ta sẽ làm nhiệm vụ gắn hash thu được với url thành một cặp key-value và ghi vào redis. Để làm nhiệm vụ này thì đầu tiên chúng ta cần khởi tạo redis, mình khởi tạo redis bằng cách overwrite constructor của app và đưa redis instance vào thành 1 instance property. Ngoài ra, chúng ta cũng không muốn 1 url mà mỗi lần request lại tạo một hash khác nhau , rất tốn tài nguyên, do đó mỗi lần gen hash mình sẽ lưu duplicate thành 2 cặp key-value. Một cặp chứa url làm key và hash làm value, và một cặp chứ hash làm key và url là value, điều này đảm bảo mối liên hệ giữa url/hash là 1/1.</p>
+<h1>Set up SASL với memcached</h1>
 
-<figure class='code'><figcaption><span>implement.rb </span></figcaption>
+<p>Điều đầu tiên bạn cần đảm bảo đó là set biến môi trường <code>SASL_CONF_PATH</code> khi bạn chay memcached. Trong ví dụ này <code>SASL_CONF_PATH</code> sẽ được trỏ tới <code>/home/kiennt/sasl</code></p>
+
+<figure class='code'><figcaption><span>install.sh </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> <span class="nb">export </span><span class="nv">SASL_CONF_PATH</span><span class="o">=</span>/home/kiennt/sasl
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Sau đó bạn cần set up file memcached.conf trong SASL (tên của file sẽ là tên của ứng dụng SASL - cụ thể ở đây là memcached)</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'><span class="n">post</span> <span class="s1">&#39;/&#39;</span> <span class="k">do</span>
-</span><span class='line'>  <span class="vi">@error</span> <span class="o">=</span> <span class="kp">nil</span>
-</span><span class='line'>  <span class="vi">@error</span> <span class="o">=</span> <span class="s1">&#39;please enter url&#39;</span> <span class="k">if</span> <span class="no">URI</span><span class="o">.</span><span class="n">regexp</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">params</span><span class="o">[</span><span class="ss">:url</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">nil?</span>
-</span><span class='line'>  <span class="vi">@success</span> <span class="o">=</span> <span class="kp">false</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">unless</span> <span class="vi">@error</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">params</span><span class="o">[</span><span class="ss">:url</span><span class="o">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">params</span><span class="o">[</span><span class="ss">:url</span><span class="o">].</span><span class="n">empty?</span>
-</span><span class='line'>      <span class="vi">@url</span> <span class="o">=</span> <span class="n">params</span><span class="o">[</span><span class="ss">:url</span><span class="o">]</span>
-</span><span class='line'>      <span class="vi">@hash</span> <span class="o">=</span> <span class="n">rand_hash</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
-</span><span class='line'>      <span class="n">exist</span> <span class="o">=</span> <span class="vi">@redis</span><span class="o">.</span><span class="n">setnx</span> <span class="s2">&quot;url:</span><span class="si">#{</span><span class="vi">@url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="vi">@hash</span>
-</span><span class='line'>      <span class="k">if</span> <span class="n">exist</span> <span class="c1">#key not set</span>
-</span><span class='line'>        <span class="vi">@redis</span><span class="o">.</span><span class="n">setnx</span> <span class="s2">&quot;hash:</span><span class="si">#{</span><span class="vi">@hash</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="vi">@url</span>
-</span><span class='line'>      <span class="k">else</span>
-</span><span class='line'>        <span class="vi">@hash</span> <span class="o">=</span> <span class="vi">@redis</span><span class="o">.</span><span class="n">get</span> <span class="s2">&quot;url:</span><span class="si">#{</span><span class="vi">@url</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>      <span class="k">end</span>
-</span><span class='line'>      <span class="vi">@success</span> <span class="o">=</span> <span class="kp">true</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="n">erb</span> <span class="ss">:index</span>
-</span><span class='line'><span class="k">end</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>mech_list: plain
+</span><span class='line'>log_level: 5
+</span><span class='line'>sasldb_path: /home/kiennt/sasl/sasldb2</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Tiếp theo, bạn cần tạo một file database (được trỏ tới từ bước trước) trong file <code>memcached.conf</code></p>
+
+<figure class='code'><figcaption><span>install.sh </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> sudo saslpasswd2 -c -a memcached -f /home/kiennt/sasl/sasldb2 &lt;username&gt;
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Như vậy chúng ta đã có @hash để trả về cho user, chúng ta sẽ ghep hash vào trong views để hiển thị cho user (views/index.rb)</p>
+<p>Chú ý rằng cờ -a xác định tên của ứng dụng <code>memcached</code> - chính là tên của config file bạn đã xác định ở trên <code>memcached.conf</code>. Khi bạn chạy <code>saslpasswd2</code>, bạn sẽ được hỏi password và password verify cation.</p>
 
-<figure class='code'><figcaption><span>index.erb </span></figcaption>
+<h1>Chạy memcached với SASL</h1>
+
+<p>Để chạy memcached với SASL, bạn cần sử dụng cờ <code>-S</code> để bật cơ chế security của mecached lên</p>
+
+<figure class='code'><figcaption><span>install.sh </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='erb'><span class='line'><span class="x">&lt;form id=&quot;form&quot; method=&quot;post&quot;&gt;</span>
-</span><span class='line'><span class="x">  &lt;input type=&quot;text&quot; value=&quot;&quot; name=&quot;url&quot; id=&quot;url&quot;/&gt;</span>
-</span><span class='line'><span class="x">  &lt;input type=&quot;submit&quot; value=&quot;shorten&quot; id=&quot;submit&quot; class=&quot;submit&quot;/&gt;</span>
-</span><span class='line'><span class="x">&lt;/form&gt;</span>
-</span><span class='line'><span class="x">&lt;hr/&gt;</span>
-</span><span class='line'><span class="x">&lt;div class=&quot;mes&quot;&gt;Result&lt;/div&gt;</span>
-</span><span class='line'><span class="cp">&lt;%</span> <span class="k">if</span> <span class="vi">@error</span> <span class="cp">%&gt;</span><span class="x"></span>
-</span><span class='line'><span class="x">  &lt;div id=&#39;error&#39;&gt;</span>
-</span><span class='line'><span class="x">    </span><span class="cp">&lt;%=</span> <span class="vi">@error</span> <span class="cp">%&gt;</span><span class="x"></span>
-</span><span class='line'><span class="x">  &lt;/div&gt;</span>
-</span><span class='line'><span class="cp">&lt;%</span> <span class="k">else</span> <span class="cp">%&gt;</span><span class="x"></span>
-</span><span class='line'><span class="x">  </span><span class="cp">&lt;%</span> <span class="k">if</span> <span class="vi">@success</span> <span class="cp">%&gt;</span><span class="x"></span>
-</span><span class='line'><span class="x">    &lt;a id=&quot;result&quot; href=&#39;</span><span class="cp">&lt;%=</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">escape_html</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="si">}#{</span><span class="vi">@hash</span><span class="si">}</span><span class="s2">&quot;</span> <span class="cp">%&gt;</span><span class="x">&#39;&gt;</span><span class="cp">&lt;%=</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">escape_html</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="si">}#{</span><span class="vi">@hash</span><span class="si">}</span><span class="s2">&quot;</span> <span class="cp">%&gt;</span><span class="x">&lt;/a&gt;</span>
-</span><span class='line'><span class="x">    &lt;input data-clipboard-text=&#39;</span><span class="cp">&lt;%=</span><span class="s2">&quot;</span><span class="si">#{</span><span class="n">escape_html</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="si">}#{</span><span class="vi">@hash</span><span class="si">}</span><span class="s2">&quot;</span> <span class="cp">%&gt;</span><span class="x">&#39; type=&quot;button&quot; id=&quot;yank&quot; class=&quot;submit&quot; value=&quot;yank&quot;/&gt;</span>
-</span><span class='line'><span class="x">  </span><span class="cp">&lt;%</span> <span class="k">end</span> <span class="cp">%&gt;</span><span class="x">  </span>
-</span><span class='line'><span class="cp">&lt;%</span> <span class="k">end</span> <span class="cp">%&gt;</span><span class="x"></span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> <span class="nb">export </span><span class="nv">SASL_CONF_PATH</span><span class="o">=</span>/home/kiennt/sasl
+</span><span class='line'><span class="nv">$&gt;</span> /usr/local/bin/memcached -S -vvv
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Phần việc còn lại chúng ta phải giải quyết là khi user click vào link. Link của chúng ta có dạng là www.my-application.com/#{hash}, với sinatra để lọc phần hash hết sức đon giản vì sinatra đã tự động lọc hộ chúng ta và đưa vào biến global params, do đó chúng ta chỉ cần lấy hash từ params, tìm trong redis, và redirect user là ok:</p>
+<h1>Tổng kết</h1>
 
-<figure class='code'><figcaption><span>redirect.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'>  <span class="n">get</span> <span class="s1">&#39;/:hash&#39;</span> <span class="k">do</span>
-</span><span class='line'>    <span class="n">url</span> <span class="o">=</span> <span class="vi">@redis</span><span class="o">.</span><span class="n">get</span> <span class="s2">&quot;hash:</span><span class="si">#{</span><span class="n">params</span><span class="o">[</span><span class="ss">:hash</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>    <span class="n">redirect</span> <span class="n">url</span>
-</span><span class='line'>  <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Như vậy chúng ta đã có một flow hoàn chỉnh rồi, thêm tí css và sử dụng <a href="https://github.com/zeroclipboard/ZeroClipboard">ZeroClipboard</a> để có nút yank để copy url vào clipboard, chúng ta đã có một dịch vụ rút gọn url cho riêng mình!</p>
-
-<p><img src="/images/urlshorten/background.png"></p>
-
-<p>Toàn bộ source code cho tutorial này mình đang để ở đây, mọi người có thể sử dụng tùy ý :).
-<a href="https://github.com/ktmt/link_shorttener">https://github.com/ktmt/link_shorttener</a></p>
+<p>Bài viết này giới thiệu với các cài đặt và chạy memcached với SASL. Giờ bạn có thể tập trung vào việc code ứng dụng của bạn rồi.</p>
 
 		
 		
@@ -910,150 +516,35 @@ Như vậy chúng ta đã có cái khung đơn giản nhất của một web ser
   
 
 
-<time datetime="2013-07-07T22:54:00+09:00" data-updated="true" itemprop="datePublished">Jul 7<span>th</span>, 2013</time></div>
+<time datetime="2013-07-24T09:13:00+09:00" data-updated="true" itemprop="datePublished">Jul 24<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/git/'>git</a>
+	<a class='category' href='/blog/categories/ios/'>iOS</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/07/07/git-server-hook-dot-markdown/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/07/24/nhung-luu-y-khi-dung-uitableview/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/07/git-server-hook-dot-markdown/" itemprop="url">Githook và Server Hook (Tiếp)</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/07/24/nhung-luu-y-khi-dung-uitableview/" itemprop="url">Những Lưu ý Khi Dùng UITableView</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<p>Ở bài viết <a href="/blog/2013/06/25/using-githook-to-automatically-test-your-app/">trước</a>, tôi đã giới thiệu về githook, client hook và các user case hay sử dụng với client hook. Bài viết này, tôi sẽ giới thiệu thêm về server hook và các ứng dụng của chúng trong thực tế</p>
+		<p>Ở bài viết trước, tôi đã đề cập đến việc custom 1 UITableViewCell. Tuy nhiên, việc sử dụng UITableView cũng còn khá nhiều điều cần phải quan tâm khác. Trong bài viết này, tôi sẽ đề cập đến những vấn đề ấy:</p>
 
-<h1>Server-side hooks</h1>
+<h1>Lưu ý khi dùng định danh cho UITableViewCell</h1>
 
-<p>Bên cạnh việc sử dụng các client-side hooks, bạn có thể sử dụng một vài server-side hook như là một hệ thống admin để áp đặt một cơ chế quán lý cho project của bạn. Những script này sẽ được chạy trước và sau khi commit được đẩy lên server. Những pre-hooks có thể trả về giá trị khác 0 ở bất cứ thời điểm nào để loại bỏ một push từ client, cũng như để in ra một error message cho client</p>
+<p>Trong quá trình tạo hiển thị, UITableView sẽ lưu lại các cell bị che khỏi màn hình hiển thị (ko phải render) trong 1 stack. Các Cell này sẽ được sử dụng lại khi mà 1 cell mới xuất hiện trên màn hình. Điều này giúp cải thiện tốc độ load table cell và ko làm tăng thêm bộ nhớ cho chương trình. Khi lấy cell trong stack ra, UITableView sẽ sử dụng định danh đã nói ở trên để lấy được các cell cùng kiểu. Chính vì thế định danh này phải được đặt giống với trường identifier trong file xib. Nếu không, các cell của table sẽ không bao giờ được sử dụng lại. Có thế test điều này trong ví dụ: trường identifier trong file CustomTableCell.xib đặt là &#8220;CustomTableCell&#8221; và định danh trong code đặt là &#8220;Custom&#8221;, khi chạy chương trình, điều kiện if (!cell) sẽ luôn luôn xảy ra => tức là table view sẽ luôn tạo ra cell mới chứ ko sử dụng lại.</p>
 
-<h2>pre-receive và post-receive</h2>
+<p><img src="/images/luuYTableView/break_point.png"></p>
 
-<p>Script đầu tiên được chạy khi server nhận được một push từ client đó là <code>pre-receive</code>. Script này nhận một list các tham chiếu sẽ được push từ stdin. Nếu nó trả về giá trị khác 0, không có tham chiếu nào được chấp nhận. Bạn có thể sử dụng hook này để làm những việc như đảm bảo không có bất cứ tham chiếu nào là <code>non-fast-forwards</code>.</p>
+<h1>Cải thiện tốc load của UITableView.</h1>
 
-<p><code>post-receive</code> hook chạy sau khi toàn bộ quá trình được hoàn tất và có thể sử dụng để update các service khác hoặc để notify uer. Nó nhận cùng dữ liệu từ stdin như <code>pre-receive</code> hook. Ví dụ bao gồm gửi email chó một list các developer liên quan, notify CI server, hoặc update ticket tracking system. Bạn thậm chí có thể parse commit message để kiểm tra xem có bất cứ ticket nào cần open, modified hoặc update hay không. <code>post-receive</code> không thể làm ngừng lại quá trình push, nhưng client sẽ không đóng kết nối tới server cho đên khi <code>post-receive</code> kết thúc. Ví thế hãy cẩn thận khi bạn muốn làm những việc tốn thời gian. Cách tốt nhất là hãy sử dụng các background process để xử lý các tác vụ tốn thời gian.</p>
+<p> Không nên sử dụng các hàm vẽ mà phải tính toán nhiều, đặc biệt là các hàm của QuartzCore framework, bởi vì các hàm này thường rất chậm, sẽ làm giảm tốc độ load của các cell.</p>
 
-<h2>update</h2>
+<p> Khi sử dụng TableView với các cell phức tạp, mà độ cao của cell phụ thuộc vào các content bên trong nó (VD như các news feeds của Facebook app), để cải thiện tốc độ load các cell này, hãy cùng học tập cách làm của Facebook: Trước hết, khi lấy được danh sách các feed, FB sẽ tính toán sẵn height cho từng cell một và lưu các giá trị này vào database (core data). Sau đó, khi load các cell, height của từng cell sẽ được lấy ra từ database. Điều này làm giảm hiện tượng thắt cổ chai khi mà nếu không tính toán height trước, table view sẽ vừa phải khởi tạo các component vừa phải tính toán chiều cao cho các cell. Đặc biệt là trong trường hợp danh sách các feed được lưu lại trên máy, và lần chạy app tiếp theo sẽ sử dụng lại các feed này => height cho các cell đã được tính toán từ trước.</p>
 
-<p>Update script là tương tự với <code>pre-receive</code> script, ngoại trừ việc nó chỉ chạy một làn cho mỗi branch mà pusher muốn update. Nếu pusher muốn update nhiều branch, <code>pre-receive</code> chỉ chạy duy nhất một lần, nhưng update sẽ chạy một lần cho mỗi branch mà chúng được push. Thay vì đọc dữ liệu từ stdin, script này sẽ nhận 3 tham số đầu vào: tên của branch, SHA-1 trỏ đến commit trước khi được push, và SHA-1 user đang muốn push. Nếu update script trả về kết quả khác 0, chỉ branch ứng với script này bị reject, các branch khác vẫn được update bình thường</p>
-
-<h1>Ví dụ</h1>
-
-<p>Trong ví dụ này, chúng ta sẽ bắt buộc mỗi commit message phải có phần mở đầu của message tuân theo một định dạng. Cụ thể mỗi mesage phải có dạng &#8220;ref:1234&#8221; bởi vì mỗi một commit sẽ ứng với một ticket trong hệ thống.</p>
-
-<p>Để làm việc này, sẻver sẽ phải kiểm tra tất cả các commit được push để xem string trong commit message có đúng format hay không. Nếu commit message là không đúng format, trả về giá trị khác 0 và reject push.</p>
-
-<p>Chúng ta sẽ viết một update hook để làm việc này. Chú ý rắng, update hook nhận 3 giá trị đầu vào: tên của branch được update, SHA-1 của commit trước khi được push, và SHA-1 của commit sau khi được push. Các đoạn code dưới đây được minh hoạ bằng ruby, bạn có thể sử dụng ngôn ngữ lập trình khác nếu muốn</p>
-
-<figure class='code'><figcaption><span>update </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#!/usr/bin/env ruby
-</span><span class='line'>
-</span><span class='line'>$refname = ARGV[0]
-</span><span class='line'>$oldrev  = ARGV[1]
-</span><span class='line'>$newrev  = ARGV[2]</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Để lấy các commit từ <code>$oldrev</code> tới <code>$newrev</code>, chúng ta sử dụng lệnh <code>git rev-lít</code>. Lệnh này sẽ trả về danh sách các SHA-1 cho các commit nằm giữa 2 commit mà chúng ta truyền vào</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>$ git rev-list 538c33..d14fc7
-</span><span class='line'>d14fc7c847ab946ec39590d87783c69b031bdfb7
-</span><span class='line'>9f585da4401b0a3999e84113824d15245c13f0be
-</span><span class='line'>234071a1be950e2a8d078e6141f5cd20c1e61ad3
-</span><span class='line'>dfa04c9ef3d5197182f13fb5b9b1fb7717d2222a
-</span><span class='line'>17716ec0f1ff5c77eff40b7fe912f9f6cfd0e475</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Sau đó, chúng ta sử dụng lệnh <code>git cat-file</code> đẻ duyệt qua từng commit và lấy nội dụng của commit message.</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>$ git cat-file commit ca82a6
-</span><span class='line'>tree cfda3bf379e4f8dba8717dee55aab78aef7f4daf
-</span><span class='line'>parent 085bb3bcb608e1e8451d4b2432f8ecbe6306e7e7
-</span><span class='line'>author kiennt &lt;kiennt@gmail.com> 1205815931 -0700
-</span><span class='line'>committer kiennt &lt;schacon@gmail.com> 1240030591 -0700
-</span><span class='line'>
-</span><span class='line'>Add new post about githook</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Cách đơn giản để lấy commit message từ một commit là khi có SHA-1 , chúng ta xác định dòng blank đầu tiên và lấy tất cả phần đằng sau nó. Chúng ta có thể sử dụng <code>sed</code> để làm điều này</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>$ git cat-file commit ca82a6 | sed '1,/^$/d'
-</span><span class='line'>Add new post about githook</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Sau đây là toàn bộ đoạn code ruby để hoàn thành tác vụ trên</p>
-
-<figure class='code'><figcaption><span>update </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#!/usr/bin/env ruby
-</span><span class='line'>
-</span><span class='line'>$refname = ARGV[0]
-</span><span class='line'>$oldrev  = ARGV[1]
-</span><span class='line'>$newrev  = ARGV[2]
-</span><span class='line'>$regex = /\[ref: (\d+)\]/
-</span><span class='line'>
-</span><span class='line'># enforced custom commit message format
-</span><span class='line'>def check_message_format
-</span><span class='line'>  missed_revs = `git rev-list #{$oldrev}..#{$newrev}`.split("\n")
-</span><span class='line'>  missed_revs.each do |rev|
-</span><span class='line'>    message = `git cat-file commit #{rev} | sed '1,/^$/d'`
-</span><span class='line'>    if !$regex.match(message)
-</span><span class='line'>      puts "[POLICY] Your message is not formatted correctly"
-</span><span class='line'>      exit 1
-</span><span class='line'>    end
-</span><span class='line'>  end
-</span><span class='line'>end
-</span><span class='line'>check_message_format</span></code></pre></td></tr></table></div></figure>
-
-
-<h1>Kết luận</h1>
-
-<p>Qua 2 bài viết về githook, bạn đã nắm được phần nào các hooks trong git, và các ứng dụng liên quan đến chúng. Giờ bạn có thể sử dụng githook để tạo nên workflow phù hợp nhất với git cho project của mình</p>
-
-<h1>Tham khảo</h1>
-
-<p><a href="http://git-scm.com/book/en/Customizing-Git-Git-Hooks">Githook documentation</a>
-<a href="http://git-scm.com/book/en/Customizing-Git-An-Example-Git-Enforced-Policy">Customizing Git</a></p>
+<p> Sử dụng multiple thread để giúp app chạy mượt mà hơn, tránh tình trạng bị treo. VD: main thread chỉ điều chỉnh UI và điều khiển các event tương tác với user. Các tác vụ tính toán nên để ở 1 thread khác, vd như các tác vụ network, JSON parsing, tạo và lưu database.</p>
 
 		
 		

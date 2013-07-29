@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: sysadmin | Blog kỹ thuật máy tính]]></title>
+  <link href="http://toandk.github.com/blog/categories/sysadmin/atom.xml" rel="self"/>
+  <link href="http://toandk.github.com/"/>
+  <updated>2013-07-30T00:42:43+09:00</updated>
+  <id>http://toandk.github.com/</id>
+  <author>
+    <name><![CDATA[kỹ thuật máy tính]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Cài đặt memcached với sasl]]></title>
+    <link href="http://toandk.github.com/blog/2013/07/24/install-memcached-with-sasl/"/>
+    <updated>2013-07-24T10:05:00+09:00</updated>
+    <id>http://toandk.github.com/blog/2013/07/24/install-memcached-with-sasl</id>
+    <content type="html"><![CDATA[<h1>Giới thiệu</h1>
+
+<p>Memcached là cơ sở dữ liệu được lưu trong memory. Thông thường chúng ta sử dụng memcached trong mạng nội bộ, hoặc sử dụng private IP để kết nối tới memcached, tuy nhiên trong một số trường hợp, IP của memcached server cần public ra ngoài (ví dụ toàn bộ các server đều đặt trên AWS). Trong trường hợp này, chúng ta cần bảo mật kết nối của memcached server.</p>
+
+<p>Từ phiên bản 1.4.3, memcached đã support sử dụng <a href="http://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer">SASL</a></p>
+
+<p>Bài viết này sẽ giới thiệu với các bạn cách cài đặt memcached với SASL cũng như giới thiệu cơ chế, cách làm việc của SASL</p>
+
+<h1>Cách cài đặt SASL với memcached</h1>
+
+<p>Đầu tiên bạn cần cài đặt phiên bản mới nhất của memcached. Bạn sẽ cần một số gói và thư viện khác để support SASL.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>install.sh </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> sudo apt-get install libsasl2-2 sasl2-bin libsasl2-2 libsasl2-dev libsasl2-modules
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Đừng quên, để cài đặt memcached, bạn cùng sẽ cần cài <code>libevent</code></p>
+
+<p>Cài đặt memcached</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>install.sh </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> wget http://memcached.googlecode.com/files/memcached-1.4.3.tar.gz
+</span><span class='line'><span class="nv">$&gt;</span> tar xvf memcached-1.4.3.tar.gz
+</span><span class='line'><span class="nv">$&gt;</span> <span class="nb">cd </span>memcached-1.4.3
+</span><span class='line'><span class="nv">$&gt;</span> ./configure --enable-sasl
+</span><span class='line'><span class="nv">$&gt;</span> sed -i <span class="s1">&#39;s/-Werror//g&#39;</span> Makefile
+</span><span class='line'><span class="nv">$&gt;</span> make
+</span><span class='line'><span class="nv">$&gt;</span> sudo make install
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Cài đặt libmemcached</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>install.sh </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> wget https://launchpad.net/libmemcached/1.0/1.0.17/+download/libmemcached-1.0.17.tar.gz
+</span><span class='line'><span class="nv">$&gt;</span> tar xvf libmemcached-1.0.17.tar.gz
+</span><span class='line'><span class="nv">$&gt;</span> <span class="nb">cd </span>libmemcached-1.0.17
+</span><span class='line'><span class="nv">$&gt;</span> ./configure
+</span><span class='line'><span class="nv">$&gt;</span> make
+</span><span class='line'><span class="nv">$&gt;</span> sudo make install
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h1>Set up SASL với memcached</h1>
+
+<p>Điều đầu tiên bạn cần đảm bảo đó là set biến môi trường <code>SASL_CONF_PATH</code> khi bạn chay memcached. Trong ví dụ này <code>SASL_CONF_PATH</code> sẽ được trỏ tới <code>/home/kiennt/sasl</code></p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>install.sh </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> <span class="nb">export </span><span class="nv">SASL_CONF_PATH</span><span class="o">=</span>/home/kiennt/sasl
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Sau đó bạn cần set up file memcached.conf trong SASL (tên của file sẽ là tên của ứng dụng SASL - cụ thể ở đây là memcached)</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>mech_list: plain
+</span><span class='line'>log_level: 5
+</span><span class='line'>sasldb_path: /home/kiennt/sasl/sasldb2</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Tiếp theo, bạn cần tạo một file database (được trỏ tới từ bước trước) trong file <code>memcached.conf</code></p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>install.sh </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> sudo saslpasswd2 -c -a memcached -f /home/kiennt/sasl/sasldb2 &lt;username&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Chú ý rằng cờ -a xác định tên của ứng dụng <code>memcached</code> - chính là tên của config file bạn đã xác định ở trên <code>memcached.conf</code>. Khi bạn chạy <code>saslpasswd2</code>, bạn sẽ được hỏi password và password verify cation.</p>
+
+<h1>Chạy memcached với SASL</h1>
+
+<p>Để chạy memcached với SASL, bạn cần sử dụng cờ <code>-S</code> để bật cơ chế security của mecached lên</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>install.sh </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> <span class="nb">export </span><span class="nv">SASL_CONF_PATH</span><span class="o">=</span>/home/kiennt/sasl
+</span><span class='line'><span class="nv">$&gt;</span> /usr/local/bin/memcached -S -vvv
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h1>Tổng kết</h1>
+
+<p>Bài viết này giới thiệu với các cài đặt và chạy memcached với SASL. Giờ bạn có thể tập trung vào việc code ứng dụng của bạn rồi.</p>
+]]></content>
+  </entry>
+  
+</feed>

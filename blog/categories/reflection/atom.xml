@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Reflection | Blog kỹ thuật máy tính]]></title>
+  <link href="http://toandk.github.com/blog/categories/reflection/atom.xml" rel="self"/>
+  <link href="http://toandk.github.com/"/>
+  <updated>2013-07-30T00:42:43+09:00</updated>
+  <id>http://toandk.github.com/</id>
+  <author>
+    <name><![CDATA[kỹ thuật máy tính]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Reflection and reverse engineer in PHP]]></title>
+    <link href="http://toandk.github.com/blog/2013/07/28/reflection-and-reverse-engineer-in-php/"/>
+    <updated>2013-07-28T23:45:00+09:00</updated>
+    <id>http://toandk.github.com/blog/2013/07/28/reflection-and-reverse-engineer-in-php</id>
+    <content type="html"><![CDATA[<h2>Giới thiệu Reflection class trong PHP</h2>
+
+<p>Kể từ PHP 5 trở đi, Programmer PHP đã có bộ API Reflection rất hữu dụng để reverse-engineer các class, interfaces, function hay các extension.
+Bài viết này sẽ giới thiệu tính năng, ý nghĩa và ứng dụng của Reflection trong PHP.</p>
+
+<h2>Thế nào là dynamically-typed language ?</h2>
+
+<p>Cũng giống như Python hay Ruby, PHP là 1 dynamically-typed language.</p>
+
+<p>Chúng ta hãy cùng xem xét 2 class sau:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>Author.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="x">&amp;lt;?php</span>
+</span><span class='line'><span class="x">class Author</span>
+</span><span class='line'><span class="x">{&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;pre&gt;&lt;code&gt;private $name;</span>
+</span><span class='line'><span class="x">private $birth;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">public function __construct($name, $birth)</span>
+</span><span class='line'><span class="x">{</span>
+</span><span class='line'><span class="x">    $this-&amp;gt;name = $name;</span>
+</span><span class='line'><span class="x">    $this-&amp;gt;birth = $birth;</span>
+</span><span class='line'><span class="x">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">public function getName()</span>
+</span><span class='line'><span class="x">{</span>
+</span><span class='line'><span class="x">    return $this-&amp;gt;name;</span>
+</span><span class='line'><span class="x">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">public function getBirth()</span>
+</span><span class='line'><span class="x">{</span>
+</span><span class='line'><span class="x">    return $this-&amp;gt;birth;</span>
+</span><span class='line'><span class="x">}</span>
+</span><span class='line'><span class="x">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;}</span>
+</span><span class='line'><span class="x">?&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>Book.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="x">&amp;lt;?php</span>
+</span><span class='line'><span class="x">class Book</span>
+</span><span class='line'><span class="x">{&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;pre&gt;&lt;code&gt;private $author;</span>
+</span><span class='line'><span class="x">public function setAuthor($author)</span>
+</span><span class='line'><span class="x">{</span>
+</span><span class='line'><span class="x">    $this-&amp;gt;author = $author; </span>
+</span><span class='line'><span class="x">}</span>
+</span><span class='line'><span class="x">public function getAuthor()</span>
+</span><span class='line'><span class="x">{</span>
+</span><span class='line'><span class="x">    return $this-&amp;gt;author;</span>
+</span><span class='line'><span class="x">}</span>
+</span><span class='line'><span class="x">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;}&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;?&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>2 class rất đơn giản phải không :) Book hoàn toàn có thể được setAuthor() là 1 string hay là 1 instance của class Author.</p>
+
+<p>Không khó để hình dung ra kết quả của đoạn code dưới đây.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>sample.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="x">&amp;lt;?php</span>
+</span><span class='line'><span class="x">$book1 = new Book;</span>
+</span><span class='line'><span class="x">$book1-&gt;setAuthor(&quot;Nam Cao&quot;);</span>
+</span><span class='line'><span class="x">var_dump($book1-&gt;getAuthor());&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;$book2 = new Book;</span>
+</span><span class='line'><span class="x">$book2-&gt;setAuthor(new Author(&quot;Nam Cao&quot;,&quot;29-10-1915&quot;));</span>
+</span><span class='line'><span class="x">var_dump($book1-&gt;getAuthor());</span>
+</span><span class='line'><span class="x">?&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Nếu chỉ dừng ở đây thì tôi với bạn chẳng có gì để nói với nhau :D
+Nhưng bạn hãy thử để ý, 1 instance của 1 class Book khi gọi đến hàm <code>setAuthor</code> hoàn toàn không có 1 khái niệm nào về <code>$author</code> cả.
+Nói cách khác, $author có thể là bất cứ 1 object nào.
+Điều gì sẽ xảy ra khi tôi modify class Book 1 chút như sau:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>Book.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="x">&amp;lt;?php</span>
+</span><span class='line'><span class="x">class Book</span>
+</span><span class='line'><span class="x">{&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;pre&gt;&lt;code&gt;private $author;</span>
+</span><span class='line'><span class="x">public function setAuthor($author)</span>
+</span><span class='line'><span class="x">{</span>
+</span><span class='line'><span class="x">    $this-&amp;gt;author = $author; </span>
+</span><span class='line'><span class="x">    var_dump($author-&amp;gt;getName()); // Attention here! Now we try to call getName() of variable $author</span>
+</span><span class='line'><span class="x">}</span>
+</span><span class='line'><span class="x">public function getAuthor()</span>
+</span><span class='line'><span class="x">{</span>
+</span><span class='line'><span class="x">    return $this-&amp;gt;author;</span>
+</span><span class='line'><span class="x">}</span>
+</span><span class='line'><span class="x">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;}&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;?&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Bạn thử chạy lại đoạn code sample.php bên trên, bạn sẽ thấy $book1 trả về Fatal Error nhưng $book2 sẽ chạy qua bình thường!</p>
+
+<p>Vào thời điểm runtime $book2, PHP sẽ "inspect" object $author truyền vào cho <code>setAuthor</code> và tự hiểu $author là 1 instance của class Author và có 1 method là <code>getName()</code>.</p>
+
+<h2>Reverse engineer example</h2>
+
+<p>Vậy PHP nói riêng và các dynamically-typed language nói chung làm thế nào để nhận biết được type của object truyền vào function hay class ?</p>
+
+<p>Câu trả lời là reflection class! Bạn đã nhận ra PHP dùng reflection như thế nào qua ví dụ bên trên, bạn thậm chí có thể tự sử dụng reflection class.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>Book.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="x">&amp;lt;?php</span>
+</span><span class='line'><span class="x">class Book</span>
+</span><span class='line'><span class="x">{&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;pre&gt;&lt;code&gt;private $author;</span>
+</span><span class='line'><span class="x">public function setAuthor($author)</span>
+</span><span class='line'><span class="x">{</span>
+</span><span class='line'><span class="x">    $this-&amp;gt;author = $author; </span>
+</span><span class='line'><span class="x">    var_dump($author-&amp;gt;getName()); // original name</span>
+</span><span class='line'><span class="x">    $reflector = new ReflectionClass($author); // Here we start to inspect $author</span>
+</span><span class='line'><span class="x">    $authorName = $reflector-&amp;gt;getProperty(&#39;name&#39;); // Get local variable &#39;name&#39;</span>
+</span><span class='line'><span class="x">    $authorName-&amp;gt;setAccessible(true); // since &#39;name&#39; is a private local variable of class Author, we need access here to modify </span>
+</span><span class='line'><span class="x">    $authorName-&amp;gt;setValue($author,&#39;Ngo Tat To&#39;); // now hack the &#39;name&#39; of $author :))</span>
+</span><span class='line'><span class="x">    var_dump($author-&amp;gt;getName()); // Guess what will be output here :D </span>
+</span><span class='line'><span class="x">}</span>
+</span><span class='line'><span class="x">public function getAuthor()</span>
+</span><span class='line'><span class="x">{</span>
+</span><span class='line'><span class="x">    return $this-&amp;gt;author;</span>
+</span><span class='line'><span class="x">}</span>
+</span><span class='line'><span class="x">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;}&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="x">&lt;p&gt;?&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Bạn thử đoán xem đoạn var_dump sau sẽ ra kết quả gì :D</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>Book.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="x">&amp;lt;?php</span>
+</span><span class='line'><span class="x">$book2 = new Book;</span>
+</span><span class='line'><span class="x">$book2-&gt;setAuthor(new Author(&quot;Nam Cao&quot;,&quot;29-10-1915&quot;));</span>
+</span><span class='line'><span class="x">var_dump($book1-&gt;getAuthor()); // Suprisingly, &#39;Ngo Tat To&#39; and not &#39;Nam Cao&#39; here</span>
+</span><span class='line'><span class="x">?&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h2>Reflection class dùng để làm gì ?</h2>
+
+<p>Đến đây có lẽ bạn đọc đã hình dung ra phần nào cách thức hoạt động của reflection class, các ngôn ngữ dynamically-typed "hiểu" các object như thế nào.
+Reflection thực tế tồn tại trong PHPUnit hay các mocking framework, các code analysis framwworks hay metaprogramming.</p>
+
+<p>Reflection class trong PHP là 1 tool mạnh mẽ cung cấp cho programmer chính những sức mạnh mà ngôn ngữ sở hữu.
+Tuy nhiên reflection class không hề được khuyến khích dùng rộng rãi, vì với bản chất là tool của quá trình reverse engineering, nó hoàn toàn có thể làm design của hệ thống trở nên mess up và khó kiểm soát.</p>
+
+<p>Reflection chỉ nên dùng khi nào thực sự cần thiết, ứng dụng nhìn thấy rõ nhất là khi bạn phải "đối đầu" với 1 project mà document ko đầy đủ hay không được upadte thường xuyên. <a href="https://github.com/cakephp/api_generator">Cake Api Generator</a> là ví dụ điển hình nhất.</p>
+
+<h2>Summary</h2>
+
+<ul>
+<li><strong>Dynamically-typed language</strong>: Là ngôn ngữ có thể tự hiểu được object tại thời điểm runtime, không cần tại compile time. PHP, Ruby, Python là dynamically-typed language. Ngược lại C hay Java là statically typed language.</li>
+<li><strong>Reflection Class</strong> Là 1 bộ API được PHP cung cấp để sử dụng kỹ thuật reverse engineer, hữu dụng khi tạo document tự động.</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>
