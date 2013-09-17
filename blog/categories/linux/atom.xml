@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: linux | Blog kỹ thuật máy tính]]></title>
-  <link href="http://toandk.github.com/blog/categories/linux/atom.xml" rel="self"/>
-  <link href="http://toandk.github.com/"/>
-  <updated>2013-07-30T00:42:43+09:00</updated>
-  <id>http://toandk.github.com/</id>
+  <link href="http://ktmt.github.com/blog/categories/linux/atom.xml" rel="self"/>
+  <link href="http://ktmt.github.com/"/>
+  <updated>2013-09-18T01:15:24+09:00</updated>
+  <id>http://ktmt.github.com/</id>
   <author>
     <name><![CDATA[kỹ thuật máy tính]]></name>
     
@@ -14,10 +14,172 @@
 
   
   <entry>
+    <title type="html"><![CDATA[Tìm hiểu redis (phần 3): đối tượng trong redis (redis objects)]]></title>
+    <link href="http://ktmt.github.com/blog/2013/08/04/tim-hieu-redis-3/"/>
+    <updated>2013-08-04T21:05:00+09:00</updated>
+    <id>http://ktmt.github.com/blog/2013/08/04/tim-hieu-redis-3</id>
+    <content type="html"><![CDATA[<h2>1. Giới thiệu</h2>
+
+<p>Trong các bài viết trước mình đã trình bày về <a href="http://ktmt.github.io/blog/2013/07/02/tim-hieu-redis/">cách redis sao lưu dữ liệu</a> cũng như <a href="http://ktmt.github.io/blog/2013/07/16/tim-hieu-redis-2/">framework lập trình hướng sự kiện của redis</a>. Trong bài viết này mình trình bày về các đối tượng và kiểu dữ liệu trong redis.</p>
+
+<h2>2. Khái quát</h2>
+
+<p>Redis là một hệ thống cơ sở dữ liệu key-value - mỗi giá trị được quản lý bởi 1 cặp khóa và giá trị (key-value). Khi ghi dữ liệu, ta phải chỉ định rõ cặp khóa và giá trị. Khi đọc dữ liệu, ta phải chỉ ra ta muốn đọc dữ liệu của khóa nào. Trong Redis, khóa (key) có thể là một chuỗi. <strong>giá trị của dữ liệu</strong> (value) có thể là một trong một số kiểu dữ liệu thông dụng</p>
+
+<ul>
+<li>tập hợp (set)</li>
+<li>tập hợp đã sắp xếp (sorted set)</li>
+<li>chuỗi (string)</li>
+<li>danh sách (list)</li>
+</ul>
+
+
+<p>Để hỗ trợ các kiểu dữ liệu ở trên, đồng thời đảm bảo tính mở rộng (phát triển thêm các kiểu dữ liệu mới) cũng để dễ dàng quản lý đối tượng trong phần core db, redis thêm 1 layer mô tả dữ liệu trung gian gọi là robj. Các thao tác của core db (đọc, ghi, hash, encoding...) sẽ được thao tác trực tiếp với robj. Các kiểu dữ liệu người dùng ở trên sẽ được chuyển đổi (convert) qua lại đến robj. Nói cách khác, phần core db chỉ biết đến sự tồn tại của robj, các kiểu dữ liệu ở trên muốn được quản lý bởi coredb cần phải được chuyển qua robj.</p>
+
+<p>Về mặt tổ chức mã, bạn có thể tham khảo sơ đồ dưới đây:</p>
+
+<pre><code>╒===============╕
+|  t_hash.c     |
+|  t_list.c     |       ╒============╕      ╒=====================╕
+|  t_set.c      |   &lt;=&gt; |  object.c  |  &lt;=&gt; |  db.c (robj -&gt; sds) | 
+|  t_string.c   |       ╘============╛      ╘=====================╛
+|  t_zset.c     |
+╘===============╛
+</code></pre>
+
+<h2>3. Chi tiết về robj</h2>
+
+<p>Chi tiết về cấu trúc của robj được khai báo trong file <a href="https://github.com/antirez/redis/blob/unstable/src/redis.h">redis.h</a></p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>robj.c </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">A</span> <span class="n">redis</span> <span class="n">object</span><span class="p">,</span> <span class="n">that</span> <span class="n">is</span> <span class="n">a</span> <span class="n">type</span> <span class="n">able</span> <span class="n">to</span> <span class="n">hold</span> <span class="n">a</span> <span class="n">string</span> <span class="o">/</span> <span class="n">list</span> <span class="o">/</span> <span class="n">set</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">The</span> <span class="n">actual</span> <span class="n">Redis</span> <span class="n">Object</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">REDIS_LRU_CLOCK_MAX</span> <span class="p">((</span><span class="mi">1</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="mi">21</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">Max</span> <span class="n">value</span> <span class="n">of</span> <span class="n">obj</span><span class="o">-&gt;</span><span class="n">lru</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">REDIS_LRU_CLOCK_RESOLUTION</span> <span class="mi">10</span> <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">LRU</span> <span class="n">clock</span> <span class="n">resolution</span> <span class="n">in</span> <span class="n">seconds</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">typedef</span> <span class="k">struct</span> <span class="n">redisObject</span> <span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kt">unsigned</span> <span class="n">type</span><span class="o">:</span><span class="mi">4</span><span class="p">;</span>
+</span><span class='line'><span class="kt">unsigned</span> <span class="n">notused</span><span class="o">:</span><span class="mi">2</span><span class="p">;</span>     <span class="cm">/* Not used */</span>
+</span><span class='line'><span class="kt">unsigned</span> <span class="n">encoding</span><span class="o">:</span><span class="mi">4</span><span class="p">;</span>
+</span><span class='line'><span class="kt">unsigned</span> <span class="n">lru</span><span class="o">:</span><span class="mi">22</span><span class="p">;</span>        <span class="cm">/* lru time (relative to server.lruclock) */</span>
+</span><span class='line'><span class="kt">int</span> <span class="n">refcount</span><span class="p">;</span>
+</span><span class='line'><span class="kt">void</span> <span class="o">*</span><span class="n">ptr</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span> <span class="n">robj</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">Macro</span> <span class="n">used</span> <span class="n">to</span> <span class="n">initialize</span> <span class="n">a</span> <span class="n">Redis</span> <span class="n">object</span> <span class="n">allocated</span> <span class="n">on</span> <span class="n">the</span> <span class="n">stack</span><span class="p">.</span>
+</span><span class='line'> <span class="o">*</span> <span class="n">Note</span> <span class="n">that</span> <span class="n">this</span> <span class="n">macro</span> <span class="n">is</span> <span class="n">taken</span> <span class="n">near</span> <span class="n">the</span> <span class="n">structure</span> <span class="n">definition</span> <span class="n">to</span> <span class="n">make</span> <span class="n">sure</span>
+</span><span class='line'> <span class="o">*</span> <span class="n">we</span><span class="err">&#39;</span><span class="n">ll</span> <span class="n">update</span> <span class="n">it</span> <span class="n">when</span> <span class="n">the</span> <span class="n">structure</span> <span class="n">is</span> <span class="n">changed</span><span class="p">,</span> <span class="n">to</span> <span class="n">avoid</span> <span class="n">bugs</span> <span class="n">like</span>
+</span><span class='line'> <span class="o">*</span> <span class="n">bug</span> <span class="err">#</span><span class="mi">85</span> <span class="n">introduced</span> <span class="n">exactly</span> <span class="n">in</span> <span class="n">this</span> <span class="n">way</span><span class="p">.</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">initStaticStringObject</span><span class="p">(</span><span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">var</span><span class="p">,</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">ptr</span><span class="p">)</span> <span class="k">do</span> <span class="p">{</span> <span class="err">\</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">_var</span><span class="p">.</span><span class="n">refcount</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> \
+</span><span class='line'><span class="n">_var</span><span class="p">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">REDIS_STRING</span><span class="p">;</span> \
+</span><span class='line'><span class="n">_var</span><span class="p">.</span><span class="n">encoding</span> <span class="o">=</span> <span class="n">REDIS_ENCODING_RAW</span><span class="p">;</span> \
+</span><span class='line'><span class="n">_var</span><span class="p">.</span><span class="n">ptr</span> <span class="o">=</span> <span class="n">_ptr</span><span class="p">;</span> \
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span> <span class="k">while</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Qua đó ta có thể thấy robj gồm có các trường như:</p>
+
+<ul>
+<li>kiểu dữ liệu type</li>
+<li>loại encoding: kiểu dữ liệu type có thể hiểu là kiểu dữ liệu người dùng, còn encoding có thể hiểu là kiểu dữ liệu ở backend được quản lý ở  core db của redis để đảm bảo hiệu năng.</li>
+<li>lru (<a href="http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used">least-recently used</a>): là trường đại diện cho thời gian tồn tại tương đối của redis object. Redis hỗ trợ 1 tính năng đối với các đối tượng được ghi vào cơ sở dữ liệu redis: <a href="http://www.redis.io/commands/expire">expire</a>. Các đối tượng quá thời gian chỉ  định trước sẽ được loại bỏ khỏi cơ sở dữ liệu. Trường này dùng để quản lý <strong>thời gian hết hiệu lực</strong> này.</li>
+<li>refcount: là một biến kiểu số nguyên, đại diện cho số lượng reference đến robj này. Mỗi lần có một truy cập đến robj, đại lượng reference sẽ được tăng lên 1, và sẽ bị giảm đi 1 mỗi khi đối tượng <strong>expired</strong> hoặc không được tiếp tục tham chiếu.</li>
+<li>*ptr: con trỏ trỏ trực tiếp đến dữ liệu</li>
+<li>notused??</li>
+</ul>
+
+
+<p>Ở đây, ta gặp một kiểu khai báo <strong>rất lạ</strong> đặt ra nhiều câu hỏi. Thay vì khai báo unsigned type tác giả sử dụng unsigned type:4, điều này có ý nghĩa là gì? Sử dụng cả trường notused và lru:22 có ý nghĩa là gì?</p>
+
+<p>Thực chất khai báo :số nguyên sau kiểu dữ liệu unsigned trong C biểu thị số bit mà trường này muốn sử dụng. Như vậy kiểu type ở trên có độ dài 4 bits. Tương tự như vậy độ dài của encoding là 4 bits. Với độ dài này, redis có thể hỗ trợ tối đa 2<sup>4</sup> = 16 kiểu dữ liệu khác nhau! LRU có độ dài 22 bits. Thực chất trường LRU này đại diện cho thời gian tương đối tính từ <a href="https://github.com/antirez/redis/blob/unstable/src/redis.h#L725">server.lruclock</a>. Thời gian này được tính bằng số phút theo thời gian tương đối này. Để ý với 4 bits cho type, 4 bits cho encoding và 22 bits cho lru, ta mới dùng có 30 bits cho cấu trúc robj này. Do các hệ thống x86 thường căn chỉnh cấu trúc dữ liệu theo bội số của 16 (liên quan đến cơ chế làm việc của CPU cache) nên ta cần padding thêm 2 bits và việc padding 2 bits này chính là nhiệm vụ của notused!</p>
+
+<p>Mã của robj khá gọn gàng, trong sáng, ngắn gọn và dễ hiểu. Bạn có thể tham khảo tại file <a href="https://github.com/antirez/redis/blob/unstable/src/object.c">object.c</a>. Ở đây tôi sẽ trình bày 2 điểm quan trọng về robj:</p>
+
+<ul>
+<li>Tại sao phải encode <strong>robj</strong></li>
+<li>Vai trò của refcount.</li>
+</ul>
+
+
+<p><strong>Tại sao phải encode robj?</strong> Như trong danh sách các kiểu dữ liệu người dùng ở trên, ta thấy có chuỗi là kiểu dữ liệu cơ bản. Các kiểu dữ liệu còn lại (hast, set, list) đều là kiểu dữ liệu xoay quanh chuỗi, số nguyên hoặc các kiểu dữ liệu khác. Bản thân chuỗi thường có nhiều ký tự lặp lại, vì vậy bằng việc encoding chuỗi dữ liệu ta sẽ tiết kiệm được lượng bộ nhớ mà redis sử dụng. Encoding ở đây thực chất là làm giảm kích thước các object. Thuật toán encode chuỗi có thể tham khảo thủ tục <a href="https://github.com/antirez/redis/blob/unstable/src/object.c#L339">tryObjectEncoding</a> và và các thủ tục trong file <a href="https://github.com/antirez/redis/blob/unstable/src/util.c">util.c</a>. Thử tưởng tượng bạn có 1 key trỏ đến danh sách gồm 100 chuỗi, mỗi chuỗi chỉ cần tiết kiệm được 1 byte, thì việc encode này sẽ giúp bạn tiết kiệm được 100 bytes bộ nhớ. Lượng bộ nhớ tiết kiệm này sẽ có ý nghĩa khi bạn có hàng triệu key và value!</p>
+
+<p><strong>Vai trò của refcount</strong> Refcount thường được dùng để chia sẻ dữ liệu giống nhau của các đối tượng khác nhau. Ví dụ bạn có 2 xâu a, b cùng giá trị "Chào Thế giới!" thì không việc gì ta phải có 2 chuỗi "Chào Thế giới!" trong bộ nhớ. Chuỗi a và b có thể cùng trỏ tới 1 chuỗi trên bộ nhớ và chỉ thật sự cần có 1 bản copy riêng khi mà 2 chuỗi khác nhau. Đây là cách sử dụng thường gặp của "<a href="http://en.wikipedia.org/wiki/Reference_counting"><strong>reference count idiom</strong></a>". Tuy vậy ở redis hiếm khi ta thấy 2 object cùng chia sẻ giá trị như trường hợp ở trên. Vậy vai trò của reference count ở đây là gì?</p>
+
+<p>Thực chất tác giả sử dụng refcount ở đây 1 cách khá sáng tạo (dù mình không biết là có thật sự là 1 cách dùng mới hay không). Thử tưởng tượng 1 trường hợp sau đây: 1 thread đang đọc giá trị của robj trong khi 1 thread khác đang gửi command del robj. Nếu command del được tiến hành ngay lập tức, thread đọc robj có thể bị lỗi và trả về giá trị không đúng (1 list có 10 phần tử nhưng phần tử nhưng khi đọc thì redis báo giá trị không tồn tại :-)). Nếu như command del không được thực thi, khóa trên sẽ vẫn tồn tại trong bộ nhớ, và kết quả thực hiện del sẽ thất bại. Chắc là bạn không muốn command del thất bại liên tục (khi số lượng đọc ghi cực lớn, khả năng xảy ra lỗi này là khá cao!). Để giải quyết bài toán trên, tác giả của redis sử dụng refcount. Khi một object được truy cập bởi nhiều thread, refcount của object sẽ được tăng lên 1 đơn vị và giảm 1 khi không được tham chiếu nữa. Như vậy command del sẽ chỉ giảm refcount của robj đi 1. Nếu như tại thời điểm này không có tham chiếu nào đến robj này, robj này sẽ bị thu hồi ngay lập tức. Tuy vậy nếu có 1 thread khác đang tham chiếu robj này, refcount của robj sẽ lớn hơn 1, và do đó tại thời điểm command del được thực thi, giá trị của refcount giảm xuống còn 1. Khi thread khác hoàn thành công việc, thread này sẽ giảm refcount xuống tiếp 1 đơn vị nữa, lúc này robj refcount sẽ về 0 và robj sẽ được giải phóng!</p>
+
+<h2>4. Các cấu trúc dữ liệu người dùng</h2>
+
+<p>Tôi gọi các cấu trúc dữ liệu người dùng để phân biệt chúng với cấu trúc dữ liệu redis dùng để tăng hiệu năng ở core. Các cấu trúc dữ liệu này gồm list, hash, set và string được viết ở các file có tiền tố <strong>t_</strong> tương ứng. Như trình bày ở trên phần db core không biết gì ngoài robj vì vậy các cấu trúc dữ liệu này có nhiệm vụ là convert cách biểu diễn dữ liệu về robj.</p>
+
+<p>Nếu xem các file này, bạn sẽ thấy mỗi file đều có các hàm convert sang robj như: hashTypeConvert, listTypeConvert, ... Mỗi cấu trúc dữ liệu có cách viết khác nhau, nhưng đều cùng cấu trúc và khá ngắn gọn và đơn giản. Bạn có thể tham khảo từng file trên để  tìm hiểu rõ hơn về cách redis hỗ trợ các kiểu dữ liệu.</p>
+
+<p><div>
+  <pre><code class='bash'>src git:(unstable) wc -l t_*.c
+   761 t_hash.c
+  1149 t_list.c
+   913 t_set.c
+   459 t_string.c
+  2205 t_zset.c
+  5487 total</code></pre>
+</div>
+</p>
+
+<h2>5. Kết luận:</h2>
+
+<p>Bài viết trình bày về cách redis tổ chức các kiểu dữ liệu người dùng cũng như cách tổ chức phần "<strong>frontend</strong>" của redis db. Bài viết cũng trình bày chi tiết về robj, về ý nghĩa và vai trò của các trường trong robj cũng như vai trò của robj với backend db. Trong bài viết sau, mình sẽ cố gắng trình bày chi tiết về phần backend server.</p>
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[Tìm hiểu redis (phần 2): Framework lập trình sự kiện]]></title>
-    <link href="http://toandk.github.com/blog/2013/07/16/tim-hieu-redis-2/"/>
+    <link href="http://ktmt.github.com/blog/2013/07/16/tim-hieu-redis-2/"/>
     <updated>2013-07-16T00:00:00+09:00</updated>
-    <id>http://toandk.github.com/blog/2013/07/16/tim-hieu-redis-2</id>
+    <id>http://ktmt.github.com/blog/2013/07/16/tim-hieu-redis-2</id>
     <content type="html"><![CDATA[<h2>1. Giới thiệu</h2>
 
 <p>Trong bài viết <a href="http://ktmt.github.io/blog/2013/07/02/tim-hieu-redis/">tìm hiểu redis phần 1</a>, chúng ta đã tìm hiểu cách redis quản lý dữ liệu (AOF và RDB) cũng như cách redis tận dụng các tính năng của OS (fsync) để sao lưu dữ liệu. Bài viết này tập trung trình bày cụ thể hơn về framework lập trình hướng sự kiện của redis.</p>
@@ -631,9 +793,9 @@ aeCreateEventLLoop, aeStop, aeMain, aeCreateFileEvent, aeCreateTimeEvent...</li>
   
   <entry>
     <title type="html"><![CDATA[Tìm hiểu redis - phần 1]]></title>
-    <link href="http://toandk.github.com/blog/2013/07/02/tim-hieu-redis/"/>
+    <link href="http://ktmt.github.com/blog/2013/07/02/tim-hieu-redis/"/>
     <updated>2013-07-02T23:38:00+09:00</updated>
-    <id>http://toandk.github.com/blog/2013/07/02/tim-hieu-redis</id>
+    <id>http://ktmt.github.com/blog/2013/07/02/tim-hieu-redis</id>
     <content type="html"><![CDATA[<h2>1. Giới thiệu</h2>
 
 <p><a href="www.redis.io">Redis</a> là hệ thống lưu trữ key-value với rất nhiều tính năng và được <a href="http://redis.io/topics/whos-using-redis">sử dụng rộng rãi</a>. Redis nổi bật bởi việc hỗ trợ nhiều cấu trúc dữ liệu cơ bản (hash, list, set, sorted set, string), đồng thời cho phép scripting bằng ngôn ngữ lua. Bên cạnh lưu trữ key-value trên RAM với hiệu năng cao, redis còn hỗ trợ lưu trữ dữ liệu trên đĩa cứng (persistent redis) cho phép phục hồi dữ liệu khi gặp sự cố. Ngoài tính năng replicatation (sao chép giữa master-client), tính năng cluster (sao lưu master-master) cũng đang được phát triển . Để sử dụng một cách hiệu quả những tính năng redis hỗ trợ cũng như vận hành redis với hiệu suất cao nhất thì việc am hiểu hệ thống lưu trữ này là điều không thể thiếu. Chính vì lý do này, mình quyết định tìm hiểu mã nguồn redis. Loạt bài viết về redis này tóm tắt những điều mình tìm hiểu được từ việc đọc mã nguồn của redis.</p>

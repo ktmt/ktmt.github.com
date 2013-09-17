@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: rails | Blog kỹ thuật máy tính]]></title>
-  <link href="http://toandk.github.com/blog/categories/rails/atom.xml" rel="self"/>
-  <link href="http://toandk.github.com/"/>
-  <updated>2013-07-30T00:42:43+09:00</updated>
-  <id>http://toandk.github.com/</id>
+  <link href="http://ktmt.github.com/blog/categories/rails/atom.xml" rel="self"/>
+  <link href="http://ktmt.github.com/"/>
+  <updated>2013-09-18T01:15:24+09:00</updated>
+  <id>http://ktmt.github.com/</id>
   <author>
     <name><![CDATA[kỹ thuật máy tính]]></name>
     
@@ -14,10 +14,153 @@
 
   
   <entry>
+    <title type="html"><![CDATA[prototype chức năng mới cho webapp trên rails với chanko]]></title>
+    <link href="http://ktmt.github.com/blog/2013/09/08/prototype-chuc-nang-moi-cho-webapp-tren-rails-voi-chanko/"/>
+    <updated>2013-09-08T21:49:00+09:00</updated>
+    <id>http://ktmt.github.com/blog/2013/09/08/prototype-chuc-nang-moi-cho-webapp-tren-rails-voi-chanko</id>
+    <content type="html"><![CDATA[<p>Là một web developer nói chung và ruby on rails developer nói riêng, bạn chắc hẳn sẽ gặp nhiều khó khăn khi muốn thêm chức năng mới vào hệ thống hiện tại. Khó khăn đáng nói đến nhất bao gồm: bạn phải add sao cho chức năng mới được add vào sẽ dễ extend, dễ tháo bỏ khi không cần thiết, và việc add chức năng mới vào sẽ có ảnh hưởng tối thiểu nhất đến các chức năng đã có. Trong bài viết này, mình sẽ giới thiệu về <strong><a href="https://github.com/cookpad/chanko">chanko</a></strong>, một <strong>(framework/engine) trên ruby on rails</strong>, mà sẽ giúp cho việc tạo chức năng mới trên một app đã có cực kì clean và dễ dàng.</p>
+
+<h1>1. Cài đặt</h1>
+
+<p>Để cài đặt chanko thì chúng ta chỉ cần add chanko vào Gemfile:
+<code>ruby
+gem "chanko"
+</code></p>
+
+<h1>2. Sử dụng</h1>
+
+<p>Đầu tiên chúng ta sẽ nói về ý tưởng của chanko. Chanko tách chức năng mới với app hiện tại thông qua việc tạo ra một folder trong /app/unit. Trong đó sẽ chứa các chức năng được tạo mới thông qua chanko. Việc này có thể được nhìn thấy dễ dàng khi chúng ta sử dụng chanko generator.</p>
+
+<p>```
+$ rails generate chanko:unit example_unit</p>
+
+<pre><code>  create  app/units/example_unit
+  create  app/units/example_unit/example_unit.rb
+  create  app/units/example_unit/views/.gitkeep
+  create  app/units/example_unit/images/.gitkeep
+  create  app/units/example_unit/javascripts/.gitkeep
+  create  app/units/example_unit/stylesheets/.gitkeep
+  create  app/assets/images/units/example_unit
+  create  app/assets/javascripts/units/example_unit
+  create  app/assets/stylesheets/units/example_unit
+</code></pre>
+
+<p>```</p>
+
+<p>Chúng ta có thể thấy chanko generator gần tương tự như scaffold generator của rails. unit ở đây là một đơn vị chức năng.</p>
+
+<p>Ví dụ khi bạn cần add chức năng search button thì bạn sẽ <code>generate chanko:unit add_search_button</code>, khi đó chanko sẽ tự động tạo folder add_search_button ở trong app/units, và tạo sẵn file add_search_button_unit.rb và thư mục view để chứa view của chức năng mới này. File add_search_button.rb này sẽ chứa logic của cả model/controller của chức năng add_search_button mà chúng ta cần thêm vào.</p>
+
+<p>Các bạn có thể thấy rõ ý tưởng của chanko là tách logic và cả asset của chức năng mới cần thêm vào càng tách biệt với các chức năng cũ càng tốt. Việc này có tác dụng là chúng ta có thể thêm, bớt chức năng vào hệ thống cũ bằng một flow rất clean , và độ ảnh hưởng với hệ thống cũ cực kì thấp. Vậy nếu tách unit mới ra dưới dạng gần như một thư viện riêng như vậy, chúng ta sẽ intergrate unit này vào rails ra sao?</p>
+
+<p>Việc intergrate unit được tạo ra bởi chanko vào rails được thể hiện qua các chức năng dưới đây:</p>
+
+<h2>2.1 Invoke</h2>
+
+<p>```ruby</p>
+
+<h1>app/controllers/users_controller.rb</h1>
+
+<p>class UsersController &lt; ApplicationController
+  def index</p>
+
+<pre><code>invoke(:add_search_button_unit, :index) do
+  @users = User.all
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>```ruby
+module AddSearchButtonUnit
+  include Chanko::Unit
+  function (:index) do</p>
+
+<pre><code>@users = Users.unit.active
+</code></pre>
+
+<p>  end
+end
+<code>``
+Hàm invoke này sẽ đưa logic của hàm</code>index<code>được định nghĩa trong</code>add_search_button_unit.rb` vào trong logic của hàm hiện tại. Block được pass vào hàm invoke sẽ là fallback function, được execute khi có lỗi hày có vấn đề gì xảy ra với hàm invoke. Chúng ta có thể hình dung đơn giản chức năng invoke dùng để extend logic của một hàm của một unit (chức năng mới) và logic của controller (chức năng cũ)</p>
+
+<h2>2.2 Unit module</h2>
+
+<p>Unit module chính là module của chức năng mới được thêm vào, ở đây chính là module AddSearchButton mà chúng ta đã nói đến ở trên. Trong module này sẽ định nghĩa logic cho controller, model và cả view helper cho chức năng mới. Tất cả MVC logic đều được nhét vào 1 file có thể hơi khó nhìn khi chức năng của chúng ta có nhiều logic phức tạp , tuy nhiên khi dừng lại ở mức prototyping thì việc này có thể chấp nhận được.</p>
+
+<p><strong>Logic của controller</strong> được add vào thông qua hàm <code>scope(:controller)</code>
+```ruby
+scope(:controller) do
+  function(:show) do</p>
+
+<pre><code>@user = User.find(params[:id])
+</code></pre>
+
+<p>  end</p>
+
+<p>  function(:index) do</p>
+
+<pre><code>@users = User.active
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Gần tương tự, <strong>Logic của của model</strong> sẽ được thực hiện thông qua hàm <code>model</code>. Một điểm hơi khác là trong block pass vào thì chúng ta phải extend model mà chúng ta muốn thêm chức năng vào. Một điều đặc biệt ở đây là các hàm được extend cho một model X sẽ không được add trực tiếp vào model X thông qua monkey patch, mà sẽ add gián tiếp thông qua một proxy tên là unit. Do đó giả sử chúng ta một thêm hàm <code>method</code> vào model X thì chúng ta sẽ gọi nó thông qua <code>X.unit.method</code>. Như ở ví dụ dưới đây thì hàm active? sẽ được gọi thông qua user.unit.active?</p>
+
+<p>```ruby
+models do
+  expand(:User) do</p>
+
+<pre><code>scope :active, lambda { where(:deleted_at =&gt; nil) }
+
+def active?
+  deleted_at.nil?
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Logic của view được thực hiện thêm vào thông qua hàm <code>scope(:view)</code> và qua file view được add vào thư mục /units/unit_name/views (file view này sẽ có extension là slim)</p>
+
+<p>```ruby
+scope(:view) do
+  function(:active) do</p>
+
+<pre><code>render '/active' if user.unit.active?
+</code></pre>
+
+<p>  end
+end
+```
+Hàm view này sẽ render view active.html.slim nằm trong app/units/unit_name/views</p>
+
+<p>Ngoài việc add logic của unit vào controller/model/view thông qua các hàm scope và model như đã giới thiệu ở trên. Chanko::Unit cung cấp cho chúng ta một hàm rất hữu ích là <code>active_if</code>. Hàm này giống như một dạng functionality toggle, giúp chúng ta có thể on/off một chức năng mới cực kì dễ dàng. Block được pass vào active_if sẽ quyêt định chức unit có được enable không, nếu không được enable thì tất cả các logic của unit sẽ không được execute.</p>
+
+<p><code>ruby
+active_if do |context, options|
+  true
+end
+</code></p>
+
+<h1>3. Kết luận</h1>
+
+<p>Qua bài viết này chúng ta đã biết cách sử dụng gem chanko để có thể prototype chức năng mới một cách dễ dàng hơn, và ít ảnh hưởng đến hệ thống cũ nhất. Một cách đơn giản thì chanko đưa logic của cả model/view/controller vào tập trung trong 1 file, và cung cấp các helper function để giúp logic của hệ thống cũ có thể invoke các chức năng của unit mới một cách đơn giản nhất.</p>
+
+<p>Các bạn có thể tham khảo chi tiết thông qua <a href="http://cookpad.github.io/chanko/">homepage của chanko</a></p>
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[Sử dụng ssl trên rubyonrails]]></title>
-    <link href="http://toandk.github.com/blog/2013/05/15/su-dung-ssl-voi-rails-va-mot-so-chu-y/"/>
+    <link href="http://ktmt.github.com/blog/2013/05/15/su-dung-ssl-voi-rails-va-mot-so-chu-y/"/>
     <updated>2013-05-15T23:03:00+09:00</updated>
-    <id>http://toandk.github.com/blog/2013/05/15/su-dung-ssl-voi-rails-va-mot-so-chu-y</id>
+    <id>http://ktmt.github.com/blog/2013/05/15/su-dung-ssl-voi-rails-va-mot-so-chu-y</id>
     <content type="html"><![CDATA[<h1>HTTPS trên rails</h1>
 
 <p>Là RoR developer, khi phải làm việc với một số thông tin quan trọng như: thông tin cá nhân user, thông tin về thanh toán trực tuyến thì thường bạn phải dùng kết nối có bảo mật (secure connection), và điển hình ở đây là sử dụng HTTPS. Để setup HTTPS trên rails, thì trước hết mình phải nhắc lại là các web server phổ biến trên rails như là webrick, unicorn hay thin đều không hỗ trợ HTTPS từ đầu.  Để sử dụng SSL thì có 2 cách:</p>

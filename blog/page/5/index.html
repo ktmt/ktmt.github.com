@@ -7,7 +7,7 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jun 30th, 2013 hash, java,, programming,, thread, Comments Tutorial: Duplicate File Finder (Java) Mở đầu Trong quá trình dọn dẹp máy tính cá nhân, &hellip;">
+	<meta name="description" content="Aug 2nd, 2013 sercurity,, server Comments Các Lỗi Bảo Mật Khi Xây Dựng Server Login Bằng Facebook Cho Mobile App Mở đầu Facebook là mạng xã hội phổ &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -17,7 +17,7 @@
 
 	<link href="/atom.xml" rel="alternate" title="Blog kỹ thuật máy tính" type="application/atom+xml">
 	
-	<link rel="canonical" href="http://toandk.github.com/blog/page/5/">
+	<link rel="canonical" href="http://ktmt.github.com/blog/page/5/">
 	<link href="/favicon.png" rel="shortcut icon">
 	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
 	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
@@ -84,37 +84,171 @@
   
 
 
-<time datetime="2013-06-30T09:07:00+09:00" data-updated="true" itemprop="datePublished">Jun 30<span>th</span>, 2013</time></div>
+<time datetime="2013-08-02T23:30:00+09:00" data-updated="true" itemprop="datePublished">Aug 2<span>nd</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/hash/'>hash</a>, <a class='category' href='/blog/categories/java/'>java,</a>, <a class='category' href='/blog/categories/programming/'>programming,</a>, <a class='category' href='/blog/categories/thread/'>thread,</a>
+	<a class='category' href='/blog/categories/sercurity/'>sercurity,</a>, <a class='category' href='/blog/categories/server/'>server</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/06/30/tutorial-duplicate-file-finder-java/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/08/02/cac-loi-bao-mat-can-tranh-khi-xay-dung-server-ho-tro-login-bang-facebook-cho-mobile-app/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/30/tutorial-duplicate-file-finder-java/" itemprop="url">Tutorial: Duplicate File Finder (Java)</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/08/02/cac-loi-bao-mat-can-tranh-khi-xay-dung-server-ho-tro-login-bang-facebook-cho-mobile-app/" itemprop="url">Các Lỗi Bảo Mật Khi Xây Dựng Server Login Bằng Facebook Cho Mobile App</a></h1>
 	<div class="entry-content" itemprop="articleBody">
 		<h1>Mở đầu</h1>
 
-<p>Trong quá trình dọn dẹp máy tính cá nhân, tôi gặp phải vấn đề là quá nhiều file trùng lặp trong máy tính. Việc có quá nhiều file như vậy gây lãng phí ổ cứng, cộng thêm đôi lúc tôi không còn nhớ là file này đặt ở thư mục này có ý nghĩa gì nữa. Giá mà có công cụ nào đó để tìm tự động các file này cho tôi thì tốt quá nhỉ??</p>
+<p>Facebook là mạng xã hội phổ biến nhất hiện nay. Nếu bạn đọc blog này mà không có tài khoản
+Facebook, tôi nghi ngờ bạn đến từ Vegeta. Chức năng &#8220;Login bằng tài khoản Facebook&#8221; là môt trong
+những chức năng giúp cho người dùng đăng ký vào hệ thống ứng dụng của bạn một cách nhanh chóng.
+Phần lớn các app mobile đếu support chức năng này.</p>
 
-<p>Không cần phải giá mà nữa, không gì bằng làm ra cho mình một công cụ như vậy. Bài viết này sẽ trình bày những bước đầu tiên tôi prototype công cụ tìm kiếm các file trùng lặp. Thông qua bài viêt này, tôi cũng sẽ giới thiệu về những chủ đề sau trong Java: tính hash, thread pooling.</p>
+<p>Việc cài đặt hỗ trợ chức năng login bằng Facebook trên server tuy khá đơn giản, nhưng rất dễ xảy
+ra lỗi bảo mật, nếu bạn không chú ý. Bài viết này trình bày một vài lỗi cơ bản hay gặp khi
+cài đặt trên server cho ứng dụng trên mobile</p>
 
-<h1>MD5 checksum</h1>
+<h1>Luồng thực hiện để login bằng facebook trên mobile</h1>
 
-<p>MD5 là một thuật toán mã hóa thông điệp (message-digest), về bản chất là một hàm băm (hash) xuất ra một giá trị 128-bit (16-byte). MD5 được sử dụng rất nhiều trong các ứng dụng bảo mật, và cũng được sử dụng để kiểm tra tính toàn vẹn dữ liệu (ví dụ như bạn down một file từ Internet về, thường có một MD5 key đi kèm, để bạn kiểm tra xem file bạn down có chính xác giống nguồn down không.)</p>
+<p>Các bước được thực hiện khi người dùng bấm vào nút &#8220;login bằng facebook&#8221; trên một ứng dụng mobile.
+Để phần trình bày bên dưới rõ ràng, tôi sẽ gọi ứng dụng mobile là A, và server của ứng dụng này
+là server A, ứng dụng trên FB cho app A là FBA</p>
 
-<p>Tôi không có ý định đi sâu vào cách tính MD5, bạn có thể tham khảo trên google. Lưu ý là thuật toán MD5 vẫn có thể sinh ra cùng một giá trị hash với 2 file có nội dung khác nhau (tuy nhiên trường hợp này rất hiếm). Để chắc chắn tìm được 2 file có nội dung giống hệt nhau, ta sẽ so sánh theo thứ tự: so sánh giá trị hash, so sánh độ lớn của file, và cuối cùng là so sánh từng byte của hai file để chắc chắn chúng trùng nhau.</p>
+<ul>
+<li>Ứng dụng mobile A sẽ chuyển sang gọi ứng dụng Facebook để yêu cầu người dùng các quyền để truy
+cập vào tải khoản của người dùng trên FB</li>
+<li>Sau khi người dùng cho phép ứng dụng mobile A truy cập vào FB, ứng dụng mobile A sẽ gửi request
+lên FB server để lấy access token</li>
+<li>Server FB trả về access token cho ứng dụng mobile A</li>
+</ul>
 
-<p>Trong Java, hàm băm đã được đưa vào thư viện <em>java.security</em>, thông qua class <em>MessageDigest</em>. Bạn chỉ cần khai báo đối tượng <em>MessageDigest</em>, sau đó chọn phương thức mã hóa MD5, hoặc SHA. Việc bạn phải làm đối với từng file là chuyển file thành byte stream, và update dòng input này vào đối tượng <em>MessageDigest</em> trên, và bạn sẽ nhận được một dòng byte kết quả.</p>
 
-<p>Chi tiết về class <em>MessageDigest</em>, bạn có thể tham khảo tại đây: <a href="http://docs.oracle.com/javase/6/docs/api/java/security/MessageDigest.html">http://docs.oracle.com/javase/6/docs/api/java/security/MessageDigest.html</a></p>
+<p>Sau khi có được access token, ứng dụng mobile có thể làm theo 2 cách</p>
 
-<figure class='code'><figcaption><span>MD5.java </span></figcaption>
+<ul>
+<li><p><strong>Cách 1</strong>: ứng dụng mobile A sử dụng access token để truy cập vào FB API, lấy thông tin của user
+từ FB như user id, username, email. Và gửi những thông tin này lên cho server A. Dựa vào trường
+user id hoặc email, server A sẽ tạo mới tài khoản cho user, hoặc merge với một tài khoản có sẵn
+ở trong server, rồi trả về thông tin tài khoản cho user.</p></li>
+<li><p><strong>Cách 2</strong>: ứng dụng mobile A gửi ngay access token nhận được từ FB lên cho server A. Server A
+sử dụng access token truy cập vào FB API và check user trình bày ở cách 1.</p></li>
+</ul>
+
+
+<p>Cách 1 có ưu điểm hơn so với cách 2 ở chỗ, việc request vào FB API được thực hiện ở phía client
+do đó server sẽ giảm được tải đi một phần. Cả server và client đều có khả năng lấy được thông
+tin user trên FB bằng access token, vậy thì sử dụng client để lấy thông tin, server có
+thể sử dụng tài nguyên để làm việc khác. Hơn nữa nếu để server lấy thông tin user, thời gian để
+lấy thông tin sẽ phụ thuộc vào tốc độ mạng giữa server A và FB server.</p>
+
+<p>Mọi lý do đều dẫn đến cách 1 là tốt hơn so với cách 2 về mặt hiệu năng.</p>
+
+<p>Tuy nhiên, nếu xét về khía cạnh bảo mât, cách 1 lại cưc kỳ nguy hiểm. Vì sao vậy</p>
+
+<p>Hãy xét một trường hợp thế này:</p>
+
+<ul>
+<li>User B sử dụng app A và dùng chức năng login bằng FB để đăng nhập. App A cài đặt theo cách 1.
+Sau khi có access token, app A lấy được FB user id của B là id_B, và email là email_B. App A
+gửi những thông tin này lên cho server A. Server A nhận thấy hệ thống chưa có user nào có FB ID
+là id_B, nên tạo mới một account cho B, và trả về thông tin của B.</li>
+<li>Lần tiếp theo user B sử dụng app A để đăng nhập bằng FB, server A sẽ không tạo mới account,
+  mà trả về luôn thông tin của account đã tạo ra ở trên</li>
+<li>Hacker C, bằng cách nào đó biết được URL endpoint của server A phục vụ cho việc đăng nhập bằng FB.
+Hacker C, truyền lên một thông tin giả với trường FB ID là id_B. Lúc này server B, chỉ kiểm tra FB
+ID của request là id_B, nên sẽ vẫn coi đây là request của user B và trả về thông tin của tài khoản user B.</li>
+</ul>
+
+
+<p>Vậy là C có thể chiếm bất cứ tài khoản FB nào mà C biết FB id (có tới 1 tỉ tải khoản FB đó, nên C hẳn sẽ có rất nhiều thứ để chiếm đây)</p>
+
+<p>Với cách implement bằng cách 1, server sẽ không thể phân biệt được request nào là request thật của user.
+Để chắc chắn server khi nhận được access token, phải request tới FB API để kiểm tra xem access token
+truyền lên có phải là của user mà app A truyền lên hay không. Nói cách khác server vẫn cần request tới FB API.
+Như vậy việc client gửi request tới FB API để lấy thông tin là cũng không cần thiết.</p>
+
+<h1>Liệu server sử dụng access token để lấy thông tin của user trên FB đã là đủ?</h1>
+
+<p>Hãy nói tiếp về cách implement thứ 2. Khi server A nhận access token từ app A.
+Server gửi request tới FB API để lấy thông tin của user như FB ID và email. Sau đó tạo mới hoặc merge
+với một tài khoản đã có trong hệ thống (trùng FB ID hoặc là trùng email).</p>
+
+<p>Nhưng như thế đã là đủ?</p>
+
+<p>Ta lại xét tiếp một tình huống như sau:</p>
+
+<ul>
+<li>Hacker C tạo ra một FB app mới là FBA&#8217; và bằng cách nào đó lấy được access token của user B khi B sử dụng FBA&#8217;.</li>
+<li>Hacker C gửi request tới server A sử dụng access token FBA&#8217;.</li>
+<li>Server A dùng FBA&#8217; để lấy thông tin, và nhận thấy thông tin đó là của user B, nên server A trả
+về thông tin của tài khoản B</li>
+</ul>
+
+
+<p>Như vây, hacker C lại chiếm được tài khoản của user B trên hệ thống A bằng cách dùng một access token
+trên một FB app khác của user B</p>
+
+<p>Để bảo mật, cách duy nhất là khi server A nhận được access token, server A cần gửi request tới FB API
+để check xem access token này là từ FB Application nào.</p>
+
+<h1>Tổng kết</h1>
+
+<p>Bài viết trình bày 2 lỗi bảo mật hay gặp khi cài đặt hệ thống login bằng facebook trên server cho
+ứng dụng mobile. Lỗi thứ nhất là sử dụng client để lấy access token, mà không kiểm tra độ chính xác
+của access token. Lỗi thứ hai là chỉ kiểm tra độ chính xác của access token bằng cách thông tin
+user, mà không kiểm tra thông tin của app từ access token.</p>
+
+<p>Nếu bạn đã có một hệ thống login bằng FB, hãy check lại nó. Nếu bạn chưa từng cài đặt hệ thống này
+thì chúc mừng bạn, bạn đã được cảnh báo !!!</p>
+
+		
+		
+	</div>
+
+</article>
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-28T23:45:00+09:00" data-updated="true" itemprop="datePublished">Jul 28<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/php/'>PHP</a>, <a class='category' href='/blog/categories/reflection/'>Reflection</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/07/28/reflection-and-reverse-engineer-in-php/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/07/28/reflection-and-reverse-engineer-in-php/" itemprop="url">Reflection and Reverse Engineer in PHP</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h2>Giới thiệu Reflection class trong PHP</h2>
+
+<p>Kể từ PHP 5 trở đi, Programmer PHP đã có bộ API Reflection rất hữu dụng để reverse-engineer các class, interfaces, function hay các extension.
+Bài viết này sẽ giới thiệu tính năng, ý nghĩa và ứng dụng của Reflection trong PHP.</p>
+
+<h2>Thế nào là dynamically-typed language ?</h2>
+
+<p>Cũng giống như Python hay Ruby, PHP là 1 dynamically-typed language.</p>
+
+<p>Chúng ta hãy cùng xem xét 2 class sau:</p>
+
+<figure class='code'><figcaption><span>Author.php </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -139,96 +273,147 @@
 <span class='line-number'>22</span>
 <span class='line-number'>23</span>
 <span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'> <span class="kd">public</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">getMD5</span><span class="o">(</span><span class="n">File</span> <span class="n">file</span><span class="o">)</span>
-</span><span class='line'>  <span class="o">{</span>
-</span><span class='line'>      <span class="k">if</span><span class="o">(!</span><span class="n">file</span><span class="o">.</span><span class="na">exists</span><span class="o">())</span>
-</span><span class='line'>          <span class="k">return</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
-</span><span class='line'>      <span class="k">try</span>
-</span><span class='line'>      <span class="o">{</span>
-</span><span class='line'>          <span class="n">MessageDigest</span>  <span class="n">md</span> <span class="o">=</span>  <span class="n">MessageDigest</span><span class="o">.</span><span class="na">getInstance</span><span class="o">(</span><span class="s">&quot;MD5&quot;</span><span class="o">);</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Author</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">private</span> <span class="nv">$name</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">private</span> <span class="nv">$birth</span><span class="p">;</span>
 </span><span class='line'>
-</span><span class='line'>          <span class="c1">//read the file into a byte array</span>
-</span><span class='line'>          <span class="kt">byte</span><span class="o">[]</span> <span class="n">input</span> <span class="o">=</span> <span class="k">new</span> <span class="kt">byte</span><span class="o">[(</span><span class="kt">int</span><span class="o">)</span> <span class="n">file</span><span class="o">.</span><span class="na">length</span><span class="o">()];</span>
-</span><span class='line'>          <span class="n">InputStream</span> <span class="n">in</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FileInputStream</span><span class="o">(</span><span class="n">file</span><span class="o">);</span>
-</span><span class='line'>          <span class="n">in</span><span class="o">.</span><span class="na">read</span><span class="o">(</span><span class="n">input</span><span class="o">);</span>
-</span><span class='line'>          <span class="n">in</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
-</span><span class='line'>          
-</span><span class='line'>          <span class="c1">//update the MessageDigest and process</span>
-</span><span class='line'>          <span class="n">md</span><span class="o">.</span><span class="na">update</span><span class="o">(</span><span class="n">input</span><span class="o">);</span>
-</span><span class='line'>          <span class="kt">byte</span><span class="o">[]</span> <span class="n">fileDigest</span> <span class="o">=</span> <span class="n">md</span><span class="o">.</span><span class="na">digest</span><span class="o">();</span>
-</span><span class='line'>          
-</span><span class='line'>          <span class="k">return</span> <span class="nf">ByteArrayToString</span><span class="o">(</span><span class="n">fileDigest</span><span class="o">);</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>      <span class="k">catch</span><span class="o">(</span><span class="n">IOException</span> <span class="n">e</span> <span class="o">)</span>
-</span><span class='line'>      <span class="o">{</span>
-</span><span class='line'>          <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
-</span><span class='line'>          <span class="k">return</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>      <span class="k">catch</span><span class="o">(</span><span class="n">NoSuchAlgorithmException</span> <span class="n">e</span><span class="o">)</span>
-</span><span class='line'>      <span class="o">{</span>
-</span><span class='line'>          <span class="k">return</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'>  
-</span><span class='line'>  <span class="kd">private</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">ByteArrayToString</span><span class="o">(</span><span class="kt">byte</span><span class="o">[]</span> <span class="n">ba</span><span class="o">)</span>
-</span><span class='line'>  <span class="o">{</span>
-</span><span class='line'>     <span class="n">StringBuilder</span> <span class="n">sb</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StringBuilder</span><span class="o">();</span>
-</span><span class='line'>     <span class="k">for</span><span class="o">(</span><span class="kt">byte</span> <span class="nl">b:</span> <span class="n">ba</span><span class="o">)</span>
-</span><span class='line'>        <span class="n">sb</span><span class="o">.</span><span class="na">append</span><span class="o">(</span><span class="n">String</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">&quot;%02x&quot;</span><span class="o">,</span> <span class="n">b</span><span class="o">&amp;</span><span class="mh">0xff</span><span class="o">));</span>
-</span><span class='line'>     <span class="k">return</span> <span class="n">sb</span><span class="o">.</span><span class="na">toString</span><span class="o">();</span>
-</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nv">$birth</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">name</span> <span class="o">=</span> <span class="nv">$name</span><span class="p">;</span>
+</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">birth</span> <span class="o">=</span> <span class="nv">$birth</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">public</span> <span class="k">function</span> <span class="nf">getName</span><span class="p">()</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">name</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">public</span> <span class="k">function</span> <span class="nf">getBirth</span><span class="p">()</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">birth</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<h1>Theading</h1>
-
-<p>Threading, hay concurrency, trong Java là một chủ đề khá phức tạp và tôi cũng chưa đủ khả năng nắm rõ được tất cả. Do vậy, trong bài viết này, tôi xin chỉ đề cập đến kĩ thuật thread pooling để phân bài toán ra thành nhiều tác vụ, chạy trên nhiều luồng khác nhau.</p>
-
-<p>Thread pool là gì? Bạn có thể hiểu nôm na là thay vì cứ gọi một luồng mới cho từng tác vụ khi cần thiết (phương pháp này gặp nhược điểm vì việc tạo thread mới sẽ gặp overhead), ta tạo sẵn một cái &#8220;bể&#8221; (pool) trong đó khởi động sẵn một loạt các luồng (thread). Các luồng này ngoi ngoi lên để đợi ta ném tác vụ vào để chúng thực hiện. Sau khi thực hiện xong, nó sẽ báo cáo lại kết quả, kết thúc tác vụ, và quay trở lại &#8220;bể&#8221; để tiếp tục ngoi ngoi chờ tác vụ mới. Chỉ khi nào đóng &#8220;bể&#8221;, thì các luồng mới bị mất đi.</p>
-
-<p>Trong bài toán tìm file trùng lặp này, tôi sẽ áp dụng thread pooling như sau:</p>
-
-<ul>
-<li>Tạo một class DuppFind, implement Runnable class (đây là class ta có thể truyền vào cho pool), đại diện cho tác vụ tìm kiếm. Với mỗi object DuppFind, nó sẽ được truyền vào các tham số gồm có:</li>
-</ul>
 
 
-<p>&#8211; Thư mục bắt đầu tìm kiếm</p>
+<figure class='code'><figcaption><span>Book.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Book</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">private</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">setAuthor</span><span class="p">(</span><span class="nv">$author</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">getAuthor</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>&#8211; Map&lt;String, List<String>>: là một map chứa key là md5 và value là một List chứa đường dẫn đến các file có md5 value như vậy</p>
 
-<p>&#8211; pool, thuộc class ExcutorService.</p>
+<p>2 class rất đơn giản phải không :) Book hoàn toàn có thể được setAuthor() là 1 string hay là 1 instance của class Author.</p>
 
-<ul>
-<li>Mỗi tác vụ sau khi được luồng chọn để thực thi, nó sẽ làm gì? Nhiệm vụ của tác vụ là quét tất cả các file, thư mục có trong thư mục được chỉ định tìm kiếm. Nếu gặp file, nó sẽ tính MD5 cho file đó, và thêm vào Map. Nếu gặp thư mục, tác vụ này sẽ tạo ra một tác vụ DuppFind mới, chỉ định thư mục mới này cho tác vụ DuppFind mới, và ném vào pool (bây giờ bạn đã hiểu tại sao object DuppFind luôn được truyền pool vào rồi đấy:) )</li>
-</ul>
+<p>Không khó để hình dung ra kết quả của đoạn code dưới đây.</p>
+
+<figure class='code'><figcaption><span>sample.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="nv">$book1</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
+</span><span class='line'><span class="nv">$book1</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="s2">&quot;Nam Cao&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="nb">var_dump</span><span class="p">(</span><span class="nv">$book1</span><span class="o">-&gt;</span><span class="na">getAuthor</span><span class="p">());</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$book2</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
+</span><span class='line'><span class="nv">$book2</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">(</span><span class="s2">&quot;Nam Cao&quot;</span><span class="p">,</span><span class="s2">&quot;29-10-1915&quot;</span><span class="p">));</span>
+</span><span class='line'><span class="nb">var_dump</span><span class="p">(</span><span class="nv">$book1</span><span class="o">-&gt;</span><span class="na">getAuthor</span><span class="p">());</span>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure>
 
 
-<p>Một vài điểm lưu ý:</p>
+<p>Nếu chỉ dừng ở đây thì tôi với bạn chẳng có gì để nói với nhau :D
+Nhưng bạn hãy thử để ý, 1 instance của 1 class Book khi gọi đến hàm <code>setAuthor</code> hoàn toàn không có 1 khái niệm nào về <code>$author</code> cả.
+Nói cách khác, $author có thể là bất cứ 1 object nào.
+Điều gì sẽ xảy ra khi tôi modify class Book 1 chút như sau:</p>
 
-<ul>
-<li><p>Mỗi tác vụ phải có trách nhiệm đợi tất cả các tác vụ con nó tạo ra hoàn thành thì mới được chấm dứt. Tôi thực hiện điều này bằng cách sử dụng đối tượng Future được trả lại mỗi lần ném tác vụ mới vào pool. Sau đó chỉ cần gọi polling kết quả từ tác vụ con là được.</p></li>
-<li><p>Với những Collection dùng chung giữa các thread, cần phải dùng những Concurrecy Collection mà Java cung cấp. Cụ thể ở đây, tôi dùng ConcurrentHashMap cho Map và CopyOnWriteArrayList cho List.</p></li>
-</ul>
+<figure class='code'><figcaption><span>Book.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Book</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">private</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">setAuthor</span><span class="p">(</span><span class="nv">$author</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>      <span class="nb">var_dump</span><span class="p">(</span><span class="nv">$author</span><span class="o">-&gt;</span><span class="na">getName</span><span class="p">());</span> <span class="c1">// Attention here! Now we try to call getName() of variable $author</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">getAuthor</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure>
 
 
-<p>Dưới đây là đoạn code cho phần thread pooling:</p>
+<p>Bạn thử chạy lại đoạn code sample.php bên trên, bạn sẽ thấy $book1 trả về Fatal Error nhưng $book2 sẽ chạy qua bình thường!</p>
 
-<figure class='code'><figcaption><span>DuppFind.java </span></figcaption>
+<p>Vào thời điểm runtime $book2, PHP sẽ &#8220;inspect&#8221; object $author truyền vào cho <code>setAuthor()</code> và tự hiểu $author là 1 instance của class Author và có 1 method là <code>getName()</code>.</p>
+
+<h2>Reverse engineer example</h2>
+
+<p>Vậy PHP nói riêng và các dynamically-typed language nói chung làm thế nào để nhận biết được type của object truyền vào function hay class ?</p>
+
+<p>Câu trả lời là reflection class! Bạn đã nhận ra PHP dùng reflection như thế nào qua ví dụ bên trên, bạn thậm chí có thể tự sử dụng reflection class.</p>
+
+<figure class='code'><figcaption><span>Book.php </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -251,128 +436,63 @@
 <span class='line-number'>20</span>
 <span class='line-number'>21</span>
 <span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">DuppFind</span> <span class="kd">implements</span> <span class="n">Runnable</span><span class="o">{</span>
-</span><span class='line'>  <span class="kd">private</span> <span class="n">File</span> <span class="n">directory</span><span class="o">;</span>
-</span><span class='line'>  <span class="kd">private</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">md5FileMap</span><span class="o">;</span>
-</span><span class='line'>  <span class="kd">private</span> <span class="n">ExecutorService</span> <span class="n">pool</span><span class="o">;</span>
-</span><span class='line'>  
-</span><span class='line'>  <span class="kd">public</span> <span class="nf">DuppFind</span><span class="o">(</span><span class="n">File</span> <span class="n">directory</span><span class="o">,</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">md5FileMap</span><span class="o">,</span> <span class="n">ExecutorService</span> <span class="n">pool</span><span class="o">)</span>
-</span><span class='line'>  <span class="o">{</span>
-</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">directory</span> <span class="o">=</span> <span class="n">directory</span><span class="o">;</span>
-</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">md5FileMap</span> <span class="o">=</span> <span class="n">md5FileMap</span><span class="o">;</span>
-</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">pool</span> <span class="o">=</span> <span class="n">pool</span><span class="o">;</span>
-</span><span class='line'>  <span class="o">}</span>    
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Book</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">private</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">setAuthor</span><span class="p">(</span><span class="nv">$author</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>      <span class="nb">var_dump</span><span class="p">(</span><span class="nv">$author</span><span class="o">-&gt;</span><span class="na">getName</span><span class="p">());</span> <span class="c1">// original name</span>
+</span><span class='line'>      <span class="nv">$reflector</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ReflectionClass</span><span class="p">(</span><span class="nv">$author</span><span class="p">);</span> <span class="c1">// Here we start to inspect $author</span>
+</span><span class='line'>      <span class="nv">$authorName</span> <span class="o">=</span> <span class="nv">$reflector</span><span class="o">-&gt;</span><span class="na">getProperty</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">);</span> <span class="c1">// Get local variable &#39;name&#39;</span>
+</span><span class='line'>      <span class="nv">$authorName</span><span class="o">-&gt;</span><span class="na">setAccessible</span><span class="p">(</span><span class="k">true</span><span class="p">);</span> <span class="c1">// since &#39;name&#39; is a private local variable of class Author, we need access here to modify </span>
+</span><span class='line'>      <span class="nv">$authorName</span><span class="o">-&gt;</span><span class="na">setValue</span><span class="p">(</span><span class="nv">$author</span><span class="p">,</span><span class="s1">&#39;Ngo Tat To&#39;</span><span class="p">);</span> <span class="c1">// now hack the &#39;name&#39; of $author :))</span>
+</span><span class='line'>      <span class="nb">var_dump</span><span class="p">(</span><span class="nv">$author</span><span class="o">-&gt;</span><span class="na">getName</span><span class="p">());</span> <span class="c1">// Guess what will be output here :D </span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">getAuthor</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'>  <span class="nd">@Override</span>
-</span><span class='line'>  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span> <span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>      <span class="k">try</span>
-</span><span class='line'>      <span class="o">{</span>
-</span><span class='line'>          <span class="n">File</span><span class="o">[]</span> <span class="n">files</span> <span class="o">=</span> <span class="n">directory</span><span class="o">.</span><span class="na">listFiles</span><span class="o">();</span>
-</span><span class='line'>          <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">Future</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">results</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">Future</span><span class="o">&lt;?&gt;&gt;();</span>
-</span><span class='line'>          <span class="k">for</span><span class="o">(</span><span class="n">File</span> <span class="n">file</span> <span class="o">:</span> <span class="n">files</span><span class="o">)</span>
-</span><span class='line'>          <span class="o">{</span>
-</span><span class='line'>              <span class="k">if</span><span class="o">(</span><span class="n">file</span><span class="o">.</span><span class="na">isDirectory</span><span class="o">())</span>
-</span><span class='line'>              <span class="o">{</span>
-</span><span class='line'>                  <span class="c1">//System.out.println(&quot;Dir: &quot; + file.getAbsolutePath());</span>
-</span><span class='line'>                  <span class="n">DuppFind</span> <span class="n">df</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DuppFind</span><span class="o">(</span><span class="n">file</span><span class="o">,</span> <span class="n">md5FileMap</span><span class="o">,</span> <span class="n">pool</span><span class="o">);</span>
-</span><span class='line'>                  <span class="n">Future</span><span class="o">&lt;?&gt;</span> <span class="n">result</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">df</span><span class="o">);</span>
-</span><span class='line'>                  <span class="n">results</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">result</span><span class="o">);</span>
-</span><span class='line'>              <span class="o">}</span>
-</span><span class='line'>              <span class="k">else</span> <span class="nf">if</span><span class="o">(</span><span class="n">file</span><span class="o">.</span><span class="na">isFile</span><span class="o">())</span>
-</span><span class='line'>              <span class="o">{</span>
-</span><span class='line'>                  <span class="c1">//calculate md5</span>
-</span><span class='line'>                  <span class="n">String</span> <span class="n">md5</span> <span class="o">=</span> <span class="n">MD5Utils</span><span class="o">.</span><span class="na">getMD5</span><span class="o">(</span><span class="n">file</span><span class="o">);</span>
-</span><span class='line'>                  <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">listFile</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CopyOnWriteArrayList</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;();</span>
-</span><span class='line'>                  <span class="k">if</span><span class="o">(</span><span class="n">md5FileMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">md5</span><span class="o">)</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
-</span><span class='line'>                  <span class="o">{</span>
-</span><span class='line'>                      <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Duplicate md5: &quot;</span> <span class="o">+</span> <span class="n">md5</span> <span class="o">+</span> <span class="s">&quot;, size now: &quot;</span> <span class="o">+</span> <span class="n">md5FileMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">md5</span><span class="o">).</span><span class="na">size</span><span class="o">());</span>
-</span><span class='line'>                      <span class="n">listFile</span><span class="o">.</span><span class="na">addAll</span><span class="o">(</span><span class="n">md5FileMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">md5</span><span class="o">));</span>
-</span><span class='line'>                  <span class="o">}</span>
-</span><span class='line'>                  <span class="n">listFile</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">file</span><span class="o">.</span><span class="na">getAbsolutePath</span><span class="o">());</span>
-</span><span class='line'>                  <span class="n">md5FileMap</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="n">md5</span><span class="o">);</span>
-</span><span class='line'>                  <span class="n">md5FileMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">md5</span><span class="o">,</span> <span class="n">listFile</span><span class="o">);</span>
-</span><span class='line'>                  <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Add: File&quot;</span> <span class="o">+</span> <span class="n">file</span><span class="o">.</span><span class="na">getAbsolutePath</span><span class="o">()</span> <span class="o">+</span> <span class="s">&quot;, MD5: &quot;</span> <span class="o">+</span> <span class="n">md5</span><span class="o">);</span>
-</span><span class='line'>              <span class="o">}</span>
-</span><span class='line'>          <span class="o">}</span>
-</span><span class='line'>          
-</span><span class='line'>          <span class="c1">//wait until all sub-tasks complete</span>
-</span><span class='line'>          <span class="k">for</span><span class="o">(</span><span class="n">Future</span><span class="o">&lt;?&gt;</span> <span class="nl">result:</span> <span class="n">results</span><span class="o">)</span>
-</span><span class='line'>          <span class="o">{</span>
-</span><span class='line'>              <span class="n">result</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
-</span><span class='line'>          <span class="o">}</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>      <span class="k">catch</span><span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span>
-</span><span class='line'>      <span class="o">{</span>
-</span><span class='line'>          <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>      <span class="k">catch</span><span class="o">(</span><span class="n">ExecutionException</span> <span class="n">e</span><span class="o">)</span>
-</span><span class='line'>      <span class="o">{</span>
-</span><span class='line'>          <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Toàn bộ code đã ở trên github: <a href="https://github.com/viethnguyen/DuppFind">https://github.com/viethnguyen/DuppFind</a></p>
+<p>Bạn thử đoán xem đoạn var_dump sau sẽ ra kết quả gì :D</p>
 
-<h1>Đánh giá</h1>
+<figure class='code'><figcaption><span>Book.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="nv">$book2</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
+</span><span class='line'><span class="nv">$book2</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">(</span><span class="s2">&quot;Nam Cao&quot;</span><span class="p">,</span><span class="s2">&quot;29-10-1915&quot;</span><span class="p">));</span>
+</span><span class='line'><span class="nb">var_dump</span><span class="p">(</span><span class="nv">$book1</span><span class="o">-&gt;</span><span class="na">getAuthor</span><span class="p">());</span> <span class="c1">// Suprisingly, &#39;Ngo Tat To&#39;, not &#39;Nam Cao&#39; here </span>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Reflection class dùng để làm gì ?</h2>
+
+<p>Đến đây có lẽ bạn đọc đã hình dung ra phần nào cách thức hoạt động của reflection class, các ngôn ngữ dynamically-typed &#8220;hiểu&#8221; các object như thế nào.
+Reflection thực tế tồn tại trong PHPUnit hay các mocking framework, các code analysis framwworks hay metaprogramming.</p>
+
+<p>Reflection class trong PHP là 1 tool mạnh mẽ cung cấp cho programmer chính những sức mạnh mà ngôn ngữ sở hữu.
+Tuy nhiên reflection class không hề được khuyến khích dùng rộng rãi, vì với bản chất là tool của quá trình reverse engineering, nó hoàn toàn có thể làm design của hệ thống trở nên mess up và khó kiểm soát.</p>
+
+<p>Reflection chỉ nên dùng khi nào thực sự cần thiết, ứng dụng nhìn thấy rõ nhất là khi bạn phải &#8220;đối đầu&#8221; với 1 project mà document ko đầy đủ hay không được upadte thường xuyên. <a href="https://github.com/cakephp/api_generator">Cake Api Generator</a> là ví dụ điển hình nhất.</p>
+
+<h2>Summary</h2>
 
 <ul>
-<li><p>Đoạn code trên chạy chính xác với những thư mục nhỏ, không có quá nhiều thư mục con, cháu&#8230; Tuy nhiên, với những thư mục chứa nhiều thư mục con, vì có quá nhiều tác vụ vào thread pool, nên hay xảy ra exception out of memory - heap.</p></li>
-<li><p>Mới chỉ kiểm tra xem 2 file có MD5 trùng nhau không. Nếu trùng nhau rồi, ta cần kiểm tra thêm độ dài 2 file có trùng nhau không, rồi nếu trùng tiếp thì phải check từng byte để chắc chắn nhất có thể (xóa đi khỏi hối hận :P)</p></li>
-<li><p>Ở trên mới hiển thị ra những file nào trùng lặp. Cần cho phép user xóa file trùng lặp trong chương trình.</p></li>
-<li><p>Cần thiết kế GUI!</p></li>
+<li><strong>Dynamically-typed language</strong>: Là ngôn ngữ có thể tự hiểu được object tại thời điểm runtime, không cần tại compile time. PHP, Ruby, Python là dynamically-typed language. Ngược lại C hay Java là statically typed language.</li>
+<li><strong>Reflection Class</strong> Là 1 bộ API được PHP cung cấp để sử dụng kỹ thuật reverse engineer, hữu dụng khi tạo document tự động.</li>
 </ul>
-
-
-<p>Bạn thấy đó, còn khá nhiều vấn đề cần giải quyết để có một tool hoàn chỉnh. Những vấn đề này sẽ được cải tiến và được report lại trong một ngày không xa :) Nếu bạn cảm thấy hứng thú, rất welcome contribute :)</p>
-
-<h1>Tham khảo</h1>
-
-<ol>
-<li>Core Java</li>
-<li>Java Concurrency in Practice</li>
-<li>Effective Java</li>
-</ol>
 
 
 		
@@ -396,124 +516,43 @@
   
 
 
-<time datetime="2013-06-25T21:07:00+09:00" data-updated="true" itemprop="datePublished">Jun 25<span>th</span>, 2013</time></div>
+<time datetime="2013-07-24T10:05:00+09:00" data-updated="true" itemprop="datePublished">Jul 24<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/git/'>git</a>
+	<a class='category' href='/blog/categories/sysadmin/'>sysadmin</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/06/25/using-githook-to-automatically-test-your-app/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/07/24/install-memcached-with-sasl/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/25/using-githook-to-automatically-test-your-app/" itemprop="url">Giới Thiệu về Githook và Client Side Hook</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/07/24/install-memcached-with-sasl/" itemprop="url">Cài đặt Memcached Với Sasl</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h1>Githook là gì</h1>
+		<h1>Giới thiệu</h1>
 
-<p>Giống như các hệ thống quản lý version khác, Git cung cấp một cách để gọi những custom script khi một hành động đặc biệt được thực hiện trong git. Có 2 nhóm hook trong git: hook cho client, và hook cho server. Client hook là dành cho những hoạt động xảy ra ở client như commit và merge. Server hook là dành cho những hoạt động xảy ra ở Git server như nhận được một commit push lên từ client. Bài viết này giới thiệu một số cách sử dụng hook cả client side hook</p>
+<p>Memcached là cơ sở dữ liệu được lưu trong memory. Thông thường chúng ta sử dụng memcached trong mạng nội bộ, hoặc sử dụng private IP để kết nối tới memcached, tuy nhiên trong một số trường hợp, IP của memcached server cần public ra ngoài (ví dụ toàn bộ các server đều đặt trên AWS). Trong trường hợp này, chúng ta cần bảo mật kết nối của memcached server.</p>
 
-<h1>Install hook</h1>
+<p>Từ phiên bản 1.4.3, memcached đã support sử dụng <a href="http://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer">SASL</a></p>
 
-<p>Các hooks được lưu trong thư mục <code>hooks</code> của <code>.git</code> folder. Trong phần lớn các project, nó là <code>.git/hooks</code>. Ở chế độ mặc định, Git cung cấp một loạt các examples cho các hooks, các ví dụ này đưa ra khá nhiều chỉ dẫn về inputs của mỗi hook. Tất cả các examples được viết bằng shell script, với một vài mã lệnh Perl, tuy nhiên bạn có thể viết các script này bằng bất cứ ngôn ngữ nào (ví dụ như Python, Ruby). Tất cả các examples đều có tên kết thúc bằng <code>.sample</code>, bạn cần đổi tên các script trước khi chạy</p>
+<p>Bài viết này sẽ giới thiệu với các bạn cách cài đặt memcached với SASL cũng như giới thiệu cơ chế, cách làm việc của SASL</p>
 
-<p>Để enable các hook script, đặt một file trong thư mục <code>hooks</code> với tên tương ứng với tên của hook, và set quyền cho script đó là executable.</p>
+<h1>Cách cài đặt SASL với memcached</h1>
 
-<h1>Client side hooks</h1>
+<p>Đầu tiên bạn cần cài đặt phiên bản mới nhất của memcached. Bạn sẽ cần một số gói và thư viện khác để support SASL.</p>
 
-<p>Có rất nhiều loại client side hooks, chúng ta chia chúng theo work flow</p>
-
-<h2>Committing-Workflow Hooks</h2>
-
-<p><code>pre-commit</code> hook được gọi đầu tiên, trước khi bạn gõ nội dung của một commit message. Hook này được sử dụng để kiểm tra nội dụng các files được commit. Bạn có thể viết script để kiểm tra coding convetion, hoặc để run test, để chạy static analysis trước khi commit. Nếu script trả về kết quả khác 0, commit sẽ bị loại bỏ. Tuy nhiên bạn có thể bỏ qua chạy hook này khi commit với lệnh <code>git commit --no-verify</code></p>
-
-<p><code>prepare-commit-msg</code> là hook được chạy trước khi trình soạn thảo commit message được gọi đế và sau khi message mặc định được tạo ra. Hook này giúp bạn thay đổi default message trước khi commit author thấy nó. Hook này về cơ bản là ít khi hữu dụng, chỉ trừ khi các commit message được sinh ra tự động.</p>
-
-<p><code>commit-msg</code> hook nhận duy nhất một input là đường dẫn của file chứa commit message. Nếu script này trả về kết quả khác 0, commit sẽ bị loại bỏ. Hook này có tác dụng giúp bạn chuẩn hoá mesage trước khi commit</p>
-
-<p>Sau khi toàn bộ quá trình commit được hoàn tất, <code>post-commit</code> hook sẽ chạy. hook này không nhận tham số đầu vào, nhưng bạn có thể dễ dàng lầy last commit bằng cách gọi <code>git log -1 HEAD</code>. Thông thường, hook này dụng để notification.</p>
-
-<p>Committing-workflow client side scripts được sử dụng và setup bới chính các developer tại máy local của họ. Các developers phải tự maintain chúng, tuy nhiên họ có thể thay đổi chúng bất cứ lúc nào</p>
-
-<h2>Email workflow hooks</h2>
-
-<p>Bạn có thể set up 3 client side hooks cho email workflow. Tất cả các hooks này đều liên quan đến <code>git am</code> command. Nếu bạn không sử dụng câu lệnh này trong workflow của bạn, bạn có thể bỏ qua phần này. Nếu bạn nhận patch qua email được chuẩn bị bới lệnh <code>git format-patch</code>, thì có thể những hook này sẽ có ích với bạn</p>
-
-<p>Hook đầu tiên là <code>applypatch-msg</code>. Nó nhận một tham số: tên của file tạm chứ nội dụng của commit message. Git sẽ bỏ qua patch nếu hook này trả về giá trị khác 0. Bạn có thể sử dụng hook này để đảm bảo commit message là đúng chuẩn.</p>
-
-<p>Hook tiếp theo khi apply patches thông qua <code>git am</code> là <code>pre-applypatch</code>. Hook không nhận giá trị đầu vào và được chay sau khi patch được applied. Vì thế bạn có thể sử dụng hook này để kiểm tra toàn bộ mã nguồn trước khi make commit. VD: chạy test, chạy static analysis, kiểm tra style (hook này tương đối giống <code>pre-commit</code> trong phần trước)</p>
-
-<p>Hook cuối cùng được chạy trong process của <code>git am</code> là <code>post-applypatch</code>. Bạn có thể sử dụng nó để notify cho một group hoặc một author về patch này.</p>
-
-<h2>Một vài client hooks khác</h2>
-
-<p><code>pre-rebase</code> hooks run trước khi bạn rebase bất cứ commit nào, và sẽ cả process lại nếu hook trả về giái trị khác 0.</p>
-
-<p><code>post-checkout</code> được gọi sau khi bạn chạy lệnh <code>git checkout</code> thành công. Bạn có thể sử dụng nó để setup environment, hoặc tự động sinh document sau khi checkout</p>
-
-<p><code>post-merge</code> hook được chạy sau khi bạn chạy lệnh <code>git merge</code>. Bạn có thể sử dụng để phục hồi lại dữ liệu trong thư mục làm việc mà Git không thể kiểm tra ví dụ như dữ liệu liên quan đến permission.</p>
-
-<h1>Kết luận</h1>
-
-<p>Bài viết giới thiệu về githooks và một số client hooks thường dùng. Hy vọng bạn tìm thấy một vài thông tin hữu ích giúp bạn tự động hoá một số công việc hàng ngày khi làm việc với git.</p>
-
-<h1>Tham khảo</h1>
-
-<p><a href="http://git-scm.com/book/en/Customizing-Git-Git-Hooks">Githook documentation</a></p>
-
-		
-		
-	</div>
-
-</article>
+<figure class='code'><figcaption><span>install.sh </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> sudo apt-get install libsasl2-2 sasl2-bin libsasl2-2 libsasl2-dev libsasl2-modules
+</span></code></pre></td></tr></table></div></figure>
 
 
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
+<p>Đừng quên, để cài đặt memcached, bạn cùng sẽ cần cài <code>libevent</code></p>
 
+<p>Cài đặt memcached</p>
 
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-06-21T23:07:00+09:00" data-updated="true" itemprop="datePublished">Jun 21<span>st</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/html5/'>html5</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/06/21/playing-with-web-audio-api-part-2/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/21/playing-with-web-audio-api-part-2/" itemprop="url">Playing With Web Audio Api (Part 2)</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h3>Playing audio with multisource and precise timing</h3>
-
-<p>Để làm game một game hay trên html5 thì âm thanh là một thứ không thể thiếu. Đầu tiên hãy đến với một game rất nổi tiếng:
-<a href="http://chrome.angrybirds.com/">Angry bird chrome</a></p>
-
-<p>Các bạn có thể để ý khi play một màn game bất kì nào đấy thì sẽ thấy rất nhiều âm thanh với các lớp (layer) khác nhau,
-được play vào các thời điểm khác nhau một cách hợp lý. Nếu chỉ đơn thuần dùng audio tag thì việc control các layer âm
-thanh khác nhau được play vào thời điểm nào sẽ rất khó.</p>
-
-<p>Nhờ có web audio api mà việc này trở nên dễ dàng hơn rất nhiều.</p>
-
-<p>Như mình đã nói ở bài trước, web audio api xoay quanh audio context. Điều đặc biệt là <strong>một context có thể load cùng một lúc
-nhiều audio source</strong>, và <strong>play mỗi audio source tại các thời điểm khác nhau</strong>, với một interface rất dễ hiểu.
-Đầu tiên là việc load nhiều audio source vào cùng một context. Dưới đây là module <strong><em>BufferLoader</em></strong> có nhiệm vụ load các file audio từ
-nhiều source khác nhau và quản lý thông qua bufferList.</p>
-
-<figure class='code'><figcaption><span>loadfile.js </span></figcaption>
+<figure class='code'><figcaption><span>install.sh </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -521,169 +560,79 @@ nhiều source khác nhau và quản lý thông qua bufferList.</p>
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
 <span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">BufferLoader</span><span class="p">(</span><span class="nx">context</span><span class="p">,</span> <span class="nx">urlList</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">context</span> <span class="o">=</span> <span class="nx">context</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">urlList</span> <span class="o">=</span> <span class="nx">urlList</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">onload</span> <span class="o">=</span> <span class="nx">callback</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">bufferList</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">();</span>
-</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">loadCount</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="nx">BufferLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadBuffer</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">url</span><span class="p">,</span> <span class="nx">index</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="c1">// Load buffer asynchronously</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">request</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">XMLHttpRequest</span><span class="p">();</span>
-</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">open</span><span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="nx">url</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
-</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">responseType</span> <span class="o">=</span> <span class="s2">&quot;arraybuffer&quot;</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">loader</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">onload</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>    <span class="c1">// Asynchronously decode the audio file data in request.response</span>
-</span><span class='line'>    <span class="nx">loader</span><span class="p">.</span><span class="nx">context</span><span class="p">.</span><span class="nx">decodeAudioData</span><span class="p">(</span>
-</span><span class='line'>      <span class="nx">request</span><span class="p">.</span><span class="nx">response</span><span class="p">,</span>
-</span><span class='line'>      <span class="kd">function</span><span class="p">(</span><span class="nx">buffer</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">buffer</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>          <span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;error decoding file data: &#39;</span> <span class="o">+</span> <span class="nx">url</span><span class="p">);</span>
-</span><span class='line'>          <span class="k">return</span><span class="p">;</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>        <span class="nx">loader</span><span class="p">.</span><span class="nx">bufferList</span><span class="p">[</span><span class="nx">index</span><span class="p">]</span> <span class="o">=</span> <span class="nx">buffer</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="o">++</span><span class="nx">loader</span><span class="p">.</span><span class="nx">loadCount</span> <span class="o">==</span> <span class="nx">loader</span><span class="p">.</span><span class="nx">urlList</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span>
-</span><span class='line'>          <span class="nx">loader</span><span class="p">.</span><span class="nx">onload</span><span class="p">(</span><span class="nx">loader</span><span class="p">.</span><span class="nx">bufferList</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">},</span>
-</span><span class='line'>      <span class="kd">function</span><span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;decodeAudioData error&#39;</span><span class="p">,</span> <span class="nx">error</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>    <span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">onerror</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;BufferLoader: XHR error&#39;</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">send</span><span class="p">();</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="nx">BufferLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">load</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">urlList</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="o">++</span><span class="nx">i</span><span class="p">)</span>
-</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="nx">loadBuffer</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">urlList</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span> <span class="nx">i</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> wget http://memcached.googlecode.com/files/memcached-1.4.3.tar.gz
+</span><span class='line'><span class="nv">$&gt;</span> tar xvf memcached-1.4.3.tar.gz
+</span><span class='line'><span class="nv">$&gt;</span> <span class="nb">cd </span>memcached-1.4.3
+</span><span class='line'><span class="nv">$&gt;</span> ./configure --enable-sasl
+</span><span class='line'><span class="nv">$&gt;</span> sed -i <span class="s1">&#39;s/-Werror//g&#39;</span> Makefile
+</span><span class='line'><span class="nv">$&gt;</span> make
+</span><span class='line'><span class="nv">$&gt;</span> sudo make install
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Giải thích đoạn code trên một chút, module BufferLoader sẽ có properties là <strong>urllist</strong> chứa một list url của các audio source,
-BufferList là một <strong>array các buffer</strong> tương ứng với từng source đã load.</p>
+<p>Cài đặt libmemcached</p>
 
-<p>Hàm <strong>load</strong> sẽ chạy từng file trong urllist, gọi hàm <strong><em>loadBuffer</em></strong> để load từng file thông qua <strong>XHR</strong>, sau khi load được qua XHR
-thì buffer được tạo ra và cho vào <strong>bufferList</strong>
-Như vậy là chúng ta đã có thể control multiple audio source thông qua <strong><em>BufferLoader</em></strong></p>
-
-<p>Giờ đến việc play theo precise timing, như bài lần trước chúng ta đã biết để play thì chúng ta sẽ dùng hàm noteOn(t), để play từ đầu
-thì t = 0, thế nên để play tại một thời điểm bất kì thì chúng ta sẽ chỉ cần set t(với đơn vị là second và relative theo thời điêm bắt đầu
-của audio).</p>
-
-<p>Hãy thử bằng một ví dụ đơn giản :D, bạn muốn làm 1 game bắn súng, trong đấy có một khẩu súng rất cool, giả sử là m4a1 đi :D. Chắc hẳn bạn
-nào đã chơi counter strike rồi thì sẽ biết là m4a1 thì phải bắt phát một được, hoặc bắn 3 viên một, hoặc bắn liên thanh. Cơ mà bạn chỉ có
-1 file âm thanh chứa ngắn chứa một tiếng súng, vậy bạn phải làm sao? Rất đơn giản, bạn chỉ cần timing để playback lại cái source của bạn là ok
-. Hãy tham khảo đoạn code dưới đây:</p>
-
-<figure class='code'><figcaption><span>loadfile.js </span></figcaption>
+<figure class='code'><figcaption><span>install.sh </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">MachineGun</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">shootRound</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">type</span><span class="p">,</span> <span class="nx">rounds</span><span class="p">,</span> <span class="nx">interval</span><span class="p">,</span> <span class="nx">random</span><span class="p">,</span> <span class="nx">random2</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="k">typeof</span> <span class="nx">random</span> <span class="o">==</span> <span class="s1">&#39;undefined&#39;</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nx">random</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">time</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">currentTime</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">rounds</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="kd">var</span> <span class="nx">source</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">makeSource</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">buffers</span><span class="p">[</span><span class="nx">type</span><span class="p">]);</span>
-</span><span class='line'>        <span class="nx">source</span><span class="p">.</span><span class="nx">playbackRate</span><span class="p">.</span><span class="nx">value</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="nx">random2</span><span class="p">;</span>
-</span><span class='line'>        <span class="nx">source</span><span class="p">.</span><span class="nx">noteOn</span><span class="p">(</span><span class="nx">time</span> <span class="o">+</span> <span class="nx">i</span> <span class="o">*</span> <span class="nx">interval</span> <span class="o">+</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="nx">random</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="nx">MachineGun</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">makeSource</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">buffer</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">source</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">createBufferSource</span><span class="p">();</span>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">compressor</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">createDynamicsCompressor</span><span class="p">();</span>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">gain</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">createGainNode</span><span class="p">();</span>
-</span><span class='line'>    <span class="nx">gain</span><span class="p">.</span><span class="nx">gain</span><span class="p">.</span><span class="nx">value</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">;</span>
-</span><span class='line'>    <span class="nx">source</span><span class="p">.</span><span class="nx">buffer</span> <span class="o">=</span> <span class="nx">buffer</span><span class="p">;</span>
-</span><span class='line'>    <span class="nx">source</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">gain</span><span class="p">);</span>
-</span><span class='line'>    <span class="nx">gain</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">compressor</span><span class="p">);</span>
-</span><span class='line'>    <span class="nx">compressor</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">destination</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">return</span> <span class="nx">source</span><span class="p">;</span>
-</span><span class='line'><span class="p">};</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> wget https://launchpad.net/libmemcached/1.0/1.0.17/+download/libmemcached-1.0.17.tar.gz
+</span><span class='line'><span class="nv">$&gt;</span> tar xvf libmemcached-1.0.17.tar.gz
+</span><span class='line'><span class="nv">$&gt;</span> <span class="nb">cd </span>libmemcached-1.0.17
+</span><span class='line'><span class="nv">$&gt;</span> ./configure
+</span><span class='line'><span class="nv">$&gt;</span> make
+</span><span class='line'><span class="nv">$&gt;</span> sudo make install
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Đoạn code trên có 2 hàm là <strong>shootRound</strong> và <strong>makeSource</strong>.
-Hàm <strong>makeSource</strong> nhận đầu vào là buffer , chỉnh lại âm thanh cho nhỏ đi một chút thông qua việc set gain = 0.2, sử dụng compressor Node
-để smoothing data đi một chút trước khi kết nối với destination node.
-Hàm <strong>shootRound</strong> có mục đích đúng như cái tên của nó, dùng để bắn, hay chính xác là timing buffer có sẵn theo các paramter đầu vào.
-Các parameter ở đây gồm có rounds ( là số lần lặp lại, ví dụ súng của bạn bắn 3 phát một thì rounds sẽ là 3), interval (khoảng cách giữa 2 lần bắn), 2 biến random và random2 dùng để set xem nên bắn đều đều hay bắn một cách random cho nó thật :D.</p>
+<h1>Set up SASL với memcached</h1>
 
-<p>Chỉ nói lý thuyết không hơi khó hiểu, các bạn có thể xem ví dụ trực quan ở:
-<a href="https://github.com/huydx/html5collection.git">https://github.com/huydx/html5collection.git</a>
-Ví dụ ở trên mình đặt ở html5collection / webaudioapi / guneffect.html. Lưu ý một chút là mình dùng XHR để load file nên các bạn sẽ phải sử dụng thông qua web server (đơn giản nhất là XAMPP) và xem thông qua localhost.</p>
+<p>Điều đầu tiên bạn cần đảm bảo đó là set biến môi trường <code>SASL_CONF_PATH</code> khi bạn chay memcached. Trong ví dụ này <code>SASL_CONF_PATH</code> sẽ được trỏ tới <code>/home/kiennt/sasl</code></p>
+
+<figure class='code'><figcaption><span>install.sh </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> <span class="nb">export </span><span class="nv">SASL_CONF_PATH</span><span class="o">=</span>/home/kiennt/sasl
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Sau đó bạn cần set up file memcached.conf trong SASL (tên của file sẽ là tên của ứng dụng SASL - cụ thể ở đây là memcached)</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>mech_list: plain
+</span><span class='line'>log_level: 5
+</span><span class='line'>sasldb_path: /home/kiennt/sasl/sasldb2</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Tiếp theo, bạn cần tạo một file database (được trỏ tới từ bước trước) trong file <code>memcached.conf</code></p>
+
+<figure class='code'><figcaption><span>install.sh </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> sudo saslpasswd2 -c -a memcached -f /home/kiennt/sasl/sasldb2 &lt;username&gt;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Chú ý rằng cờ -a xác định tên của ứng dụng <code>memcached</code> - chính là tên của config file bạn đã xác định ở trên <code>memcached.conf</code>. Khi bạn chạy <code>saslpasswd2</code>, bạn sẽ được hỏi password và password verify cation.</p>
+
+<h1>Chạy memcached với SASL</h1>
+
+<p>Để chạy memcached với SASL, bạn cần sử dụng cờ <code>-S</code> để bật cơ chế security của mecached lên</p>
+
+<figure class='code'><figcaption><span>install.sh </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> <span class="nb">export </span><span class="nv">SASL_CONF_PATH</span><span class="o">=</span>/home/kiennt/sasl
+</span><span class='line'><span class="nv">$&gt;</span> /usr/local/bin/memcached -S -vvv
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>Tổng kết</h1>
+
+<p>Bài viết này giới thiệu với các cài đặt và chạy memcached với SASL. Giờ bạn có thể tập trung vào việc code ứng dụng của bạn rồi.</p>
 
 		
 		

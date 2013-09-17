@@ -7,7 +7,7 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="May 7th, 2013 database, engine, mysql, storage Comments Giới Thiệu Một Số Storage Engine Của Mysql Giới thiệu MySQL là một trong những hệ thống cơ &hellip;">
+	<meta name="description" content="Jun 3rd, 2013 unix Comments Unix Tools Phần 2 Giới thiệu Hàng ngày chúng ta gặp phải rất nhiều bài toán thống kê khác nhau. Bài toán thống kê số &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -17,7 +17,7 @@
 
 	<link href="/atom.xml" rel="alternate" title="Blog kỹ thuật máy tính" type="application/atom+xml">
 	
-	<link rel="canonical" href="http://toandk.github.com/blog/page/12/">
+	<link rel="canonical" href="http://ktmt.github.com/blog/page/12/">
 	<link href="/favicon.png" rel="shortcut icon">
 	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
 	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
@@ -84,258 +84,342 @@
   
 
 
-<time datetime="2013-05-07T16:53:00+09:00" data-updated="true" itemprop="datePublished">May 7<span>th</span>, 2013</time></div>
+<time datetime="2013-06-03T22:15:00+09:00" data-updated="true" itemprop="datePublished">Jun 3<span>rd</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/database/'>database</a>, <a class='category' href='/blog/categories/engine/'>engine</a>, <a class='category' href='/blog/categories/mysql/'>mysql</a>, <a class='category' href='/blog/categories/storage/'>storage</a>
+	<a class='category' href='/blog/categories/unix/'>unix</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/05/07/storageenginemysql/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/06/03/unix-tools-2/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/05/07/storageenginemysql/" itemprop="url">Giới Thiệu Một Số Storage Engine Của Mysql</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/06/03/unix-tools-2/" itemprop="url">Unix Tools Phần 2</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h1>Giới thiệu</h1>
+		<h3>Giới thiệu</h3>
 
-<p>MySQL là một trong những hệ thống cơ sở dữ liệu quan hệ phổ biến số một thế giới, được sử dụng bởi hầu hết các website lớn. Do vậy, việc nắm vững MySQL là yêu cầu không thể thiếu đối với một webmaster.</p>
+<p>Hàng ngày chúng ta gặp phải rất nhiều bài toán thống kê khác nhau. Bài toán thống kê số liệu cũng có thể xuất hiện dưới nhiều dạng khác nhau như: bằng việc kiểm apache acccess log thống kê xem có tổng số truy cập vào 1 API trong 1 phút, hay 1 API cụ thể được truy cập từ những địa điểm nào và cụ thể là bao nhiều lần. Xử lý số liệu là một bài toán khó, và việc bóc tách dữ liệu nhiều khi cũng không hể đơn giản. Tuy vậy, bằng việc sử dụng thành thạo các công cụ command line của linux, nhiều khi ta có thể giải quyết những bài toán trên một cách nhanh chóng chỉ bằng 1, 2 dòng lệnh. Bài viết này sẽ đưa ra 1 bài toán cụ thể và cách sử dụng các unix command line tool để giải quyết các bài toán đó.</p>
 
-<p>Kiến trúc logic của MySQL nhìn tổng quan có thể được mô tả như hình dưới đây</p>
-
-<p><img src="/images/logical_mysql_architecture.jpeg"></p>
-
-<p>Ta có thể thấy MySQL có các component cơ bản như ở dưới đây</p>
+<h3>Khái lược các tool dùng trong bài</h3>
 
 <ul>
-<li>Connection/thread handling</li>
-<li>Query cache</li>
-<li>Parser</li>
-<li>Optimizer</li>
-<li>Storage engine</li>
+<li>Grep: Cho phép tìm một chuỗi bất kỳ trong một file. Chuỗi có thể được mô tả bằng regular expression.</li>
+<li>uniq: công cụ giúp loại bỏ</li>
+<li>sort: sắp xếp các record trong 1 file</li>
+<li>wc: đếm từ và dòng trong 1 file</li>
+<li>awk: công cụ để in các cột dữ liệu, cũng như xử lý dữ liệu trên từng cột</li>
 </ul>
 
 
-<p>Việc nắm rõ từng chức năng và nhiệm vụ của từng thành phần là điều không thể thiếu trong việc sử dụng MySQL một cách hiệu quả. Bài viết sẽ tập trung giới thiệu về thành phần dưới cùng trong mô hình trên: Storage engine (Máy lưu trữ)</p>
+<h3>Bài toán</h3>
 
-<h1>Storage Engine (Máy lưu trữ)</h1>
+<p>Để dễ hình dung cũng như dễ kiểm tra tính đúng đắn, ta giả sử 1 bài toán tưởng tượng như sau:</p>
 
-<p>Storage Engine thực chất là cách MySQL lưu trữ dữ liệu trên đĩa cứng. MySQL lưu mỗi database như là một thư mục con nằm dưới thư mục data. Khi một table được tạo ra, MySQL sẽ lưu định nghĩa bảng ở file đuôi .frm và tên trùng với tên của bảng được tạo. Việc quản lý định nghĩa bảng là nhiệm vụ của MySQL server, dù rằng mỗi storage engine sẽ lưu trữ và đánh chỉ mục (index) dữ liệu khác nhau.</p>
+<p>Có log file:</p>
 
-<p>Ví dụ: mình chỉ định &#8211;datadir là /usr/local/mysql/data và định nghĩa bảng users trong database tên là test như sau</p>
-
-<div>
-  <pre><code class='bash'>create table users (
-    id int not null auto_increment, 
-    name varchar(30), 
-    password varchar(20), 
-    primary key(id)
-);</code></pre>
-</div>
-
-
-<p>thì trong thư mục /usr/local/mysql/data sẽ có thư mục con là test, và dưới test sẽ có các file</p>
-
-<div>
-  <pre><code class='bash'>-rw-rw----  1 _mysql  wheel   8624  5  7 17:35 users.frm
--rw-rw----  1 _mysql  wheel  98304  5  7 17:35 users.ibd</code></pre>
-</div>
-
-
-<p>Để xem loại storage engine của bảng hiện tại, bạn có thể dùng câu lệnh <em>SHOW DATABASE STATUS</em></p>
-
-<div>
-  <pre><code class='bash'>mysql&gt; show table status like 'users' \G
-*************************** 1. row ***************************
-           Name: users
-         Engine: InnoDB
-        Version: 10
-     Row_format: Compact
-           Rows: 2
- Avg_row_length: 8192
-    Data_length: 16384
-Max_data_length: 0
-   Index_length: 0
-      Data_free: 0
- Auto_increment: 3
-    Create_time: 2013-05-07 17:35:09
-    Update_time: NULL
-     Check_time: NULL
-      Collation: latin1_swedish_ci
-       Checksum: NULL
- Create_options:
-        Comment:
-1 row in set (0.01 sec)</code></pre>
-</div>
-
-
-<p>Cụ thể trong trường hợp này:</p>
-
-<pre><code>storage engine          : innodb
-loại row                : compact
-Số lượng row dữ liệu    : 2
-giá trị auto increment tiếp theo: 3
-...
+<pre><code>    IP1 2 20:00:01 Get /A 
+    IP2 2 20:00:02 Get /B
+    IP2 3 20:00:03 Get /C
+    IP4 2 20:02:01 Get /A 
+    IP5 2 20:03:01 Get /B
+    IP2 3 20:03:02 Get /A
+    IP3 2 20:03:04 Get /B 
+    IP2 2 20:04:01 Get /B
+    IP1 3 20:05:12 Get /C
+    IP6 2 20:05:31 Get /C 
+    IP5 2 20:06:02 Get /B
+    IP4 3 20:07:03 Get /A
 </code></pre>
 
-<h2>Tổng quan các engine</h2>
+<p>Bài toán: Hãy đếm xem trong 1 phút có bao nhiêu requests và thử đếm xem có bao nhiêu request đến A, B.</p>
 
-<h3>1. MyISAM engine</h3>
+<h3>Phương pháp giải quyết</h3>
 
-<h5>Đặc điểm</h5>
+<p>Theo đề bài, ta có 2 bài toán
+* Thống kê requests theo từng phút.
+* Thống kê requests đến A, B.</p>
+
+<p>Ta sẽ lần lượt giải từng bài toán 1.</p>
+
+<h4>Thống kê requests đến A, B</h4>
+
+<p>Bài toán này thực chất khá dễ và ta có thể giải quyết bằng grep và wc. Để ý rằng mỗi dòng là 1 requests đến A, B hoặc C vì vậy bài toán có thể chuyển về là: đếm số dòng có ký tự A và ký tự B. Để lọc ký tự ta có thể dùng grep, để đếm số dòng ta có thể dùng wc. Như vậy bài toán có thể được giải quyết bằng cách pipe kết quả grep sang wc.</p>
+
+<p>Lời giải:</p>
+
+<div>
+  <pre><code class='bash'>grep A data.dat | wc -l
+4
+grep B data.dat | wc -l
+5</code></pre>
+</div>
+
+
+<p>Như vậy có 4 requests đến A và 5 requests đến B trong log file.
+Bằng 1 câu lệnh, ta có thể đưa ngay ra được kết quả. Dễ như ăn kẹo!</p>
+
+<h4>Đếm số request trong 1 phút.</h4>
+
+<p>Bài toán này khó hơn 1 chút do ta chỉ có trong log các request theo từng giây, trong khi ta cần thống kê theo phút. Liệu có cách nào biến bài toán về bài toán đếm số dòng như ở trên không? Nếu như ta có thể nhóm các dòng dữ liệu theo phút, bài toán có thể được giải quyết tương tự như bài toán trên.</p>
+
+<p>Trước tiên, làm thế nào để nhóm dòng theo phút? Muốn nhóm dòng theo phút ta phải tách được phần phút ra. Để ý giờ:phút là trường thứ 3 trong file. Do vậy nếu tách được cột thứ 3 và lấy 5 ký tự đầu tiên, ta có thể lấy phút của từng request. Tách cột là việc của awk!</p>
+
+<div>
+  <pre><code class='bash'>awk '{print substr($3, 1, 5)}' data.dat
+20:00
+20:00
+20:00
+20:02
+20:03
+20:03
+20:03
+20:04
+20:05
+20:05
+20:06
+20:07</code></pre>
+</div>
+
+
+<p>Ồ, ta đã tiến được 1 bước! Bước tiếp theo, nếu như ta có thể nhóm các phần tử giống nhau và đếm các phần tử đó, ta sẽ có kết quả mong muốn. Nhóm các giá trị giống nhau là nhiệm vụ của uniq!</p>
+
+<div>
+  <pre><code class='bash'>awk '{print substr($3, 1, 5)}' data.dat | uniq -c
+3 20:00
+2 20:02
+3 20:03
+1 20:04
+2 20:05
+1 20:06
+1 20:07</code></pre>
+</div>
+
+
+<p>Tuyệt! Như vậy bằng 1 dòng lệnh, ta đã nhóm được các API trong cùng 1 phút, cũng như số lượng API trong thời điểm đấy. Nếu số lượng request nhiều, số dòng kết quả lớn và ta chỉ muốn biết thời điểm có truy cập lớn nhất, ta có thể sắp xếp theo số lượng truy cập. Sắp xếp các dòng theo giá trị cột là công việc của sort! Bằng câu lệnh sort ta có kết quả như dưới đây:</p>
+
+<div>
+  <pre><code class='bash'>awk '{print substr($3, 1, 5)}' data.dat | uniq -c | sort -nk1 -r
+3 20:03
+3 20:00
+2 20:05
+1 20:07
+1 20:06
+1 20:04
+1 20:02</code></pre>
+</div>
+
+
+<p>Bài toán đầu tiên cũng đã được giải quyết chỉ với 1 dòng lệnh!</p>
+
+<h3>Kết luận</h3>
+
+<p>Bài viết đã giới thiệu qua các công cụ commandline của unix cũng như cách áp dụng công cụ đó vào bài toán cụ thể. Hy vọng qua bài viết bạn đã thấy được phần nào tầm quan trọng cũng như sức mạng của các chương trình tiện ích như awk, wc, grep, uniq, sort. Và để hiểu rõ công cụ thì không cách nào khác là áp dụng thật sáng tạo chúng vào công việc hàng ngày, do vậy bạn hãy thử áp dụng các công cụ trên vào bài toán sau nhé:</p>
+
+<p><strong>Với log file trên, đếm xem có bao nhiêu nguồn truy cập, và nguồn truy cập nào có số lượng truy cập lớn nhất</strong> ;)</p>
+
+		
+		
+	</div>
+
+</article>
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-06-02T19:47:00+09:00" data-updated="true" itemprop="datePublished">Jun 2<span>nd</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/code-golf/'>Code golf</a>, <a class='category' href='/blog/categories/php/'>PHP</a>, <a class='category' href='/blog/categories/web-programming/'>Web programming</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/06/02/99-bottles-of-beer/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/06/02/99-bottles-of-beer/" itemprop="url">99-bottles-of-beer</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h2>The song, and the home page</h2>
+
+<p>Đầu tiên có thể độc giả sẽ tự hỏi ý nghĩa của tiêu đề bài viết là gì ? Vậy trước hết mời bạn ghé qua <a href="http://99-bottles-of-beer.net">home page</a> và enjoy the <a href="http://www.youtube.com/watch?v=qVjCag8XoHQ">song</a></p>
+
+<p>99-bottles-of-beer cũng từng là đề bài của code golf và phpgolf. Mission của chúng ta là code 1 đoạn PHP snippet print <a href="http://99-bottles-of-beer.net/lyrics.html">lyric</a> của bài hát mà dung lượng đoạn code là nhỏ nhất.
+Logic thật đơn giản phải không :D</p>
+
+<figure class='code'><figcaption><span>lyric</span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>99 bottles of beer on the wall, 99 bottles of beer.
+</span><span class='line'>Take one down and pass it around, 98 bottles of beer on the wall.
+</span><span class='line'>
+</span><span class='line'>98 bottles of beer on the wall, 98 bottles of beer.
+</span><span class='line'>Take one down and pass it around, 97 bottles of beer on the wall.
+</span><span class='line'>
+</span><span class='line'>97 bottles of beer on the wall, 97 bottles of beer.
+</span><span class='line'>Take one down and pass it around, 96 bottles of beer on the wall.
+</span><span class='line'>
+</span><span class='line'>...
+</span><span class='line'>
+</span><span class='line'>1 bottle of beer on the wall, 1 bottle of beer.
+</span><span class='line'>Go to the store and buy some more, 99 bottles of beer on the wall.</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Với mục tiêu dùng ít code nhất có thể, tôi sẽ không dùng cấu trúc rẽ nhánh if-else, thay vào đó là ternary operator của PHP
+( có nghĩa là bạn có thể viết &#8220;(condition)?true-action:false-action&#8221; thay vì &#8220;if (condition) {true-action} else {false-action}&#8221;  )</p>
+
+<p>Đoạn code đầu tiên tôi nghĩ ra trong đầu như sau:</p>
+
+<figure class='code'><figcaption><span>sol1.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'>  <span class="nv">$a</span><span class="o">=</span><span class="s2">&quot;beer on the wall&quot;</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="nv">$i</span><span class="o">=</span><span class="mi">99</span><span class="p">;</span><span class="nv">$i</span><span class="o">&gt;=</span><span class="mi">1</span><span class="p">;</span><span class="nv">$i</span><span class="o">--</span><span class="p">){</span>
+</span><span class='line'>    <span class="nv">$x</span><span class="o">=</span><span class="p">(</span><span class="nv">$i</span><span class="o">==</span><span class="mi">1</span><span class="p">)</span><span class="o">?</span><span class="s2">&quot;bottle&quot;</span><span class="o">:</span><span class="s2">&quot;bottles&quot;</span><span class="p">;</span>
+</span><span class='line'>    <span class="nv">$b</span><span class="o">=</span><span class="s2">&quot;&lt;p&gt;</span><span class="si">$i</span><span class="s2"> </span><span class="si">$x</span><span class="s2"> of </span><span class="si">$a</span><span class="s2">, </span><span class="si">$i</span><span class="s2"> </span><span class="si">$x</span><span class="s2"> of beer.&lt;br&gt;&quot;</span><span class="p">;</span>
+</span><span class='line'>    <span class="nv">$b</span><span class="o">.=</span><span class="p">(</span><span class="nv">$i</span><span class="o">==</span><span class="mi">1</span><span class="p">)</span><span class="o">?</span><span class="s2">&quot;Go to the store and buy some more, 99 bottles of </span><span class="si">$a</span><span class="s2">.&quot;</span><span class="o">:</span><span class="s2">&quot;Take one down and pass it around, &quot;</span><span class="o">.</span><span class="p">(</span><span class="nv">$i</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="s2">&quot; </span><span class="si">$x</span><span class="s2"> of </span><span class="si">$a</span><span class="s2">.&lt;/p&gt;&quot;</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">print</span> <span class="nv">$b</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Optimize</h2>
+
+<p>Bạn thử ls -l sẽ thấy đoạn code trên có dung lượng 288 bytes!</p>
+
+<p>Để rút ngắn đoạn code trên, đầu tiên tôi nhớ lại những kiến thức cơ bản về PHP: dấu space hoàn toàn không cần thiết, và ký tự &#8220;?>&#8221; ở cuối cũng có thể bỏ đi
+PHP long tag ở đầu có thể thay = PHP short tag</p>
+
+<figure class='code'><figcaption><span>sol2.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?</span>
+</span><span class='line'><span class="nv">$a</span><span class="o">=</span><span class="s2">&quot;beer on the wall&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="k">for</span><span class="p">(</span><span class="nv">$i</span><span class="o">=</span><span class="mi">99</span><span class="p">;</span><span class="nv">$i</span><span class="o">&gt;=</span><span class="mi">1</span><span class="p">;</span><span class="nv">$i</span><span class="o">--</span><span class="p">){</span>
+</span><span class='line'><span class="nv">$x</span><span class="o">=</span><span class="p">(</span><span class="nv">$i</span><span class="o">==</span><span class="mi">1</span><span class="p">)</span><span class="o">?</span><span class="s2">&quot;bottle&quot;</span><span class="o">:</span><span class="s2">&quot;bottles&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="nv">$b</span><span class="o">=</span><span class="s2">&quot;&lt;p&gt;</span><span class="si">$i</span><span class="s2"> </span><span class="si">$x</span><span class="s2"> of </span><span class="si">$a</span><span class="s2">, </span><span class="si">$i</span><span class="s2"> </span><span class="si">$x</span><span class="s2"> of beer.&lt;br&gt;&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="nv">$b</span><span class="o">.=</span><span class="p">(</span><span class="nv">$i</span><span class="o">==</span><span class="mi">1</span><span class="p">)</span><span class="o">?</span><span class="s2">&quot;Go to the store and buy some more, 99 bottles of </span><span class="si">$a</span><span class="s2">.&quot;</span><span class="o">:</span><span class="s2">&quot;Take one down and pass it around, &quot;</span><span class="o">.</span><span class="p">(</span><span class="nv">$i</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="s2">&quot; </span><span class="si">$x</span><span class="s2"> of </span><span class="si">$a</span><span class="s2">.&lt;/p&gt;&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="k">print</span> <span class="nv">$b</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>263 bytes!</p>
+
+<p>Làm thế nào để rút ngắn hơn nữa ? Nếu để ý vào những chi tiết nhỏ hơn, bạn sẽ thấy:</p>
 
 <ul>
-<li>full-text indexing</li>
-<li>compression.</li>
-<li>spatial functions (GIS)</li>
-<li>Không hỗ trợ transactions</li>
-<li>Không hỗ trợ row-level lock.</li>
+<li>trong điều kiện vòng lặp, thay &#8220;$i>=1&#8221; bằng &#8220;$i>0&#8221;</li>
+<li>&#8221;($i==1)?&#8221; là quá dài. Ta có thể bỏ đi 2 dấu ngoặc &#8220;$i==1?&#8221;</li>
+<li>print có thể thay bằng echo. ( Thực tế trong PHP bạn còn có thể thay rtrim -> chop, explode -> split, implode -> join, preg_split -> split (trong 1 vài trường hợp) và preg_replace -> preg_filter trong hầu hết các TH  )</li>
+<li>&#8220;$x=($i==1)?&#8221;bottle&#8221;:&#8221;bottles&#8221;;&#8221; có thể được viết lại : &#8220;$x=&#8217;bottle&#8217;;$i==1?:$x.=&#8217;s&#8217;;&#8221;</li>
+<li>Mỗi lần sử dụng biến $a ta đều có &#8220;of&#8221; ở đăng trước. Vậy có thể đơn giản cho word &#8220;of&#8221; vào trong biến a</li>
+<li>&#8220;99 bottles of $a&#8221; có thể rewrite tiếp lại thành &#8220;99{$x}s of $a&#8221;</li>
+<li>Chúng ta có thể xoá &#8220;$i&#8211;&#8221; trong vòng lặp for, vì thế thêm &#8211; vào trước &#8220;$i==1&#8221; ở dòng gần cuối thành &#8220;$i&#8211;==1&#8221; và vì thế bỏ luôn đoạn ($i-1) ở sau đó</li>
 </ul>
 
 
-<h5>Lưu trữ</h5>
+<p>Như vậy solution tiếp theo của chúng ta sẽ là</p>
 
-<p>MyISAM lưu mỗi bảng dữ liệu trên 2 file: .MYD cho dữ liệu và .MYI cho chỉ mục. Row có 2 loại: dynamic và static (tuỳ thuộc bạn có dữ liệu thay đổi độ dài hay không). Số lượng row tối đa có thể lưu trữ bị giới hạn bởi hệ điều hành, dung lượng đĩa cứng. MyISAM mặc định sử dụng con trỏ độ dài 6 bytes để trỏ tới bản ghi dữ liệu, do vậy giới hạn kích thước dữ liệu xuống 256TB.</p>
-
-<h5>Tính năng:</h5>
-
-<ul>
-<li>MyISAM lock toàn bộ table. User (MySQL server) chiếm shared-lock khi đọc và chiếm exclusive-lock khi ghi. Tuy vậy, việc đọc ghi có thể diễn ra đồng thời!</li>
-<li>MyISAM có khả năng tự sửa chữa và phục hồi dữ liệu sau khi hệ thống crashed.</li>
-<li>Dùng command check table / repair table để kiểm tra lỗi và phục hồi sau khi bị lỗi.</li>
-<li>MyISAM có thể đánh chỉ mục full-text, hỗ trợ tìm kiếm full-text.</li>
-<li>MyISAM không ghi dữ liệu ngay vào ổ đĩa cứng, mà ghi vào 1 buffer trên memory (và chỉ ghi vào đĩa cứng sau 1 khoảng thời gian), do đó tăng tốc độ ghi. Tuy vậy, sau khi server crash, ta cần phải phục hồi dữ liệu bị hư hỏng bằng myisamchk.</li>
-<li>MyISAM hỗ trợ nén dữ liệu, hỗ trợ tăng tốc độ đọc dữ liệu. Mặc dù vậy dữ liệu sau khi nén không thể cập nhật được.</li>
-</ul>
-
-
-<h3>2. InnoDB engine</h3>
-
-<h5>Đặc điểm</h5>
-
-<ul>
-<li>Là engine phức tạp nhất trong các engine của MySQL</li>
-<li>Hỗ trợ transactions</li>
-<li>Hỗ trợ phục hồi, sửa chữa tốt</li>
-</ul>
+<figure class='code'><figcaption><span>sol2.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?</span>
+</span><span class='line'><span class="nv">$a</span><span class="o">=</span><span class="s2">&quot; of beer on the wall&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="k">for</span><span class="p">(</span><span class="nv">$i</span><span class="o">=</span><span class="mi">99</span><span class="p">;</span><span class="nv">$i</span><span class="o">&gt;=</span><span class="mi">1</span><span class="p">;){</span>
+</span><span class='line'><span class="nv">$x</span><span class="o">=</span><span class="s1">&#39;bottle&#39;</span><span class="p">;</span><span class="nv">$i</span><span class="o">==</span><span class="mi">1</span><span class="o">?:</span><span class="nv">$x</span><span class="o">.=</span><span class="s1">&#39;s&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="nv">$b</span><span class="o">=</span><span class="s2">&quot;&lt;p&gt;</span><span class="si">$i</span><span class="s2"> </span><span class="si">$x$a</span><span class="s2">, </span><span class="si">$i</span><span class="s2"> </span><span class="si">$x</span><span class="s2"> of beer.&lt;br&gt;&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="nv">$b</span><span class="o">.=</span><span class="nv">$i</span><span class="o">--==</span><span class="mi">1</span><span class="o">?</span><span class="s2">&quot;Go to the store and buy some more, 99 </span><span class="si">{</span><span class="nv">$x</span><span class="si">}</span><span class="s2">s</span><span class="si">$a</span><span class="s2">.&quot;</span><span class="o">:</span><span class="s2">&quot;Take one down and pass it around, &quot;</span><span class="o">.</span><span class="nv">$i</span><span class="o">.</span><span class="s2">&quot; </span><span class="si">$x$a</span><span class="s2">.&lt;/p&gt;&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="k">echo</span> <span class="nv">$b</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
-<h5>Lưu trữ</h5>
+<p>241 bytes!</p>
 
-<p>InnoDB lưu dữ liệu trên 1 file (thuật ngữ gọi là tablespace).</p>
+<h2>The trick</h2>
 
-<h5>Tính năng:</h5>
+<p>Bạn có nghĩ đã hết cách để rút gọn đoạn code ?</p>
 
-<ul>
-<li>InnoDB hỗ trợ MVCC (Multiversion Concurrency Control) để cải thiện việc truy cập đồng thời và hỗ trợ chiến thuật next-key locking.</li>
-<li>InnoDB được xây dựng dựa trên clustered index, do đó việc tìm kiếm theo primary key có hiệu năng rất cao. InnoDB không hỗ trợ sắp xếp index do vậy việc thay đổi cấu trúc bảng sẽ dẫn tới toàn bộ dữ liệu phải được đánh chỉ mục từ đầu (CHẬM với những bảng lớn).</li>
-</ul>
+<p>Bạn có quên điều gì không ? Bỏ đi tất cả các ký tự line-feed (line break), cho code thành 1 dòng, chúng ra sẽ có kết quả tốt hơn.</p>
 
-
-<h3>3. Memory engine</h3>
-
-<h5>Đặc điểm</h5>
-
-<ul>
-<li>Còn được gọi là HEAP tables.</li>
-</ul>
+<figure class='code'><figcaption><span>sol4.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?</span><span class="nv">$a</span><span class="o">=</span><span class="s2">&quot; of beer on the wall&quot;</span><span class="p">;</span><span class="k">for</span><span class="p">(</span><span class="nv">$i</span><span class="o">=</span><span class="mi">99</span><span class="p">;</span><span class="nv">$i</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">;){</span><span class="nv">$x</span><span class="o">=</span><span class="s1">&#39;bottle&#39;</span><span class="p">;</span><span class="nv">$i</span><span class="o">^</span><span class="mi">1</span><span class="o">?</span><span class="nv">$x</span><span class="o">.=</span><span class="s1">&#39;s&#39;</span><span class="o">:</span><span class="mi">0</span><span class="p">;</span><span class="nv">$b</span><span class="o">=</span><span class="s2">&quot;&lt;p&gt;</span><span class="si">$i</span><span class="s2"> </span><span class="si">$x$a</span><span class="s2">, </span><span class="si">$i</span><span class="s2"> </span><span class="si">$x</span><span class="s2"> of beer.&lt;br&gt;&quot;</span><span class="p">;</span><span class="nv">$b</span><span class="o">.=</span><span class="err">$</span>
+</span><span class='line'><span class="nx">i</span><span class="o">--==</span><span class="mi">1</span><span class="o">?</span><span class="s2">&quot;Go to the store and buy some more, 99 </span><span class="si">{</span><span class="nv">$x</span><span class="si">}</span><span class="s2">s</span><span class="si">$a</span><span class="s2">.&quot;</span><span class="o">:</span><span class="s2">&quot;Take one down and pass it around, &quot;</span><span class="o">.</span><span class="nv">$i</span><span class="o">.</span><span class="s2">&quot; </span><span class="si">$x$a</span><span class="s2">.&lt;/p&gt;&quot;</span><span class="p">;</span><span class="k">echo</span>
+</span><span class='line'> <span class="nv">$b</span><span class="p">;}</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
-<h5>Lưu trữ</h5>
+<p>233 bytes!</p>
 
-<p>Tất cả dữ liệu đều nằm trên memory.</p>
+<p>Bạn có tin có 1 đoạn code sẽ cho kết quả tương tự với &#8230; 30 bytes ???</p>
 
-<h5>Tính năng:</h5>
+<p>!!</p>
 
-<ul>
-<li>Sau khi server restart, cấu trúc bảng được bảo toàn, dữ liệu bị mất hết.</li>
-<li>Memory engine sử dụng HASH index nên rất nhanh cho query lookup.</li>
-<li>Memory engine dùng table-level locking do vậy tính concurrency không cao.</li>
-</ul>
-
-
-<h3>4. Archive engine</h3>
-
-<h5>Đặc điểm</h5>
-
-<ul>
-<li>Chỉ hỗ trợ Insert và Select.</li>
-<li>Không đánh chỉ mục</li>
-<li>Dữ liệu được buffer và nén bằng zlib nên tốn ít I/O, tốc độ ghi do đó cao.</li>
-</ul>
+<figure class='code'><figcaption><span>trick.php </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?</span><span class="k">include</span><span class="p">(</span><span class="s1">&#39;http://bit.ly/xxxx&#39;</span><span class="p">);</span> <span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure>
 
 
-<h5>Tính năng:</h5>
+<p>PHP là 1 ngôn ngữ web! Với allow_url_fopen và allow_url_include turn on có thể dễ dàng load 1 link kết quả có sẵn đi kèm 1 dịch vụ như bitly !</p>
 
-<ul>
-<li>Tốc độ ghi cao, phù hợp cho ứng dụng log.</li>
-</ul>
+<p>Stay hungry, stay foolish :D</p>
 
-
-<h3>5. CSV engine</h3>
-
-<h5>Đặc điểm</h5>
-
-<ul>
-<li>Coi file CSV như là 1 table.</li>
-<li>Không hỗ trợ đánh chỉ mục</li>
-</ul>
-
-
-<h5>Tính năng:</h5>
-
-<ul>
-<li>Nếu bài toán là trích xuất thông tin từ file CSV và ghi vào cơ sở dữ liệu, đồng thời cần kết quả CSV ngay từ DB, engine này có vẻ thích hợp.</li>
-</ul>
-
-
-<h3>6. Falcon engine</h3>
-
-<h5>Đặc điểm</h5>
-
-<ul>
-<li>Được thiết kế cho phần cứng hiện đại: server 64 bit, bộ nhớ &#8220;thênh thang&#8221;</li>
-<li>Vẫn còn khá mới, chưa có nhiều usercase</li>
-</ul>
-
-
-<h3>7. Maria engine (Cơ sở dữ liệu liên quan: <a href="https://mariadb.org/">MariaDB</a>)</h3>
-
-<h5>Đặc điểm</h5>
-
-<ul>
-<li>Được thiết kế bởi những chiến tướng dày dạn kinh nghiêm của MySQL, với mục đích thay thế MyISAM</li>
-<li>Hỗ trợ transactions theo lựa chọn</li>
-<li>Khôi phục lỗi</li>
-<li>Row-level locking và MVCC</li>
-<li>Hỗ trợ BLOB tốt hơn.</li>
-</ul>
-
-
-<h2>Tiêu chí lựa chọn engine</h2>
-
-<ul>
-<li>Transactions: Nếu ứng dụng yêu cầu transactions, InnoDB là lựa chọn duy nhất. Nếu không yêu cầu transactions, MyISAM là lựa chọn tốt.</li>
-<li>Concurrency: Nếu yêu cầu chịu tải cao và không cần thiết transactions, MyISAM là lựa chọn số 1.</li>
-<li>Sao lưu: Các engine đều phần nào hỗ trợ sao lưu. Ngoài ra ta cần hỗ trợ sao lưu trên cả quan điểm thiết kế hệ thống. Ví dụ: bạn thiết kế database server gồm master và slave, master yêu cần transaction nên dùng innodb, slave cần sao lưu và đọc nên có thể dùng MyISAM. Cơ chế đồng bộ master-slave sẽ giúp bạn quản lý sự khác nhau giữa các engine nhưng đảm bảo tính sao lưu. Tiêu chí này có trọng số nhỏ.</li>
-<li>Phục hồi sau crash: MyISAM có khả năng phục hồi sau crash kém hơn InnoDB.</li>
-<li>Tính năng theo yêu cầu hệ thống: Nếu yêu cầu là logging, MyISAM hoặc Archive là lựa chọn hợp lý. Nếu cần lưu trực tiếp CSV, CSV engine là lựa chọn đáng cân nhắc. Nếu ứng dụng không thay đổi dữ liệu mấy (ví dụ cơ sở dữ liệu sách), MyISAM và tính năng nén là lựa chọn phù hợp.</li>
-</ul>
-
-
-<h1>Kết luận</h1>
-
-<p>Bài viết này đã giới thiệu tổng quan về storage engine, một thành phần quan trọng của hệ thống cơ sở dữ liệu. Một số engine tiêu biểu và tính năng đặc điểm cũng được đưa ra. Tiêu chí chọn lựa mỗi loại engine cũng được giới thiệu.</p>
-
-<p>Hy vọng qua bài viết, bạn có cái nhìn tổng quan về database storate engine nói chung, và MySQL storage engine nói riêng, đồng thời hiểu được tầm quan trọng của việc chọn lựa storage engine.</p>
-
-<h1>Tham khảo</h1>
+<h2>Tham khảo</h2>
 
 <ol>
-<li><a href="http://shop.oreilly.com/product/9780596101718.do">High performance MySQL, 2ed</a></li>
-<li><a href="http://dev.mysql.com/doc/refman/5.7/en/storage-engines.html">Storage Engines</a></li>
-<li><a href="http://www.linux.org/article/view/an-introduction-to-mysql-storage-engines">Storage Engine Introduction</a></li>
+<li><a href="http://www.phpgolf.org/tips">phpgolf tips and tricks</a></li>
+<li><a href="http://stackoverflow.com/questions/3801097/solve-this-php-puzzle-in-as-few-bytes-as-possible">Question on StackOverFlow</a></li>
 </ol>
 
 
@@ -360,284 +444,77 @@ giá trị auto increment tiếp theo: 3
   
 
 
-<time datetime="2013-05-06T16:44:00+09:00" data-updated="true" itemprop="datePublished">May 6<span>th</span>, 2013</time></div>
+<time datetime="2013-06-02T08:06:00+09:00" data-updated="true" itemprop="datePublished">Jun 2<span>nd</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/programming/'>programming</a>, <a class='category' href='/blog/categories/python/'>python</a>
+	<a class='category' href='/blog/categories/garbage-collector/'>garbage collector</a>, <a class='category' href='/blog/categories/java/'>java</a>, <a class='category' href='/blog/categories/programming/'>programming</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/05/06/memoization-and-decorator/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/06/02/weakhashmap-va-weak-reference-trong-java/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/05/06/memoization-and-decorator/" itemprop="url">Memoization and Decorator</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/06/02/weakhashmap-va-weak-reference-trong-java/" itemprop="url">WeakHashMap và Weak Reference Trong Java</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h2>What is memoization</h2>
+		<h1>Giới thiệu</h1>
 
-<p>Trước hết chúng ta làm quen với khái niệm memoization. Ngôn ngữ ở đây là Python, bài toán là viết hàm tính giai thừa (n!)</p>
+<p>Trong thư viện Collection của Java, có một lớp đặc biệt: <strong>WeakHashMap</strong>. Về hoạt động nói chung nó rất giống với <strong>HashMap</strong>, đều có chức năng quản lý key, value như thêm, bớt, truy xuất value theo key&#8230; Vậy khác biệt của <strong>WeakHashMap</strong> so với <strong>HashMap</strong> là gì? Đó chính là khả năng phối hợp của <strong>WeakHashMap</strong> với garbage collector nhằm loại bỏ khả năng leak memory có thể xảy ra với <strong>HashMap</strong>. Trong bài viết này, chúng ta sẽ tìm hiểu <strong>WeakHashMap</strong> là gì, cách hoạt động của nó như thế nào, và cách nó xóa bỏ những entry không dùng đến ra sao.</p>
 
-<p>Hàm giai thừa thông thường sẽ được viết đệ quy như sau:</p>
+<h1>Mở đầu</h1>
 
-<figure class='code'><figcaption><span>python.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">def</span> <span class="nf">fac</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span> <span class="k">return</span> <span class="mi">1</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">n</span> <span class="o">*</span> <span class="n">fac</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
+<p>Thử tưởng tượng một tình huống như thế này: bạn muốn sử dụng một class nào đó, nhưng không thể extend được nó (ví dụ trường hợp đơn giản nhất là class đó được chỉ định là <strong>final</strong>). Vậy bạn làm gì khi muốn thêm property cho object thuộc class đó?</p>
 
+<p>Ví dụ, bạn muốn sử dụng một class <strong>Product</strong> mà không thể extend được. Bây giờ muốn thêm <strong>serialNumber</strong> cho product đó, ứng cử viên hàng đầu là HashMap, bạn có thể tạo một cặp <strong>key</strong> là Product object, <strong>value</strong> là serialNumber:</p>
 
-<p>Có gì không ổn ở đoạn code này ? Cách giải quyết hoàn toàn không có vấn đề, nhưng nếu tinh ý bạn sẽ nhận thấy có 1 khối lượng tính toán bị lặp lại khá nhiều khi chạy nhiều hàm fac(n). VD, nếu tính fac(3), fac(4) và fac(10) lần lượt sẽ đòi hỏi 3 flow tính toán riêng rẽ mà không có reuse: fac(3) sẽ tính đệ quy từ fac(2) xuống fac(1), fac(4) tính đệ quy từ fac(3) xuống fac(1) và fac(10) tính đệ quy từ fac(9) xuống fac(1) !</p>
-
-<p>Áp dụng memoization dưới dạng dict, ta có thể viết hàm fac_m như sau:</p>
-
-<figure class='code'><figcaption><span>python.py </span></figcaption>
+<figure class='code'><figcaption><span>product.java </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="n">memo</span> <span class="o">=</span> <span class="p">{}</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">fac_m</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">n</span><span class="o">&lt;</span><span class="mi">2</span><span class="p">:</span> <span class="k">return</span> <span class="mi">1</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">n</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">memo</span><span class="p">:</span>
-</span><span class='line'>        <span class="n">memo</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span> <span class="o">*</span> <span class="n">fac_m</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">memo</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Ở đây memo đóng vài trò như 1 cache. fac(3) sẽ generate ra 3 record in cache, và fac(4) sẽ hit cache khi chạy đệ quy được 1 lần. Tương tự fac(10) sẽ hit cache khi đệ quy xuống đến fac(4)</p>
-
-<p>Như vậy memoization đơn giản chỉ là tìm cách nhớ những phần tử để giảm khối lượng tính toán</p>
-
-<p>Memoization có thể implement dưới dạng function&#8230;</p>
-
-<figure class='code'><figcaption><span>python.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">def</span> <span class="nf">memoize</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">memo</span> <span class="o">=</span> <span class="p">{}</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">arg</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">memo</span><span class="p">:</span>
-</span><span class='line'>        <span class="n">memo</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">memo</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">fac_m_f</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">memoize</span><span class="p">(</span><span class="n">fac</span><span class="p">,</span><span class="n">n</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>&#8230;hoặc class</p>
-
-<figure class='code'><figcaption><span>python.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Memoize</span><span class="p">:</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="n">f</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">memo</span> <span class="o">=</span> <span class="p">{}</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">memo</span><span class="p">:</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">memo</span><span class="p">[</span><span class="n">args</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
-</span><span class='line'>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">memo</span><span class="p">[</span><span class="n">args</span><span class="p">]</span>
-</span><span class='line'><span class="n">fac</span><span class="o">=</span> <span class="n">Memoize</span><span class="p">(</span><span class="n">fac</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Thêm 1 step nữa, thay vì &#8220;fac=Memoize(fac)&#8221; như ở trên, bạn có thể viết hàm mới theo kiểu decorator</p>
-
-<figure class='code'><figcaption><span>python.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="nd">@Memoize</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">fac_m_d</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">n</span><span class="o">&lt;</span><span class="mi">2</span><span class="p">:</span> <span class="k">return</span> <span class="mi">1</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">n</span> <span class="o">*</span> <span class="n">fac_m_d</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Decorator ở đây là từ khoá &#8220;@Memoize&#8221; trước định nghĩa của hàm fac_m_d</p>
-
-<p>Vậy decorator trong Python là gì và cách dùng ra sao ?</p>
-
-<h2>Python decorator</h2>
-
-<p>Trong số các design pattern, có 1 design pattern gọi là &#8220;decorator design pattern&#8221;. Python decorator chỉ là 1 cách implement của decorator design pattern. 2 khái niệm này không hoàn toàn giống nhau. Một điểm nữa cần nhớ là, memoization ở trên chỉ là 1 trong các ứng dụng của python decorator, python decorator còn có nhiều ứng dựng khác.</p>
-
-<p>Mọi function trong python đều là object, cho phép ta có thể assign funtion cho variable hoặc defince function trong chính 1 function khác. Dựa vào đó, decorator có thể dưới dạng decorator function như ví dụ dưới đây:</p>
-
-<figure class='code'><figcaption><span>python.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">def</span> <span class="nf">gotham</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">inside_gotham</span><span class="p">():</span>
-</span><span class='line'>        <span class="k">print</span> <span class="s">&quot;Gotham needs Batman&quot;</span>
-</span><span class='line'>        <span class="n">f</span><span class="p">()</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">inside_gotham</span>
-</span><span class='line'>
-</span><span class='line'><span class="nd">@gotham</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">batman</span><span class="p">():</span>
-</span><span class='line'>    <span class="k">print</span> <span class="s">&quot;Batman Here! Gotham is saved! &quot;</span>
-</span><span class='line'><span class="n">batman</span><span class="p">()</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Đoạn code sẽ cho output:</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>Gotham needs Batman
-</span><span class='line'>Batman Here! Gotham is saved!</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Cơ chế của decorator có thể hiểu đơn giản là, khi intepreter đọc đến đoạn code đefine function với decorator, interpreter sẽ evaluate function 1 cách bình thường và pass function object kết quả thẳng cho decorator(dưới dạng function hoặc class). Decorator(function hoăc class) lấy agrument là 1 function object và return kết quả là 1 function object khác.</p>
-
-<p>Function object kết quả nói trên gồm function object ban đầu đã được gói lại và &#8220;thêm thắt&#8221;, và từ nay về sau sẽ được gọi thay cho function object ban đầu mỗi khi có lệnh call.</p>
-
-<p>Ngoài memoization bên trên, bạn có thể dễ thấy rất nhiều ứng dụng của decorator trong các task liên quan đến wrap VD như:</p>
-
-<p>Timing, benchmark tính toán thời gian run code</p>
-
-<figure class='code'><figcaption><span>python.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">def</span> <span class="nf">time_cal</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">arg</span><span class="p">):</span>
-</span><span class='line'>        <span class="n">t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-</span><span class='line'>        <span class="n">res</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">arg</span><span class="p">)</span>
-</span><span class='line'>        <span class="k">print</span> <span class="n">func</span><span class="o">.</span><span class="n">func_name</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">res</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">wrapper</span>
-</span><span class='line'>
-</span><span class='line'><span class="nd">@time_cal</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">fac</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span> <span class="k">return</span> <span class="mi">1</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">n</span> <span class="o">*</span> <span class="n">fac</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>hay trong web application, nếu bạn đã dùng Flaskr, bạn có thể thấy đoạn code sau</p>
-
-<figure class='code'><figcaption><span>python.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="nd">@mod.route</span><span class="p">(</span><span class="s">&#39;/me/&#39;</span><span class="p">)</span>
-</span><span class='line'><span class="nd">@requires_login</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">home</span><span class="p">():</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">import</span> <span class="nn">java.util.HashMap</span><span class="o">;</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="n">Map</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">productMap</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">,</span><span class="n">String</span><span class="o">&gt;();</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="n">productMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">product</span><span class="o">,</span> <span class="n">serialNo</span><span class="o">);</span>
 </span><span class='line'><span class="o">...</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Ở đây trang web của bạn ở sublink &#8220;&#8230;/me&#8221; sẽ được đảm bảo chỉ viewable với user đã login. Decorator &#8220;@requires_login&#8221; có thể viết ở 1 file độc lập và mọi hàm cần tính đảm bảo như trên chỉ cần thêm &#8220;@requires_login&#8221; đằng trước.</p>
+<p>Đoạn code trên có vẻ đã hoàn thành mục tiêu thêm thuộc tính cho Product object, nhưng có vấn đề gì ở đây không? Cách giải quyết này gặp phải vấn đề liên quan đến việc giải phóng bộ nhớ. Vì <strong>HashMap</strong> sử dụng <strong>strong reference</strong> để trỏ đến Product object, nên khi trong chương trình không còn reference nào đến Product object nữa, <strong>garbage collector</strong> nhận thấy vẫn còn strong reference ở trong <strong>HashMap</strong>, nên nó không giải phóng object này nữa. Lâu dần, sẽ xuất hiện hiện tượng <strong>Leak Memory</strong>: ta không thể giải phóng được cặp key, value nằm trong <strong>HashMap</strong>, khi mà <strong>HashMap</strong> còn được sử dụng (để hiểu rõ hơn, bạn có thể xem ví dụ demo ở cuối bài).</p>
 
-<figure class='code'><figcaption><span>python.py </span></figcaption>
+<p>Nhân đây, xin giải thích thêm về <strong>Strong reference</strong>. Đây là Java reference bình thường mà ta thường sử dụng. Như ví dụ sau:</p>
+
+<figure class='code'><figcaption><span>strong.java </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">requires_login</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
-</span><span class='line'>    <span class="nd">@wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">decorated_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">if</span> <span class="n">g</span><span class="o">.</span><span class="n">user</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">flash</span><span class="p">(</span><span class="s">u&#39;You need to be signed in for this page.&#39;</span><span class="p">)</span>
-</span><span class='line'>            <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s">&#39;users.login&#39;</span><span class="p">,</span> <span class="nb">next</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">decorated_function</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">String</span> <span class="n">serialNo</span> <span class="o">=</span> <span class="k">new</span> <span class="n">String</span><span class="o">();</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<h2>Kết luận</h2>
+<p>sẽ tạo một object String và lưu một strong reference đến nó vào biến serialNo. Ta cần phải để ý mới quan hệ giữa strong reference và garbage collector như sau: Nếu một object được trỏ đến qua một số strong references, object đó sẽ không được garbage collector để ý đến.</p>
 
-<ul>
-<li>Memoization: pattern dùng để nhớ các tính toán nhằm làm giảm workload khi gặp các bài toán đệ quy</li>
-<li>Decorator pattern: decorator design pattern</li>
-<li>Python Decorator: Python tools để implement decorator pattern</li>
-</ul>
+<h1>WeakHashMap</h1>
 
+<p>Trái ngược lại với <strong>strong reference</strong> là <strong>weak reference</strong>. *Weak reference** sẽ không thể cản trở garbage collector giải phóng object khỏi memory. Khai báo như sau:</p>
 
-		
-		
-	</div>
-
-</article>
+<figure class='code'><figcaption><span>weak.java </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">WeakReference</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">&gt;</span> <span class="n">weakProduct</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WeakReference</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">&gt;(</span><span class="n">product</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
+<p>Sau đó, ta có thể truy cập đến Product object thông qua việc gọi method weakProduct.get(). Tuy nhiên, ta cần phải chú ý khi gọi method này. Vì weak reference không đủ khả năng chặn quá trình garbage collection, nên đến một cycle nào đó, garbage collector sẽ giải phóng Product object (khi không còn strong reference nào đến nó) , và bạn sẽ thấy weakProduct.get() đột nhiên trả về null.</p>
 
+<p>Quay trở lại với ví dụ Product ở trên, ta giải quyết vấn đề đã nêu bằng cách sử dụng <strong>WeakHashMap</strong> class.  <strong>WeakHashMap</strong> hoạt động y hệt như <strong>HashMap</strong>, chỉ khác là key được refer đến bằng <strong>weak reference</strong>. Lúc này, khi một object chỉ reachable bởi <strong>WeakReference</strong>, garbage collector sẽ giải phóng object, đồng thời sẽ đặt <strong>weak reference</strong> trỏ đến object kia vào một queue. WeakHashMap sẽ định kì kiểm tra queue này xem có weak reference nào mới đến không. Nếu thấy một weak reference trong queue, nghĩa là key đã không được ai sử dụng nữa và nó đã bị garbage collector &#8220;tịch thu&#8221;. Lúc đó, WeakHashMap sẽ bỏ entry liên quan đi. No more memory leak ! :)</p>
 
+<h1>Demo</h1>
 
+<p>Lý thuyết là vậy. Để dễ hiểu hơn, quan sát đoạn demo WeakHashMap sau:</p>
 
-
-
-
-
-  
-
-
-<time datetime="2013-05-03T06:43:00+09:00" data-updated="true" itemprop="datePublished">May 3<span>rd</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/memo/'>memo</a>, <a class='category' href='/blog/categories/tips/'>tips</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/05/03/error-when-install-therubyracer/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/05/03/error-when-install-therubyracer/" itemprop="url">Error When Install Therubyracer</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<p>Là ruby dev chắc bạn biết đến gem therubyracer (là gem dùng làm javascript interpreter trên ruby thông qua v8, gem này thường dùng làm javascript headless test hay để sử dụng một số module của nodejs trên ruby)
-Tuy nhiên khi cài đặt gem này trên mac os (kể cả từ 10.6 đến 10.8) thì rất hay bị gặp lỗi:</p>
-
-<figure class='code'><figcaption><span>error error.sh</span></figcaption>
+<figure class='code'><figcaption><span>WeakHashMapDemo.java </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -664,58 +541,109 @@ Tuy nhiên khi cài đặt gem này trên mac os (kể cả từ 10.6 đến 10.
 <span class='line-number'>24</span>
 <span class='line-number'>25</span>
 <span class='line-number'>26</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$ </span>gem install therubyracer
-</span><span class='line'>Building native extensions.  This could take a <span class="k">while</span>...
-</span><span class='line'>ERROR:  Error installing therubyracer:
-</span><span class='line'>    ERROR: Failed to build gem native extension.
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">package</span> <span class="n">corejava</span><span class="o">.</span><span class="na">collection</span><span class="o">;</span>
 </span><span class='line'>
-</span><span class='line'>        /Users/david/.rvm/rubies/ruby-1.9.3-p194/bin/ruby extconf.rb
-</span><span class='line'>checking <span class="k">for </span>main<span class="o">()</span> in -lobjc... yes
-</span><span class='line'>*** extconf.rb failed ***
-</span><span class='line'>Could not create Makefile due to some reason, probably lack of
-</span><span class='line'>necessary libraries and/or headers.  Check the mkmf.log file <span class="k">for </span>more
-</span><span class='line'>details.  You may need configuration options.
+</span><span class='line'><span class="kn">import</span> <span class="nn">java.util.Map</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">java.util.WeakHashMap</span><span class="o">;</span>
 </span><span class='line'>
-</span><span class='line'>Provided configuration options:
-</span><span class='line'>    --with-opt-dir
-</span><span class='line'>    --with-opt-include
-</span><span class='line'>    --without-opt-include<span class="o">=</span><span class="k">${</span><span class="nv">opt</span><span class="p">-dir</span><span class="k">}</span>/include
-</span><span class='line'>    --with-opt-lib
-</span><span class='line'>    --without-opt-lib<span class="o">=</span><span class="k">${</span><span class="nv">opt</span><span class="p">-dir</span><span class="k">}</span>/lib
-</span><span class='line'>    --with-make-prog
-</span><span class='line'>    --without-make-prog
-</span><span class='line'>    --srcdir<span class="o">=</span>.
-</span><span class='line'>    --curdir
-</span><span class='line'>    --ruby<span class="o">=</span>/Users/david/.rvm/rubies/ruby-1.9.3-p194/bin/ruby
-</span><span class='line'>    --with-objclib
-</span><span class='line'>    --without-objclib
-</span><span class='line'>extconf.rb:15:in <span class="sb">`</span>&lt;main&gt;<span class="s1">&#39;: undefined method `include_path&#39;</span> <span class="k">for </span>Libv8:Module <span class="o">(</span>NoMethodError<span class="o">)</span>
+</span><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">WeakHashMapTest</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="c1">//add one element to the map...</span>
+</span><span class='line'>      <span class="n">Map</span><span class="o">&lt;</span><span class="n">Data</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">map</span>  <span class="o">=</span> <span class="k">new</span> <span class="n">WeakHashMap</span><span class="o">&lt;</span><span class="n">Data</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;();</span>
+</span><span class='line'>      <span class="n">Data</span> <span class="n">someDataObject</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Data</span><span class="o">(</span><span class="s">&quot;test&quot;</span><span class="o">);</span>
+</span><span class='line'>      <span class="n">map</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">someDataObject</span><span class="o">,</span> <span class="n">someDataObject</span><span class="o">.</span><span class="na">value</span><span class="o">);</span>
+</span><span class='line'>      <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;map contains someDataObject ? &quot;</span> <span class="o">+</span> <span class="n">map</span><span class="o">.</span><span class="na">containsKey</span><span class="o">(</span><span class="n">someDataObject</span><span class="o">));</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="c1">//now make someDataObject eligible for garbage collection...</span>
+</span><span class='line'>      <span class="n">someDataObject</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">1000000</span><span class="o">;</span> <span class="n">i</span><span class="o">++){</span>
+</span><span class='line'>          <span class="k">if</span><span class="o">(</span><span class="n">map</span><span class="o">.</span><span class="na">size</span><span class="o">()!=</span><span class="mi">0</span><span class="o">)</span>
+</span><span class='line'>          <span class="o">{</span>
+</span><span class='line'>              <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;At iteration &quot;</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s">&quot; the map still holds the reference on someDataObject&quot;</span><span class="o">);</span>
+</span><span class='line'>          <span class="o">}</span>
+</span><span class='line'>          <span class="k">else</span>
+</span><span class='line'>          <span class="o">{</span>
+</span><span class='line'>              <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;someDataObject has finally been garbage collected at iteration &quot;</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s">&quot;, so the map is now empty&quot;</span><span class="o">);</span>
+</span><span class='line'>              <span class="k">break</span><span class="o">;</span>
+</span><span class='line'>          <span class="o">}</span>
+</span><span class='line'>          
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kd">static</span> <span class="kd">class</span> <span class="nc">Data</span><span class="o">{</span>
+</span><span class='line'>      <span class="n">String</span> <span class="n">value</span><span class="o">;</span>
+</span><span class='line'>      <span class="n">Data</span><span class="o">(</span><span class="n">String</span> <span class="n">value</span><span class="o">){</span>
+</span><span class='line'>          <span class="k">this</span><span class="o">.</span><span class="na">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">;</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Bị lỗi này hình như là do version của v8 đang cài trong máy bị conflict với version v8 therubyracer reference đến, để fix thì có 2 cách:
-Cách đầu tiên là uninstall bản gem libv8 đang có trong máy đi, rồi install lại therubyracer</p>
+<p>Chạy đoạn code trên: kết quả như sau:</p>
 
-<figure class='code'><figcaption><span>fix1 fix1.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>output </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$ </span>gem uninstall libv8
-</span><span class='line'><span class="nv">$ </span>gem install therubyracer
-</span></code></pre></td></tr></table></div></figure>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>map contains someDataObject ? true
+</span><span class='line'>At iteration 0 the map still holds the reference on someDataObject
+</span><span class='line'>At iteration 1 the map still holds the reference on someDataObject
+</span><span class='line'>...
+</span><span class='line'>At iteration 29574 the map still holds the reference on someDataObject
+</span><span class='line'>someDataObject has finally been garbage collected at iteration 29575, hence the map is now empty</span></code></pre></td></tr></table></div></figure>
 
 
-<p>Khi install therubyracer thì gem sẽ tự động install lại bản v8 thích hợp vào đúng chỗ.</p>
+<p> thay <strong>WeakHashMap</strong> bằng <strong>HashMap</strong>, kết quả sẽ như thế nào?</p>
 
-<p>Hoặc bạn có thể dùng cách thứ 2 là update lại bản libv8 mới nhất, rồi tiến hành cài đặt như bình thường</p>
-
-<figure class='code'><figcaption><span>fix1 fix1.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>output </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$ </span>gem update libv8
-</span><span class='line'><span class="nv">$ </span>gem install therubyracer
-</span></code></pre></td></tr></table></div></figure>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>map contains someDataObject ? true
+</span><span class='line'>At iteration 0 the map still holds the reference on someDataObject
+</span><span class='line'>At iteration 1 the map still holds the reference on someDataObject
+</span><span class='line'>...
+</span><span class='line'>At iteration 999997 the map still holds the reference on someDataObject
+</span><span class='line'>At iteration 999998 the map still holds the reference on someDataObject
+</span><span class='line'>At iteration 999999 the map still holds the reference on someDataObject</span></code></pre></td></tr></table></div></figure>
 
 
+<p>Bạn đã thấy điểm khác biệt? Sau một khoảng thời gian, <strong>WeakHashMap</strong> sẽ bỏ đi entry tương ứng với weak reference. Còn <strong>HashMap</strong>, vì là strong reference, trong map sẽ luôn chứa cặp phần tử (someDataObject, value) mặc dù bên ngoài someDataObject đã set là null.</p>
+
+<h1>Kết luận</h1>
+
+<p>Bài viết này đã trình bày tác dụng của một lớp trong Collection của Java: <strong>WeakHashSet</strong>. Đồng thời, bài viết cũng giới thiệu <strong>weak reference</strong> và <strong>strong reference</strong> và mối quan hệ của chúng với Java garbage collector.</p>
+
+<h1>Tham khảo</h1>
+
+<ol>
+<li>Core Java Volume I&#8211;Fundamentals</li>
+<li><a href="http://docs.oracle.com/javase/6/docs/api/java/util/WeakHashMap.html">http://docs.oracle.com/javase/6/docs/api/java/util/WeakHashMap.html</a></li>
+</ol>
 
 
 		

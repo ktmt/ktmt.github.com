@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: property | Blog kỹ thuật máy tính]]></title>
+  <link href="http://ktmt.github.com/blog/categories/property/atom.xml" rel="self"/>
+  <link href="http://ktmt.github.com/"/>
+  <updated>2013-09-18T01:15:24+09:00</updated>
+  <id>http://ktmt.github.com/</id>
+  <author>
+    <name><![CDATA[kỹ thuật máy tính]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[[iOS property:attributes]]]></title>
+    <link href="http://ktmt.github.com/blog/2013/09/10/ios-property-attributes/"/>
+    <updated>2013-09-10T00:56:00+09:00</updated>
+    <id>http://ktmt.github.com/blog/2013/09/10/ios-property-attributes</id>
+    <content type="html"><![CDATA[<h1>Mở đầu</h1>
+
+<p>Nếu bạn đã từng sử dụng Objective C thì thấy rằng khi khai báo các property cho 1 class nào đấy chúng ta có 2 cách như sau:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>@interface MyClass : NSObject {&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;pre>&lt;code>NSString *myString;
+</span><span class='line'>&lt;/code>&lt;/pre>
+</span><span class='line'>
+</span><span class='line'>&lt;p>}</span></code></pre></td></tr></table></div></figure></notextile></div>
+hoặc có thể dùng <code>@property (attributes) type name</code> để khai báo như sau:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>@interface MyClass : NSObject {
+</span><span class='line'>}
+</span><span class='line'>@property (strong, nonatomic) NSString *myString;</span></code></pre></td></tr></table></div></figure></notextile></div>
+Với cách thứ 2 thì compiler sẽ tự động sinh ra các setter/getter cho property ấy. Thế nhưng việc sinh ra setter/getter như thế nào là phụ thuộc vào tập <code>attributes</code> mà bạn đã set ở trên. Khi mới bắt đầu code iOS mình thấy việc set thuộc tính này hơi bị loạn với khá nhiều thuộc tính (retain, strong, weak, unsafe_unretained, nonatomic...). Rồi khi phiên bản thay đổi, kiểu project có dùng ARC hay không cũng dẫn đến việc sử dụng các thuộc tính này cũng khác nhau. Ngoài ra trong một số trường hợp nếu bạn không sử dụng đúng thuộc tính có thể làm app của bạn chạy bị lỗi. Trong bài viết này mình sẽ tóm tắt lại các thuộc tính của property, cũng như nói về khi nào sẽ dùng thuộc tính nào, tại sao, và thuộc tính nào là mặc định.</p>
+
+<h1>Các thuộc tính của property</h1>
+
+<p>Nếu chia nhóm thì có lẽ bao gồm 3 nhóm thuộc tính như sau:</p>
+
+<h2>Writability</h2>
+
+<p>Nhóm này có 2 thuộc tính là <code>readwrite</code> và <code>readonly</code>. Nhóm thuộc tính này thì khá là dễ hiểu.
+Với thuộc tính <code>readwrite</code> thì compiler sẽ generate ra cả setter và getter, còn <code>readonly</code> thì compiler chỉ generate ra getter.
+Mặc định là <code>readwrite</code> (không liên quan đến project dùng ARC hay không).</p>
+
+<h2>Setter Semantics</h2>
+
+<p>Nhóm này gồm các thuộc tính để chỉ ra cách thức quản lý bộ nhớ, bao gồm các thuộc tính như sau:
+<code>assign</code>, <code>strong</code>, <code>weak</code>, <code>unsafe_unretained</code>, <code>retain</code>, <code>copy</code>.
+Khi chúng ta set một trong các thuộc tính này cho property thì setter (getter không liên quan) được tạo ra thay đổi tương ứng với thuộc tính đó.
+Trước hết chúng ta sẽ nói qua về cách quản lý bộ nhớ trước iOS5 khi mà ARC chưa xuất hiện.
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>Car &lt;em>car1 = [[Car alloc] init];
+</span><span class='line'>//...
+</span><span class='line'>[car1 release]</span></code></pre></td></tr></table></div></figure></notextile></div>
+Trước khi ARC xuất hiện thì các lập trình viên iOS đều phải tự quản lý bộ nhớ.
+Khi chúng ta tạo object với vùng nhớ của nó, đồng nghĩa với việc chúng ta nắm giữ ownership của object đó.
+Khi không cần dùng nữa thì phải huỷ bỏ ownership đấy đi bằng cách gửi message <code>release</code>.
+Một object có thể có nhiều ownership và mỗi object sẽ có 1 property tên là <code>retainCount</code> để lưu số lượng owner của nó.
+Mỗi khi chúng ta tạo object, hay <code>retain</code> thì <code>retainCount</code> lại được tăng lên 1.
+Khi chúng ta gửi message <code>release</code> tới object đấy thì <code>retainCount</code> lại bị giảm đi 1.
+Một khi <code>retainCount</code> bằng 0 thì vùng nhớ của nó sẽ bị giải phóng.
+Chúng ta có thể gửi message <code>retain</code> để tạo thêm ownership như ví dụ dưới đây. Khi đó <code>car1</code> và <code>car2</code> cùng trỏ đến 1 vùng nhớ và <code>retainCount</code> bây giờ bằng 2.
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>// retain
+</span><span class='line'>Car &lt;/em>car2 = [car1 retain];  // retainCount = 2</span></code></pre></td></tr></table></div></figure></notextile></div>
+Ngoài ra để copy sang vùng nhớ mới chúng ta có thể gửi message <code>copy</code> như ví dụ dưới đây. Khi đó <code>retainCount</code> ở vùng nhớ mới có giá trị khởi tạo là 1.
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>// copy
+</span><span class='line'>Car *car3 = [car1 copy];    // retainCount = 1</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Quay trở lại với thuộc tính của property. Thuộc tính đầu tiên là <code>retain</code>. Như ví dụ dưới đây khi ta set thuộc tính <code>retain</code> cho property <code>name</code> thì compiler sẽ sinh ra setter <code>setName</code> như bên dưới.
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>@interface Car: NSObject&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>@property (nonatomic, retain) NSString *name;&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>@end;</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>- (void)setName:(NSString *)newName {&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;pre>&lt;code>[newName retain];
+</span><span class='line'>[_name release];
+</span><span class='line'>_name = newName;
+</span><span class='line'>&lt;/code>&lt;/pre>
+</span><span class='line'>
+</span><span class='line'>&lt;p>}</span></code></pre></td></tr></table></div></figure></notextile></div>
+Nhìn vào setter ta thấy đầu tiên là tạo ownership (hay tăng <code>retainCount</code> thêm 1) của <code>newName</code> bằng cách gọi <code>[newNmane retain]</code>.
+Tiếp theo là việc gửi message <code>release</code> tới <code>_name</code> ban đầu để xoá ownership ban đầu đi. Sau đó mới gán contrỏ trỏ đến object mới.
+Vậy nên thuộc tính <code>retain</code> giúp tạo ra setter trong đó tạo ownership mới và trỏ đến vùng nhớ mới.
+Chú ý rằng thuộc tính <code>retain</code> chỉ dùng cho những project không dùng ARC.</p>
+
+<p>Và từ iOS5 trở đi Apple giới thiệu ARC giúp cho việc quản lý bộ nhớ đơn giản hơn. ARC không hoạt động như các <code>Garbage Collection</code> khác mà thực ra chỉ là phần front-end của compiler nhằm mục đich tự động chèn thêm các đoạn code gọi message như <code>retain</code> hay <code>release</code>. Từ đấy lập trình viên không phải gọi các message này nữa. Ví dụ như 1 object được tạo trong 1 method thì sẽ chèn thêm đoạn gửi message <code>release</code> tới object đó ở gần cuối method. Hay trong trường hợp là property của 1 class <code>Car</code> ở trên thì tự động chèn <code>[_name release]</code> trong method <code>dealloc</code> của class <code>Car</code> chẳng hạn.
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;ul>
+</span><span class='line'>&lt;li>(void)dealloc
+</span><span class='line'>{
+</span><span class='line'>//...
+</span><span class='line'>[_name release];
+</span><span class='line'>//...
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure></notextile></div>
+Khi project của bạn dùng ARC thì chúng ta sẽ dùng thuộc tính <code>strong</code> thay cho thuộc tính <code>retain</code>.
+<code>strong</code> cũng tương tự như <code>retain</code> sẽ giúp tạo ra setter, mà trong setter đó tạo ra ownership mới (tăng retainCount thêm 1). Và ngoài ra ARC sẽ thêm các đoạn gửi message <code>release</code> tới các property này trong method <code>dealloc</code> của class.</li>
+</ul>
+
+
+<p>Thế nhưng xuất hiện vấn đề có tên là <code>Strong Reference Cycles</code>. Mình sẽ lấy 1 ví dụ để thấy rõ hơn về vấn đề này.
+Một object A nào đấy có ownership của 1 object B. Object B lại có ownership của 1 object C. Object C lại có ownership của object B.</p>
+
+<p><img src="/images/ios_property_attributes/strong_reference_cycles.png"></p>
+
+<p>Một khi object A ko cần thiết nữa thì trong method <code>dealloc</code> của A sẽ gửi message <code>release</code> tới object B. retainCount của object B giảm đi 1 nhưng vẫn còn 1 ( do object C retain ) thế nên method <code>dealloc</code> của object B không bao giờ được gọi, kéo theo message <code>release</code> cũng không bao giờ được gửi tới object C. Từ đó dẫn đến vùng nhớ của object B và object C không được giải phóng => xuất hiện hiện tượng Leak Memory.
+Vì vậy để tránh hiện tượng này ta sẽ dùng thuộc tính <code>weak</code> thay vì dùng thuộc tính <code>strong</code> trong class của object C.
+Với thuộc tính <code>weak</code> thì trong setter được sinh ra sẽ không <code>retain</code> (không tăng retainCount thêm 1) mà chỉ đơn thuần gán con trỏ trỏ đến vùng nhớ mới.
+Thuộc tính <code>weak</code> cũng chỉ dùng trong trường hợp bạn đang dùng ARC. Và một cái hay của <code>weak</code> nữa là khi vùng nhớ bị giải phóng thì con trỏ được set bằng <code>nil</code>. Mà trong Objective C thì gửi message đến <code>nil</code> sẽ không vấn đề gì, app của bạn không bị crash. Điển hình nhất của việc dùng thuộc tính <code>weak</code> đó là cho các <code>delegate</code>, <code>datasource</code>.</p>
+
+<p>Tuy nhiên vẫn còn một vài class như NSTextView, NSFont, NSColorSpace chưa hỗ trợ khai báo thuộc tính <code>weak</code> nên với những class này bạn có thể dùng thuộc tính <code>unsafe_unretained</code> thay cho <code>weak</code>. Thế nhưng chú ý 1 điều rằng sau khi vùng nhớ nó trỏ tới bị xoá thì con trỏ không được set la nil.</p>
+
+<p>Tiếp theo là thuộc tính <code>copy</code>. Với việc thiết lập thuộc tính này compiller sẽ tạo ra setter như sau:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>@interface Car: NSObject&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>@property (nonatomic, copy) NSString *name;&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>@end;</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>- (void)setName:(NSString *)newName {&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;pre>&lt;code>[_name release];
+</span><span class='line'>_name = [newName copy];     // retainCount = 1
+</span><span class='line'>&lt;/code>&lt;/pre>
+</span><span class='line'>
+</span><span class='line'>&lt;p>}</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Như ở trên ta thấy 1 vùng nhớ mới được copy ra và <code>_name</code> giờ chiếm giữ 1 ownership của vùng nhớ đó.
+Tại sao chúng ta không dùng <code>strong</code> ở đây mà lại dùng <code>copy</code>. Giả sử ở trên chúng ta dùng thuộc tính <code>strong</code> và xem qua 2 ví dụ dưới đây.
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>NSString &lt;em>name1 = @"Toyota";
+</span><span class='line'>car1.name = name1;
+</span><span class='line'>name1 = @"Honda";</span></code></pre></td></tr></table></div></figure></notextile></div>
+Trong trường hợp này <code>car1.name</code> vẫn có giá trị là "Toyota" và <code>name1</code> giờ chuyển thành "Honda". Hoàn toàn không có vấn đề gì.
+Thế nhưng trong ví dụ thứ 2 dưới đây thay vì dùng NSString mà dùng subclass của nó là NSMutableString.
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>NSMutableString &lt;/em>name1 = @"Toyota";
+</span><span class='line'>car1.name = name1;
+</span><span class='line'>[name1 appendString:"2"];</span></code></pre></td></tr></table></div></figure></notextile></div>
+Trong trường hợp này giá trị của <code>car1.name</code> là "Toyota2" mặc dù ban đầu chúng ta set là "Toyota".
+Vì vậy mặc dù property <code>name</code> trong class <code>Car</code> với kiểu NSString nhưng nếu dùng <code>strong</code> giá trị của <code>name</code> vẫn có thể bị append như trên.
+Để tránh những trường hợp như thế ta dùng <code>copy</code> để mỗi lần gán sẽ copy 1 vùng nhớ mới tránh được những trường hợp như trên.
+Đối với những class có subclass là <code>Mutable...</code> thì chúng ta nên chú ý dùng thuộc tính <code>copy</code>. Ngoài ra <code>block</code> cũng phải dùng <code>copy</code>.</p>
+
+<p>Thuộc tính cuối cùng trong nhóm này là <code>assign</code> thì dùng cho các property kiểu không phải là object. Tức là các kiểu dữ liệu như <code>int</code>, <code>NSInteger</code>, <code>float</code>,...</p>
+
+<p>Với nhóm thuộc tính này thì <code>strong</code> là thuộc tính mặc định trong trường hợp dùng ARC, còn <code>retain</code> là thuộc tính mặc định trong trường hợp không dùng ARC.</p>
+
+<h2>Atomicity</h2>
+
+<p>Nhóm thuộc tính này bao gồm 2 thuộc tính là <code>atomic</code> và <code>nonatomic</code>. Thuộc tính mặc định là <code>atomic</code>.
+Nhóm thuộc tính này liên quan đến vấn đề multithread. Chưa bàn đến atomic hay nonatomic, mà chúng ta cùng xem ví dụ sau:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>@interface MyView {
+</span><span class='line'>}&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>@property CGPoint center;&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>@end</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>khi đấy chúng ta có setter/getter như sau:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>- (CGPoint) center {
+</span><span class='line'>  return _center;
+</span><span class='line'>}&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;ul>
+</span><span class='line'>&lt;li>(void)setCenter:(CGPoint)newCenter {
+</span><span class='line'>_center = newCenter;
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure></notextile></div>
+và bởi vì struct CGPoint có 2 thành phần <code>CGFloat x, CGFloat y</code> nên thực ra setter sẽ thực hiện các bước như sau:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/li>
+</span><span class='line'>&lt;li>(void)setCenter:(CGPoint)newCenter {
+</span><span class='line'>&lt;em>center.x = newCenter.x;
+</span><span class='line'>&lt;/em>center.y = newCenter.y;
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure></notextile></div></li>
+</ul>
+
+
+<p>Trong trường hợp chúng ta chạy multithread thì có thể xảy ra khả năng như sau:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>// giả sủ ban đầu center của myView là (-5.f, -8.f)&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>// thread 1 gọi setter
+</span><span class='line'>[myView setCenter:CGPointMake(1.f, 2.f)];&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>// tiep theo bên trong setCenter sẽ chạy
+</span><span class='line'>&lt;em>center.x = newCenter.x; // &lt;/em>center.x giờ có giá trị là 1.f và _center.y vẫn giữ giá trị là -8.f&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>// chưa kịp chạy lệnh tiếp theo để set _center.y thì ở thread 2 gọi getter
+</span><span class='line'>CGPoint point = [myView center];
+</span><span class='line'>// và getter chạy trả về (1.f, -8.f)&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>// thread 1 tiếp tục giá trị cho y
+</span><span class='line'>&lt;em>center.y = newCenter.y // &lt;/em>center.y giờ là  2.f</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Như trường hợp ở trên ta thấy giá trị center là (1.f, 2.f) nhưng tại thread 2 giá trị lấy được lại là (1.f, -8.f)
+dẫn đến kết quả không được như mong muốn.
+Vì vậy trong trường hợp multithread để tránh những tình huống như trên ta set thuộc tính <code>atomic</code> cho property. Khi đấy compiler sẽ sinh ra các setter/getter như sau:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>- (CGPoint) center {
+</span><span class='line'>  CGPoint curCenter;
+</span><span class='line'>  @synchronized(self) {&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;pre>&lt;code>curCenter = _center;
+</span><span class='line'>&lt;/code>&lt;/pre>
+</span><span class='line'>
+</span><span class='line'>&lt;p>  }
+</span><span class='line'>  return curCenter;
+</span><span class='line'>}&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;ul>
+</span><span class='line'>&lt;li>(void)setCenter:(CGPoint)newCenter {
+</span><span class='line'>@synchronized(self) {
+</span><span class='line'>  _center = newCenter;
+</span><span class='line'>}
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure></notextile></div>
+Bên trong setter/getter sử dụng lock để tránh việc nhiều thread truy cập đồng thời. Thế nhưng việc dùng lock sẽ mất chi phí cũng như cản trở tốc độ của chương trình. Vì vậy nên trong trường hợp bạn không dùng multithread hoặc không thể xảy ra những vấn đề như trên thì bạn nên dùng thuộc tính <code>nonatomic</code> để tăng tốc độ cho chương trình.</li>
+</ul>
+
+
+<h1>Tổng kết</h1>
+
+<p>Bài viết này mình đã trình bày về các thuộc tính cho property, giải thích qua về các thuộc tính cũng như khi nào nên dùng thuộc tính nào.
+Mặc dù mình vẫn thấy còn những lập trình viên không dùng ARC nhưng có lẽ đa số mọi người đã chuyển qua dùng ARC.
+Thế nên thuộc tính <code>retain</code> có thể không cần dùng nữa.
+Để tìm hiểu kĩ hơn các bạn có thể đọc tại <a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ProgrammingWithObjectiveC/ProgrammingWithObjectiveC.pdf">Programming With Objective C</a></p>
+]]></content>
+  </entry>
+  
+</feed>

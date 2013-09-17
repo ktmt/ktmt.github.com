@@ -7,7 +7,7 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jul 15th, 2013 DI, Design pattern, IoC, PHP Comments Inversion of Control and Dependency Injection Preface Trước khi đọc bài này, tôi có 1 vài &hellip;">
+	<meta name="description" content="Aug 26th, 2013 mysql Comments Nâng Phiên Bản Mysql 5.6 1. Giới thiệu Trong quá trình vận hành 1 website chúng ta thường có các task như nâng phiên &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -17,7 +17,7 @@
 
 	<link href="/atom.xml" rel="alternate" title="Blog kỹ thuật máy tính" type="application/atom+xml">
 	
-	<link rel="canonical" href="http://toandk.github.com/blog/page/3/">
+	<link rel="canonical" href="http://ktmt.github.com/blog/page/3/">
 	<link href="/favicon.png" rel="shortcut icon">
 	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
 	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
@@ -84,81 +84,381 @@
   
 
 
-<time datetime="2013-07-15T02:02:00+09:00" data-updated="true" itemprop="datePublished">Jul 15<span>th</span>, 2013</time></div>
+<time datetime="2013-08-26T22:06:00+09:00" data-updated="true" itemprop="datePublished">Aug 26<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/di/'>DI</a>, <a class='category' href='/blog/categories/design-pattern/'>Design pattern</a>, <a class='category' href='/blog/categories/ioc/'>IoC</a>, <a class='category' href='/blog/categories/php/'>PHP</a>
+	<a class='category' href='/blog/categories/mysql/'>mysql</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/07/15/inversion-of-control-and-dependency-injection/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/08/26/nang-phien-ban-mysql/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/15/inversion-of-control-and-dependency-injection/" itemprop="url">Inversion of Control and Dependency Injection</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/08/26/nang-phien-ban-mysql/" itemprop="url">Nâng Phiên Bản Mysql 5.6</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h2>Preface</h2>
+		<h2>1. Giới thiệu</h2>
 
-<p>Trước khi đọc bài này, tôi có 1 vài recommend cho độc giả :)</p>
+<p>Trong quá trình vận hành 1 website chúng ta thường có các task như nâng phiên bản máy chủ web, nâng phiên bản cơ sở dữ liệu (vì mục đích nâng cao hiệu năng hoặc đảm bảo bảo mật). Với những hệ thống sẵn có, quản lý lượng dữ liệu lớn, tác vụ này thường không hề đơn giản, đòi hỏi 1 trình tự hơp lý. Bài viết này tổng kết là trình tự nâng cấp mysql từ phiên bản 5.0.x lên phiên bản 5.6.x và những vấn đề mình gặp phải trong quá trình nâng cấp này.</p>
 
-<ol>
-<li><p>Bạn nên đọc trước bài viết về <a href="http://ktmt.github.io/blog/2013/06/14/design-pattern-ap-dung-builder-pattern-trong-test-java/">Builder Pattern trong Java</a> cũng trong blog ktmt, sẽ có 1 cái nhìn tổng quát và hình dung dễ dàng hơn về ứng dụng của các pattern trong programming.</p></li>
-<li><p>Có hàng tá bài viết về Inversion Of Control và Dependency Injection. Try to google it first.</p></li>
-<li><p>Nếu không, nhớ google thêm sau khi đọc bài viết :D</p></li>
-</ol>
+<h2>2. Bài toán</h2>
 
+<p>Website sử dụng hệ thống cơ sơ dữ liệu mysql, dưới mô hình master/slave. Cả master/slave đều đang chạy mysql 5.0. Ta cần nâng cấp mysql lên phiên bản 5.6.</p>
 
-<h2>Dependency Injection</h2>
+<h4>Điều kiện</h4>
 
-<p>Chúng ta sẽ bắt đầu với 1 ví dụ gần giống ví dụ trong bài viết về Builder Pattern ở trên. Xem đoạn code sau. Ngôn ngữ ở đây là PHP.</p>
+<p>Mọi bài toán đều không có gì khó nếu như không có giới hạn gì. Ở đây ta bắt gặp 1 vài giới hạn cần chú ý như sau:</p>
 
-<figure class='code'><figcaption><span>Book.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">Book</span> <span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">title</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Title</span><span class="p">;</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Author</span><span class="p">;</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">genre</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Genre</span><span class="p">;</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">publishDate</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">PublishDate</span><span class="p">;</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">ISBN</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ISBN</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'>
-</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
+<ul>
+<li>Các query được dùng trong website có thể không tương thích với mysql phiên bản mới.</li>
+<li>Nâng cấp master đồng thời với slave sẽ có rủi ro khi mà cả 2 gặp lỗi.</li>
+<li>Dung lượng ổ cứng: khi dung lượng ổ cứng sao lưu không cho phép, ta sẽ phải thực hiện các thao tác công phu hơn 1 chút.</li>
+</ul>
 
 
-<p>Ở đây giả sử Title, Author, Genre, PublishDate hay ISBN đều là các class đã được định nghĩa trước. Như vậy class Book có 5 <strong>dependency</strong> là 5 class kể trên.</p>
+<p>Do vậy, cách tốt nhất là nâng cấp lần lượt slave -> master. Tức là slave sẽ chạy mysql5.6 và master sẽ chạy mysql5.0</p>
 
-<p>Về mặt technical, chẳng có gì là không ổn với 1 class như trên cả.
-Tuy nhiên programmer có kinh nghiệm sẽ dễ dàng nhận thấy chúng ta đã hardcoded 5 dependency trên vào trong Book.
-Nói cách khác nếu muốn Book chứa những dependency khác, chẳng có cách nào khác là sửa lại định nghĩa class.</p>
+<h4>Phương pháp</h4>
 
-<p>Như vậy, để tránh những phiền phức nói trên và tạo độ linh hoạt khi sử dụng, class Book nên được viết lại như sau:</p>
+<p>Có 2 cách nâng cấp mysql.</p>
 
-<figure class='code'><figcaption><span>Book.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<ul>
+<li><a href="http://dev.mysql.com/doc/refman/5.6/en/upgrading.html">Cách truyền thống</a> như được viết trong tài liệu hướng dẫn nâng cấp. Cụ thể ta nâng cấp dần dần qua các phiên bản trung gian bằng script mysql_upgrade.</li>
+<li>Cách ngắn gọn: dump toàn bộ dữ liệu ở phiên bản cũ và import lại vào phiên bản mới.</li>
+</ul>
+
+
+<p>Mỗi cách có ưu nhược điểm riêng; cụ thể cách 1 đảm bảo khả năng thành công cao, tuy vậy lại có nhược điểm là chuẩn bị môi trường cho các phiên bản rườm rà, tốn thời gian. Với khoảng cách 2 phiên bản lớn (5.0 -> 5.6: qua 5.1, 5.5) thì việc upgrade khá tốn thời gian.</p>
+
+<p>Cách 2 có ưu điểm nhanh, tuy vậy lại có nhược điểm là tính tương thích giũa 2 phiên bản không tốt, dẫn đến khả năng lỗi sau khi upgrade cao.</p>
+
+<p>Bài viết sẽ trình bày quy trình upgrade theo cách 2.</p>
+
+<h2>3. Quy trình:</h2>
+
+<h4>Bước 1: dump toàn bộ dữ liệu</h4>
+
+<p>Ta có thể dump toàn bộ dữ liệu từ slave hoặc master hiện tại.</p>
+
+<p>a. Dump dữ liệu từ slave</p>
+
+<div>
+  <pre><code class='bash'>mysql&gt; stop slave
+mysql&gt; show slave status;</code></pre>
+</div>
+
+
+<p>Ghi nhớ các thông tin: master_host, master_port, replication_user, relay_master_log_file,</p>
+
+<div>
+  <pre><code class='bash'>$ mysqldump -u username -p --all-database --single-transaction | gzip -f &gt; dumpfile.gz</code></pre>
+</div>
+
+
+
+
+<div>
+  <pre><code class='bash'>mysql&gt; start slave;</code></pre>
+</div>
+
+
+<p>b. Dump dữ liệu từ master</p>
+
+<div>
+  <pre><code class='bash'>mysql&gt; flush tables with read lock;
+mysql&gt; show master status;</code></pre>
+</div>
+
+
+
+
+<div>
+  <pre><code class='bash'>mysqldump -u username -p --all-database --single-transaction | gzip -f &gt; dumpfile.gz</code></pre>
+</div>
+
+
+
+
+<div>
+  <pre><code class='bash'>mysql&gt; unlock tables;</code></pre>
+</div>
+
+
+<h4>Bước 2: Cài đặt mysql phiên bản 5.6</h4>
+
+<div>
+  <pre><code class='bash'>$ /etc/init.d/mysql stop                 # stop mysql-5.0
+$ cd /usr/local
+$ wget http://dev.mysql.com/get/Downloads/MySQL-5.6/mysql-5.6.13-linux-glibc2.5-x86_64.tar.gz/from/http://cdn.mysql.com/
+ 
+$ tar xfz mysql-5.6.13-linux-glibc2.5-x86_64.tar.gz
+$ mv mysql-5.6.13-linux-glibc2.5-x86_64 mysql-5.6.13
+ 
+# symbolic link張替える
+$ rm mysql
+$ ln -sf mysql-5.6.13 mysql
+$ cd mysql
+$ chown -R mysql:mysql .</code></pre>
+</div>
+
+
+<h4>Bước 3: Khởi động mysql và import dữ liệu</h4>
+
+<div>
+  <pre><code class='bash'>$ cp /tmp/my.cnf /usr/local/mysql
+ 
+# データ容量そろえる
+$ cd /dbdata/data
+$ rm -rf *
+ 
+# 起動するため、テンポラリデータフォルダを作る
+$ cd /usr/local/mysql
+$ cd data                             # 空きフォルダか確認
+$ ll 
+$ cd ..
+$ ./scripts/mysql_install_db --user=mysql
+$ cp support-files/mysql.server /etc/init.d/mysql
+$ /etc/init.d/mysql start
+$ mysqladmin -u root password 'pass'
+ 
+ 
+# data フォルダは /dbdata/dataにする
+$ mv data data.bk
+$ ln -sf /dbdata/data data
+
+# import data file
+$ mysql -u root -p &lt; バックアップファイル</code></pre>
+</div>
+
+
+<h4>Bước 4: Khởi động lại mysql.</h4>
+
+<div>
+  <pre><code class='bash'>$ /etc/init.d/mysql stop
+$ /etc/init.d/mysql start</code></pre>
+</div>
+
+
+<h4>Bước 5: Cài đặt sao chép (replication)</h4>
+
+<div>
+  <pre><code class='bash'>$ mysql -u root -p
+mysql&gt; show slave status¥G;   # replication されてない確認
+ 
+....
+ 
+mysql&gt; change master to master_host='master ip',
+         master_user='レプリケーションユーザ名',
+         master_password='パスワード',
+         master_log_file='mysql-bin.000003',
+         master_log_pos=73;
+  Query OK, 0 rows affected (0.03 sec)
+mysql&gt;
+mysql&gt; show slave status¥G
+*************************** 1. row ***************************
+             Slave_IO_State:
+                Master_Host: master ip
+                Master_User: レプリケーションユーザ名
+                Master_Port: 3306
+              Connect_Retry: 60
+            Master_Log_File: mysql-bin.001378
+        Read_Master_Log_Pos: 348578503
+             Relay_Log_File: mysqld-relay-bin.000001
+              Relay_Log_Pos: 4
+      Relay_Master_Log_File: mysql-bin.001378
+           Slave_IO_Running: No
+          Slave_SQL_Running: No
+            Replicate_Do_DB:
+        Replicate_Ignore_DB:
+         Replicate_Do_Table:
+     Replicate_Ignore_Table:
+    Replicate_Wild_Do_Table:
+Replicate_Wild_Ignore_Table:
+                 Last_Errno: 0
+                 Last_Error:
+               Skip_Counter: 0
+        Exec_Master_Log_Pos: 348578503
+            Relay_Log_Space: 98
+            Until_Condition: None
+             Until_Log_File:
+              Until_Log_Pos: 0
+         Master_SSL_Allowed: No
+         Master_SSL_CA_File:
+         Master_SSL_CA_Path:
+            Master_SSL_Cert:
+          Master_SSL_Cipher:
+             Master_SSL_Key:
+      Seconds_Behind_Master: NULL
+1 row in set (0.00 sec)
+  
+mysql&gt; start slave;</code></pre>
+</div>
+
+
+<h4>Bước 6: Kiểm tra cài đặt replication.</h4>
+
+<div>
+  <pre><code class='bash'>mysql&gt; show slave status¥G
+*************************** 1. row ***************************
+             Slave_IO_State:
+                Master_Host: master ip
+                Master_User: レプリケーションユーザ名
+                Master_Port: 3306
+              Connect_Retry: 60
+            Master_Log_File: mysql-bin.001378
+        Read_Master_Log_Pos: 348578503
+             Relay_Log_File: mysqld-relay-bin.000001
+              Relay_Log_Pos: 4
+      Relay_Master_Log_File: mysql-bin.001378
+           Slave_IO_Running: No
+          Slave_SQL_Running: No
+            Replicate_Do_DB:
+        Replicate_Ignore_DB:
+         Replicate_Do_Table:
+     Replicate_Ignore_Table:
+    Replicate_Wild_Do_Table:
+Replicate_Wild_Ignore_Table:
+                 Last_Errno: 0
+                 Last_Error:
+               Skip_Counter: 0
+        Exec_Master_Log_Pos: 348578503
+            Relay_Log_Space: 98
+            Until_Condition: None
+             Until_Log_File:
+              Until_Log_Pos: 0
+         Master_SSL_Allowed: No
+         Master_SSL_CA_File:
+         Master_SSL_CA_Path:
+            Master_SSL_Cert:
+          Master_SSL_Cipher:
+             Master_SSL_Key:
+      Seconds_Behind_Master: NULL
+1 row in set (0.00 sec)
+  
+mysql&gt; start slave;</code></pre>
+</div>
+
+
+<h2>4. Các lỗi có thể có</h2>
+
+<p>Nếu làm mọi việc suôn sẻ, ta có thể hoàn thành thao tác nâng cấp ở bước 4. Tuy vậy tuỳ vào đặc tính dữ liệu, mà mọi việc có thể không suôn sẻ như vậy. Trong lần nâng cấp này, mình gặp 1 lỗi sau sau khi khởi động mysql.</p>
+
+<div>
+  <pre><code class='bash'>2013-08-25 11:07:00 19807 [Note] Server socket created on IP: '0.0.0.0'.
+02:07:00 UTC - mysqld got signal 11 ;
+This could be because you hit a bug. It is also possible that this binary
+or one of the libraries it was linked against is corrupt, improperly built,
+or misconfigured. This error can also be caused by malfunctioning hardware.
+We will try our best to scrape up some info that will hopefully help
+diagnose the problem, but since we have already crashed,
+something is definitely wrong and this may fail.
+
+key_buffer_size=134217728
+read_buffer_size=2097152
+max_used_connections=0
+max_threads=100
+thread_count=0
+connection_count=0
+It is possible that mysqld could use up to
+key_buffer_size + (read_buffer_size + sort_buffer_size)*max_threads = 542029 K  bytes of memory
+Hope that's ok; if not, decrease some variables in the equation.
+
+Thread pointer: 0xe57de70
+Attempting backtrace. You can use the following information to find out
+where mysqld died. If you see no messages after this, something went
+terribly wrong...
+stack_bottom = 7fffd70eced8 thread_stack 0x40000
+/usr/local/mysql/bin/mysqld(my_print_stacktrace+0x35)[0x8fa385]
+/usr/local/mysql/bin/mysqld(handle_fatal_signal+0x3e8)[0x66cfd8]
+/lib64/libpthread.so.0[0x3a9300eb10]
+/usr/local/mysql/bin/mysqld(_Z9get_fieldP11st_mem_rootP5Field+0x3c)[0x77b16c]
+/usr/local/mysql/bin/mysqld[0x68c5bc]
+/usr/local/mysql/bin/mysqld(_Z10acl_reloadP3THD+0x459)[0x68f059]
+/usr/local/mysql/bin/mysqld(_Z8acl_initb+0x117)[0x6901c7]
+/usr/local/mysql/bin/mysqld(_Z11mysqld_mainiPPc+0x543)[0x582e13]
+/lib64/libc.so.6(__libc_start_main+0xf4)[0x3a9241d994]
+/usr/local/mysql/bin/mysqld(__gxx_personality_v0+0x2e1)[0x5779e9]
+
+Trying to get some variables.
+Some pointers may be invalid and cause the dump to abort.
+Query (0): is an invalid pointer
+Connection ID (thread ID): 0
+Status: NOT_KILLED
+
+The manual page at http://dev.mysql.com/doc/mysql/en/crashing.html contains
+information that should help you find out what is causing the crash.
+130825 11:07:00 mysqld_safe Number of processes running now: 0
+130825 11:07:00 mysqld_safe mysqld restarted
+2013-08-25 11:07:01 0 [Warning] TIMESTAMP with implicit DEFAULT value is deprecated. Please use --explicit_defaults_for_timestamp server option (see documentation for more details).
+2013-08-25 11:07:01 19847 [Note] Plugin 'FEDERATED' is disabled.
+2013-08-25 11:07:01 19847 [Note] InnoDB: The InnoDB memory heap is disabled
+2013-08-25 11:07:01 19847 [Note] InnoDB: Mutexes and rw_locks use GCC atomic builtins
+2013-08-25 11:07:01 19847 [Note] InnoDB: Compressed tables use zlib 1.2.3
+2013-08-25 11:07:01 19847 [Note] InnoDB: Using Linux native AIO
+2013-08-25 11:07:01 19847 [Note] InnoDB: Not using CPU crc32 instructions
+2013-08-25 11:07:01 19847 [Note] InnoDB: Initializing buffer pool, size = 512.0M
+2013-08-25 11:07:01 19847 [Note] InnoDB: Completed initialization of buffer pool
+2013-08-25 11:07:01 19847 [Note] InnoDB: Highest supported file format is Barracuda.
+130825 11:07:09 mysqld_safe mysqld from pid file /usr/local/mysql/data/nl-dbdev-slave.pid ended</code></pre>
+</div>
+
+
+<p>mysql khởi động gặp bug về bộ nhớ (segmentation fault) và bị kill bởi signal 11. Mysql liên tục khởi động và bị kill.</p>
+
+<p>Để tránh trường hợp này, sau khi import dữ liệu ta nên chạy mysql_upgrade 1 lần để script này sửa các bảng trong trạng thái lỗi trước khi khởi động lại để tránh lỗi ở trên.</p>
+
+<h2>5. Tổng kết</h2>
+
+<p>Bài viết tóm tắt quy trình nâng cấp phiên bản mysql cũng như cách dump toàn bộ dữ liệu trong mysql cũng như lỗi có thể gặp phải + cách giải quyết. Hy vọng với tóm tắt này, bạn sẽ không bở ngỡ khi phải backup hay nâng cấp phiên bản cho mysql.</p>
+
+		
+		
+	</div>
+
+</article>
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-08-26T09:30:00+09:00" data-updated="true" itemprop="datePublished">Aug 26<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/ios/'>iOS</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/08/26/nhung-meo-lap-trinh-voi-objective-c/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/08/26/nhung-meo-lap-trinh-voi-objective-c/" itemprop="url">Những Mẹo Lập Trình Với Objective-C</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1>Mở đầu</h1>
+
+<p>Đối với những lập trình viên khi mới tiếp xúc với Objective-C, chắc hẳn sẽ gặp phải 1 số bỡ ngỡ với các cú pháp của nó. Tuy được kế thừa từ C nhưng Objective-C lại có cách gọi hàm, sử dụng biến khác hẳn. Vì thế, bài viết này sẽ giới thiệu cho mọi người 1 số mẹo để lập trình hiệu quả với Objective-C, đặc biệt là đối với những ai chưa có thời gian dài tiếp xúc với nó.</p>
+
+<h1>Objective-C Literals</h1>
+
+<ul>
+<li>Thứ nhất là đối với NSNumber, thay vì phải khởi tạo dài dòng như <code>[NSNumber numberWithInt:x]</code>… chúng ta có thể thay thế bằng các cách dưới đây:</li>
+</ul>
+
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -175,31 +475,169 @@ Nói cách khác nếu muốn Book chứa những dependency khác, chẳng có 
 <span class='line-number'>15</span>
 <span class='line-number'>16</span>
 <span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">Book</span> <span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nv">$title</span><span class="p">,</span> <span class="nv">$author</span><span class="p">,</span> <span class="nv">$genre</span><span class="p">,</span> <span class="nv">$publishdate</span><span class="p">,</span> <span class="nv">$isbn</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">title</span> <span class="o">=</span> <span class="nv">$title</span><span class="p">;</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="nv">$author</span><span class="p">;</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">genre</span> <span class="o">=</span> <span class="nv">$genre</span><span class="p">;</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">publishDate</span> <span class="o">=</span> <span class="nv">$publishdate</span><span class="p">;</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">ISBN</span> <span class="o">=</span> <span class="nv">$isbn</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="o">...</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="c1">// character literals.</span>
+</span><span class='line'>  <span class="n">NSNumber</span> <span class="o">*</span><span class="n">theLetterZ</span> <span class="o">=</span> <span class="sc">@&#39;Z&#39;</span><span class="p">;</span>          <span class="c1">// tương đương với [NSNumber numberWithChar:&#39;Z&#39;]</span>
 </span><span class='line'>
-</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span> <span class="p">(</span><span class="k">new</span> <span class="nx">Title</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Author</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Genre</span><span class="p">,</span> <span class="k">new</span> <span class="nx">PublishDate</span><span class="p">,</span> <span class="k">new</span> <span class="nx">ISBN</span><span class="p">)</span>
+</span><span class='line'>  <span class="c1">// integral literals.</span>
+</span><span class='line'>  <span class="n">NSNumber</span> <span class="o">*</span><span class="n">fortyTwo</span> <span class="o">=</span> <span class="err">@</span><span class="mi">42</span><span class="p">;</span>             <span class="c1">// tương đương với [NSNumber numberWithInt:42]</span>
+</span><span class='line'>  <span class="n">NSNumber</span> <span class="o">*</span><span class="n">fortyTwoUnsigned</span> <span class="o">=</span> <span class="err">@</span><span class="mi">42</span><span class="n">U</span><span class="p">;</span>    <span class="c1">// tương đương với [NSNumber numberWithUnsignedInt:42U]</span>
+</span><span class='line'>  <span class="n">NSNumber</span> <span class="o">*</span><span class="n">fortyTwoLong</span> <span class="o">=</span> <span class="err">@</span><span class="mi">42L</span><span class="p">;</span>        <span class="c1">// tương đương với [NSNumber numberWithLong:42L]</span>
+</span><span class='line'>  <span class="n">NSNumber</span> <span class="o">*</span><span class="n">fortyTwoLongLong</span> <span class="o">=</span> <span class="err">@</span><span class="mi">42L</span><span class="n">L</span><span class="p">;</span>   <span class="c1">// tương đương với [NSNumber numberWithLongLong:42LL]</span>
 </span><span class='line'>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span><span class='line'>  <span class="c1">// floating point literals.</span>
+</span><span class='line'>  <span class="n">NSNumber</span> <span class="o">*</span><span class="n">piFloat</span> <span class="o">=</span> <span class="err">@</span><span class="mf">3.141592654F</span><span class="p">;</span>    <span class="c1">// tương đương với [NSNumber numberWithFloat:3.141592654F]</span>
+</span><span class='line'>  <span class="n">NSNumber</span> <span class="o">*</span><span class="n">piDouble</span> <span class="o">=</span> <span class="err">@</span><span class="mf">3.1415926535</span><span class="p">;</span>   <span class="c1">// tương đương với [NSNumber numberWithDouble:3.1415926535]</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// BOOL literals.</span>
+</span><span class='line'>  <span class="n">NSNumber</span> <span class="o">*</span><span class="n">yesNumber</span> <span class="o">=</span> <span class="err">@</span><span class="n">YES</span><span class="p">;</span>           <span class="c1">// tương đương với [NSNumber numberWithBool:YES]</span>
+</span><span class='line'>  <span class="n">NSNumber</span> <span class="o">*</span><span class="n">noNumber</span> <span class="o">=</span> <span class="err">@</span><span class="n">NO</span><span class="p">;</span>             <span class="c1">// tương đương với [NSNumber numberWithBool:NO]</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#ifdef __cplusplus</span>
+</span><span class='line'>  <span class="n">NSNumber</span> <span class="o">*</span><span class="n">trueNumber</span> <span class="o">=</span> <span class="err">@</span><span class="n">true</span><span class="p">;</span>         <span class="c1">// tương đương với [NSNumber numberWithBool:(BOOL)true]</span>
+</span><span class='line'>  <span class="n">NSNumber</span> <span class="o">*</span><span class="n">falseNumber</span> <span class="o">=</span> <span class="err">@</span><span class="n">false</span><span class="p">;</span>       <span class="c1">// tương đương với [NSNumber numberWithBool:(BOOL)false]</span>
+</span><span class='line'><span class="cp">#endif</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Bạn có thể thấy, ý tưởng của Dependency Injection(DI) thực ra rất đơn giản, chỉ là bạn vẫn thường sử dụng và không để ý.
-Dependency có thể được inject theo nhiều kiểu, ví dụ bên trên là constructor injection.
-Chúng ta còn có setter injection như sau:</p>
+<ul>
+<li>Tạo mảng nhanh: Thay vì dùng khởi tạo <code>[NSArray arrayWithObjects:…]</code> chúng ta có thể dùng:</li>
+</ul>
 
-<figure class='code'><figcaption><span>Book.php </span></figcaption>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">NSArray</span> <span class="o">*</span><span class="n">array</span> <span class="o">=</span> <span class="err">@</span><span class="p">[</span> <span class="s">@&quot;Hello&quot;</span><span class="p">,</span> <span class="n">NSApp</span><span class="p">,</span> <span class="p">[</span><span class="n">NSNumber</span> <span class="nl">numberWithInt:</span><span class="mi">42</span><span class="p">]</span> <span class="p">];</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Và tạo NSDictionary:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">NSDictionary</span> <span class="o">*</span><span class="n">dictionary</span> <span class="o">=</span> <span class="err">@</span><span class="p">{</span>
+</span><span class='line'>    <span class="s">@&quot;name&quot;</span> <span class="o">:</span> <span class="n">name1</span><span class="p">,</span>
+</span><span class='line'>    <span class="s">@&quot;date&quot;</span> <span class="o">:</span> <span class="p">[</span><span class="n">NSDate</span> <span class="n">date</span><span class="p">],</span>
+</span><span class='line'>    <span class="s">@&quot;processInfo&quot;</span> <span class="o">:</span> <span class="p">[</span><span class="n">ProcessInfo</span> <span class="n">processInfo</span><span class="p">]</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Cách gọi trên kia sẽ tạo ra 1 NSDictionary với 3 key: name, date, processInfo và các value tương ứng. Các value phải là đối tượng của ObjectiveC và phải khác nil (nếu không sẽ crash).
+Tiện thể với dictionary, khi khởi tạo 1 NSDictionary:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="p">[</span><span class="n">NSDictionary</span> <span class="nl">dictionaryWithObjectsAndKeys:</span>
+</span><span class='line'>                <span class="n">value_1</span><span class="p">,</span> <span class="s">@&quot;key1&quot;</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">value_2</span><span class="p">,</span> <span class="s">@&quot;key2&quot;</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">value_3</span><span class="p">,</span> <span class="s">@&quot;key3&quot;</span><span class="p">,</span>
+</span><span class='line'>                <span class="p">...</span>
+</span><span class='line'>                <span class="n">value_n</span><span class="p">,</span> <span class="s">@&quot;keyn&quot;</span><span class="p">,</span> <span class="nb">nil</span><span class="p">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Nếu có 1 trong các value từ <code>value_1</code> đến <code>value_n</code> bằng nil, vd là <code>value_i</code>, thì NSDictionary được tạo ra sẽ chỉ nhận được các key và value trong khoảng từ <code>value_1</code> đến <code>value_(i-1)</code> chứ không làm crash chương trình. Vì vậy, trong lúc lập trình, nên chú ý điều này để tránh việc tìm không ra lỗi.</p>
+
+<ul>
+<li>Sử dụng toán tử chỉ số cho array và dictionary giống C:</li>
+</ul>
+
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">NSMutableArray</span> <span class="o">*</span><span class="n">array</span> <span class="o">=</span> <span class="p">...;</span>
+</span><span class='line'><span class="n">NSUInteger</span> <span class="n">idx</span> <span class="o">=</span> <span class="p">...;</span>
+</span><span class='line'><span class="kt">id</span> <span class="n">newObject</span> <span class="o">=</span> <span class="p">...;</span>
+</span><span class='line'><span class="kt">id</span> <span class="n">oldObject</span> <span class="o">=</span> <span class="n">array</span><span class="p">[</span><span class="n">idx</span><span class="p">];</span>  <span class="c1">// tương đương với oldObject = [array objectAtIndex:idx]</span>
+</span><span class='line'><span class="n">array</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">newObject</span><span class="p">;</span>         <span class="c1">// tương đương với [array replaceObjectAtIndex:idx withObject:newObject]</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">NSMutableDictionary</span> <span class="o">*</span><span class="n">dictionary</span> <span class="o">=</span> <span class="p">...;</span>
+</span><span class='line'><span class="n">NSString</span> <span class="o">*</span><span class="n">key</span> <span class="o">=</span> <span class="p">...;</span>
+</span><span class='line'><span class="n">oldObject</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="n">key</span><span class="p">];</span>    <span class="c1">// tương đương với oldObject = [dictionary objectForKey:key]</span>
+</span><span class='line'><span class="n">dictionary</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">newObject</span><span class="p">;</span>    <span class="c1">// tương đương với [dictionary setObject:newObject forKey:key]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Chú ý là replace object chỉ dùng được cho NSMutableArray và NSMutableDictionary, không dùng được cho NSArray và NSDictionary.</p>
+
+<h1>Mẹo debug với XCode</h1>
+
+<p>Khi debug code Objective C, chương trình sẽ nhảy ra hàm main <code>int retVal = UIApplicationMain(argc, argv, nil, @"AppDelegate");</code> mỗi khi có crash. Màn hình log thì có quá ít thông tin để giúp cho việc debug lỗi crash này. Vậy thì làm thế nào để khắc phục điều này, giúp cho XCode stop lại ở đúng nơi nó bị crash?
+Đầu tiên là mở panel Breakpoint Navigator và click vào button + ở góc trái dưới màn hình, chọn Add Exception Breakpoint:</p>
+
+<p><img src="/images/meo_objective_c/addex.png"></p>
+
+<p>Sau đó ấn Done button để tạo 1 exception breakpoint mới:</p>
+
+<p><img src="/images/meo_objective_c/doneex.png"></p>
+
+<p>Chuột phải vào breakpoint mới tạo ra, chọn Move breakpoint to > User để áp dụng cho tất cả các workspaces khác:</p>
+
+<p><img src="/images/meo_objective_c/senduser.png"></p>
+
+<p>Vậy là xong, kể từ bây giờ bạn sẽ được nhìn thấy nơi chôn rau cắt rốn của đống crash :)</p>
+
+<h1>Tổng kết</h1>
+
+<p>Những tips trong bài viết này tuy nhỏ nhưng có thể sẽ rất hữu ích trong quá trình code của bạn, giúp code ngắn gọn và sáng sủa hơn. Tất nhiên vẫn còn rất nhiều kỹ thuật đặc biệt khác trong Objective-C mà trong khuôn khổ bài viết này chưa thể đề cập hết được. Vì thế, hãy đợi bài viết sau nhé :)</p>
+
+		
+		
+	</div>
+
+</article>
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-08-12T00:11:00+09:00" data-updated="true" itemprop="datePublished">Aug 12<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/08/12/tao-class-datasource-cho-tableview/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/08/12/tao-class-datasource-cho-tableview/" itemprop="url">Tạo Class DataSource Cho TableView</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1>Mở đầu</h1>
+
+<p>Để tiếp nối chuỗi bài về TableView, hôm nay mình cũng viết một bài liên quan đến TableView. Trong iOS TableView là class được dùng khá nhiều.
+Khi dùng TableView chúng ta thường phải set datasource và delegate cho TableView. Thường thì datasource của TableView là một array.</p>
+
+<p>Khá nhiều bạn thường set datasource cho Tableview ngay trong ViewController (<code>tableview.datasource = self</code>). Và khi đấy trong ViewController chúng ta luôn luôn phải implement delegate cho TableViewDataSource như sau:</p>
+
+<figure class='code'><figcaption><span>TmpViewController.m </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -224,49 +662,42 @@ Chúng ta còn có setter injection như sau:</p>
 <span class='line-number'>22</span>
 <span class='line-number'>23</span>
 <span class='line-number'>24</span>
-<span class='line-number'>25</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">Book</span> <span class="p">()</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="cp">#pragma mark - UITableViewDataSource delegate</span>
+</span><span class='line'><span class="k">-</span> <span class="p">(</span><span class="n">NSInteger</span><span class="p">)</span><span class="nf">tableView:</span><span class="p">(</span><span class="n">UITalbeView</span> <span class="o">*</span><span class="p">)</span><span class="nv">tableView</span> <span class="nf">numberOfRowsInSection:</span><span class="p">(</span><span class="n">NSInteger</span><span class="p">)</span><span class="nv">section</span>
 </span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">setTitle</span><span class="p">(</span><span class="nv">$title</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">title</span> <span class="o">=</span> <span class="nv">$title</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'><span class="c1">// Here we have 4 more methods : setAuthor ,setGenre, setPublishDate, setISBN</span>
+</span><span class='line'>  <span class="k">return</span> <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">dataArray</span> <span class="n">count</span><span class="p">];</span>
 </span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="o">...</span>
 </span><span class='line'>
-</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
-</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setTitle</span><span class="p">(</span><span class="k">new</span> <span class="nx">Title</span><span class="p">);</span>
-</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">);</span>
-</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setGenre</span><span class="p">(</span><span class="k">new</span> <span class="nx">Genre</span><span class="p">);</span>
-</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setPublishDate</span><span class="p">(</span><span class="k">new</span> <span class="nx">PublishDate</span><span class="p">);</span>
-</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setISBN</span><span class="p">(</span><span class="k">new</span> <span class="nx">ISBN</span><span class="p">);</span>
+</span><span class='line'><span class="k">-</span> <span class="p">(</span><span class="n">UITableViewCell</span> <span class="o">*</span><span class="p">)</span><span class="nf">tableView:</span><span class="p">(</span><span class="n">UITableView</span> <span class="o">*</span><span class="p">)</span><span class="nv">tableView</span> <span class="nf">cellForRowAtIndexPath:</span><span class="p">(</span><span class="n">NSIndexPath</span> <span class="o">*</span><span class="p">)</span><span class="nv">indexPath</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">static</span> <span class="n">NSString</span> <span class="o">*</span><span class="n">cellIdentifier</span> <span class="o">=</span> <span class="s">@&quot;MyCell&quot;</span><span class="p">;</span>
+</span><span class='line'>  <span class="c1">// lấy cell có sẵn</span>
+</span><span class='line'>  <span class="n">UITableViewCell</span> <span class="o">*</span><span class="n">cell</span> <span class="o">=</span> <span class="p">[</span><span class="n">tableView</span> <span class="nl">dequeueReusableCellWithIdentifier:</span><span class="n">cellIdentifier</span><span class="p">];</span>
+</span><span class='line'>  <span class="c1">// nếu không có cell có sẵn thì tạo cell mới</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="n">cell</span> <span class="o">==</span> <span class="nb">nil</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">cell</span> <span class="o">=</span> <span class="p">[</span><span class="n">UITableViewCell</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithStyle:</span><span class="n">UITableViewCellStyleDefault</span>
+</span><span class='line'>                                 <span class="nl">reuseIdentifier:</span><span class="n">cellIdentifier</span><span class="p">];</span>
+</span><span class='line'>  <span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span><span class='line'>  <span class="c1">// lấy dữ liệu cho cell hiện tại. (Ví dụ dữ liệu là NSString)</span>
+</span><span class='line'>  <span class="n">NSString</span> <span class="o">*</span><span class="n">item</span> <span class="o">=</span> <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">dataArray</span> <span class="nl">objectAtIndex:</span><span class="n">indexPath</span><span class="p">.</span><span class="n">row</span><span class="p">];</span>
+</span><span class='line'>  <span class="c1">// gán dữ liệu cho cell</span>
+</span><span class='line'>  <span class="p">[</span><span class="n">cell</span><span class="p">.</span><span class="n">textLabel</span> <span class="nl">setText:</span><span class="n">item</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="n">cell</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Và vấn đề mới lại nảy sinh! Có quá nhiều setter và điều đó biến Book thành 1 class phức tạp khi sử dụng.
-Việc viết lại tất cả các setter khi khởi tạo 1 Book thật là painful !</p>
+<p>Việc viết như trên đối với những ứng dụng nhỏ thì không vấn đề gì nhưng khi ứng dụng sử dụng nhiều tableview thì trong từng ViewController chúng ta luôn phải viết đi viết lại đoạn code trên. Nếu nhìn kỹ đoạn code trên bạn sẽ thấy thực ra với mỗi TableView khác nhau chúng ta chỉ cần thay đổi phần <code>#gán dữ liệu cho cell</code> tuỳ theo cấu trúc của từng cell. Còn đâu những phần còn lại chúng ta có thể sử dụng lại code. Ngoài ra nếu chúng ta để những đoạn code này trong ViewController sẽ khiến ViewController trở nên dài hơn bởi vì bản thân ViewController đã chứa rất nhiều code như delegate, code xử lý sự kiện, gesture. Vì vậy để có một ViewController ngắn gọn hơn, dễ hiểu hơn, lại tăng tính sử dụng lại code chúng ta sẽ tạo 1 class datasource riêng tên là TVArrayDataSource.</p>
 
-<p>Để giải quyết vấn đề kể trên, chúng ta sẽ đến với design pattern tiếp theo: Inversion of Control (IoC)</p>
+<h1>Tạo class TVArrayDataSource</h1>
 
-<h2>Inversion of Control</h2>
+<p>Vậy chúng ta sẽ chuyển hết code ở trên sang class TVArrayDataSource và trong các ViewController chúng ta chỉ cần viết phần <code>#gán dữ liệu cho cell</code> tuỳ theo cấu trúc của cell. Vậy trong TVArrayDataSource cần những property gì?</p>
 
-<blockquote><p>In software engineering, inversion of control (IoC) is a programming technique, expressed here in terms of object-oriented programming, in which object coupling is bound at run time by an assembler object and is typically not known at compile time using static analysis.</p></blockquote>
+<p>Đầu tiên là <code>NSArray *items</code> trỏ đến array data của chúng ta trong ViewController để chúng ta có thể lấy data tương ứng cho từng cell và cell identifier <code>NSString *cellIdentifier</code> là string dùng để định danh cell.</p>
 
-<p>Giải thích lý thuyết về IoC có lẽ sẽ tốn nhiều công sức,
-như recommend trên đầu bài, bạn có thể google 1 chút về IoC.
-Ở đây tôi sẽ đưa ra luôn 1 implement để sử dụng với class Book kể trên.</p>
-
-<figure class='code'><figcaption><span>IoC.php </span></figcaption>
+<figure class='code'><figcaption><span>TVArrayDatasource.m </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -297,47 +728,46 @@ như recommend trên đầu bài, bạn có thể google 1 chút về IoC.
 <span class='line-number'>28</span>
 <span class='line-number'>29</span>
 <span class='line-number'>30</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">IoC</span> <span class="p">{</span>
-</span><span class='line'>   <span class="k">protected</span> <span class="k">static</span> <span class="nv">$registry</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">@interface</span> <span class="nc">TVArrayDataSource</span><span class="p">()</span>
 </span><span class='line'>
-</span><span class='line'>   <span class="c1">// Register</span>
-</span><span class='line'>   <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">register</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nx">Closure</span> <span class="nv">$resolve</span><span class="p">)</span>
-</span><span class='line'>   <span class="p">{</span>
-</span><span class='line'>      <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">[</span><span class="nv">$name</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$resolve</span><span class="p">;</span>
-</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="n">strong</span><span class="p">,</span> <span class="n">nonatomic</span><span class="p">)</span> <span class="n">NSArray</span> <span class="o">*</span><span class="n">items</span><span class="p">;</span>
+</span><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="n">copy</span><span class="p">,</span> <span class="n">nonatomic</span><span class="p">)</span> <span class="n">NSString</span> <span class="o">*</span><span class="n">cellIdentifier</span><span class="p">;</span>
 </span><span class='line'>
-</span><span class='line'>   <span class="c1">// Resolve</span>
-</span><span class='line'>   <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">resolve</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
-</span><span class='line'>   <span class="p">{</span>
-</span><span class='line'>      <span class="k">if</span> <span class="p">(</span> <span class="k">static</span><span class="o">::</span><span class="na">registered</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span> <span class="p">)</span>
-</span><span class='line'>      <span class="p">{</span>
-</span><span class='line'>         <span class="nv">$name</span> <span class="o">=</span> <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">[</span><span class="nv">$name</span><span class="p">];</span>
-</span><span class='line'>         <span class="k">return</span> <span class="nv">$name</span><span class="p">();</span>
-</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'><span class="k">@end</span>
 </span><span class='line'>
-</span><span class='line'>      <span class="k">throw</span> <span class="k">new</span> <span class="nx">Exception</span><span class="p">(</span><span class="s1">&#39;Nothing registered with that name, fool.&#39;</span><span class="p">);</span>
-</span><span class='line'>   <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>   <span class="c1">// Check resigtered or not</span>
-</span><span class='line'>   <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">registered</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
-</span><span class='line'>   <span class="p">{</span>
-</span><span class='line'>      <span class="k">return</span> <span class="nb">array_key_exists</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">);</span>
-</span><span class='line'>   <span class="p">}</span>
-</span><span class='line'>
+</span><span class='line'><span class="k">@implementation</span> <span class="nc">TVArrayDataSource</span>
+</span><span class='line'><span class="k">-</span> <span class="p">(</span><span class="n">NSInteger</span><span class="p">)</span><span class="nf">tableView:</span><span class="p">(</span><span class="n">UITableView</span> <span class="o">*</span><span class="p">)</span><span class="nv">tableView</span> <span class="nf">numberOfRowsInSection:</span><span class="p">(</span><span class="n">NSInteger</span><span class="p">)</span><span class="nv">section</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">items</span> <span class="n">count</span><span class="p">];</span>
 </span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span><span class='line'><span class="k">-</span> <span class="p">(</span><span class="n">UITableViewCell</span> <span class="o">*</span><span class="p">)</span><span class="nf">tableView:</span><span class="p">(</span><span class="n">UITableView</span> <span class="o">*</span><span class="p">)</span><span class="nv">tableView</span> <span class="nf">cellForRowAtIndexPath:</span><span class="p">(</span><span class="n">NSIndexPath</span> <span class="o">*</span><span class="p">)</span><span class="nv">indexPath</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c1">// tìm cell có sẵn</span>
+</span><span class='line'>    <span class="n">UITableViewCell</span> <span class="o">*</span><span class="n">cell</span> <span class="o">=</span> <span class="p">[</span><span class="n">tableView</span> <span class="nl">dequeueReusableCellWithIdentifier:</span><span class="n">self</span><span class="p">.</span><span class="n">cellIdentifier</span><span class="p">];</span>
+</span><span class='line'>    <span class="c1">// tạo cell mới nếu không tìm thấy</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">cell</span> <span class="o">==</span> <span class="nb">nil</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="p">...</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// lấy data cho cell</span>
+</span><span class='line'>    <span class="kt">id</span> <span class="n">item</span> <span class="o">=</span> <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">items</span> <span class="nl">objectAtIndex:</span><span class="n">indexPath</span><span class="p">.</span><span class="n">row</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// gán dữ liệu cho cell</span>
+</span><span class='line'>    <span class="p">...</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">cell</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">@end</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>WTH! Cái khỉ gì trông lằng nhằng quá phải không :D</p>
+<p>Đầu tiên chúng ta sẽ nói về đoạn <code>...</code> tại phần gán dữ liệu cho cell. Tại vì tuỳ từng trường hợp của tableview mà cell của chúng ta có cấu trúc khác nhau, data source có cấu trúc khác nhau nên phần gán dữ liệu này là khác nhau. Do đó tại đây chúng ta có thể gọi đến các hàm callback trong ViewController để gán dữ liệu cho cell theo cách mà chúng ta muốn. Có nhiều cách như dùng block, selector hay delegate. Mình thì thấy tiện nhất và ngắn nhất là block và selector nên mình sẽ tạo class TVArrayDataSource có thể dùng block hoặc selector.</p>
 
-<p>Đừng lo lắng, để hiểu đoạn code trên trước hết hãy để ý rằng ở đây chúng ta có rất nhiều các static function.
-Static function có thể gọi trục tiếp trên class chứ không phải trên instance thông qua cách gọi &#8220;Class::StaticMethod()&#8221;.
-Ngoài ra Closure là 1 anonymous function.
-Bạn sẽ hiểu ngay khi xem cách dùng dưới đây</p>
+<p>Với block thì chúng ta cần tạo 1 property để lưu block và execute block tại đoạn gán dữ liệu. Chúng ta sẽ thêm block property vào TVArrayDataSource.m và tạo 1 method khởi tạo dataSource với block như sau:</p>
 
-<figure class='code'><figcaption><span>Book.php </span></figcaption>
+<figure class='code'><figcaption><span>TVArrayDataSource.m </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -346,46 +776,20 @@ Bạn sẽ hiểu ngay khi xem cách dùng dưới đây</p>
 <span class='line-number'>6</span>
 <span class='line-number'>7</span>
 <span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="nx">IoC</span><span class="o">::</span><span class="na">register</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">,</span> <span class="k">function</span><span class="p">(){</span>
-</span><span class='line'>    <span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setTitle</span><span class="p">(</span><span class="k">new</span> <span class="nx">Title</span><span class="p">);</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">);</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setGenre</span><span class="p">(</span><span class="k">new</span> <span class="nx">Genre</span><span class="p">);</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setPublishDate</span><span class="p">(</span><span class="k">new</span> <span class="nx">PublishDate</span><span class="p">);</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setISBN</span><span class="p">(</span><span class="k">new</span> <span class="nx">ISBN</span><span class="p">);</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">typedef</span> <span class="nf">void</span> <span class="p">(</span><span class="o">^</span><span class="n">TVCellConfigureBlock</span><span class="p">)(</span><span class="kt">id</span><span class="p">,</span> <span class="kt">id</span><span class="p">);</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="k">return</span> <span class="nv">$book</span><span class="p">;</span>
-</span><span class='line'><span class="p">});</span>
-</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="k">@interface</span> <span class="nc">TVArrayDataSource</span> : <span class="nc">NSObject</span> <span class="o">&lt;</span><span class="n">UITableViewDataSource</span><span class="o">&gt;</span>
 </span><span class='line'>
-</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="nx">IoC</span><span class="o">::</span><span class="na">resolve</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span><span class='line'><span class="cm">/* khởi tạo datasource với block */</span>
+</span><span class='line'><span class="o">-</span> <span class="p">(</span><span class="kt">id</span><span class="p">)</span><span class="nl">initWithItems:</span><span class="p">(</span><span class="n">NSArray</span> <span class="o">*</span><span class="p">)</span><span class="n">items</span>
+</span><span class='line'>     <span class="nl">cellIdentifier:</span><span class="p">(</span><span class="n">NSString</span> <span class="o">*</span><span class="p">)</span><span class="n">cellIdentifier</span>
+</span><span class='line'> <span class="nl">cellConfigureBlock:</span><span class="p">(</span><span class="n">TVCellConfigureBlock</span><span class="p">)</span> <span class="n">configureBlock</span><span class="p">;</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Woo! Bây giở mỗi khi muốn tạo 1 instance của Book với đầy đủ các dependency, chỉ cần <code>IoC::resolve('book')</code>.
-Cùng với đó, các dependency có thể inject thông qua <code>IoC::register('book',function(){...})</code>.
-Đến khi unit test, bạn có thể dùng <code>IoC::register</code> để mocking các dependency và test Book mà không khởi tạo Title,Author&#8230;</p>
 
-<h2>Singleton pattern with IoC</h2>
 
-<p>Bạn thử tưởng tượng, nếu như phần register &#8216;book&#8217; bên trên chiếm nhiều tài nguyên, có thể bạn sẽ không muốn mỗi lần resolve lại khởi tạo 1 instance mới.
-Nói cách khác, bạn chỉ muốn chỉ có 1 Book với đầy đủ Title, Author, &#8230; được khởi tạo 1 lần, và lần sau muốn sử dụng thì gọi lại chính instance đã được tạo.</p>
-
-<p>Đây là đất diễn của Singleton design pattern :)
-Tôi sẽ thêm static function <code>singleton</code> cho IoC như sau:</p>
-
-<figure class='code'><figcaption><span>IoC.php </span></figcaption>
+<figure class='code'><figcaption><span>TVArrayDataSource.m </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -422,294 +826,48 @@ Tôi sẽ thêm static function <code>singleton</code> cho IoC như sau:</p>
 <span class='line-number'>34</span>
 <span class='line-number'>35</span>
 <span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">IoC</span> <span class="p">{</span>
-</span><span class='line'>  <span class="k">protected</span> <span class="k">static</span> <span class="nv">$registry</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
-</span><span class='line'>  <span class="k">protected</span> <span class="k">static</span> <span class="nv">$shared</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="p">...</span>
+</span><span class='line'><span class="c1">// thêm block property vào</span>
+</span><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="n">copy</span><span class="p">,</span> <span class="n">nonatomic</span><span class="p">)</span> <span class="n">TVCellConfigureBlock</span> <span class="n">configureBlock</span><span class="p">;</span>
 </span><span class='line'>
-</span><span class='line'>  <span class="c1">// Register, here save the Closure to static::$registry</span>
-</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">register</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nx">Closure</span> <span class="nv">$resolve</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>     <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">[</span><span class="nv">$name</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$resolve</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="c1">// Singleton, Note that here we save the result of Closure, not the Closure</span>
-</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">singleton</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nx">Closure</span> <span class="nv">$resolve</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>    <span class="k">static</span><span class="o">::</span><span class="nv">$shared</span><span class="p">[</span><span class="nv">$name</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$resolve</span><span class="p">();</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="c1">// Resolve, consider register or singleton here</span>
-</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">resolve</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span> <span class="k">static</span><span class="o">::</span><span class="na">registered</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span> <span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="nv">$name</span> <span class="o">=</span> <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">[</span><span class="nv">$name</span><span class="p">];</span>
-</span><span class='line'>      <span class="k">return</span> <span class="nv">$name</span><span class="p">();</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span> <span class="k">static</span><span class="o">::</span><span class="na">singletoned</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span> <span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="nv">$instance</span> <span class="o">=</span> <span class="k">static</span><span class="o">::</span><span class="nv">$shared</span><span class="p">[</span><span class="nv">$name</span><span class="p">];</span>
-</span><span class='line'>      <span class="k">return</span> <span class="nv">$instance</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">throw</span> <span class="k">new</span> <span class="nx">Exception</span><span class="p">(</span><span class="s1">&#39;Nothing registered with that name, fool.&#39;</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="c1">// Check resigtered or not</span>
-</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">registered</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>     <span class="k">return</span> <span class="nb">array_key_exists</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'>  <span class="c1">// Check singleton object or not</span>
-</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">singletoned</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="nb">array_key_exists</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="k">static</span><span class="o">::</span><span class="nv">$shared</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Và bây giờ</p>
-
-<figure class='code'><figcaption><span>Book.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="nx">IoC</span><span class="o">::</span><span class="na">singleton</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">,</span> <span class="k">function</span><span class="p">(){</span>
-</span><span class='line'>    <span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setTitle</span><span class="p">(</span><span class="k">new</span> <span class="nx">Title</span><span class="p">);</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">);</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setGenre</span><span class="p">(</span><span class="k">new</span> <span class="nx">Genre</span><span class="p">);</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setPublishDate</span><span class="p">(</span><span class="k">new</span> <span class="nx">PublishDate</span><span class="p">);</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setISBN</span><span class="p">(</span><span class="k">new</span> <span class="nx">ISBN</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">return</span> <span class="nv">$book</span><span class="p">;</span>
-</span><span class='line'><span class="p">});</span>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'>
-</span><span class='line'><span class="nv">$book1</span> <span class="o">=</span> <span class="nx">IoC</span><span class="o">::</span><span class="na">resolve</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">);</span>
-</span><span class='line'><span class="nv">$book2</span> <span class="o">=</span> <span class="nx">IoC</span><span class="o">::</span><span class="na">resolve</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">);</span> <span class="c1">// exactly same instance with $book1</span>
-</span><span class='line'>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Bạn có thể lấy <a href="https://gist.github.com/DTVD/5997723">đoạn code sample trên Gist</a> về chạy thử.
-Have fun with IoC :)</p>
-
-<h2>Real-World Use Case</h2>
-
-<p>Đọc đến đây có thể bạn sẽ hỏi tôi, việc quái gì phải xoắn cái IoC này thế, nó có thực sự hữu dụng hay chỉ là 1 cái pattern mang tính demo biếu diễn ?</p>
-
-<p>Chúng ta hãy cùng ghé qua <a href="http://laravel.com/docs/ioc">Laravel</a>, 1 framework hiện đại của PHP.</p>
-
-<p>Ở Laravel, <a href="http://laravel.com/docs/ioc">IoC</a> đã được chuẩn bị sẵn và không chỉ dùng 1 mình, còn kết hợp với <a href="http://laravel.com/docs/ioc#service-providers">ServiceProviders</a> và <a href="http://laravel.com/docs/facades">Facades</a> để tăng tối đa độ linh hoạt của code base.
-Một Facades (lại là 1 design pattern khác - hãy google sau khi đọc bài này :) ) có thể được kết nối với IoC và UnitTest như sau :</p>
-
-<figure class='code'><figcaption><span>Facades.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1">// binding IoC</span>
-</span><span class='line'><span class="nx">App</span><span class="o">::</span><span class="na">bind</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">,</span> <span class="k">function</span><span class="p">()</span>
+</span><span class='line'><span class="c1">// và method khởi tạo chỉ đơn giản như sau</span>
+</span><span class='line'><span class="k">-</span> <span class="p">(</span><span class="kt">id</span><span class="p">)</span><span class="nf">initWithItems:</span><span class="p">(</span><span class="n">NSArray</span> <span class="o">*</span><span class="p">)</span><span class="nv">items</span>
+</span><span class='line'>     <span class="nf">cellIdentifier:</span><span class="p">(</span><span class="n">NSString</span> <span class="o">*</span><span class="p">)</span><span class="nv">cellIdentifier</span>
+</span><span class='line'> <span class="nf">cellConfigureBlock:</span><span class="p">(</span><span class="n">TVCellConfigureBlock</span><span class="p">)</span><span class="nv">configureBlock</span>
 </span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
-</span><span class='line'><span class="p">});</span>
+</span><span class='line'>    <span class="n">self</span> <span class="o">=</span> <span class="p">[</span><span class="n">super</span> <span class="n">init</span><span class="p">];</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">self</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">self</span><span class="p">.</span><span class="n">items</span> <span class="o">=</span> <span class="n">items</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">self</span><span class="p">.</span><span class="n">cellIdentifier</span> <span class="o">=</span> <span class="n">cellIdentifier</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">self</span><span class="p">.</span><span class="n">configureBlock</span> <span class="o">=</span> <span class="n">configureBlock</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">self</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'><span class="c1">// binding facades to IoC</span>
-</span><span class='line'><span class="k">use</span> <span class="nx">Illuminate\Support\Facades\Facade</span><span class="p">;</span>
+</span><span class='line'><span class="c1">// và chúng ta thêm phần execute block tại đoạn gán dữ liệu cho cell</span>
+</span><span class='line'><span class="k">-</span> <span class="p">(</span><span class="n">UITableViewCell</span> <span class="o">*</span><span class="p">)</span><span class="nf">tableView:</span><span class="p">(</span><span class="n">UITableView</span> <span class="o">*</span><span class="p">)</span><span class="nv">tableView</span> <span class="nf">cellForRowAtIndexPath:</span><span class="p">(</span><span class="n">NSIndexPath</span> <span class="o">*</span><span class="p">)</span><span class="nv">indexPath</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>   <span class="c1">// tìm cell có sẵn</span>
+</span><span class='line'>    <span class="n">UITableViewCell</span> <span class="o">*</span><span class="n">cell</span> <span class="o">=</span> <span class="p">[</span><span class="n">tableView</span> <span class="nl">dequeueReusableCellWithIdentifier:</span><span class="n">self</span><span class="p">.</span><span class="n">cellIdentifier</span><span class="p">];</span>
+</span><span class='line'>    <span class="c1">// tạo cell mới nếu không tìm thấy</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">cell</span> <span class="o">==</span> <span class="nb">nil</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="p">...</span>
+</span><span class='line'>    <span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">FacadesBook</span> <span class="k">extends</span> <span class="nx">Facade</span> <span class="p">{</span>
+</span><span class='line'>    <span class="c1">// lấy data cho cell</span>
+</span><span class='line'>    <span class="kt">id</span> <span class="n">item</span> <span class="o">=</span> <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">items</span> <span class="nl">objectAtIndex:</span><span class="n">indexPath</span><span class="p">.</span><span class="n">row</span><span class="p">];</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="k">protected</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">getFacadeAccessor</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="s1">&#39;book&#39;</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="c1">// execute block để gán dữ liệu cho cell</span>
+</span><span class='line'>    <span class="n">self</span><span class="p">.</span><span class="n">configureBlock</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">item</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">cell</span><span class="p">;</span>
 </span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Tại sao đã bind class Book vào IoC <code>book</code> rồi, lại còn tiếp tục bind IoC <code>book</code> và Facades <code>FacadesBook</code> lần nữa?</p>
+<p>Khi đó bên ViewController chúng ta chỉ cần tạo 1 block để thực hiện việc gán dữ liệu cho cell. Và block này sẽ được execute bằng <code>self.configureBlock(cell, item)</code> với tham số là cell hiện tại và data tương ứng của cell. Bởi vì tham số của block là cell hiện tại và data cho cell đấy nênchúng ta hoàn toàn có thể tự do tuỳ chỉnh cell theo ý muốn. Và code bên ViewController sẽ rất ngắn và đẹp như sau:</p>
 
-<p>Facades trong Laravel có thể &#8220;biến thành&#8221; Mock object sau khi gọi method <code>shouldReceive</code> (a magic method :D)</p>
-
-<figure class='code'><figcaption><span>Facades.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="c1">//Use Book as usual:</span>
-</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="nx">FacadesBook</span><span class="o">::</span><span class="na">AnInstanceMethodOfBookClass</span><span class="p">(</span><span class="nv">$AParams</span><span class="p">);</span>
-</span><span class='line'><span class="c1">//Mocking for UnitTest:</span>
-</span><span class='line'><span class="nx">FacadesBook</span><span class="o">::</span><span class="na">shouldReceive</span><span class="p">(</span><span class="s1">&#39;AnInstanceMethodOfBookClass&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">once</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">with</span><span class="p">(</span><span class="nv">$AParams</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">andReturn</span><span class="p">(</span><span class="nv">$FakeValue</span><span class="p">);</span>
-</span><span class='line'><span class="nv">$mockBook</span> <span class="o">=</span> <span class="nx">FacadesBook</span><span class="o">::</span><span class="na">AnInstanceMethodOfBookClass</span><span class="p">(</span><span class="nv">$AParams</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><code>$book</code> sẽ trả về giá trị thực khi thực hiện method <code>AnInstanceMethodOfBookClass</code> của class Book, trong khi đó <code>$mockBook</code> sẽ trả về <code>$FakeValue</code>.</p>
-
-<h2>Summary</h2>
-
-<ul>
-<li><strong>Dependency Injection</strong>: Đưa các dependency vào class thông qua constructor hoặc setter, không khỏi tạo trực tiếp bên trong class.</li>
-<li><strong>Inversion of Control</strong>: bind object vào thời điểm run time, không phải vào thời điểm compile time.</li>
-<li><strong>Singleton</strong>: Design pattern, cho phép trong 1 hệ thống chỉ có 1 instance duy nhất của class được tồn tại.</li>
-</ul>
-
-
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-07-10T15:24:00+09:00" data-updated="true" itemprop="datePublished">Jul 10<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/redis/'>redis</a>, <a class='category' href='/blog/categories/sinatra/'>sinatra</a>, <a class='category' href='/blog/categories/tutorial/'>tutorial</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/07/10/tu-tao-dich-vu-thu-gon-url-voi-sinatra-va-redis/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/10/tu-tao-dich-vu-thu-gon-url-voi-sinatra-va-redis/" itemprop="url">Tự tạo Dịch vụ Thu Gọn Url Với Sinatra và Redis</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h2>Mở đầu</h2>
-
-<p>Chắc hẳn các bạn đã biết về các dịch vụ rút gọn url, điển hình là bit.ly. Mục đích của dịch vụ này là nhằm thu gọn là những url rất dài để tiết kiệm chữ (cho những dịch vụ giới hạn về số kí tự như twitter chẳng hạn) và để cho url nhìn gọn hơn.
-Cơ chế của một dịch vụ rút gọn url khá đơn giản, vậy tại sao không tự làm một dịch vụ cho chính mình. Bài này mình sẽ hướng dẫn cách làm một url shorten service đơn giản dựa trên sinatra và redis.</p>
-
-<h2>Cài đặt</h2>
-
-<p>Để cài đặt sinatra thì bạn phải có ruby đã cài sẵn trên máy, việc cài đặt sinatra khá đơn giản thông qua <strong>gem</strong>:</p>
-
-<figure class='code'><figcaption><span>sinatra_install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>  gem install sinatra
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Tiếp đến là redis, để cài đặt redis thì tùy thuộc vào hệ điều hành, trên mac-osx các bạn có thể cài đặt rất dễ dàng thông qua <strong>brew</strong>:</p>
-
-<figure class='code'><figcaption><span>redis_install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>  brew install redis
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Trên linux hoặc windows các bạn có thể google để tìm ra hướng dẫn  cài tương ứng.
-Các bạn khởi động redis thông qua, khi khởi động redis mà không set option với config gì cả thì redis sẽ chạy trên localhost và port là 6789:</p>
-
-<figure class='code'><figcaption><span>redis_install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>  redis-server
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>Giới thiệu qua về sinatra và redis</h2>
-
-<p>Sinatra là một mini webframework based trên Rack(Rack là web server interface rút gọn nhất có thể rất nổi tiếng trên ruby). Sinatra cung cấp cho bạn một DSL(Domain specific language) để có thể build một web app một cách dễ dàng nhất. Các bạn có thể tìm hiểu về sinatra ở <a href="http://www.sinatrarb.com/intro.html">trang chủ của sinatra</a>.</p>
-
-<p>Redis là hệ thống lưu trữ key-value với rất nhiều tính năng và được sử dụng rộng rãi. KTMT blog đã có <a href="http://ktmt.github.io/blog/2013/07/02/tim-hieu-redis/">một bài viết về redis</a> cách đây không lâu, các bạn có thể tham khảo lại. Về cách sử dụng redis, các bạn có thể tham khảo tại <a href="http://redis.io/documentation">trang chủ redis</a></p>
-
-<h2>Thiết kế chương trình</h2>
-
-<p>Cơ chế của một dịch vụ thu gọn hết sức đơn giản, được thể hiện ở diagram dưới đây:</p>
-
-<p><img src="/images/urlshorten/url-shorten-flow.png"></p>
-
-<p>Chắc bạn nào đã dùng bit.ly sẽ tưởng tượng ra usage flow một dịch vụ rút gọn url nên có. Cơ chế chúng ta dùng ở bài viết này như sau: đầu tiên user sẽ gửi url cần rút gọn thông qua form input. Web server nhận được request này sẽ hash url lại thành một chuỗi ngắn hơn, thông thường từ 5~10 kí tự, webserver sẽ lưu lại cặp &lt;hash, origin url> vào redis, và trả lại chuỗi hash đó được ghép vào url của dịch vụ : http://your-service.com/hash.</p>
-
-<p>Khi user click vào http://your-service.com/hash, đầu tiên server sẽ dùng chuỗi hash tìm original url trên redis, sau đó sẽ trả về response 301 (redirect) với location mới là original url, nhờ vậy mà user sẽ được redirect đến original url.</p>
-
-<p>Như vậy là đã định hình ý tưởng nên làm gì, chúng ta sẽ bắt tay vào code</p>
-
-<h2>Coding</h2>
-
-<ol>
-<li>Tạo khung
-Đầu tiên là sườn của một Sinatra app, có get, post. Chúng ta tạo folder cho app của chúng ta và tạo 1 file là app.rb chính là sinatra app:</li>
-</ol>
-
-
-<figure class='code'><figcaption><span>make.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>mkdir url_shorten <span class="o">&amp;&amp;</span> <span class="nb">cd </span>url_shorten
-</span><span class='line'>touch app.rb <span class="o">&amp;&amp;</span> vim app.rb
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Sau đó chúng ta sẽ tạo cái khung cho sinatra app như dưới đây:</p>
-
-<figure class='code'><figcaption><span>url_shorten.rb </span></figcaption>
+<figure class='code'><figcaption><span>ViewController1.m </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -720,47 +878,33 @@ Các bạn khởi động redis thông qua, khi khởi động redis mà không 
 <span class='line-number'>8</span>
 <span class='line-number'>9</span>
 <span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'><span class="nb">require</span> <span class="s1">&#39;sinatra/base&#39;</span>
-</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;redis&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">UrlShort</span> <span class="o">&lt;</span> <span class="ss">Sinatra</span><span class="p">:</span><span class="ss">:Base</span>
-</span><span class='line'>  <span class="n">set</span> <span class="ss">:public_dir</span><span class="p">,</span> <span class="no">File</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">__FILE__</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;/static&#39;</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="n">get</span> <span class="s1">&#39;/&#39;</span> <span class="k">do</span>
-</span><span class='line'>    <span class="n">erb</span> <span class="ss">:index</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="no">UrlShort</span><span class="o">.</span><span class="n">run!</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="c1">// configure block. Kiểu tham số có thể tuỳ chỉnh theo kiểu data bất kỳ của bạn.</span>
+</span><span class='line'><span class="n">TVCellConfigureBlock</span> <span class="n">configureCell</span> <span class="o">=</span> <span class="o">^</span><span class="p">(</span><span class="n">CellClassName</span> <span class="o">*</span><span class="n">cell</span><span class="p">,</span> <span class="n">DataType</span> <span class="o">*</span><span class="n">name</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">// gán dữ liệu cho cell. ví dụ như sau:</span>
+</span><span class='line'>  <span class="p">[</span><span class="n">cell</span><span class="p">.</span><span class="n">title</span> <span class="nl">setText:</span><span class="n">name</span><span class="p">];</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'><span class="c1">// tạo instance dataSource của TVArrayDataSource và khởi tạo với block ở trên</span>
+</span><span class='line'><span class="n">dataSource</span> <span class="o">=</span> <span class="p">[[</span><span class="n">TVArrayDataSource</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithItems:</span><span class="n">items</span>
+</span><span class='line'>                                       <span class="nl">cellIdentifier:</span><span class="s">@&quot;MYCELL&quot;</span>
+</span><span class='line'>                                   <span class="nl">cellConfigureBlock:</span><span class="n">configureCell</span><span class="p">];</span>
+</span><span class='line'><span class="n">tableView</span><span class="p">.</span><span class="n">datasource</span> <span class="o">=</span> <span class="n">dataSource</span><span class="p">;</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Sinatra có syntax dạng DSL: get &#8216;some info&#8217; do &#8216;something&#8217; để represent cho &#8216;get&#8217; request rất dễ hiểu. Đoạn code trên có nghĩa là khi request đến &#8216;/&#8217; (root) thì sẽ render file index nằm trong views.
-Như vậy chúng ta đã có cái khung đơn giản nhất của một web service, nhận request, trả về view. (erb là template engine có sẵn của ruby, nó sẽ render file có đuôi erb ra html)</p>
+<p>Bạn thấy đấy giờ trong ViewController thì phần code cho dataSource của tableView khá là đẹp.
+Đôi khi bạn muốn viết đoạn gán dữ liệu cho cell vào một method khác trong class ViewController thay vì dùng block. Để cho những trường hợp đó như đã nói ở trên chúng ta có thể dùng selector. Tương tự như block chúng ta cũng sẽ tạo một <code>@property (assign, nonatomic) SEL configureSelector;</code> và đối tượng để execute method của selector này <code>@property (weak, nonatomic) id target;</code> (Đối tượng này chính là ViewController). Chúng ta cũng cần tạo một hàm khởi tạo datasource khác với selector. Cuối cùng trong phần gán dữ liệu cho cell chúng ta execute method của selector với <code>objc_msgSend(self.target, self.configureSelector, cell, item);</code>. Do phần này tương tự như đối với block  nên mình không giải thích thêm mà các bạn có thể xem code trên github.</p>
 
-<p>Tiếp đến chúng ta sẽ thực hiện xử lý hash url. Về mặt lý thuyết thì gọi là hash không đúng lắm vì hash phải là nhận đầu vào X và trả lại Y là kết quả của việc hash X, bài toán của chúng ta ở đây chỉ đơn thuần là generate ra một chuỗi random để represent cho một cái url, như vậy bài toán của chúng ta sẽ là một hàm random_hash(N) nhận đầu vào N là độ dài của chuỗi input và đầu ra là một chuỗi random (cả chữ cả số) có độ dài N, ví dụ như sau:</p>
+<p>Tiếp theo còn một đoạn <code>...</code> tại phần tạo cell mới khi mà không tìm thấy cell có thể dùng lại. Như bạn thấy đấy để tạo cell mới chúng ta cần biết Class của cell. Với Objective-C chúng ta có thể tạo 1 instance từ tên class. Khi đó chúng ta có thể tạo 1 cell như sau:</p>
 
-<figure class='code'><figcaption><span>hash.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'>  <span class="n">rand_hash</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span> <span class="c1">#=&gt; &quot;s4xA6&quot;</span>
-</span></code></pre></td></tr></table></div></figure>
+<p><code>
+cell = [[NSClassFromString(CELL_CLASS_NAME) alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:self.cellIdentifier];
+</code></p>
 
+<p>Như vậy class TVArrayDataSource chỉ cần có thêm thông tin là tên class của cell là mọi việc có thể hoàn tất. Ngoài ra nhiều khi chúng ta muốn tạo cell từ file Xib. Để tạo cell từ file xib chúng ta cũng chỉ cần biết thêm tên file xib. Thế nên mình tạo thêm một property <code>cellName</code> để lưu tên class của cell hoặc tên file Xib tuỳ theo trường hợp cell tạo từ file xib hay từ code.
+Như vậy việc tạo class TVArrayDatasource đã hoàn thành. Và bây giờ trong ViewController chúng ta chỉ implement đoạn code ngắn như sau:
+Khi sử dụng với block</p>
 
-<p>Để giải quyết bài toán này thì có khá nhiều hướng đi:</p>
-
-<ol>
-<li>Loop từ 1 đến 5 rồi với mỗi lần loop bạn random ra một số hoặc chữ cái.</li>
-<li>Tạo ra 1 array có độ dài 64 gồm từ [0..9] [a..z] và [A..Z] và random ra 5 vị trí trong đó (việc này có thể thực hiện rất dễ dàng thông qua Array#sample của ruby).</li>
-<li>Sử dụng base64. base64 có một đặc điểm là sẽ biến 1 số M thành 1 chuỗi cả chữ cả số có độ dài max là log(64)(M). Do đó để tạo ra một chuỗi random có length N thì chúng ta chỉ cần random một số M nằm trong khoảng 64<sup>(N-1)</sup> đến 64<sup>(N)</sup> và chuyển nó về base 64.</li>
-<li>Sử dụng một số kĩ thuật generate 64bit (mà đã được giới thiệu ở <a href="http://ktmt.github.io/blog/2013/06/09/xay-dung-he-thong-sinh-64bit-unique-id/">bài viết về generate 64bit uid</a> trên KTMT gần đây.</li>
-</ol>
-
-
-<p>Ở bài viết này chúng ta sẽ sử dụng kĩ thuật số (3). Chúng ta đưa hàm generate hash vào trong helper của sinatra thông qua hàm helpers như sau:</p>
-
-<figure class='code'><figcaption><span>hash.rb </span></figcaption>
+<figure class='code'><figcaption><span>ViewController.m </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -770,21 +914,23 @@ Như vậy chúng ta đã có cái khung đơn giản nhất của một web ser
 <span class='line-number'>7</span>
 <span class='line-number'>8</span>
 <span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'><span class="k">class</span> <span class="nc">UrlShort</span> <span class="o">&lt;</span> <span class="ss">Sinatra</span><span class="p">:</span><span class="ss">:Base</span>
-</span><span class='line'>  <span class="o">.</span><span class="n">.</span>
-</span><span class='line'>  <span class="n">helpers</span> <span class="k">do</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">rand_hash</span><span class="p">(</span><span class="n">length</span><span class="p">)</span>
-</span><span class='line'>      <span class="n">gap</span> <span class="o">=</span> <span class="mi">64</span><span class="o">**</span><span class="p">(</span><span class="n">length</span><span class="p">)</span> <span class="o">-</span> <span class="mi">64</span><span class="o">**</span><span class="p">(</span><span class="n">length</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>      <span class="p">(</span><span class="nb">rand</span><span class="p">(</span><span class="n">gap</span><span class="p">)</span> <span class="o">+</span> <span class="mi">64</span><span class="o">**</span><span class="p">(</span><span class="n">length</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">to_s</span><span class="p">(</span><span class="mi">64</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>  <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="c1">// tạo block</span>
+</span><span class='line'><span class="n">TVCellConfigureBlock</span> <span class="n">configureCell</span> <span class="o">=</span> <span class="o">^</span><span class="p">(</span><span class="n">CELL_CLASS_NAME</span> <span class="o">*</span><span class="n">cell</span><span class="p">,</span> <span class="n">DATATYPE</span> <span class="o">*</span><span class="n">name</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="p">[</span><span class="n">cell</span><span class="p">.</span><span class="n">title</span> <span class="nl">setText:</span><span class="n">name</span><span class="p">];</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">dataSource</span> <span class="o">=</span> <span class="p">[[</span><span class="n">TVArrayDataSource</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithItems:</span><span class="n">items</span>
+</span><span class='line'>                                       <span class="nl">cellIdentifier:</span><span class="s">@&quot;MYCELL&quot;</span>
+</span><span class='line'>                                   <span class="nl">cellConfigureBlock:</span><span class="n">configureCell</span><span class="p">];</span>
+</span><span class='line'><span class="p">[</span><span class="n">dataSource</span> <span class="nl">setXibFileName:</span><span class="s">@&quot;XibFileName&quot;</span><span class="p">];</span>
+</span><span class='line'><span class="n">tableview</span><span class="p">.</span><span class="n">datasource</span> <span class="o">=</span> <span class="n">dataSource</span><span class="p">;</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Tiếp theo chúng ta sẽ làm nhiệm vụ gắn hash thu được với url thành một cặp key-value và ghi vào redis. Để làm nhiệm vụ này thì đầu tiên chúng ta cần khởi tạo redis, mình khởi tạo redis bằng cách overwrite constructor của app và đưa redis instance vào thành 1 instance property. Ngoài ra, chúng ta cũng không muốn 1 url mà mỗi lần request lại tạo một hash khác nhau , rất tốn tài nguyên, do đó mỗi lần gen hash mình sẽ lưu duplicate thành 2 cặp key-value. Một cặp chứa url làm key và hash làm value, và một cặp chứ hash làm key và url là value, điều này đảm bảo mối liên hệ giữa url/hash là 1/1.</p>
+<p>Hoặc khi sử dụng với selector.</p>
 
-<figure class='code'><figcaption><span>implement.rb </span></figcaption>
+<figure class='code'><figcaption><span>ViewController.m </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -798,267 +944,28 @@ Như vậy chúng ta đã có cái khung đơn giản nhất của một web ser
 <span class='line-number'>11</span>
 <span class='line-number'>12</span>
 <span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'><span class="n">post</span> <span class="s1">&#39;/&#39;</span> <span class="k">do</span>
-</span><span class='line'>  <span class="vi">@error</span> <span class="o">=</span> <span class="kp">nil</span>
-</span><span class='line'>  <span class="vi">@error</span> <span class="o">=</span> <span class="s1">&#39;please enter url&#39;</span> <span class="k">if</span> <span class="no">URI</span><span class="o">.</span><span class="n">regexp</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">params</span><span class="o">[</span><span class="ss">:url</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">nil?</span>
-</span><span class='line'>  <span class="vi">@success</span> <span class="o">=</span> <span class="kp">false</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">dataSource</span> <span class="o">=</span> <span class="p">[[</span><span class="n">TVArrayDataSource</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithItems:</span><span class="n">items</span>
+</span><span class='line'>                                       <span class="nl">cellIdentifier:</span><span class="s">@&quot;MYCELL&quot;</span>
+</span><span class='line'>                                               <span class="nl">target:</span><span class="n">self</span>
+</span><span class='line'>                                     <span class="nl">cellConfigureSel:</span><span class="k">@selector</span><span class="p">(</span><span class="nl">configureCell:andItem:</span><span class="p">)];</span>
+</span><span class='line'><span class="p">[</span><span class="n">dataSource</span> <span class="nl">setCellClassName:</span><span class="s">@&quot;CELL_CLASS_NAME&quot;</span><span class="p">];</span>
+</span><span class='line'><span class="n">tableView</span><span class="p">.</span><span class="n">dataSource</span> <span class="o">=</span> <span class="n">dataSource</span><span class="p">;</span>
 </span><span class='line'>
-</span><span class='line'>  <span class="k">unless</span> <span class="vi">@error</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">params</span><span class="o">[</span><span class="ss">:url</span><span class="o">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">params</span><span class="o">[</span><span class="ss">:url</span><span class="o">].</span><span class="n">empty?</span>
-</span><span class='line'>      <span class="vi">@url</span> <span class="o">=</span> <span class="n">params</span><span class="o">[</span><span class="ss">:url</span><span class="o">]</span>
-</span><span class='line'>      <span class="vi">@hash</span> <span class="o">=</span> <span class="n">rand_hash</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
-</span><span class='line'>      <span class="n">exist</span> <span class="o">=</span> <span class="vi">@redis</span><span class="o">.</span><span class="n">setnx</span> <span class="s2">&quot;url:</span><span class="si">#{</span><span class="vi">@url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="vi">@hash</span>
-</span><span class='line'>      <span class="k">if</span> <span class="n">exist</span> <span class="c1">#key not set</span>
-</span><span class='line'>        <span class="vi">@redis</span><span class="o">.</span><span class="n">setnx</span> <span class="s2">&quot;hash:</span><span class="si">#{</span><span class="vi">@hash</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="vi">@url</span>
-</span><span class='line'>      <span class="k">else</span>
-</span><span class='line'>        <span class="vi">@hash</span> <span class="o">=</span> <span class="vi">@redis</span><span class="o">.</span><span class="n">get</span> <span class="s2">&quot;url:</span><span class="si">#{</span><span class="vi">@url</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>      <span class="k">end</span>
-</span><span class='line'>      <span class="vi">@success</span> <span class="o">=</span> <span class="kp">true</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
 </span><span class='line'>
-</span><span class='line'>  <span class="n">erb</span> <span class="ss">:index</span>
-</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="c1">// selector</span>
+</span><span class='line'><span class="k">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">configureCell:</span><span class="p">(</span><span class="n">CELL_CLASS_NAME</span> <span class="o">*</span><span class="p">)</span><span class="nv">cell</span> <span class="nf">andItem:</span><span class="p">(</span><span class="n">DATA_TYPE</span> <span class="o">*</span><span class="p">)</span><span class="nv">item</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="p">[</span><span class="n">cell</span><span class="p">.</span><span class="n">title</span> <span class="nl">setText:</span><span class="n">item</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Như vậy chúng ta đã có @hash để trả về cho user, chúng ta sẽ ghep hash vào trong views để hiển thị cho user (views/index.rb)</p>
+<h1>Tổng kết</h1>
 
-<figure class='code'><figcaption><span>index.erb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='erb'><span class='line'><span class="x">&lt;form id=&quot;form&quot; method=&quot;post&quot;&gt;</span>
-</span><span class='line'><span class="x">  &lt;input type=&quot;text&quot; value=&quot;&quot; name=&quot;url&quot; id=&quot;url&quot;/&gt;</span>
-</span><span class='line'><span class="x">  &lt;input type=&quot;submit&quot; value=&quot;shorten&quot; id=&quot;submit&quot; class=&quot;submit&quot;/&gt;</span>
-</span><span class='line'><span class="x">&lt;/form&gt;</span>
-</span><span class='line'><span class="x">&lt;hr/&gt;</span>
-</span><span class='line'><span class="x">&lt;div class=&quot;mes&quot;&gt;Result&lt;/div&gt;</span>
-</span><span class='line'><span class="cp">&lt;%</span> <span class="k">if</span> <span class="vi">@error</span> <span class="cp">%&gt;</span><span class="x"></span>
-</span><span class='line'><span class="x">  &lt;div id=&#39;error&#39;&gt;</span>
-</span><span class='line'><span class="x">    </span><span class="cp">&lt;%=</span> <span class="vi">@error</span> <span class="cp">%&gt;</span><span class="x"></span>
-</span><span class='line'><span class="x">  &lt;/div&gt;</span>
-</span><span class='line'><span class="cp">&lt;%</span> <span class="k">else</span> <span class="cp">%&gt;</span><span class="x"></span>
-</span><span class='line'><span class="x">  </span><span class="cp">&lt;%</span> <span class="k">if</span> <span class="vi">@success</span> <span class="cp">%&gt;</span><span class="x"></span>
-</span><span class='line'><span class="x">    &lt;a id=&quot;result&quot; href=&#39;</span><span class="cp">&lt;%=</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">escape_html</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="si">}#{</span><span class="vi">@hash</span><span class="si">}</span><span class="s2">&quot;</span> <span class="cp">%&gt;</span><span class="x">&#39;&gt;</span><span class="cp">&lt;%=</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">escape_html</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="si">}#{</span><span class="vi">@hash</span><span class="si">}</span><span class="s2">&quot;</span> <span class="cp">%&gt;</span><span class="x">&lt;/a&gt;</span>
-</span><span class='line'><span class="x">    &lt;input data-clipboard-text=&#39;</span><span class="cp">&lt;%=</span><span class="s2">&quot;</span><span class="si">#{</span><span class="n">escape_html</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="si">}#{</span><span class="vi">@hash</span><span class="si">}</span><span class="s2">&quot;</span> <span class="cp">%&gt;</span><span class="x">&#39; type=&quot;button&quot; id=&quot;yank&quot; class=&quot;submit&quot; value=&quot;yank&quot;/&gt;</span>
-</span><span class='line'><span class="x">  </span><span class="cp">&lt;%</span> <span class="k">end</span> <span class="cp">%&gt;</span><span class="x">  </span>
-</span><span class='line'><span class="cp">&lt;%</span> <span class="k">end</span> <span class="cp">%&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
+<p>Bài viết trình bày về cách tạo class datasource riêng cho tableView thay vì implement trực tiếp trong ViewController. Điều này sẽ giúp ViewController ngắn gọn hơn và code trông đẹp hơn, cũng như tăng khả năng sử dụng lại code. Chúng ta có thể dùng lại class TVArrayDataSource tại nhiều ViewController mà không cần phải implement lại các hàm delegate của TableViewDataSource. Thế nhưng hiện tại class này chỉ dùng cho những tableview có 1 section.
+Toàn bộ code của class này cũng như sample bạn có thể tham khảo tại: <a href="https://github.com/ktmt/TVDataSource">https://github.com/ktmt/TVDataSource</a></p>
 
-
-<p>Phần việc còn lại chúng ta phải giải quyết là khi user click vào link. Link của chúng ta có dạng là www.my-application.com/#{hash}, với sinatra để lọc phần hash hết sức đon giản vì sinatra đã tự động lọc hộ chúng ta và đưa vào biến global params, do đó chúng ta chỉ cần lấy hash từ params, tìm trong redis, và redirect user là ok:</p>
-
-<figure class='code'><figcaption><span>redirect.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'>  <span class="n">get</span> <span class="s1">&#39;/:hash&#39;</span> <span class="k">do</span>
-</span><span class='line'>    <span class="n">url</span> <span class="o">=</span> <span class="vi">@redis</span><span class="o">.</span><span class="n">get</span> <span class="s2">&quot;hash:</span><span class="si">#{</span><span class="n">params</span><span class="o">[</span><span class="ss">:hash</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>    <span class="n">redirect</span> <span class="n">url</span>
-</span><span class='line'>  <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Như vậy chúng ta đã có một flow hoàn chỉnh rồi, thêm tí css và sử dụng <a href="https://github.com/zeroclipboard/ZeroClipboard">ZeroClipboard</a> để có nút yank để copy url vào clipboard, chúng ta đã có một dịch vụ rút gọn url cho riêng mình!</p>
-
-<p><img src="/images/urlshorten/background.png"></p>
-
-<p>Toàn bộ source code cho tutorial này mình đang để ở đây, mọi người có thể sử dụng tùy ý :).
-<a href="https://github.com/ktmt/link_shorttener">https://github.com/ktmt/link_shorttener</a></p>
-
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-07-07T22:54:00+09:00" data-updated="true" itemprop="datePublished">Jul 7<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/git/'>git</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/07/07/git-server-hook-dot-markdown/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/07/git-server-hook-dot-markdown/" itemprop="url">Githook và Server Hook (Tiếp)</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<p>Ở bài viết <a href="/blog/2013/06/25/using-githook-to-automatically-test-your-app/">trước</a>, tôi đã giới thiệu về githook, client hook và các user case hay sử dụng với client hook. Bài viết này, tôi sẽ giới thiệu thêm về server hook và các ứng dụng của chúng trong thực tế</p>
-
-<h1>Server-side hooks</h1>
-
-<p>Bên cạnh việc sử dụng các client-side hooks, bạn có thể sử dụng một vài server-side hook như là một hệ thống admin để áp đặt một cơ chế quán lý cho project của bạn. Những script này sẽ được chạy trước và sau khi commit được đẩy lên server. Những pre-hooks có thể trả về giá trị khác 0 ở bất cứ thời điểm nào để loại bỏ một push từ client, cũng như để in ra một error message cho client</p>
-
-<h2>pre-receive và post-receive</h2>
-
-<p>Script đầu tiên được chạy khi server nhận được một push từ client đó là <code>pre-receive</code>. Script này nhận một list các tham chiếu sẽ được push từ stdin. Nếu nó trả về giá trị khác 0, không có tham chiếu nào được chấp nhận. Bạn có thể sử dụng hook này để làm những việc như đảm bảo không có bất cứ tham chiếu nào là <code>non-fast-forwards</code>.</p>
-
-<p><code>post-receive</code> hook chạy sau khi toàn bộ quá trình được hoàn tất và có thể sử dụng để update các service khác hoặc để notify uer. Nó nhận cùng dữ liệu từ stdin như <code>pre-receive</code> hook. Ví dụ bao gồm gửi email chó một list các developer liên quan, notify CI server, hoặc update ticket tracking system. Bạn thậm chí có thể parse commit message để kiểm tra xem có bất cứ ticket nào cần open, modified hoặc update hay không. <code>post-receive</code> không thể làm ngừng lại quá trình push, nhưng client sẽ không đóng kết nối tới server cho đên khi <code>post-receive</code> kết thúc. Ví thế hãy cẩn thận khi bạn muốn làm những việc tốn thời gian. Cách tốt nhất là hãy sử dụng các background process để xử lý các tác vụ tốn thời gian.</p>
-
-<h2>update</h2>
-
-<p>Update script là tương tự với <code>pre-receive</code> script, ngoại trừ việc nó chỉ chạy một làn cho mỗi branch mà pusher muốn update. Nếu pusher muốn update nhiều branch, <code>pre-receive</code> chỉ chạy duy nhất một lần, nhưng update sẽ chạy một lần cho mỗi branch mà chúng được push. Thay vì đọc dữ liệu từ stdin, script này sẽ nhận 3 tham số đầu vào: tên của branch, SHA-1 trỏ đến commit trước khi được push, và SHA-1 user đang muốn push. Nếu update script trả về kết quả khác 0, chỉ branch ứng với script này bị reject, các branch khác vẫn được update bình thường</p>
-
-<h1>Ví dụ</h1>
-
-<p>Trong ví dụ này, chúng ta sẽ bắt buộc mỗi commit message phải có phần mở đầu của message tuân theo một định dạng. Cụ thể mỗi mesage phải có dạng &#8220;ref:1234&#8221; bởi vì mỗi một commit sẽ ứng với một ticket trong hệ thống.</p>
-
-<p>Để làm việc này, sẻver sẽ phải kiểm tra tất cả các commit được push để xem string trong commit message có đúng format hay không. Nếu commit message là không đúng format, trả về giá trị khác 0 và reject push.</p>
-
-<p>Chúng ta sẽ viết một update hook để làm việc này. Chú ý rắng, update hook nhận 3 giá trị đầu vào: tên của branch được update, SHA-1 của commit trước khi được push, và SHA-1 của commit sau khi được push. Các đoạn code dưới đây được minh hoạ bằng ruby, bạn có thể sử dụng ngôn ngữ lập trình khác nếu muốn</p>
-
-<figure class='code'><figcaption><span>update </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1">#!/usr/bin/env ruby</span>
-</span><span class='line'>
-</span><span class='line'><span class="vg">$refname</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span>
-</span><span class='line'><span class="vg">$oldrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span>
-</span><span class='line'><span class="vg">$newrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Để lấy các commit từ <code>$oldrev</code> tới <code>$newrev</code>, chúng ta sử dụng lệnh <code>git rev-lít</code>. Lệnh này sẽ trả về danh sách các SHA-1 cho các commit nằm giữa 2 commit mà chúng ta truyền vào</p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>git rev-list 538c33..d14fc7
-</span><span class='line'>d14fc7c847ab946ec39590d87783c69b031bdfb7
-</span><span class='line'>9f585da4401b0a3999e84113824d15245c13f0be
-</span><span class='line'>234071a1be950e2a8d078e6141f5cd20c1e61ad3
-</span><span class='line'>dfa04c9ef3d5197182f13fb5b9b1fb7717d2222a
-</span><span class='line'>17716ec0f1ff5c77eff40b7fe912f9f6cfd0e475
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Sau đó, chúng ta sử dụng lệnh <code>git cat-file</code> đẻ duyệt qua từng commit và lấy nội dụng của commit message.</p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>git cat-file commit ca82a6
-</span><span class='line'>tree cfda3bf379e4f8dba8717dee55aab78aef7f4daf
-</span><span class='line'>parent 085bb3bcb608e1e8451d4b2432f8ecbe6306e7e7
-</span><span class='line'>author kiennt &lt;kiennt@gmail.com&gt; 1205815931 -0700
-</span><span class='line'>committer kiennt &lt;schacon@gmail.com&gt; 1240030591 -0700
-</span><span class='line'>
-</span><span class='line'>Add new post about githook
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Cách đơn giản để lấy commit message từ một commit là khi có SHA-1 , chúng ta xác định dòng blank đầu tiên và lấy tất cả phần đằng sau nó. Chúng ta có thể sử dụng <code>sed</code> để làm điều này</p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>git cat-file commit ca82a6 | sed <span class="s1">&#39;1,/^$/d&#39;</span>
-</span><span class='line'>Add new post about githook
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Sau đây là toàn bộ đoạn code ruby để hoàn thành tác vụ trên</p>
-
-<figure class='code'><figcaption><span>update </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1">#!/usr/bin/env ruby</span>
-</span><span class='line'>
-</span><span class='line'><span class="vg">$refname</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span>
-</span><span class='line'><span class="vg">$oldrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span>
-</span><span class='line'><span class="vg">$newrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span>
-</span><span class='line'><span class="vg">$regex</span> <span class="o">=</span> <span class="sr">/\[ref: (\d+)\]/</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1"># enforced custom commit message format</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">check_message_format</span>
-</span><span class='line'>  <span class="n">missed_revs</span> <span class="o">=</span> <span class="sb">`git rev-list </span><span class="si">#{</span><span class="vg">$oldrev</span><span class="si">}</span><span class="sb">..</span><span class="si">#{</span><span class="vg">$newrev</span><span class="si">}</span><span class="sb">`</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">missed_revs</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">rev</span><span class="o">|</span>
-</span><span class='line'>    <span class="n">message</span> <span class="o">=</span> <span class="sb">`git cat-file commit </span><span class="si">#{</span><span class="n">rev</span><span class="si">}</span><span class="sb"> | sed &#39;1,/^$/d&#39;`</span>
-</span><span class='line'>    <span class="k">if</span> <span class="o">!</span><span class="vg">$regex</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
-</span><span class='line'>      <span class="nb">puts</span> <span class="s2">&quot;[POLICY] Your message is not formatted correctly&quot;</span>
-</span><span class='line'>      <span class="nb">exit</span> <span class="mi">1</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'><span class="n">check_message_format</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h1>Kết luận</h1>
-
-<p>Qua 2 bài viết về githook, bạn đã nắm được phần nào các hooks trong git, và các ứng dụng liên quan đến chúng. Giờ bạn có thể sử dụng githook để tạo nên workflow phù hợp nhất với git cho project của mình</p>
-
-<h1>Tham khảo</h1>
-
-<p><a href="http://git-scm.com/book/en/Customizing-Git-Git-Hooks">Githook documentation</a>
-<a href="http://git-scm.com/book/en/Customizing-Git-An-Example-Git-Enforced-Policy">Customizing Git</a></p>
+<p>Hoặc để sử dụng class này bạn có thể cài qua coccoapod bằng cách thêm <code>pod 'TVArrayDataSource'</code> vào Podfile.</p>
 
 		
 		
