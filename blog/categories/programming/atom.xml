@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: programming, | Blog kỹ thuật máy tính]]></title>
-  <link href="http://ktmt.github.com/blog/categories/programming/atom.xml" rel="self"/>
-  <link href="http://ktmt.github.com/"/>
-  <updated>2013-09-18T01:15:24+09:00</updated>
-  <id>http://ktmt.github.com/</id>
+  <link href="http://git@github.com.github.com/blog/categories/programming/atom.xml" rel="self"/>
+  <link href="http://git@github.com.github.com/"/>
+  <updated>2014-07-21T22:37:14+09:00</updated>
+  <id>http://git@github.com.github.com/</id>
   <author>
     <name><![CDATA[kỹ thuật máy tính]]></name>
     
@@ -14,26 +14,138 @@
 
   
   <entry>
+    <title type="html"><![CDATA[Trở lại với cơ bản (2): Load Average]]></title>
+    <link href="http://git@github.com.github.com/blog/2014/07/20/load-average/"/>
+    <updated>2014-07-20T19:31:00+09:00</updated>
+    <id>http://git@github.com.github.com/blog/2014/07/20/load-average</id>
+    <content type="html"><![CDATA[<h1 id="giới-thiệu">Giới thiệu</h1>
+<p>Load Average – tạm dịch là “giá trị tải trung bình” – là một chỉ số liên quan đến CPU rất cơ bản và quan trọng. Việc nắm rõ ý nghĩa của chỉ số này giúp chúng ta đánh giá được hiệu năng hiện thời của máy tính cũng như sử dụng CPU nói riêng, máy tính nói chung một cách hiệu quả nhất</p>
+<p>Bài viết này bắt đầu bằng việc giải thích ý nghĩa của “giá trị tải trung bình”. Sau đó bài viết sẽ trình bày cách đánh giá chỉ số này trong thực tế. Cuối cùng bài viết đưa ra một trường hợp thực tế về cách đánh giá hiệu năng máy tính theo chỉ số này.</p>
+<h1 id="tải-trung-bình-là-gì">“Tải trung bình” là gì?</h1>
+<h2 id="ví-dụ-trạm-thu-phí">Ví dụ trạm thu phí</h2>
+<p>Để hiểu *tải trung bình&quot; là gì ta sẽ xem xét một ví dụ thực tế như sau.</p>
+<p>Bạn đang tham gia giao thông trên đường cao tốc và trước mặt của bạn là trạm thu phí đường bộ. Bạn giảm tốc để chuẩn bị qua cửa soát vé. Trạm xoát vé có 4 cửa soát vé. Tất cả các cửa đều trống và bạn chọn cửa số 1 như dưới đây.</p>
+<pre><code>    H                               &lt;-- Xe ôtô của bạn
+|   1   |   2   |   3   |   4   |   &lt;-- Trạm thu phí</code></pre>
+<p>Bạn đánh xe đến cửa số 1, trả phí cho nhân viên soát vé. Nhân viên soát vé mở barrier chắn, và bạn đi qua. Có duy nhất xe bạn qua trạm nên từ phía trạm thu phí, <em>trạm đang phục vụ 1 xe</em>.</p>
+<pre><code>|   H   |   2   |   3   |   4   |</code></pre>
+<p>Giờ tưởng tượng có nhiều xe khác cũng lưu thông trên đường cao tốc. Giả sử có trước khi bạn đến trạm thu phí, đang có 2 xe khác làm thủ tục ở cửa số 1 và số 2, bạn chú ý cửa số 3,4 còn trống nên lái xe qua cửa số 3 và làm thủ tục mà không phải chờ đợi. <em>Trạm phục vụ 3 xe</em>.</p>
+<pre><code>|   H&#39;   |   H&#39;   |   H   |   4   |</code></pre>
+<p>Có thể thấy ở 2 trường hợp trên, trạm thu phí đang làm việc khá <em>hiệu quả</em>. Các xe ôtô đi qua với thời gian chờ đợi bằng 0. Các xe ôtô đi qua trạm xoát vé một cách nhanh chóng. Người lái xe là bạn cảm thấy thoải mái vì không phải chờ đợi.</p>
+<p>Giả sử hôm nay là ngày nghỉ lễ, mọi người về quê đông nên xe khách chạy rất đông. Các gia đình tranh thủ ngày lễ nên cũng đánh xe đi chơi xa. Đường cao tốc trở nên đông đúc. Bạn đến trạm thu phí và nhận ra rằng 4 cửa đang có xe làm thủ tục. Chưa kể bạn còn đến sau 2 xe khác và phải đợi xếp hàng sau 2 xe này.</p>
+<pre><code>    H                                   &lt;-- Xe ôtô của bạn
+    H&#39;
+    H&#39;
+|   H&#39;   |   H&#39;   |   H&#39;   |   H&#39;   |   &lt;-- Trạm thu phí</code></pre>
+<p>Trong trường hợp này, bạn chắc chắn sẽ phải chờ, không những chờ các xe đang làm thủ tục tại cửa trạm mà còn chờ cả các xe đến trước bạn. Thời gian có thể bị kéo dài vì nhiều lý do như 1 xe làm thủ tục mất thời gian hơn các xe khác hoặc có sự cố ở cửa soát vé. Đứng từ góc độ của trạm thu phí, trạm đang phải xử lý số lượng xe (7 xe) nhiều hơn khả năng của trạm (4 cửa). Tại thời điểm hiện tại, trạm đang bị <em>quá tải</em>.</p>
+<p>Ta định nghĩa số lượng tải trung bình của trạm là số lượng xe mà trạm phải phục vụ trong một đơn vị thời gian. Như vậy ở ví dụ trên <em>trung bình tải</em> của trạm thu phí tại thời điểm bạn đến là 7.</p>
+<h2 id="load-average-của-cpu">Load Average của CPU</h2>
+<p>Tương tự như ví dụ trạm soát vé, “Load Average” của CPU được định nghĩa là số lượng process cần tài nguyên tính toán của CPU tại thời điểm nhất định. Giả sử tải trung bình của máy tính bạn hiện tại là 3.2, điều đó có nghĩa là tại thời điểm đó đang có trung bình 3.2 processes cần CPU xử lý. Tại thời điểm process cần CPU, nếu CPU đang rảnh process sẽ được OS cho chạy trên CPU rảnh.</p>
+<p>Mổi “cửa soát vé” trong CPU máy tính sẽ là 1 lõi CPU. Với các CPU thế hệ mới trang bị công nghệ Hyperthreading, mỗi lõi vật lý có thể hoạt động được như 2 lõi logic. Vì vậy OS sẽ nhận diện 8 lõi. Ví dụ máy tính của bạn được trang bị chip mới nhất hiện tại Corei7 MQ– 4 cores 8 threads với công nghệ Hyperthreading thì đối với hệ điều hành máy tính của bạn có 8 cores.</p>
+<p>Để kiểm tra máy tính của bạn có bao nhiêu lõi (cores), trên windows bạn có thể kiểm tra qua TaskManager &gt; Performance. Bên cạnh biểu đồ tỉ lệ sử dụng CPU nói chung là tỉ lệ sử dụng CPU của từng lõi. Số lượng cửa sổ bên tay phải là số lượng lõi logic.</p>
+<p>Trên Linux bạn có thể kiểm tra bằng nhiều cách:</p>
+<pre><code>$ top
+# ấn 1
+top - 20:38:48 up 2 days,  4:50,  1 user,  load average: 11.30, 11.54, 10.17
+Tasks: 430 total,   2 running, 428 sleeping,   0 stopped,   0 zombie
+Cpu0  : 20.5%us,  2.4%sy,  0.0%ni, 76.2%id,  0.4%wa,  0.0%hi,  0.5%si,  0.0%st
+Cpu1  : 20.2%us,  1.9%sy,  0.0%ni, 77.4%id,  0.5%wa,  0.0%hi,  0.1%si,  0.0%st
+Cpu2  : 19.9%us,  1.8%sy,  0.0%ni, 77.7%id,  0.5%wa,  0.0%hi,  0.1%si,  0.0%st
+Cpu3  : 19.9%us,  2.3%sy,  0.0%ni, 77.2%id,  0.2%wa,  0.0%hi,  0.4%si,  0.0%st
+Cpu4  : 19.8%us,  2.3%sy,  0.0%ni, 77.1%id,  0.4%wa,  0.0%hi,  0.4%si,  0.0%st
+Cpu5  : 19.7%us,  2.3%sy,  0.0%ni, 77.4%id,  0.2%wa,  0.0%hi,  0.4%si,  0.0%st
+Cpu6  : 20.1%us,  1.6%sy,  0.0%ni, 78.1%id,  0.1%wa,  0.0%hi,  0.0%si,  0.0%st
+Cpu7  : 19.6%us,  2.2%sy,  0.0%ni, 77.7%id,  0.1%wa,  0.0%hi,  0.3%si,  0.0%st
+Cpu8  : 19.4%us,  2.2%sy,  0.0%ni, 78.0%id,  0.1%wa,  0.0%hi,  0.3%si,  0.0%st
+Cpu9  : 19.8%us,  2.2%sy,  0.0%ni, 77.6%id,  0.1%wa,  0.0%hi,  0.3%si,  0.0%st
+Cpu10 : 19.5%us,  1.6%sy,  0.0%ni, 78.8%id,  0.1%wa,  0.0%hi,  0.0%si,  0.0%st
+Cpu11 : 19.9%us,  2.2%sy,  0.0%ni, 77.5%id,  0.1%wa,  0.0%hi,  0.3%si,  0.0%st
+Mem:  32846220k total, 32593588k used,   252632k free,   434464k buffers
+Swap:  4194296k total,        0k used,  4194296k free, 22380012k cached
+
+PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND
+14489 hadoop    20   0 1643m 684m  16m S 104.7  2.1  32:15.93 java
+14496 hadoop    20   0 1635m 705m  16m S 104.7  2.2  32:14.63 java
+16194 hadoop    20   0 1637m 655m  16m S 104.7  2.0  29:45.06 java
+16243 hadoop    20   0 1630m 687m  16m S 104.7  2.1  29:28.34 java</code></pre>
+<p>hoặc</p>
+<pre><code>$ mpstat -P ALL
+Linux 2.6.32-358.11.1.el6.x86_64 (bb2-dn07)     07/20/2014      _x86_64_        (12 CPU)
+
+08:39:53 PM  CPU    %usr   %nice    %sys %iowait    %irq   %soft  %steal  %guest   %idle
+08:39:53 PM  all   19.88    0.00    2.09    0.23    0.00    0.27    0.00    0.00   77.53
+08:39:53 PM    0   20.52    0.00    2.38    0.42    0.00    0.46    0.00    0.00   76.21
+08:39:53 PM    1   20.19    0.00    1.85    0.51    0.00    0.11    0.00    0.00   77.35
+08:39:53 PM    2   19.95    0.00    1.81    0.48    0.00    0.11    0.00    0.00   77.65
+08:39:53 PM    3   19.92    0.00    2.33    0.20    0.00    0.38    0.00    0.00   77.16
+08:39:53 PM    4   19.82    0.00    2.28    0.39    0.00    0.45    0.00    0.00   77.07
+08:39:53 PM    5   19.74    0.00    2.33    0.19    0.00    0.38    0.00    0.00   77.36
+08:39:53 PM    6   20.14    0.00    1.64    0.13    0.00    0.01    0.00    0.00   78.09
+08:39:53 PM    7   19.65    0.00    2.19    0.13    0.00    0.35    0.00    0.00   77.69
+08:39:53 PM    8   19.38    0.00    2.20    0.11    0.00    0.34    0.00    0.00   77.97
+08:39:53 PM    9   19.78    0.00    2.23    0.07    0.00    0.35    0.00    0.00   77.57
+08:39:53 PM   10   19.53    0.00    1.59    0.11    0.00    0.01    0.00    0.00   78.76
+08:39:53 PM   11   19.93    0.00    2.21    0.07    0.00    0.34    0.00    0.00   77.45</code></pre>
+<p>hoặc</p>
+<pre><code>$　cat /proc/cpuinfo
+.....</code></pre>
+<h1 id="hiểu-và-đánh-giá-tải-trung-bình-như-thế-nào">Hiểu và đánh giá “tải trung bình” như thế nào?</h1>
+<p>Bên cạnh chỉ số tận dụng CPU bạn có thêm 1 chỉ số nữa gọi là “tải trung bình”. Bạn nên hiểu 2 giá trị này thế nào?</p>
+<p>Tỉ lệ tận dụng CPU nói rằng một process sử dụng CPU nhiều hay ít. Giả sử bạn có một tính toán khá lớn (ví dụ sắp xếp 10GB dữ liệu), phần lớn thời gian của CPU của bạn chắc chắn sẽ bận rộn so sánh và di chuyển dữ liệu. Phần trăm sử dụng CPU sẽ cao, thời gian rảnh (idle) của CPU chắc sẽ thấp.</p>
+<p>Tải trung bình nói rằng số lượng process đang đợi CPU là lớn hay nhỏ. Nếu số lượng process đợi CPU lớn, thời gian một process đợi sẽ dài, thời gian hoàn thành tác vụ của process đó sẽ dài. Bạn sẽ phải chờ kết quả lâu hơn. Ngược lại nếu số lượng process đợi thấp, bạn sẽ không phải đợi các process khác. Thời gian bạn đợi kết quả sẽ chỉ là thời gian tính toán.</p>
+<p>Làm thế nào để biết được số lượng process đang đợi CPU là lớn hay nhỏ? Giống như trường hợp trạm thu phí, nếu số lượng process lớn hơn số lượng lõi CPU, chắc chắn sẽ phải có process đợi. Ngược lại nếu số lượng process nhỏ hơn số lượng lõi CPU, các process hầu như sẽ không phải xếp hàng chờ đợi mà sẽ được OS gán cho lõi đang rảnh rỗi tính toán.</p>
+<p>Từ đây đặt ra câu hỏi: “đánh giá hiệu năng máy tính dựa vào tỉ lệ sử dụng CPU và tải trung bình như thế nào?”.</p>
+<p>Việc đánh giá hiệu năng CPU tùy thuộc vào từng bài toán cụ thể. Ta sẽ đánh giá về hiệu năng sử dụng CPU qua các trường hợp sau (giả sử máy tính có 6 cores 12 threads - ví dụ Intel Xeon):</p>
+<ul>
+<li>Tỉ lệ sử dụng CPU thấp (1%), tải CPU thấp (3 - 3 processes / 12 cores)</li>
+<li>Tỉ lệ sử dụng CPU cao (80%), tải CPU thấp (3 - 3 processes / 12 cores)</li>
+<li>Tỉ lệ sử dụng CPU thấp (1%), tải CPU cao (18 - 18 processes / 12 cores)</li>
+<li>Tỉ lệ sử dụng CPU cao (80%), tải CPU cao (18 - 18 processes / 12 cores)</li>
+</ul>
+<p>Trong trường hợp đầu, máy tính của bạn hầu như không dùng CPU mấy. CPU dành hầu hết thời gian cho tính toán thấp, số lượng process cũng không cao. Đứng từ góc độ chi phí, bạn đã chi tiền mua 1 CPu quá tốt so với nhu cầu thực tế :-)</p>
+<p>Trường hợp 2, bạn đang sử dụng CPU ở mức khá. Bạn bắt CPU tính toán cật lực. Tuy vậy tải trung bình của CPU chỉ có 3, có nghĩa là năng lực CPU của bạn vẫn còn rất lớn mà bạn hoàn toàn có thể tận dụng. Bạn hoàn toán có thể bật thêm 9 processes với mức tính toán như hiện tại mới có thể tận dụng được hết hiệu năng của CPU.</p>
+<p>Trường hợp 3 khá lý thú. CPU của bạn được dùng cho những tính toán rất nhẹ nhàng có thể xong ngay lập tức nhưng số lượng process cần CPU lại khá cao. Điều này nói lên rằng CPU của bạn đang bị quá tải process. Có nhiều lý do dẫn đến trường hợp này và mỗi trường hợp có nhiều cách giải quyết khác nhau. Một ví dụ cho trường hợp này là máy chủ web. Việc render các trang web là tính toán không hề nặng, tuy vậy với các máy chủ web chịu trafic lớn (số lượng connection lớn), các process phục vụ request sẽ phải xếp hàng dẫn đến tình trạng trang web bị phục vụ thời gian kéo dài hơn. Một ví dụ khác là máy chủ dành thời gian chủ yếu đợi thao tác vào ra (I/O) chẳng hạn nhưng truy vấn cơ sở dữ liệu. Số lượng query lớn, số lượng truy vấn cần sắp xếp lớn nhưng dữ liệu cần sắp xếp lại bé, thời gian đợi dữ liệu từ đĩa cứng lại cao. Vì vậy phần lớn CPU sẽ idle, nhưng tải CPU vẫn cao. Đối với trường hợp này, ta chỉ có cách là mua CPU với tần số thấp hơn và chia tải ra nhiều máy hơn để tối ưu hóa chi phí.</p>
+<p>Trường hợp 4 là trường hợp bạn đang sử dụng CPU một cách hiệu quả nhất. Mỗi cores đều bận rộn tính toán và hầu hết các cores đều được cho sử dụng. Tùy bài toán tính toán mà trường hợp này có thể là tốt hay xấu. Nếu đây là máy chủ web có lẽ đã đến lúc bạn mua thêm máy tính.</p>
+<h1 id="trường-hợp-thực-tế">Trường hợp thực tế</h1>
+<p>Hiểu được ý nghĩa của tải trung bình, chúng ta hiểu rằng sử dụng CPU hiệu quả có nghĩa là phải overload CPU. Một máy tính với CPU được sử dụng hết công suất suất là một máy tính được sử dụng tốt. Nắm được cách sử dụng vũ khí tải trung bình, chúng ta sẽ thử áp dụng cho 2 trường hợp thực tế.</p>
+<h3 id="cấu-hình-máy-chủ-web-1">Cấu hình máy chủ web 1</h3>
+<p>Bạn có máy tính chuyên trả về file static (css, image, js). Bạn sử dụng nginx và cấu hình để nginx trả về dữ liệu trong một thư mục nhất định. Bạn sẽ cấu hình nginx với bao nhiêu workers.</p>
+<p>Trả lời: 12! Nếu bạn cấu hình ít hơn 12 workers, khả năng cao là CPU của máy tính bạn đang không được sử dụng hết công suất. Tại một thời điểm nào đó sẽ có một vì cores rong chơi.</p>
+<h3 id="cấu-hình-máy-chủ-web-2">Cấu hình máy chủ web 2</h3>
+<p>Giả sử bạn có máy chủ web 12 cores (logic :-)) và load average hiện tại là 5. Liệu đã đến lúc bạn mua thêm máy chủ mới chưa?</p>
+<p>Trả lời: Không biết :-). Nếu máy chủ của bạn dành phần lớn thời gian idle đợi dữ liệu từ đĩa cứng hoặc cơ sở dữ liệu, nút thắt cổ chai hệ thống của bạn không phải là CPU mà có thể là cơ sở dữ liệu hoặc là đĩa cứng (thao tác I/O). Nếu cơ sở dữ liệu của bạn chưa hết công suất (I/O chưa hết công suất), bạn hoàn toàn không cần mua thêm máy chủ web. Bạn có thể cầu hình lại nginx / gunicorn…) để load average cao hơn (không quá 12 - số lượng cores) nhằm tận dụng hết năng lực của CPU của máy tính hiện tại).</p>
+<h3 id="cấu-hình-hadoop">Cấu hình hadoop</h3>
+<p>hadoop nổi tiếng trong giới BigData. Một datanode chạy các thủ tục map / reduce viết bằng java để lấy 1 block dữ liệu từ ổ cứng; chạy thao tác map để trích xuất dữ liệu; chạy thao tác reduce để tổng hợp dữ liệu. Một datanode thực hiện rất nhiều truy vấn dữ liệu từ ổ cúng cũng như sử dụng rất nhiều cpu cho thao tác sắp xếp, tổng hợp dữ liệu. Với 1 máy tính 12 cores, bạn sẽ cấu hình bao nhiêu java process cho thao tác map/reduce?</p>
+<p>Trả lời: Không biết :-) nhưng chắc chắn là lớn hơn 12. Bạn sẽ bất ngờ vì thấy câu trả lời hơi khác máy chủ web dù rằng bài toán có vẻ giống nhau! Lý do là: mô hình map/reduce của hadoop cần rất nhiều dữ liệu do vậy truy vấn đĩa cứng sẽ rất cao, thao tác I/O lớn. Dù thao tác sắp xếp dữ liệu cũng khá tốn CPU nhưng để có dữ liệu sắp xếp, 1 map process vẫn cần thời gian để chờ dữ liệu từ ổ cúng. Trong khoảng thời gian này CPU sẽ idle. Nếu bạn chỉ cấu hình số lượng map/reduce là 12 (bằng số lượng cores), sẽ có 1 khoảng thời gian mà các cores không làm việc vì phải chờ đĩa cứng. Vì vậy CPU thực chất sẽ có những lúc rất bận và những lúc rất rảnh. Để hạn chế thời gian rảnh của CPU, “best-practice” sẽ là overload CPU bằng cách cấu hình cho số lượng process lớn hơn số cores. Tỉ lệ được khuyến cáo là 1.5 lần. Nhờ vậy trong khi có những process đợi I/O, CPU sẽ bận rộn với các process trước đó.</p>
+<p><strong>Cấu hình cụ thể là bài toán tùy trường hợp. Bạn nên xem bản chất bài toán và hành vi của máy chủ trước khi cấu hình</strong></p>
+<h1 id="kết-luận">Kết luận</h1>
+<p>Bài viết đã giải thích ý nghĩa của load-average, một chỉ số quan trọng cũng như giới thiệu một số trường hợp cấu hình thực tế liên quan đến load-average. Hy vọng qua bài viết này, bạn hiểu được ý nghĩa của load-average, áp dụng vào thực tiễn công việc sử dụng máy tính hiệu quả nhất với chi phí tốt nhất.</p>
+<h1 id="câu-hỏi-phụ--">Câu hỏi phụ :-)</h1>
+<p>Một câu hỏi phỏng vấn vị trí SRE của Google:</p>
+<blockquote>
+<p>Lệnh uptime trả về 3 kết quả Load Average. 3 con số này là gì?</p>
+</blockquote>
+<h1 id="tài-liệu-tham-khảo">Tài liệu tham khảo</h1>
+<ol type="1">
+<li><a href="http://shop.oreilly.com/product/0636920025085.do">hadoop operations</a></li>
+<li><a href="http://www.amazon.com/Computer-Architecture-Quantitative-Approach-Edition/dp/0123704901">Computer Architecture, A Quantitative Approach</a></li>
+<li><a href="http://nginx.org/en/docs/">http://nginx.org/en/docs/</a></li>
+</ol>]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[Tutorial: Duplicate file finder (Java)]]></title>
-    <link href="http://ktmt.github.com/blog/2013/06/30/tutorial-duplicate-file-finder-java/"/>
+    <link href="http://git@github.com.github.com/blog/2013/06/30/tutorial-duplicate-file-finder-java/"/>
     <updated>2013-06-30T09:07:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/06/30/tutorial-duplicate-file-finder-java</id>
-    <content type="html"><![CDATA[<h1>Mở đầu</h1>
-
+    <id>http://git@github.com.github.com/blog/2013/06/30/tutorial-duplicate-file-finder-java</id>
+    <content type="html"><![CDATA[<h1 id="mở-đầu">Mở đầu</h1>
 <p>Trong quá trình dọn dẹp máy tính cá nhân, tôi gặp phải vấn đề là quá nhiều file trùng lặp trong máy tính. Việc có quá nhiều file như vậy gây lãng phí ổ cứng, cộng thêm đôi lúc tôi không còn nhớ là file này đặt ở thư mục này có ý nghĩa gì nữa. Giá mà có công cụ nào đó để tìm tự động các file này cho tôi thì tốt quá nhỉ??</p>
-
 <p>Không cần phải giá mà nữa, không gì bằng làm ra cho mình một công cụ như vậy. Bài viết này sẽ trình bày những bước đầu tiên tôi prototype công cụ tìm kiếm các file trùng lặp. Thông qua bài viêt này, tôi cũng sẽ giới thiệu về những chủ đề sau trong Java: tính hash, thread pooling.</p>
-
-<h1>MD5 checksum</h1>
-
+<h1 id="md5-checksum">MD5 checksum</h1>
 <p>MD5 là một thuật toán mã hóa thông điệp (message-digest), về bản chất là một hàm băm (hash) xuất ra một giá trị 128-bit (16-byte). MD5 được sử dụng rất nhiều trong các ứng dụng bảo mật, và cũng được sử dụng để kiểm tra tính toàn vẹn dữ liệu (ví dụ như bạn down một file từ Internet về, thường có một MD5 key đi kèm, để bạn kiểm tra xem file bạn down có chính xác giống nguồn down không.)</p>
-
 <p>Tôi không có ý định đi sâu vào cách tính MD5, bạn có thể tham khảo trên google. Lưu ý là thuật toán MD5 vẫn có thể sinh ra cùng một giá trị hash với 2 file có nội dung khác nhau (tuy nhiên trường hợp này rất hiếm). Để chắc chắn tìm được 2 file có nội dung giống hệt nhau, ta sẽ so sánh theo thứ tự: so sánh giá trị hash, so sánh độ lớn của file, và cuối cùng là so sánh từng byte của hai file để chắc chắn chúng trùng nhau.</p>
-
 <p>Trong Java, hàm băm đã được đưa vào thư viện <em>java.security</em>, thông qua class <em>MessageDigest</em>. Bạn chỉ cần khai báo đối tượng <em>MessageDigest</em>, sau đó chọn phương thức mã hóa MD5, hoặc SHA. Việc bạn phải làm đối với từng file là chuyển file thành byte stream, và update dòng input này vào đối tượng <em>MessageDigest</em> trên, và bạn sẽ nhận được một dòng byte kết quả.</p>
-
 <p>Chi tiết về class <em>MessageDigest</em>, bạn có thể tham khảo tại đây: <a href="http://docs.oracle.com/javase/6/docs/api/java/security/MessageDigest.html">http://docs.oracle.com/javase/6/docs/api/java/security/MessageDigest.html</a></p>
-
 <p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>MD5.java </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -67,28 +179,8 @@
 <span class='line-number'>30</span>
 <span class='line-number'>31</span>
 <span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kd">public</span> <span class="kd">static</span> <span class="n">String</span> <span class="n">getMD5</span><span class="o">(</span><span class="n">File</span> <span class="n">file</span><span class="o">)</span>
-</span><span class='line'><span class="o">{</span>
-</span><span class='line'>    <span class="k">if</span><span class="o">(!</span><span class="n">file</span><span class="o">.</span><span class="na">exists</span><span class="o">())</span>
-</span><span class='line'>        <span class="k">return</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
-</span><span class='line'>    <span class="k">try</span>
-</span><span class='line'>    <span class="o">{</span>
-</span><span class='line'>        <span class="n">MessageDigest</span>  <span class="n">md</span> <span class="o">=</span>  <span class="n">MessageDigest</span><span class="o">.</span><span class="na">getInstance</span><span class="o">(</span><span class="s">&quot;MD5&quot;</span><span class="o">);</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="c1">//read the file into a byte array</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'> <span class="kd">public</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">getMD5</span><span class="o">(</span><span class="n">File</span> <span class="n">file</span><span class="o">)</span> <span class="o">{</span> <span class="k">if</span><span class="o">(!</span><span class="n">file</span><span class="o">.</span><span class="na">exists</span><span class="o">())</span> <span class="k">return</span> <span class="err">“”</span><span class="o">;</span> <span class="k">try</span> <span class="o">{</span> <span class="n">MessageDigest</span> <span class="n">md</span> <span class="o">=</span> <span class="n">MessageDigest</span><span class="o">.</span><span class="na">getInstance</span><span class="o">(</span><span class="err">“</span><span class="n">MD5</span><span class="err">”</span><span class="o">);&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span>        <span class="c1">//read the file into a byte array</span>
 </span><span class='line'>        <span class="kt">byte</span><span class="o">[]</span> <span class="n">input</span> <span class="o">=</span> <span class="k">new</span> <span class="kt">byte</span><span class="o">[(</span><span class="kt">int</span><span class="o">)</span> <span class="n">file</span><span class="o">.</span><span class="na">length</span><span class="o">()];</span>
 </span><span class='line'>        <span class="n">InputStream</span> <span class="n">in</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FileInputStream</span><span class="o">(</span><span class="n">file</span><span class="o">);</span>
 </span><span class='line'>        <span class="n">in</span><span class="o">.</span><span class="na">read</span><span class="o">(</span><span class="n">input</span><span class="o">);</span>
@@ -103,11 +195,11 @@
 </span><span class='line'>    <span class="k">catch</span><span class="o">(</span><span class="n">IOException</span> <span class="n">e</span> <span class="o">)</span>
 </span><span class='line'>    <span class="o">{</span>
 </span><span class='line'>        <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
-</span><span class='line'>        <span class="k">return</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">return</span> <span class="o">&amp;</span><span class="n">quot</span><span class="o">;&amp;</span><span class="n">quot</span><span class="o">;;</span>
 </span><span class='line'>    <span class="o">}</span>
 </span><span class='line'>    <span class="k">catch</span><span class="o">(</span><span class="n">NoSuchAlgorithmException</span> <span class="n">e</span><span class="o">)</span>
 </span><span class='line'>    <span class="o">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">return</span> <span class="o">&amp;</span><span class="n">quot</span><span class="o">;&amp;</span><span class="n">quot</span><span class="o">;;</span>
 </span><span class='line'>    <span class="o">}</span>
 </span><span class='line'><span class="o">}</span>
 </span><span class='line'>
@@ -115,48 +207,30 @@
 </span><span class='line'><span class="o">{</span>
 </span><span class='line'>   <span class="n">StringBuilder</span> <span class="n">sb</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StringBuilder</span><span class="o">();</span>
 </span><span class='line'>   <span class="k">for</span><span class="o">(</span><span class="kt">byte</span> <span class="nl">b:</span> <span class="n">ba</span><span class="o">)</span>
-</span><span class='line'>      <span class="n">sb</span><span class="o">.</span><span class="na">append</span><span class="o">(</span><span class="n">String</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">&quot;%02x&quot;</span><span class="o">,</span> <span class="n">b</span><span class="o">&amp;</span><span class="n">amp</span><span class="o">;</span><span class="mh">0xff</span><span class="o">));</span>
+</span><span class='line'>      <span class="n">sb</span><span class="o">.</span><span class="na">append</span><span class="o">(</span><span class="n">String</span><span class="o">.</span><span class="na">format</span><span class="o">(&amp;</span><span class="n">quot</span><span class="o">;%</span><span class="mi">02</span><span class="n">x</span><span class="o">&amp;</span><span class="n">quot</span><span class="o">;,</span> <span class="n">b</span><span class="o">&amp;</span><span class="n">amp</span><span class="o">;</span><span class="mh">0xff</span><span class="o">));</span>
 </span><span class='line'>   <span class="k">return</span> <span class="n">sb</span><span class="o">.</span><span class="na">toString</span><span class="o">();</span>
-</span><span class='line'><span class="o">}</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
+</span><span class='line'><span class="o">}&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
 </span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<h1>Theading</h1>
-
+<h1 id="theading">Theading</h1>
 <p>Threading, hay concurrency, trong Java là một chủ đề khá phức tạp và tôi cũng chưa đủ khả năng nắm rõ được tất cả. Do vậy, trong bài viết này, tôi xin chỉ đề cập đến kĩ thuật thread pooling để phân bài toán ra thành nhiều tác vụ, chạy trên nhiều luồng khác nhau.</p>
-
-<p>Thread pool là gì? Bạn có thể hiểu nôm na là thay vì cứ gọi một luồng mới cho từng tác vụ khi cần thiết (phương pháp này gặp nhược điểm vì việc tạo thread mới sẽ gặp overhead), ta tạo sẵn một cái "bể" (pool) trong đó khởi động sẵn một loạt các luồng (thread). Các luồng này ngoi ngoi lên để đợi ta ném tác vụ vào để chúng thực hiện. Sau khi thực hiện xong, nó sẽ báo cáo lại kết quả, kết thúc tác vụ, và quay trở lại "bể" để tiếp tục ngoi ngoi chờ tác vụ mới. Chỉ khi nào đóng "bể", thì các luồng mới bị mất đi.</p>
-
+<p>Thread pool là gì? Bạn có thể hiểu nôm na là thay vì cứ gọi một luồng mới cho từng tác vụ khi cần thiết (phương pháp này gặp nhược điểm vì việc tạo thread mới sẽ gặp overhead), ta tạo sẵn một cái “bể” (pool) trong đó khởi động sẵn một loạt các luồng (thread). Các luồng này ngoi ngoi lên để đợi ta ném tác vụ vào để chúng thực hiện. Sau khi thực hiện xong, nó sẽ báo cáo lại kết quả, kết thúc tác vụ, và quay trở lại “bể” để tiếp tục ngoi ngoi chờ tác vụ mới. Chỉ khi nào đóng “bể”, thì các luồng mới bị mất đi.</p>
 <p>Trong bài toán tìm file trùng lặp này, tôi sẽ áp dụng thread pooling như sau:</p>
-
 <ul>
 <li>Tạo một class DuppFind, implement Runnable class (đây là class ta có thể truyền vào cho pool), đại diện cho tác vụ tìm kiếm. Với mỗi object DuppFind, nó sẽ được truyền vào các tham số gồm có:</li>
 </ul>
-
-
-<p>-- Thư mục bắt đầu tìm kiếm</p>
-
-<p>-- Map&lt;String, List<String>>: là một map chứa key là md5 và value là một List chứa đường dẫn đến các file có md5 value như vậy</p>
-
-<p>-- pool, thuộc class ExcutorService.</p>
-
+<p>– Thư mục bắt đầu tìm kiếm</p>
+<p>– Map<String, List<String>&gt;: là một map chứa key là md5 và value là một List chứa đường dẫn đến các file có md5 value như vậy</p>
+<p>– pool, thuộc class ExcutorService.</p>
 <ul>
 <li>Mỗi tác vụ sau khi được luồng chọn để thực thi, nó sẽ làm gì? Nhiệm vụ của tác vụ là quét tất cả các file, thư mục có trong thư mục được chỉ định tìm kiếm. Nếu gặp file, nó sẽ tính MD5 cho file đó, và thêm vào Map. Nếu gặp thư mục, tác vụ này sẽ tạo ra một tác vụ DuppFind mới, chỉ định thư mục mới này cho tác vụ DuppFind mới, và ném vào pool (bây giờ bạn đã hiểu tại sao object DuppFind luôn được truyền pool vào rồi đấy:) )</li>
 </ul>
-
-
 <p>Một vài điểm lưu ý:</p>
-
 <ul>
 <li><p>Mỗi tác vụ phải có trách nhiệm đợi tất cả các tác vụ con nó tạo ra hoàn thành thì mới được chấm dứt. Tôi thực hiện điều này bằng cách sử dụng đối tượng Future được trả lại mỗi lần ném tác vụ mới vào pool. Sau đó chỉ cần gọi polling kết quả từ tác vụ con là được.</p></li>
 <li><p>Với những Collection dùng chung giữa các thread, cần phải dùng những Concurrecy Collection mà Java cung cấp. Cụ thể ở đây, tôi dùng ConcurrentHashMap cho Map và CopyOnWriteArrayList cho List.</p></li>
 </ul>
-
-
 <p>Dưới đây là đoạn code cho phần thread pooling:</p>
-
 <p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>DuppFind.java </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -214,20 +288,8 @@
 <span class='line-number'>54</span>
 <span class='line-number'>55</span>
 <span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">DuppFind</span> <span class="kd">implements</span> <span class="n">Runnable</span><span class="o">{&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kd">private</span> <span class="n">File</span> <span class="n">directory</span><span class="o">;</span>
-</span><span class='line'><span class="kd">private</span> <span class="n">Map</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">String</span><span class="o">,</span> <span class="n">List</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">String</span><span class="o">&amp;</span><span class="n">gt</span><span class="o">;&amp;</span><span class="n">gt</span><span class="o">;</span> <span class="n">md5FileMap</span><span class="o">;</span>
-</span><span class='line'><span class="kd">private</span> <span class="n">ExecutorService</span> <span class="n">pool</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">public</span> <span class="nf">DuppFind</span><span class="o">(</span><span class="n">File</span> <span class="n">directory</span><span class="o">,</span> <span class="n">Map</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">String</span><span class="o">,</span> <span class="n">List</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">String</span><span class="o">&amp;</span><span class="n">gt</span><span class="o">;&amp;</span><span class="n">gt</span><span class="o">;</span> <span class="n">md5FileMap</span><span class="o">,</span> <span class="n">ExecutorService</span> <span class="n">pool</span><span class="o">)</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'> <span class="kd">public</span> <span class="kd">class</span> <span class="nc">DuppFind</span> <span class="kd">implements</span> <span class="n">Runnable</span><span class="o">{</span> <span class="kd">private</span> <span class="n">File</span> <span class="n">directory</span><span class="o">;</span> <span class="kd">private</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&amp;</span><span class="n">gt</span><span class="o">;</span> <span class="n">md5FileMap</span><span class="o">;</span> <span class="kd">private</span> <span class="n">ExecutorService</span> <span class="n">pool</span><span class="o">;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kd">public</span> <span class="n">DuppFind</span><span class="o">(</span><span class="n">File</span> <span class="n">directory</span><span class="o">,</span> <span class="n">Map</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">String</span><span class="o">,</span> <span class="n">List</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">String</span><span class="o">&amp;</span><span class="n">gt</span><span class="o">;&amp;</span><span class="n">gt</span><span class="o">;</span> <span class="n">md5FileMap</span><span class="o">,</span> <span class="n">ExecutorService</span> <span class="n">pool</span><span class="o">)</span>
 </span><span class='line'><span class="o">{</span>
 </span><span class='line'>    <span class="k">this</span><span class="o">.</span><span class="na">directory</span> <span class="o">=</span> <span class="n">directory</span><span class="o">;</span>
 </span><span class='line'>    <span class="k">this</span><span class="o">.</span><span class="na">md5FileMap</span> <span class="o">=</span> <span class="n">md5FileMap</span><span class="o">;</span>
@@ -244,7 +306,7 @@
 </span><span class='line'>        <span class="o">{</span>
 </span><span class='line'>            <span class="k">if</span><span class="o">(</span><span class="n">file</span><span class="o">.</span><span class="na">isDirectory</span><span class="o">())</span>
 </span><span class='line'>            <span class="o">{</span>
-</span><span class='line'>                <span class="c1">//System.out.println(&quot;Dir: &quot; + file.getAbsolutePath());</span>
+</span><span class='line'>                <span class="c1">//System.out.println(&amp;quot;Dir: &amp;quot; + file.getAbsolutePath());</span>
 </span><span class='line'>                <span class="n">DuppFind</span> <span class="n">df</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DuppFind</span><span class="o">(</span><span class="n">file</span><span class="o">,</span> <span class="n">md5FileMap</span><span class="o">,</span> <span class="n">pool</span><span class="o">);</span>
 </span><span class='line'>                <span class="n">Future</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;?&amp;</span><span class="n">gt</span><span class="o">;</span> <span class="n">result</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">df</span><span class="o">);</span>
 </span><span class='line'>                <span class="n">results</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">result</span><span class="o">);</span>
@@ -256,13 +318,13 @@
 </span><span class='line'>                <span class="n">List</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">String</span><span class="o">&amp;</span><span class="n">gt</span><span class="o">;</span> <span class="n">listFile</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CopyOnWriteArrayList</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">String</span><span class="o">&amp;</span><span class="n">gt</span><span class="o">;();</span>
 </span><span class='line'>                <span class="k">if</span><span class="o">(</span><span class="n">md5FileMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">md5</span><span class="o">)</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
 </span><span class='line'>                <span class="o">{</span>
-</span><span class='line'>                    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Duplicate md5: &quot;</span> <span class="o">+</span> <span class="n">md5</span> <span class="o">+</span> <span class="s">&quot;, size now: &quot;</span> <span class="o">+</span> <span class="n">md5FileMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">md5</span><span class="o">).</span><span class="na">size</span><span class="o">());</span>
+</span><span class='line'>                    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(&amp;</span><span class="n">quot</span><span class="o">;</span><span class="n">Duplicate</span> <span class="nl">md5:</span> <span class="o">&amp;</span><span class="n">quot</span><span class="o">;</span> <span class="o">+</span> <span class="n">md5</span> <span class="o">+</span> <span class="o">&amp;</span><span class="n">quot</span><span class="o">;,</span> <span class="n">size</span> <span class="nl">now:</span> <span class="o">&amp;</span><span class="n">quot</span><span class="o">;</span> <span class="o">+</span> <span class="n">md5FileMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">md5</span><span class="o">).</span><span class="na">size</span><span class="o">());</span>
 </span><span class='line'>                    <span class="n">listFile</span><span class="o">.</span><span class="na">addAll</span><span class="o">(</span><span class="n">md5FileMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">md5</span><span class="o">));</span>
 </span><span class='line'>                <span class="o">}</span>
 </span><span class='line'>                <span class="n">listFile</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">file</span><span class="o">.</span><span class="na">getAbsolutePath</span><span class="o">());</span>
 </span><span class='line'>                <span class="n">md5FileMap</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="n">md5</span><span class="o">);</span>
 </span><span class='line'>                <span class="n">md5FileMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">md5</span><span class="o">,</span> <span class="n">listFile</span><span class="o">);</span>
-</span><span class='line'>                <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Add: File&quot;</span> <span class="o">+</span> <span class="n">file</span><span class="o">.</span><span class="na">getAbsolutePath</span><span class="o">()</span> <span class="o">+</span> <span class="s">&quot;, MD5: &quot;</span> <span class="o">+</span> <span class="n">md5</span><span class="o">);</span>
+</span><span class='line'>                <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(&amp;</span><span class="n">quot</span><span class="o">;</span><span class="nl">Add:</span> <span class="n">File</span><span class="o">&amp;</span><span class="n">quot</span><span class="o">;</span> <span class="o">+</span> <span class="n">file</span><span class="o">.</span><span class="na">getAbsolutePath</span><span class="o">()</span> <span class="o">+</span> <span class="o">&amp;</span><span class="n">quot</span><span class="o">;,</span> <span class="nl">MD5:</span> <span class="o">&amp;</span><span class="n">quot</span><span class="o">;</span> <span class="o">+</span> <span class="n">md5</span><span class="o">);</span>
 </span><span class='line'>            <span class="o">}</span>
 </span><span class='line'>        <span class="o">}</span>
 </span><span class='line'>
@@ -280,117 +342,56 @@
 </span><span class='line'>    <span class="o">{</span>
 </span><span class='line'>        <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
 </span><span class='line'>    <span class="o">}</span>
-</span><span class='line'><span class="o">}</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
+</span><span class='line'><span class="o">}&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
 </span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;}</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
 <p>Toàn bộ code đã ở trên github: <a href="https://github.com/viethnguyen/DuppFind">https://github.com/viethnguyen/DuppFind</a></p>
-
-<h1>Đánh giá</h1>
-
+<h1 id="đánh-giá">Đánh giá</h1>
 <ul>
-<li><p>Đoạn code trên chạy chính xác với những thư mục nhỏ, không có quá nhiều thư mục con, cháu... Tuy nhiên, với những thư mục chứa nhiều thư mục con, vì có quá nhiều tác vụ vào thread pool, nên hay xảy ra exception out of memory - heap.</p></li>
+<li><p>Đoạn code trên chạy chính xác với những thư mục nhỏ, không có quá nhiều thư mục con, cháu… Tuy nhiên, với những thư mục chứa nhiều thư mục con, vì có quá nhiều tác vụ vào thread pool, nên hay xảy ra exception out of memory - heap.</p></li>
 <li><p>Mới chỉ kiểm tra xem 2 file có MD5 trùng nhau không. Nếu trùng nhau rồi, ta cần kiểm tra thêm độ dài 2 file có trùng nhau không, rồi nếu trùng tiếp thì phải check từng byte để chắc chắn nhất có thể (xóa đi khỏi hối hận :P)</p></li>
 <li><p>Ở trên mới hiển thị ra những file nào trùng lặp. Cần cho phép user xóa file trùng lặp trong chương trình.</p></li>
 <li><p>Cần thiết kế GUI!</p></li>
 </ul>
-
-
 <p>Bạn thấy đó, còn khá nhiều vấn đề cần giải quyết để có một tool hoàn chỉnh. Những vấn đề này sẽ được cải tiến và được report lại trong một ngày không xa :) Nếu bạn cảm thấy hứng thú, rất welcome contribute :)</p>
-
-<h1>Tham khảo</h1>
-
-<ol>
+<h1 id="tham-khảo">Tham khảo</h1>
+<ol type="1">
 <li>Core Java</li>
 <li>Java Concurrency in Practice</li>
 <li>Effective Java</li>
-</ol>
-
-]]></content>
+</ol>]]></content>
   </entry>
   
   <entry>
     <title type="html"><![CDATA[Design Pattern: Áp dụng Builder Pattern trong test (Java)]]></title>
-    <link href="http://ktmt.github.com/blog/2013/06/14/design-pattern-ap-dung-builder-pattern-trong-test-java/"/>
+    <link href="http://git@github.com.github.com/blog/2013/06/14/design-pattern-ap-dung-builder-pattern-trong-test-java/"/>
     <updated>2013-06-14T22:31:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/06/14/design-pattern-ap-dung-builder-pattern-trong-test-java</id>
-    <content type="html"><![CDATA[<h1>Giới thiệu</h1>
-
-<p>Builder Pattern là một pattern trong cuốn Design Pattern của "Gang of Four". Mục đích của Builder Pattern như sau: Separate the construction of a complex object from its representation so that the same construction process can
-create different representations (tạm dịch: tách rời quá trình tạo object với nội dung và cấu trúc bên trong của nó, nhờ vậy tương ứng với một quá trình tạo object có thể có nhiều cách tạo nhiều thể hiện khác nhau.)</p>
-
+    <id>http://git@github.com.github.com/blog/2013/06/14/design-pattern-ap-dung-builder-pattern-trong-test-java</id>
+    <content type="html"><![CDATA[<h1 id="giới-thiệu">Giới thiệu</h1>
+<p>Builder Pattern là một pattern trong cuốn Design Pattern của “Gang of Four”. Mục đích của Builder Pattern như sau: Separate the construction of a complex object from its representation so that the same construction process can create different representations (tạm dịch: tách rời quá trình tạo object với nội dung và cấu trúc bên trong của nó, nhờ vậy tương ứng với một quá trình tạo object có thể có nhiều cách tạo nhiều thể hiện khác nhau.)</p>
 <p>Bên cạnh đó, Builder pattern còn được dùng để giải quyết một vấn đề thường gặp trong quá trình test: cách nào tốt nhất để tạo những object có quá nhiều optional parameters, trong khi tạm thời một số parameter ta muốn để giá trị default, giá trị của parameter này không ảnh hưởng gì lắm đến algorithm hay flow của chương trình. Bài viết này sẽ trình bày phương pháp sử dụng Builder pattern này.</p>
-
-<h1>Ví dụ</h1>
-
-<p>Ta lấy ví dụ ta có một class quản lý sách, với các trường như sau: tiêu đề, tên tác giả, thể loại, năm xuất bản, ISBN. Để phục vụ việc tạo một object thuộc class này, ta nghĩ đến việc tạo một constructor như sau:
-<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>constructor.java </span></figcaption>
+<h1 id="ví-dụ">Ví dụ</h1>
+<p>Ta lấy ví dụ ta có một class quản lý sách, với các trường như sau: tiêu đề, tên tác giả, thể loại, năm xuất bản, ISBN. Để phục vụ việc tạo một object thuộc class này, ta nghĩ đến việc tạo một constructor như sau: <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>constructor.java </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kd">public</span> <span class="n">Book</span><span class="o">(</span><span class="n">String</span> <span class="n">title</span><span class="o">,</span> <span class="n">String</span> <span class="n">author</span><span class="o">,</span> <span class="n">Genre</span> <span class="n">genre</span><span class="o">,</span> <span class="n">GregorianCalendar</span> <span class="n">publishDate</span><span class="o">,</span> <span class="n">String</span> <span class="n">ISBN</span><span class="o">)</span>
-</span><span class='line'><span class="o">{</span>
-</span><span class='line'>    <span class="k">this</span><span class="o">.</span><span class="na">title</span> <span class="o">=</span> <span class="n">title</span><span class="o">;</span>
-</span><span class='line'>    <span class="k">this</span><span class="o">.</span><span class="na">author</span> <span class="o">=</span> <span class="n">author</span><span class="o">;</span>
-</span><span class='line'>    <span class="k">this</span><span class="o">.</span><span class="na">genre</span> <span class="o">=</span> <span class="n">genre</span><span class="o">;</span>
-</span><span class='line'>    <span class="k">this</span><span class="o">.</span><span class="na">publishDate</span> <span class="o">=</span> <span class="n">publishDate</span><span class="o">;</span>
-</span><span class='line'>    <span class="k">this</span><span class="o">.</span><span class="na">ISBN</span> <span class="o">=</span> <span class="n">ISBN</span><span class="o">;</span>
-</span><span class='line'><span class="o">}</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'> <span class="kd">public</span> <span class="nf">Book</span><span class="o">(</span><span class="n">String</span> <span class="n">title</span><span class="o">,</span> <span class="n">String</span> <span class="n">author</span><span class="o">,</span> <span class="n">Genre</span> <span class="n">genre</span><span class="o">,</span> <span class="n">GregorianCalendar</span> <span class="n">publishDate</span><span class="o">,</span> <span class="n">String</span> <span class="n">ISBN</span><span class="o">)</span> <span class="o">{</span> <span class="k">this</span><span class="o">.</span><span class="na">title</span> <span class="o">=</span> <span class="n">title</span><span class="o">;</span> <span class="k">this</span><span class="o">.</span><span class="na">author</span> <span class="o">=</span> <span class="n">author</span><span class="o">;</span> <span class="k">this</span><span class="o">.</span><span class="na">genre</span> <span class="o">=</span> <span class="n">genre</span><span class="o">;</span> <span class="k">this</span><span class="o">.</span><span class="na">publishDate</span> <span class="o">=</span> <span class="n">publishDate</span><span class="o">;</span> <span class="k">this</span><span class="o">.</span><span class="na">ISBN</span> <span class="o">=</span> <span class="n">ISBN</span><span class="o">;</span> <span class="o">}</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>Và trong chương trình, để tạo một object Book, ta gọi:
-<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>constructor.java </span></figcaption>
+<p>Và trong chương trình, để tạo một object Book, ta gọi: <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>constructor.java </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">Book</span> <span class="n">book2</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Book</span><span class="o">(</span><span class="s">&quot;Core Java&quot;</span><span class="o">,</span> <span class="s">&quot;Cay Horstman&quot;</span><span class="o">,</span> <span class="n">Genre</span><span class="o">.</span><span class="na">TECHNOLOGY</span><span class="o">,</span> <span class="k">new</span> <span class="n">GregorianCalendar</span><span class="o">(</span><span class="mi">2012</span><span class="o">,</span><span class="mi">12</span><span class="o">,</span><span class="mi">7</span><span class="o">),</span> <span class="s">&quot;0137081898&quot;</span><span class="o">);</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'> <span class="n">Book</span> <span class="n">book2</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Book</span><span class="o">(</span><span class="err">“</span><span class="n">Core</span> <span class="n">Java</span><span class="err">”</span><span class="o">,</span> <span class="err">“</span><span class="n">Cay</span> <span class="n">Horstman</span><span class="err">”</span><span class="o">,</span> <span class="n">Genre</span><span class="o">.</span><span class="na">TECHNOLOGY</span><span class="o">,</span> <span class="k">new</span> <span class="n">GregorianCalendar</span><span class="o">(</span><span class="mi">2012</span><span class="o">,</span><span class="mi">12</span><span class="o">,</span><span class="mi">7</span><span class="o">),</span> <span class="err">“</span><span class="mi">0137081898</span><span class="err">”</span><span class="o">);</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
 <p>Ta thấy, với cách tạo object như trên, có một số nhược điểm như sau:</p>
-
 <ul>
 <li><p>Ta bắt buộc phải khai báo tất cả các parameters, không có giá trị default. Ta sẽ bị buộc phải set cả những parameters mà ta không quan tâm khi thực hiện test object.</p></li>
 <li><p>Đoạn code khá khó hiểu khi ta chỉ khai báo giá trị của parameter và truyền vào constructor. Người đọc sẽ phải đếm vị trí của parameters, soi vào trong khai báo constructor của Book.java để biết giá trị này là gán cho parameter nào. Với ví dụ trên, chỉ có 5 parameter, nhưng với những class phức tạp có nhiều parameters hơn nữa, việc khai báo như trên rõ ràng không tốt về mặt code visibility.</p></li>
-<li><p>Xuất hiện nhu cầu tạo object với các constructor với bộ tham số đầu vào khác nhau. Như ví dụ ở trên, ta muốn tạo object nhưng không muốn nhập thể loại, hoặc không muốn nhập năm xuất bản, ... dẫn đến rất nhiều phiên bản constructor khác nhau.</p></li>
+<li><p>Xuất hiện nhu cầu tạo object với các constructor với bộ tham số đầu vào khác nhau. Như ví dụ ở trên, ta muốn tạo object nhưng không muốn nhập thể loại, hoặc không muốn nhập năm xuất bản, … dẫn đến rất nhiều phiên bản constructor khác nhau.</p></li>
 </ul>
-
-
 <p>Hoặc bạn có thể khai báo theo một cách thứ hai, theo kiểu JavaBean như sau: tạo một constructor default, không đối số, ví dụ như Book(), sau đó thì tạo một loạt các setter để nhập các tham số cho parameter. Lúc đó thì code cho từng đối tượng sẽ như sau:</p>
-
 <p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>bean.java </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">Book</span> <span class="n">book</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Book</span><span class="o">();</span>
-</span><span class='line'><span class="n">book</span><span class="o">.</span><span class="na">setTitle</span><span class="o">(</span><span class="s">&quot;Core Java&quot;</span><span class="o">);</span>
-</span><span class='line'><span class="n">book</span><span class="o">.</span><span class="na">setAuthor</span><span class="o">(</span><span class="s">&quot;Cay Horstman&quot;</span><span class="o">);</span>
-</span><span class='line'><span class="n">book</span><span class="o">.</span><span class="na">setGenre</span><span class="o">(</span><span class="n">Genre</span><span class="o">.</span><span class="na">Technology</span><span class="o">);</span>
-</span><span class='line'><span class="n">book</span><span class="o">.</span><span class="na">setPublishDate</span><span class="o">(</span><span class="k">new</span> <span class="n">GregorianCalendar</span><span class="o">(</span><span class="mi">2012</span><span class="o">,</span><span class="mi">7</span><span class="o">,</span><span class="mi">1</span><span class="o">));</span>
-</span><span class='line'><span class="n">book</span><span class="o">.</span><span class="na">setISBN</span><span class="o">(</span><span class="s">&quot;0137081898&quot;</span><span class="o">);</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'> <span class="n">Book</span> <span class="n">book</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Book</span><span class="o">();</span> <span class="n">book</span><span class="o">.</span><span class="na">setTitle</span><span class="o">(</span><span class="err">“</span><span class="n">Core</span> <span class="n">Java</span><span class="err">”</span><span class="o">);</span> <span class="n">book</span><span class="o">.</span><span class="na">setAuthor</span><span class="o">(</span><span class="err">“</span><span class="n">Cay</span> <span class="n">Horstman</span><span class="err">”</span><span class="o">);</span> <span class="n">book</span><span class="o">.</span><span class="na">setGenre</span><span class="o">(</span><span class="n">Genre</span><span class="o">.</span><span class="na">Technology</span><span class="o">);</span> <span class="n">book</span><span class="o">.</span><span class="na">setPublishDate</span><span class="o">(</span><span class="k">new</span> <span class="n">GregorianCalendar</span><span class="o">(</span><span class="mi">2012</span><span class="o">,</span><span class="mi">7</span><span class="o">,</span><span class="mi">1</span><span class="o">));</span> <span class="n">book</span><span class="o">.</span><span class="na">setISBN</span><span class="o">(</span><span class="err">“</span><span class="mi">0137081898</span><span class="err">”</span><span class="o">);</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
 <p>Nhưng cách này lại có nhược điểm là: vì việc tạo object bị kéo dài qua nhiều câu lệnh, có thể object sẽ bị rơi vào trạng thái unstable (ví dụ như ta quên mất set publishDate, như thế book sẽ không có giá trị cho publishDate !).</p>
-
 <p>Để khắc phục những nhược điểm trên, có một phương pháp sử dụng Builder pattern như sau: Thay vì tạo object mong muốn trực tiếp, ta gọi một static factory với các tham số bắt buộc, nhận về một <em>builder object</em>. Sau đó gọi các setter method dể đặt các tham số tùy chọn. Cuối cùng gọi build method, tạo ra object. Để dễ hiểu hơn, ta quan sát ví dụ sau:</p>
-
 <p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>builder.java </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -456,16 +457,8 @@ create different representations (tạm dịch: tách rời quá trình tạo ob
 <span class='line-number'>62</span>
 <span class='line-number'>63</span>
 <span class='line-number'>64</span>
-<span class='line-number'>65</span>
-<span class='line-number'>66</span>
-<span class='line-number'>67</span>
-<span class='line-number'>68</span>
-<span class='line-number'>69</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Book</span> <span class="o">{&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kd">public</span> <span class="kd">enum</span> <span class="n">Genre</span> <span class="o">{</span><span class="n">FICTION</span><span class="o">,</span> <span class="n">NONFICTION</span><span class="o">,</span> <span class="n">TECHNOLOGY</span><span class="o">,</span> <span class="n">SELFHELP</span><span class="o">,</span> <span class="n">BUSINESS</span><span class="o">,</span> <span class="n">SPORT</span><span class="o">};</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">private</span> <span class="n">String</span> <span class="n">title</span><span class="o">;</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'> <span class="kd">public</span> <span class="kd">class</span> <span class="nc">Book</span> <span class="o">{</span> <span class="kd">public</span> <span class="kd">enum</span> <span class="n">Genre</span> <span class="o">{</span><span class="n">FICTION</span><span class="o">,</span> <span class="n">NONFICTION</span><span class="o">,</span> <span class="n">TECHNOLOGY</span><span class="o">,</span> <span class="n">SELFHELP</span><span class="o">,</span> <span class="n">BUSINESS</span><span class="o">,</span> <span class="n">SPORT</span><span class="o">};&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kd">private</span> <span class="n">String</span> <span class="n">title</span><span class="o">;</span>
 </span><span class='line'><span class="kd">private</span> <span class="n">String</span> <span class="n">author</span><span class="o">;</span>
 </span><span class='line'><span class="kd">private</span> <span class="n">Genre</span> <span class="n">genre</span><span class="o">;</span>
 </span><span class='line'><span class="kd">private</span> <span class="n">GregorianCalendar</span> <span class="n">publishDate</span><span class="o">;</span>
@@ -480,7 +473,7 @@ create different representations (tạm dịch: tách rời quá trình tạo ob
 </span><span class='line'>    <span class="c1">//optional params</span>
 </span><span class='line'>    <span class="kd">private</span> <span class="n">Genre</span> <span class="n">genre</span> <span class="o">=</span> <span class="n">Genre</span><span class="o">.</span><span class="na">FICTION</span><span class="o">;</span>
 </span><span class='line'>    <span class="kd">private</span> <span class="n">GregorianCalendar</span> <span class="n">publishDate</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GregorianCalendar</span><span class="o">(</span><span class="mi">1900</span><span class="o">,</span><span class="mi">1</span><span class="o">,</span><span class="mi">1</span><span class="o">);</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="n">String</span> <span class="n">ISBN</span> <span class="o">=</span> <span class="s">&quot;000000000&quot;</span><span class="o">;</span>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">String</span> <span class="n">ISBN</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">quot</span><span class="o">;</span><span class="mi">000000000</span><span class="o">&amp;</span><span class="n">quot</span><span class="o">;;</span>
 </span><span class='line'>
 </span><span class='line'>    <span class="kd">public</span> <span class="nf">Builder</span><span class="o">(</span><span class="n">String</span> <span class="n">title</span><span class="o">,</span> <span class="n">String</span> <span class="n">author</span><span class="o">)</span>
 </span><span class='line'>    <span class="o">{</span>
@@ -524,55 +517,28 @@ create different representations (tạm dịch: tách rời quá trình tạo ob
 </span><span class='line'><span class="nd">@Override</span>
 </span><span class='line'><span class="kd">public</span> <span class="n">String</span> <span class="nf">toString</span><span class="o">()</span>
 </span><span class='line'><span class="o">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="s">&quot;Title: &quot;</span> <span class="o">+</span> <span class="n">title</span> <span class="o">+</span> <span class="s">&quot;, author: &quot;</span> <span class="o">+</span> <span class="n">author</span> <span class="o">+</span> <span class="s">&quot;, genre: &quot;</span> <span class="o">+</span> <span class="n">genre</span><span class="o">.</span><span class="na">toString</span><span class="o">()</span> <span class="o">+</span> <span class="s">&quot;, publish year: &quot;</span>
-</span><span class='line'>                <span class="o">+</span> <span class="n">publishDate</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">Calendar</span><span class="o">.</span><span class="na">YEAR</span><span class="o">)</span> <span class="o">+</span> <span class="s">&quot;, ISBN: &quot;</span> <span class="o">+</span> <span class="n">ISBN</span><span class="o">;</span>
-</span><span class='line'><span class="o">}</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="o">&amp;</span><span class="n">quot</span><span class="o">;</span><span class="nl">Title:</span> <span class="o">&amp;</span><span class="n">quot</span><span class="o">;</span> <span class="o">+</span> <span class="n">title</span> <span class="o">+</span> <span class="o">&amp;</span><span class="n">quot</span><span class="o">;,</span> <span class="nl">author:</span> <span class="o">&amp;</span><span class="n">quot</span><span class="o">;</span> <span class="o">+</span> <span class="n">author</span> <span class="o">+</span> <span class="o">&amp;</span><span class="n">quot</span><span class="o">;,</span> <span class="nl">genre:</span> <span class="o">&amp;</span><span class="n">quot</span><span class="o">;</span> <span class="o">+</span> <span class="n">genre</span><span class="o">.</span><span class="na">toString</span><span class="o">()</span> <span class="o">+</span> <span class="o">&amp;</span><span class="n">quot</span><span class="o">;,</span> <span class="n">publish</span> <span class="nl">year:</span> <span class="o">&amp;</span><span class="n">quot</span><span class="o">;</span>
+</span><span class='line'>                <span class="o">+</span> <span class="n">publishDate</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">Calendar</span><span class="o">.</span><span class="na">YEAR</span><span class="o">)</span> <span class="o">+</span> <span class="o">&amp;</span><span class="n">quot</span><span class="o">;,</span> <span class="nl">ISBN:</span> <span class="o">&amp;</span><span class="n">quot</span><span class="o">;</span> <span class="o">+</span> <span class="n">ISBN</span><span class="o">;</span>
+</span><span class='line'><span class="o">}&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
 </span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;}</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>Lúc đó ta có thể tạo Book object bằng cách sau:
-<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>builder.java </span></figcaption>
+<p>Lúc đó ta có thể tạo Book object bằng cách sau: <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>builder.java </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span>    <span class="n">Book</span> <span class="n">book</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Book</span><span class="o">.</span><span class="na">Builder</span><span class="o">(</span><span class="s">&quot;Effective Java&quot;</span><span class="o">,</span> <span class="s">&quot;Joshua Bloch&quot;</span><span class="o">)</span>
-</span><span class='line'>                    <span class="o">.</span><span class="na">publishDate</span><span class="o">(</span><span class="k">new</span> <span class="n">GregorianCalendar</span><span class="o">(</span><span class="mi">2008</span><span class="o">,</span><span class="mi">05</span><span class="o">,</span> <span class="mi">28</span><span class="o">))</span>
-</span><span class='line'>                    <span class="o">.</span><span class="na">build</span><span class="o">();</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'> <span class="n">Book</span> <span class="n">book</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Book</span><span class="o">.</span><span class="na">Builder</span><span class="o">(</span><span class="err">“</span><span class="n">Effective</span> <span class="n">Java</span><span class="err">”</span><span class="o">,</span> <span class="err">“</span><span class="n">Joshua</span> <span class="n">Bloch</span><span class="err">”</span><span class="o">)</span> <span class="o">.</span><span class="na">publishDate</span><span class="o">(</span><span class="k">new</span> <span class="n">GregorianCalendar</span><span class="o">(</span><span class="mi">2008</span><span class="o">,</span><span class="mi">05</span><span class="o">,</span> <span class="mi">28</span><span class="o">))</span> <span class="o">.</span><span class="na">build</span><span class="o">();</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
 <p>Ta thấy, cách tạo object này có ưu điểm hơn so với cách dùng constructor thông thường:</p>
-
 <ul>
-<li><p>Không cần phải khai báo những parameter nào mà ta tạm thời chưa quan tâm. Những parameters đó sẽ nhận giá trị default. Trong ví dụ trên, ta đã bỏ qua khai báo cho genre và ISBN. Chúng sẽ nhận giá trị default: genre = FICTION, ISBN = "0000000000".</p></li>
-<li><p>Ta thấy rõ là giá trị nào là gán cho parameter nào. Ví dụ: publishDate(new GregorianCalendar(2008,05, 28)) là gán giá trị cho parameter ngày xuất bản.</p></li>
-<li>Thứ tự của các method là không quan trọng. Ta có thể gọi các method để update thêm các giá trị cho các parameter theo thứ tự tùy ý. Object sẽ chưa được tạo cho đến khi gọi build(). Do vậy, builder rất dễ sử dụng và giúp ta tránh khỏi những sai lầm không mong muốn đối với thứ tự parameter.</li>
+<li><p>Không cần phải khai báo những parameter nào mà ta tạm thời chưa quan tâm. Những parameters đó sẽ nhận giá trị default. Trong ví dụ trên, ta đã bỏ qua khai báo cho genre và ISBN. Chúng sẽ nhận giá trị default: genre = FICTION, ISBN = “0000000000”.</p></li>
+<li>Ta thấy rõ là giá trị nào là gán cho parameter nào. Ví dụ: publishDate(new GregorianCalendar(2008,05, 28)) là gán giá trị cho parameter ngày xuất bản.</li>
+<li><p>Thứ tự của các method là không quan trọng. Ta có thể gọi các method để update thêm các giá trị cho các parameter theo thứ tự tùy ý. Object sẽ chưa được tạo cho đến khi gọi build(). Do vậy, builder rất dễ sử dụng và giúp ta tránh khỏi những sai lầm không mong muốn đối với thứ tự parameter.</p></li>
 </ul>
-
-
-<h1>Kết luận</h1>
-
+<h1 id="kết-luận">Kết luận</h1>
 <p>Bài viết đã giới thiệu cách sử dụng Builder Pattern để việc tạo object trong quá trinh test được dễ dàng hơn, đồng thời khiến đoạn code được sáng sủa hơn về mặt trình bày.</p>
-
-<h1>Tham khảo</h1>
-
+<h1 id="tham-khảo">Tham khảo</h1>
 <ul>
 <li><p>Effective Java - Joshua Bloch</p></li>
 <li><p>Design Patterns - Elements of Reusable</p></li>
-</ul>
-
-]]></content>
+</ul>]]></content>
   </entry>
   
 </feed>

@@ -7,7 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Tìm Hiểu Redis (Phần 3): đối Tượng Trong Redis (Redis Objects) 1. Giới thiệu Trong các bài viết trước mình đã trình bày về cách redis sao lưu dữ &hellip;">
+	<meta name="description" content="Tìm Hiểu Redis (Phần 3): đối Tượng Trong Redis (Redis Objects) 1. Giới thiệu
+Trong các bài viết trước mình đã trình bày về cách redis sao lưu dữ &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -17,11 +18,17 @@
 
 	<link href="/atom.xml" rel="alternate" title="Blog kỹ thuật máy tính" type="application/atom+xml">
 	
-	<link rel="canonical" href="http://ktmt.github.com/blog/2013/08/04/tim-hieu-redis-3/">
+	<link rel="canonical" href="http://git@github.com.github.com/blog/2013/08/04/tim-hieu-redis-3/">
 	<link href="/favicon.png" rel="shortcut icon">
 	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
 	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+    });
+  </script>
 	<link href='http://fonts.googleapis.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
 	
 </head>
@@ -44,6 +51,8 @@
 </nav>
 <nav id="sub-nav">
 	<div class="social">
+		
+		<a class="facebook" href="http://www.facebook.com/pages/ktmtgithubio/486208978117754" title="Facebook">Facebook</a>
 		
 		
 		
@@ -68,41 +77,35 @@
 			<div class="mid-col-container">
 				<div id="content" class="inner"><article class="post" itemscope itemtype="http://schema.org/BlogPosting">
 	<h1 class="title" itemprop="name">Tìm Hiểu Redis (Phần 3): đối Tượng Trong Redis (Redis Objects)</h1>
-	<div class="entry-content" itemprop="articleBody"><h2>1. Giới thiệu</h2>
-
+	<div class="entry-content" itemprop="articleBody"><h2 id="giới-thiệu">1. Giới thiệu</h2>
 <p>Trong các bài viết trước mình đã trình bày về <a href="http://ktmt.github.io/blog/2013/07/02/tim-hieu-redis/">cách redis sao lưu dữ liệu</a> cũng như <a href="http://ktmt.github.io/blog/2013/07/16/tim-hieu-redis-2/">framework lập trình hướng sự kiện của redis</a>. Trong bài viết này mình trình bày về các đối tượng và kiểu dữ liệu trong redis.</p>
-
-<h2>2. Khái quát</h2>
-
+<h2 id="khái-quát">2. Khái quát</h2>
 <p>Redis là một hệ thống cơ sở dữ liệu key-value - mỗi giá trị được quản lý bởi 1 cặp khóa và giá trị (key-value). Khi ghi dữ liệu, ta phải chỉ định rõ cặp khóa và giá trị. Khi đọc dữ liệu, ta phải chỉ ra ta muốn đọc dữ liệu của khóa nào. Trong Redis, khóa (key) có thể là một chuỗi. <strong>giá trị của dữ liệu</strong> (value) có thể là một trong một số kiểu dữ liệu thông dụng</p>
-
 <ul>
 <li>tập hợp (set)</li>
 <li>tập hợp đã sắp xếp (sorted set)</li>
 <li>chuỗi (string)</li>
 <li>danh sách (list)</li>
 </ul>
-
-
-<p>Để hỗ trợ các kiểu dữ liệu ở trên, đồng thời đảm bảo tính mở rộng (phát triển thêm các kiểu dữ liệu mới) cũng để dễ dàng quản lý đối tượng trong phần core db, redis thêm 1 layer mô tả dữ liệu trung gian gọi là robj. Các thao tác của core db (đọc, ghi, hash, encoding&#8230;) sẽ được thao tác trực tiếp với robj. Các kiểu dữ liệu người dùng ở trên sẽ được chuyển đổi (convert) qua lại đến robj. Nói cách khác, phần core db chỉ biết đến sự tồn tại của robj, các kiểu dữ liệu ở trên muốn được quản lý bởi coredb cần phải được chuyển qua robj.</p>
-
+<p>Để hỗ trợ các kiểu dữ liệu ở trên, đồng thời đảm bảo tính mở rộng (phát triển thêm các kiểu dữ liệu mới) cũng để dễ dàng quản lý đối tượng trong phần core db, redis thêm 1 layer mô tả dữ liệu trung gian gọi là robj. Các thao tác của core db (đọc, ghi, hash, encoding…) sẽ được thao tác trực tiếp với robj. Các kiểu dữ liệu người dùng ở trên sẽ được chuyển đổi (convert) qua lại đến robj. Nói cách khác, phần core db chỉ biết đến sự tồn tại của robj, các kiểu dữ liệu ở trên muốn được quản lý bởi coredb cần phải được chuyển qua robj.</p>
 <p>Về mặt tổ chức mã, bạn có thể tham khảo sơ đồ dưới đây:</p>
-
 <pre><code>╒===============╕
 |  t_hash.c     |
 |  t_list.c     |       ╒============╕      ╒=====================╕
 |  t_set.c      |   &lt;=&gt; |  object.c  |  &lt;=&gt; |  db.c (robj -&gt; sds) | 
 |  t_string.c   |       ╘============╛      ╘=====================╛
 |  t_zset.c     |
-╘===============╛
-</code></pre>
-
-<h2>3. Chi tiết về robj</h2>
-
+╘===============╛</code></pre>
+<h2 id="chi-tiết-về-robj">3. Chi tiết về robj</h2>
 <p>Chi tiết về cấu trúc của robj được khai báo trong file <a href="https://github.com/antirez/redis/blob/unstable/src/redis.h">redis.h</a></p>
-
-<figure class='code'><figcaption><span>robj.c </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>robj.c </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -150,47 +153,35 @@
 </span><span class='line'><span class="cp">    _var.encoding = REDIS_ENCODING_RAW; \</span>
 </span><span class='line'><span class="cp">    _var.ptr = _ptr; \</span>
 </span><span class='line'><span class="cp">} while(0);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
 <p>Qua đó ta có thể thấy robj gồm có các trường như:</p>
-
 <ul>
 <li>kiểu dữ liệu type</li>
-<li>loại encoding: kiểu dữ liệu type có thể hiểu là kiểu dữ liệu người dùng, còn encoding có thể hiểu là kiểu dữ liệu ở backend được quản lý ở  core db của redis để đảm bảo hiệu năng.</li>
-<li>lru (<a href="http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used">least-recently used</a>): là trường đại diện cho thời gian tồn tại tương đối của redis object. Redis hỗ trợ 1 tính năng đối với các đối tượng được ghi vào cơ sở dữ liệu redis: <a href="http://www.redis.io/commands/expire">expire</a>. Các đối tượng quá thời gian chỉ  định trước sẽ được loại bỏ khỏi cơ sở dữ liệu. Trường này dùng để quản lý <strong>thời gian hết hiệu lực</strong> này.</li>
+<li>loại encoding: kiểu dữ liệu type có thể hiểu là kiểu dữ liệu người dùng, còn encoding có thể hiểu là kiểu dữ liệu ở backend được quản lý ở core db của redis để đảm bảo hiệu năng.</li>
+<li>lru (<a href="http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used">least-recently used</a>): là trường đại diện cho thời gian tồn tại tương đối của redis object. Redis hỗ trợ 1 tính năng đối với các đối tượng được ghi vào cơ sở dữ liệu redis: <a href="http://www.redis.io/commands/expire">expire</a>. Các đối tượng quá thời gian chỉ định trước sẽ được loại bỏ khỏi cơ sở dữ liệu. Trường này dùng để quản lý <strong>thời gian hết hiệu lực</strong> này.</li>
 <li>refcount: là một biến kiểu số nguyên, đại diện cho số lượng reference đến robj này. Mỗi lần có một truy cập đến robj, đại lượng reference sẽ được tăng lên 1, và sẽ bị giảm đi 1 mỗi khi đối tượng <strong>expired</strong> hoặc không được tiếp tục tham chiếu.</li>
 <li>*ptr: con trỏ trỏ trực tiếp đến dữ liệu</li>
 <li>notused??</li>
 </ul>
-
-
 <p>Ở đây, ta gặp một kiểu khai báo <strong>rất lạ</strong> đặt ra nhiều câu hỏi. Thay vì khai báo unsigned type tác giả sử dụng unsigned type:4, điều này có ý nghĩa là gì? Sử dụng cả trường notused và lru:22 có ý nghĩa là gì?</p>
-
-<p>Thực chất khai báo :số nguyên sau kiểu dữ liệu unsigned trong C biểu thị số bit mà trường này muốn sử dụng. Như vậy kiểu type ở trên có độ dài 4 bits. Tương tự như vậy độ dài của encoding là 4 bits. Với độ dài này, redis có thể hỗ trợ tối đa 2<sup>4</sup> = 16 kiểu dữ liệu khác nhau! LRU có độ dài 22 bits. Thực chất trường LRU này đại diện cho thời gian tương đối tính từ <a href="https://github.com/antirez/redis/blob/unstable/src/redis.h#L725">server.lruclock</a>. Thời gian này được tính bằng số phút theo thời gian tương đối này. Để ý với 4 bits cho type, 4 bits cho encoding và 22 bits cho lru, ta mới dùng có 30 bits cho cấu trúc robj này. Do các hệ thống x86 thường căn chỉnh cấu trúc dữ liệu theo bội số của 16 (liên quan đến cơ chế làm việc của CPU cache) nên ta cần padding thêm 2 bits và việc padding 2 bits này chính là nhiệm vụ của notused!</p>
-
+<p>Thực chất khai báo :số nguyên sau kiểu dữ liệu unsigned trong C biểu thị số bit mà trường này muốn sử dụng. Như vậy kiểu type ở trên có độ dài 4 bits. Tương tự như vậy độ dài của encoding là 4 bits. Với độ dài này, redis có thể hỗ trợ tối đa 2^4 = 16 kiểu dữ liệu khác nhau! LRU có độ dài 22 bits. Thực chất trường LRU này đại diện cho thời gian tương đối tính từ <a href="https://github.com/antirez/redis/blob/unstable/src/redis.h#L725">server.lruclock</a>. Thời gian này được tính bằng số phút theo thời gian tương đối này. Để ý với 4 bits cho type, 4 bits cho encoding và 22 bits cho lru, ta mới dùng có 30 bits cho cấu trúc robj này. Do các hệ thống x86 thường căn chỉnh cấu trúc dữ liệu theo bội số của 16 (liên quan đến cơ chế làm việc của CPU cache) nên ta cần padding thêm 2 bits và việc padding 2 bits này chính là nhiệm vụ của notused!</p>
 <p>Mã của robj khá gọn gàng, trong sáng, ngắn gọn và dễ hiểu. Bạn có thể tham khảo tại file <a href="https://github.com/antirez/redis/blob/unstable/src/object.c">object.c</a>. Ở đây tôi sẽ trình bày 2 điểm quan trọng về robj:</p>
-
 <ul>
 <li>Tại sao phải encode <strong>robj</strong></li>
 <li>Vai trò của refcount.</li>
 </ul>
-
-
 <p><strong>Tại sao phải encode robj?</strong> Như trong danh sách các kiểu dữ liệu người dùng ở trên, ta thấy có chuỗi là kiểu dữ liệu cơ bản. Các kiểu dữ liệu còn lại (hast, set, list) đều là kiểu dữ liệu xoay quanh chuỗi, số nguyên hoặc các kiểu dữ liệu khác. Bản thân chuỗi thường có nhiều ký tự lặp lại, vì vậy bằng việc encoding chuỗi dữ liệu ta sẽ tiết kiệm được lượng bộ nhớ mà redis sử dụng. Encoding ở đây thực chất là làm giảm kích thước các object. Thuật toán encode chuỗi có thể tham khảo thủ tục <a href="https://github.com/antirez/redis/blob/unstable/src/object.c#L339">tryObjectEncoding</a> và và các thủ tục trong file <a href="https://github.com/antirez/redis/blob/unstable/src/util.c">util.c</a>. Thử tưởng tượng bạn có 1 key trỏ đến danh sách gồm 100 chuỗi, mỗi chuỗi chỉ cần tiết kiệm được 1 byte, thì việc encode này sẽ giúp bạn tiết kiệm được 100 bytes bộ nhớ. Lượng bộ nhớ tiết kiệm này sẽ có ý nghĩa khi bạn có hàng triệu key và value!</p>
-
-<p><strong>Vai trò của refcount</strong> Refcount thường được dùng để chia sẻ dữ liệu giống nhau của các đối tượng khác nhau. Ví dụ bạn có 2 xâu a, b cùng giá trị &#8220;Chào Thế giới!&#8221; thì không việc gì ta phải có 2 chuỗi &#8220;Chào Thế giới!&#8221; trong bộ nhớ. Chuỗi a và b có thể cùng trỏ tới 1 chuỗi trên bộ nhớ và chỉ thật sự cần có 1 bản copy riêng khi mà 2 chuỗi khác nhau. Đây là cách sử dụng thường gặp của &#8221;<a href="http://en.wikipedia.org/wiki/Reference_counting"><strong>reference count idiom</strong></a>&#8221;. Tuy vậy ở redis hiếm khi ta thấy 2 object cùng chia sẻ giá trị như trường hợp ở trên. Vậy vai trò của reference count ở đây là gì?</p>
-
+<p><strong>Vai trò của refcount</strong> Refcount thường được dùng để chia sẻ dữ liệu giống nhau của các đối tượng khác nhau. Ví dụ bạn có 2 xâu a, b cùng giá trị “Chào Thế giới!” thì không việc gì ta phải có 2 chuỗi “Chào Thế giới!” trong bộ nhớ. Chuỗi a và b có thể cùng trỏ tới 1 chuỗi trên bộ nhớ và chỉ thật sự cần có 1 bản copy riêng khi mà 2 chuỗi khác nhau. Đây là cách sử dụng thường gặp của “<a href="http://en.wikipedia.org/wiki/Reference_counting"><strong>reference count idiom</strong></a>”. Tuy vậy ở redis hiếm khi ta thấy 2 object cùng chia sẻ giá trị như trường hợp ở trên. Vậy vai trò của reference count ở đây là gì?</p>
 <p>Thực chất tác giả sử dụng refcount ở đây 1 cách khá sáng tạo (dù mình không biết là có thật sự là 1 cách dùng mới hay không). Thử tưởng tượng 1 trường hợp sau đây: 1 thread đang đọc giá trị của robj trong khi 1 thread khác đang gửi command del robj. Nếu command del được tiến hành ngay lập tức, thread đọc robj có thể bị lỗi và trả về giá trị không đúng (1 list có 10 phần tử nhưng phần tử nhưng khi đọc thì redis báo giá trị không tồn tại :-)). Nếu như command del không được thực thi, khóa trên sẽ vẫn tồn tại trong bộ nhớ, và kết quả thực hiện del sẽ thất bại. Chắc là bạn không muốn command del thất bại liên tục (khi số lượng đọc ghi cực lớn, khả năng xảy ra lỗi này là khá cao!). Để giải quyết bài toán trên, tác giả của redis sử dụng refcount. Khi một object được truy cập bởi nhiều thread, refcount của object sẽ được tăng lên 1 đơn vị và giảm 1 khi không được tham chiếu nữa. Như vậy command del sẽ chỉ giảm refcount của robj đi 1. Nếu như tại thời điểm này không có tham chiếu nào đến robj này, robj này sẽ bị thu hồi ngay lập tức. Tuy vậy nếu có 1 thread khác đang tham chiếu robj này, refcount của robj sẽ lớn hơn 1, và do đó tại thời điểm command del được thực thi, giá trị của refcount giảm xuống còn 1. Khi thread khác hoàn thành công việc, thread này sẽ giảm refcount xuống tiếp 1 đơn vị nữa, lúc này robj refcount sẽ về 0 và robj sẽ được giải phóng!</p>
-
-<h2>4. Các cấu trúc dữ liệu người dùng</h2>
-
+<h2 id="các-cấu-trúc-dữ-liệu-người-dùng">4. Các cấu trúc dữ liệu người dùng</h2>
 <p>Tôi gọi các cấu trúc dữ liệu người dùng để phân biệt chúng với cấu trúc dữ liệu redis dùng để tăng hiệu năng ở core. Các cấu trúc dữ liệu này gồm list, hash, set và string được viết ở các file có tiền tố <strong>t_</strong> tương ứng. Như trình bày ở trên phần db core không biết gì ngoài robj vì vậy các cấu trúc dữ liệu này có nhiệm vụ là convert cách biểu diễn dữ liệu về robj.</p>
-
-<p>Nếu xem các file này, bạn sẽ thấy mỗi file đều có các hàm convert sang robj như: hashTypeConvert, listTypeConvert, &#8230; Mỗi cấu trúc dữ liệu có cách viết khác nhau, nhưng đều cùng cấu trúc và khá ngắn gọn và đơn giản. Bạn có thể tham khảo từng file trên để  tìm hiểu rõ hơn về cách redis hỗ trợ các kiểu dữ liệu.</p>
-
+<p>Nếu xem các file này, bạn sẽ thấy mỗi file đều có các hàm convert sang robj như: hashTypeConvert, listTypeConvert, … Mỗi cấu trúc dữ liệu có cách viết khác nhau, nhưng đều cùng cấu trúc và khá ngắn gọn và đơn giản. Bạn có thể tham khảo từng file trên để tìm hiểu rõ hơn về cách redis hỗ trợ các kiểu dữ liệu.</p>
 <div>
-  <pre><code class='bash'>src git:(unstable) wc -l t_*.c
+<pre><code class='bash'>src git:(unstable) wc -l t_*.c
    761 t_hash.c
   1149 t_list.c
    913 t_set.c
@@ -198,12 +189,8 @@
   2205 t_zset.c
   5487 total</code></pre>
 </div>
-
-
-<h2>5. Kết luận:</h2>
-
-<p>Bài viết trình bày về cách redis tổ chức các kiểu dữ liệu người dùng cũng như cách tổ chức phần &#8221;<strong>frontend</strong>&#8221; của redis db. Bài viết cũng trình bày chi tiết về robj, về ý nghĩa và vai trò của các trường trong robj cũng như vai trò của robj với backend db. Trong bài viết sau, mình sẽ cố gắng trình bày chi tiết về phần backend server.</p>
-</div>
+<h2 id="kết-luận">5. Kết luận:</h2>
+<p>Bài viết trình bày về cách redis tổ chức các kiểu dữ liệu người dùng cũng như cách tổ chức phần “<strong>frontend</strong>” của redis db. Bài viết cũng trình bày chi tiết về robj, về ý nghĩa và vai trò của các trường trong robj cũng như vai trò của robj với backend db. Trong bài viết sau, mình sẽ cố gắng trình bày chi tiết về phần backend server.</p></div>
 
 </article>
 
@@ -230,7 +217,7 @@
 </section>
 </div>
 			</div>
-			<footer id="footer" class="inner">Copyright &copy; 2013
+			<footer id="footer" class="inner">Copyright &copy; 2014
 
     kỹ thuật máy tính
 
@@ -250,8 +237,8 @@
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://ktmt.github.com/blog/2013/08/04/tim-hieu-redis-3/';
-        var disqus_url = 'http://ktmt.github.com/blog/2013/08/04/tim-hieu-redis-3/';
+        var disqus_identifier = 'http://git@github.com.github.com/blog/2013/08/04/tim-hieu-redis-3/';
+        var disqus_url = 'http://git@github.com.github.com/blog/2013/08/04/tim-hieu-redis-3/';
         var disqus_script = 'embed.js';
       
     (function () {

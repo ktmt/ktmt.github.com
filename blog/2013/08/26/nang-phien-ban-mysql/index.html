@@ -7,7 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Nâng Phiên Bản Mysql 5.6 1. Giới thiệu Trong quá trình vận hành 1 website chúng ta thường có các task như nâng phiên bản máy chủ web, nâng phiên bản &hellip;">
+	<meta name="description" content="Nâng Phiên Bản Mysql 5.6 1. Giới thiệu
+Trong quá trình vận hành 1 website chúng ta thường có các task như nâng phiên bản máy chủ web, nâng phiên bản &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -17,11 +18,17 @@
 
 	<link href="/atom.xml" rel="alternate" title="Blog kỹ thuật máy tính" type="application/atom+xml">
 	
-	<link rel="canonical" href="http://ktmt.github.com/blog/2013/08/26/nang-phien-ban-mysql/">
+	<link rel="canonical" href="http://git@github.com.github.com/blog/2013/08/26/nang-phien-ban-mysql/">
 	<link href="/favicon.png" rel="shortcut icon">
 	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
 	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+    });
+  </script>
 	<link href='http://fonts.googleapis.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
 	
 </head>
@@ -44,6 +51,8 @@
 </nav>
 <nav id="sub-nav">
 	<div class="social">
+		
+		<a class="facebook" href="http://www.facebook.com/pages/ktmtgithubio/486208978117754" title="Facebook">Facebook</a>
 		
 		
 		
@@ -68,97 +77,63 @@
 			<div class="mid-col-container">
 				<div id="content" class="inner"><article class="post" itemscope itemtype="http://schema.org/BlogPosting">
 	<h1 class="title" itemprop="name">Nâng Phiên Bản Mysql 5.6</h1>
-	<div class="entry-content" itemprop="articleBody"><h2>1. Giới thiệu</h2>
-
+	<div class="entry-content" itemprop="articleBody"><h2 id="giới-thiệu">1. Giới thiệu</h2>
 <p>Trong quá trình vận hành 1 website chúng ta thường có các task như nâng phiên bản máy chủ web, nâng phiên bản cơ sở dữ liệu (vì mục đích nâng cao hiệu năng hoặc đảm bảo bảo mật). Với những hệ thống sẵn có, quản lý lượng dữ liệu lớn, tác vụ này thường không hề đơn giản, đòi hỏi 1 trình tự hơp lý. Bài viết này tổng kết là trình tự nâng cấp mysql từ phiên bản 5.0.x lên phiên bản 5.6.x và những vấn đề mình gặp phải trong quá trình nâng cấp này.</p>
-
-<h2>2. Bài toán</h2>
-
+<h2 id="bài-toán">2. Bài toán</h2>
 <p>Website sử dụng hệ thống cơ sơ dữ liệu mysql, dưới mô hình master/slave. Cả master/slave đều đang chạy mysql 5.0. Ta cần nâng cấp mysql lên phiên bản 5.6.</p>
-
-<h4>Điều kiện</h4>
-
+<h4 id="điều-kiện">Điều kiện</h4>
 <p>Mọi bài toán đều không có gì khó nếu như không có giới hạn gì. Ở đây ta bắt gặp 1 vài giới hạn cần chú ý như sau:</p>
-
 <ul>
 <li>Các query được dùng trong website có thể không tương thích với mysql phiên bản mới.</li>
 <li>Nâng cấp master đồng thời với slave sẽ có rủi ro khi mà cả 2 gặp lỗi.</li>
 <li>Dung lượng ổ cứng: khi dung lượng ổ cứng sao lưu không cho phép, ta sẽ phải thực hiện các thao tác công phu hơn 1 chút.</li>
 </ul>
-
-
-<p>Do vậy, cách tốt nhất là nâng cấp lần lượt slave -> master. Tức là slave sẽ chạy mysql5.6 và master sẽ chạy mysql5.0</p>
-
-<h4>Phương pháp</h4>
-
+<p>Do vậy, cách tốt nhất là nâng cấp lần lượt slave -&gt; master. Tức là slave sẽ chạy mysql5.6 và master sẽ chạy mysql5.0</p>
+<h4 id="phương-pháp">Phương pháp</h4>
 <p>Có 2 cách nâng cấp mysql.</p>
-
 <ul>
 <li><a href="http://dev.mysql.com/doc/refman/5.6/en/upgrading.html">Cách truyền thống</a> như được viết trong tài liệu hướng dẫn nâng cấp. Cụ thể ta nâng cấp dần dần qua các phiên bản trung gian bằng script mysql_upgrade.</li>
 <li>Cách ngắn gọn: dump toàn bộ dữ liệu ở phiên bản cũ và import lại vào phiên bản mới.</li>
 </ul>
-
-
-<p>Mỗi cách có ưu nhược điểm riêng; cụ thể cách 1 đảm bảo khả năng thành công cao, tuy vậy lại có nhược điểm là chuẩn bị môi trường cho các phiên bản rườm rà, tốn thời gian. Với khoảng cách 2 phiên bản lớn (5.0 -> 5.6: qua 5.1, 5.5) thì việc upgrade khá tốn thời gian.</p>
-
+<p>Mỗi cách có ưu nhược điểm riêng; cụ thể cách 1 đảm bảo khả năng thành công cao, tuy vậy lại có nhược điểm là chuẩn bị môi trường cho các phiên bản rườm rà, tốn thời gian. Với khoảng cách 2 phiên bản lớn (5.0 -&gt; 5.6: qua 5.1, 5.5) thì việc upgrade khá tốn thời gian.</p>
 <p>Cách 2 có ưu điểm nhanh, tuy vậy lại có nhược điểm là tính tương thích giũa 2 phiên bản không tốt, dẫn đến khả năng lỗi sau khi upgrade cao.</p>
-
 <p>Bài viết sẽ trình bày quy trình upgrade theo cách 2.</p>
-
-<h2>3. Quy trình:</h2>
-
-<h4>Bước 1: dump toàn bộ dữ liệu</h4>
-
+<h2 id="quy-trình">3. Quy trình:</h2>
+<h4 id="bước-1-dump-toàn-bộ-dữ-liệu">Bước 1: dump toàn bộ dữ liệu</h4>
 <p>Ta có thể dump toàn bộ dữ liệu từ slave hoặc master hiện tại.</p>
-
-<p>a. Dump dữ liệu từ slave</p>
-
+<ol type="a">
+<li>Dump dữ liệu từ slave
 <div>
-  <pre><code class='bash'>mysql&gt; stop slave
-mysql&gt; show slave status;</code></pre>
+<pre><code class='bash'>mysql&gt; stop slave
+mysql&gt; show slave status;</code></pre></li>
+</ol>
 </div>
+
 
 
 <p>Ghi nhớ các thông tin: master_host, master_port, replication_user, relay_master_log_file,</p>
-
 <div>
-  <pre><code class='bash'>$ mysqldump -u username -p --all-database --single-transaction | gzip -f &gt; dumpfile.gz</code></pre>
+<pre><code class='bash'>$ mysqldump -u username -p --all-database --single-transaction | gzip -f &gt; dumpfile.gz</code></pre>
 </div>
-
-
-
-
 <div>
-  <pre><code class='bash'>mysql&gt; start slave;</code></pre>
+<pre><code class='bash'>mysql&gt; start slave;</code></pre>
 </div>
-
-
-<p>b. Dump dữ liệu từ master</p>
-
+<ol start="2" type="a">
+<li>Dump dữ liệu từ master</li>
+</ol>
 <div>
-  <pre><code class='bash'>mysql&gt; flush tables with read lock;
+<pre><code class='bash'>mysql&gt; flush tables with read lock;
 mysql&gt; show master status;</code></pre>
 </div>
-
-
-
-
 <div>
-  <pre><code class='bash'>mysqldump -u username -p --all-database --single-transaction | gzip -f &gt; dumpfile.gz</code></pre>
+<pre><code class='bash'>mysqldump -u username -p --all-database --single-transaction | gzip -f &gt; dumpfile.gz</code></pre>
 </div>
-
-
-
-
 <div>
-  <pre><code class='bash'>mysql&gt; unlock tables;</code></pre>
+<pre><code class='bash'>mysql&gt; unlock tables;</code></pre>
 </div>
-
-
-<h4>Bước 2: Cài đặt mysql phiên bản 5.6</h4>
-
+<h4 id="bước-2-cài-đặt-mysql-phiên-bản-5.6">Bước 2: Cài đặt mysql phiên bản 5.6</h4>
 <div>
-  <pre><code class='bash'>$ /etc/init.d/mysql stop                 # stop mysql-5.0
+<pre><code class='bash'>$ /etc/init.d/mysql stop                 # stop mysql-5.0
 $ cd /usr/local
 $ wget http://dev.mysql.com/get/Downloads/MySQL-5.6/mysql-5.6.13-linux-glibc2.5-x86_64.tar.gz/from/http://cdn.mysql.com/
  
@@ -171,12 +146,9 @@ $ ln -sf mysql-5.6.13 mysql
 $ cd mysql
 $ chown -R mysql:mysql .</code></pre>
 </div>
-
-
-<h4>Bước 3: Khởi động mysql và import dữ liệu</h4>
-
+<h4 id="bước-3-khởi-động-mysql-và-import-dữ-liệu">Bước 3: Khởi động mysql và import dữ liệu</h4>
 <div>
-  <pre><code class='bash'>$ cp /tmp/my.cnf /usr/local/mysql
+<pre><code class='bash'>$ cp /tmp/my.cnf /usr/local/mysql
  
 # データ容量そろえる
 $ cd /dbdata/data
@@ -200,20 +172,14 @@ $ ln -sf /dbdata/data data
 # import data file
 $ mysql -u root -p &lt; バックアップファイル</code></pre>
 </div>
-
-
-<h4>Bước 4: Khởi động lại mysql.</h4>
-
+<h4 id="bước-4-khởi-động-lại-mysql.">Bước 4: Khởi động lại mysql.</h4>
 <div>
-  <pre><code class='bash'>$ /etc/init.d/mysql stop
+<pre><code class='bash'>$ /etc/init.d/mysql stop
 $ /etc/init.d/mysql start</code></pre>
 </div>
-
-
-<h4>Bước 5: Cài đặt sao chép (replication)</h4>
-
+<h4 id="bước-5-cài-đặt-sao-chép-replication">Bước 5: Cài đặt sao chép (replication)</h4>
 <div>
-  <pre><code class='bash'>$ mysql -u root -p
+<pre><code class='bash'>$ mysql -u root -p
 mysql&gt; show slave status¥G;   # replication されてない確認
  
 ....
@@ -264,12 +230,9 @@ Replicate_Wild_Ignore_Table:
   
 mysql&gt; start slave;</code></pre>
 </div>
-
-
-<h4>Bước 6: Kiểm tra cài đặt replication.</h4>
-
+<h4 id="bước-6-kiểm-tra-cài-đặt-replication.">Bước 6: Kiểm tra cài đặt replication.</h4>
 <div>
-  <pre><code class='bash'>mysql&gt; show slave status¥G
+<pre><code class='bash'>mysql&gt; show slave status¥G
 *************************** 1. row ***************************
              Slave_IO_State:
                 Master_Host: master ip
@@ -308,14 +271,10 @@ Replicate_Wild_Ignore_Table:
   
 mysql&gt; start slave;</code></pre>
 </div>
-
-
-<h2>4. Các lỗi có thể có</h2>
-
+<h2 id="các-lỗi-có-thể-có">4. Các lỗi có thể có</h2>
 <p>Nếu làm mọi việc suôn sẻ, ta có thể hoàn thành thao tác nâng cấp ở bước 4. Tuy vậy tuỳ vào đặc tính dữ liệu, mà mọi việc có thể không suôn sẻ như vậy. Trong lần nâng cấp này, mình gặp 1 lỗi sau sau khi khởi động mysql.</p>
-
 <div>
-  <pre><code class='bash'>2013-08-25 11:07:00 19807 [Note] Server socket created on IP: '0.0.0.0'.
+<pre><code class='bash'>2013-08-25 11:07:00 19807 [Note] Server socket created on IP: '0.0.0.0'.
 02:07:00 UTC - mysqld got signal 11 ;
 This could be because you hit a bug. It is also possible that this binary
 or one of the libraries it was linked against is corrupt, improperly built,
@@ -372,16 +331,10 @@ information that should help you find out what is causing the crash.
 2013-08-25 11:07:01 19847 [Note] InnoDB: Highest supported file format is Barracuda.
 130825 11:07:09 mysqld_safe mysqld from pid file /usr/local/mysql/data/nl-dbdev-slave.pid ended</code></pre>
 </div>
-
-
 <p>mysql khởi động gặp bug về bộ nhớ (segmentation fault) và bị kill bởi signal 11. Mysql liên tục khởi động và bị kill.</p>
-
 <p>Để tránh trường hợp này, sau khi import dữ liệu ta nên chạy mysql_upgrade 1 lần để script này sửa các bảng trong trạng thái lỗi trước khi khởi động lại để tránh lỗi ở trên.</p>
-
-<h2>5. Tổng kết</h2>
-
-<p>Bài viết tóm tắt quy trình nâng cấp phiên bản mysql cũng như cách dump toàn bộ dữ liệu trong mysql cũng như lỗi có thể gặp phải + cách giải quyết. Hy vọng với tóm tắt này, bạn sẽ không bở ngỡ khi phải backup hay nâng cấp phiên bản cho mysql.</p>
-</div>
+<h2 id="tổng-kết">5. Tổng kết</h2>
+<p>Bài viết tóm tắt quy trình nâng cấp phiên bản mysql cũng như cách dump toàn bộ dữ liệu trong mysql cũng như lỗi có thể gặp phải + cách giải quyết. Hy vọng với tóm tắt này, bạn sẽ không bở ngỡ khi phải backup hay nâng cấp phiên bản cho mysql.</p></div>
 
 </article>
 
@@ -408,7 +361,7 @@ information that should help you find out what is causing the crash.
 </section>
 </div>
 			</div>
-			<footer id="footer" class="inner">Copyright &copy; 2013
+			<footer id="footer" class="inner">Copyright &copy; 2014
 
     kỹ thuật máy tính
 
@@ -428,8 +381,8 @@ information that should help you find out what is causing the crash.
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://ktmt.github.com/blog/2013/08/26/nang-phien-ban-mysql/';
-        var disqus_url = 'http://ktmt.github.com/blog/2013/08/26/nang-phien-ban-mysql/';
+        var disqus_identifier = 'http://git@github.com.github.com/blog/2013/08/26/nang-phien-ban-mysql/';
+        var disqus_url = 'http://git@github.com.github.com/blog/2013/08/26/nang-phien-ban-mysql/';
         var disqus_script = 'embed.js';
       
     (function () {

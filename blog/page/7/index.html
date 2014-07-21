@@ -7,7 +7,7 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jul 16th, 2013 linux, system Comments Tìm Hiểu Redis (Phần 2): Framework Lập Trình Sự Kiện 1. Giới thiệu Trong bài viết tìm hiểu redis phần 1, chúng &hellip;">
+	<meta name="description" content="Sep 8th, 2013 rails Comments Prototype Chức Năng Mới Cho Webapp Trên Rails Với Chanko Là một web developer nói chung và ruby on rails developer nói &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -17,11 +17,17 @@
 
 	<link href="/atom.xml" rel="alternate" title="Blog kỹ thuật máy tính" type="application/atom+xml">
 	
-	<link rel="canonical" href="http://ktmt.github.com/blog/page/7/">
+	<link rel="canonical" href="http://git@github.com.github.com/blog/page/7/">
 	<link href="/favicon.png" rel="shortcut icon">
 	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
 	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+    });
+  </script>
 	<link href='http://fonts.googleapis.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
 	
 </head>
@@ -44,6 +50,8 @@
 </nav>
 <nav id="sub-nav">
 	<div class="social">
+		
+		<a class="facebook" href="http://www.facebook.com/pages/ktmtgithubio/486208978117754" title="Facebook">Facebook</a>
 		
 		
 		
@@ -84,74 +92,45 @@
   
 
 
-<time datetime="2013-07-16T00:00:00+09:00" data-updated="true" itemprop="datePublished">Jul 16<span>th</span>, 2013</time></div>
+<time datetime="2013-09-08T21:49:00+09:00" data-updated="true" itemprop="datePublished">Sep 8<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/linux/'>linux</a>, <a class='category' href='/blog/categories/system/'>system</a>
+	<a class='category' href='/blog/categories/rails/'>rails</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/07/16/tim-hieu-redis-2/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/09/08/prototype-chuc-nang-moi-cho-webapp-tren-rails-voi-chanko/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/16/tim-hieu-redis-2/" itemprop="url">Tìm Hiểu Redis (Phần 2): Framework Lập Trình Sự Kiện</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/09/08/prototype-chuc-nang-moi-cho-webapp-tren-rails-voi-chanko/" itemprop="url">Prototype Chức Năng Mới Cho Webapp Trên Rails Với Chanko</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h2>1. Giới thiệu</h2>
-
-<p>Trong bài viết <a href="http://ktmt.github.io/blog/2013/07/02/tim-hieu-redis/">tìm hiểu redis phần 1</a>, chúng ta đã tìm hiểu cách redis quản lý dữ liệu (AOF và RDB) cũng như cách redis tận dụng các tính năng của OS (fsync) để sao lưu dữ liệu. Bài viết này tập trung trình bày cụ thể hơn về framework lập trình hướng sự kiện của redis.</p>
-
-<h2>2. Lập trình hướng sự kiện</h2>
-
-<p><a href="http://en.wikipedia.org/wiki/Event-driven_programming">Lập trình hướng sự kiện</a> không phải là khái niệm mới, mà là một paradigm dược sử dụng từ rất lâu. Trong lập trình GUI (Giao diện đồ họa), khi người dùng click hay di chuyển chuột, các framework đồ họa thường hỗ trợ các phương pháp như onClick, onMouseMove &#8230; cho phép người dùng định nghĩa hành vi của hệ thống cho những sự kiện đấy.</p>
-
-<p>Các hệ thống Unix(BSD, MacOS)/Linux/Solaris từ lâu đã hỗ trợ lập trình hướng sự kiện. Mỗi hệ điều hành cung cấp API cho phép lập trình viên chỉ định 1 tập các file descriptor hoặc mốc thời gian (time-event) cần theo dõi và sẽ trigger mỗi sự kiện khi các file descriptor thay đổi trạng thái (có đọc hoặc ghi) hoặc khi một mốc thời gian quan trọng đã đến. Lập trình viên hệ thống chỉ cần cung cấp 1 hàm callback và các API này sẽ thực hiện chạy các callback này. Cụ thể:</p>
-
-<ul>
-<li><a href="http://en.wikipedia.org/wiki/Select_%28Unix%29">select</a> Chuẩn POSIX đình nghĩa hàm này.</li>
-<li>Unix (BSD, MacOS): <a href="people.freebsd.org/~jlemon/papers/kqueue.pdf">kqueue</a></li>
-<li>Linux: poll, <a href="http://man7.org/linux/man-pages/man7/epoll.7.html">epoll</a> (edge-trigger)</li>
-<li>Solaris: <a href="http://docs.oracle.com/cd/E19082-01/819-2243/port-associate-3c/index.html">event ports</a> (port_associate)</li>
-</ul>
-
-
-<p>Việc các hệ thống đều hỗ trơ cơ chế event multiplexing là điều tốt (hệ thống của bạn sẽ không phải thay đổi design nếu muốn hỗ trợ 1 hệ thống đặc biệt) tuy vậy có một khó khăn đó là: các API này có interface khác nhau. Do vậy đoạn code dùng epoll sẽ không thể nào chạy trên các Unix based và ngược lại một đoạn code dùng kqueue sẽ không chạy được trên linux. Để giải quyết vấn đề này, redis cung cấp 1 layer hướng sự kiện và thay đổi backend API (kqueue, event ports, epoll) theo hệ thống mà redis được biên dịch trên đó.</p>
-
-<h2>3. Framework</h2>
-
-<h3>a. Kiến trúc</h3>
-
-<pre><code>                    ╒========================╕
-                    |  Redis layer cao hơn   | (aof, rdb, cron...)
-                    ╘========================╛
-
-                    ╒========================╕
-                    |     API layer hướng    | frontend: aeCreateEventLoop, aeStop, aeCreateFileEvent... 
-                    |       sự kiện          | backend: aeAddEvent, aeDelEvent, aeApiPoll...
-                    ╘========================╛
-
-    ╒=============╕     ╒=============╕     ╒=============╕     ╒=============╕
-    |   select    |     |   kqueue    |     |   epoll     |     | event ports |
-    ╘=============╛     ╘=============╛     ╘=============╛     ╘=============╛
-    ae_select.c     ae_kqueue.c             ae_epoll.c               ae_evport.c
-</code></pre>
-
-<p>Để hỗ trợ các event multiplexing api khác nhau của các hệ điều hành, redis xây dựng 1 api layer đứng giữa các layer cao hơn và các api của OS (như trong hình vẽ). Layer này có 2 loại api khác nhau: frontend và backend.</p>
-
-<ul>
-<li>frontend api: là các api cho phép các layer ở trên thao tác với các sự kiện và <strong>vòng lặp sự kiện</strong> (event loop). Các api này gồm có:
-aeCreateEventLLoop, aeStop, aeMain, aeCreateFileEvent, aeCreateTimeEvent&#8230;</li>
-<li>backend api: thực chất là interface api. Các api hệ thống khác nhau sẽ được viết để phù hợp với interface này. Interface này gồm các api như: aeAddEvent, aeDelEvent, aeApiPoll, aeApiName.</li>
-</ul>
-
-
-<p>frontend api sẽ gọi backend api để taoji các sự kiện, poll các file descriptor&#8230; Các backend api sẽ đối chiếu sử dụng tương ứng với api của hệ thống. Việc sử dụng api nào sẽ được quyết định lúc biên dịch.</p>
-
-<p>Để thống nhất các polling api khác nhau về cùng 1 interface, redis định nghĩa các cấu trúc dữ liệu giống nhau với mỗi api, cụ thể là các sự kiện và <strong>vòng lặp sự kiện</strong>. Các cấu trúc này được viết trong file ae.h</p>
-
-<figure class='code'><figcaption><span>ae.c </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+		<p>Là một web developer nói chung và ruby on rails developer nói riêng, bạn chắc hẳn sẽ gặp nhiều khó khăn khi muốn thêm chức năng mới vào hệ thống hiện tại. Khó khăn đáng nói đến nhất bao gồm: bạn phải add sao cho chức năng mới được add vào sẽ dễ extend, dễ tháo bỏ khi không cần thiết, và việc add chức năng mới vào sẽ có ảnh hưởng tối thiểu nhất đến các chức năng đã có. Trong bài viết này, mình sẽ giới thiệu về <strong><a href="https://github.com/cookpad/chanko">chanko</a></strong>, một <strong>(framework/engine) trên ruby on rails</strong>, mà sẽ giúp cho việc tạo chức năng mới trên một app đã có cực kì clean và dễ dàng.</p>
+<h1 id="cài-đặt">1. Cài đặt</h1>
+Để cài đặt chanko thì chúng ta chỉ cần add chanko vào Gemfile:
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">gem</span> <span class="s2">&quot;chanko&quot;</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<h1 id="sử-dụng">2. Sử dụng</h1>
+<p>Đầu tiên chúng ta sẽ nói về ý tưởng của chanko. Chanko tách chức năng mới với app hiện tại thông qua việc tạo ra một folder trong /app/unit. Trong đó sẽ chứa các chức năng được tạo mới thông qua chanko. Việc này có thể được nhìn thấy dễ dàng khi chúng ta sử dụng chanko generator.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -161,188 +140,87 @@ aeCreateEventLLoop, aeStop, aeMain, aeCreateFileEvent, aeCreateTimeEvent&#8230;<
 <span class='line-number'>8</span>
 <span class='line-number'>9</span>
 <span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-<span class='line-number'>64</span>
-<span class='line-number'>65</span>
-<span class='line-number'>66</span>
-<span class='line-number'>67</span>
-<span class='line-number'>68</span>
-<span class='line-number'>69</span>
-<span class='line-number'>70</span>
-<span class='line-number'>71</span>
-<span class='line-number'>72</span>
-<span class='line-number'>73</span>
-<span class='line-number'>74</span>
-<span class='line-number'>75</span>
-<span class='line-number'>76</span>
-<span class='line-number'>77</span>
-<span class='line-number'>78</span>
-<span class='line-number'>79</span>
-<span class='line-number'>80</span>
-<span class='line-number'>81</span>
-<span class='line-number'>82</span>
-<span class='line-number'>83</span>
-<span class='line-number'>84</span>
-<span class='line-number'>85</span>
-<span class='line-number'>86</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#ifndef __AE_H__</span>
-</span><span class='line'><span class="cp">#define __AE_H__</span>
-</span><span class='line'>
-</span><span class='line'><span class="cp">#define AE_OK 0</span>
-</span><span class='line'><span class="cp">#define AE_ERR -1</span>
-</span><span class='line'>
-</span><span class='line'><span class="cp">#define AE_NONE 0</span>
-</span><span class='line'><span class="cp">#define AE_READABLE 1</span>
-</span><span class='line'><span class="cp">#define AE_WRITABLE 2</span>
-</span><span class='line'>
-</span><span class='line'><span class="cp">#define AE_FILE_EVENTS 1</span>
-</span><span class='line'><span class="cp">#define AE_TIME_EVENTS 2</span>
-</span><span class='line'><span class="cp">#define AE_ALL_EVENTS (AE_FILE_EVENTS|AE_TIME_EVENTS)</span>
-</span><span class='line'><span class="cp">#define AE_DONT_WAIT 4</span>
-</span><span class='line'>
-</span><span class='line'><span class="cp">#define AE_NOMORE -1</span>
-</span><span class='line'>
-</span><span class='line'><span class="cm">/* Macros */</span>
-</span><span class='line'><span class="cp">#define AE_NOTUSED(V) ((void) V)</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">struct</span> <span class="n">aeEventLoop</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="cm">/* Types and data structures */</span>
-</span><span class='line'><span class="k">typedef</span> <span class="kt">void</span> <span class="nf">aeFileProc</span><span class="p">(</span><span class="k">struct</span> <span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">clientData</span><span class="p">,</span> <span class="kt">int</span> <span class="n">mask</span><span class="p">);</span>
-</span><span class='line'><span class="k">typedef</span> <span class="kt">int</span> <span class="nf">aeTimeProc</span><span class="p">(</span><span class="k">struct</span> <span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">long</span> <span class="kt">long</span> <span class="n">id</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">clientData</span><span class="p">);</span>
-</span><span class='line'><span class="k">typedef</span> <span class="kt">void</span> <span class="nf">aeEventFinalizerProc</span><span class="p">(</span><span class="k">struct</span> <span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">clientData</span><span class="p">);</span>
-</span><span class='line'><span class="k">typedef</span> <span class="kt">void</span> <span class="nf">aeBeforeSleepProc</span><span class="p">(</span><span class="k">struct</span> <span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="cm">/* File event structure */</span>
-</span><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">aeFileEvent</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">mask</span><span class="p">;</span> <span class="cm">/* one of AE_(READABLE|WRITABLE) */</span>
-</span><span class='line'>    <span class="n">aeFileProc</span> <span class="o">*</span><span class="n">rfileProc</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">aeFileProc</span> <span class="o">*</span><span class="n">wfileProc</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">void</span> <span class="o">*</span><span class="n">clientData</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span> <span class="n">aeFileEvent</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="cm">/* Time event structure */</span>
-</span><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">aeTimeEvent</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kt">long</span> <span class="kt">long</span> <span class="n">id</span><span class="p">;</span> <span class="cm">/* time event identifier. */</span>
-</span><span class='line'>    <span class="kt">long</span> <span class="n">when_sec</span><span class="p">;</span> <span class="cm">/* seconds */</span>
-</span><span class='line'>    <span class="kt">long</span> <span class="n">when_ms</span><span class="p">;</span> <span class="cm">/* milliseconds */</span>
-</span><span class='line'>    <span class="n">aeTimeProc</span> <span class="o">*</span><span class="n">timeProc</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">aeEventFinalizerProc</span> <span class="o">*</span><span class="n">finalizerProc</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">void</span> <span class="o">*</span><span class="n">clientData</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">struct</span> <span class="n">aeTimeEvent</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span> <span class="n">aeTimeEvent</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="cm">/* A fired event */</span>
-</span><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">aeFiredEvent</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">fd</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">mask</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span> <span class="n">aeFiredEvent</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="cm">/* State of an event based program */</span>
-</span><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">aeEventLoop</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">maxfd</span><span class="p">;</span>   <span class="cm">/* highest file descriptor currently registered */</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">setsize</span><span class="p">;</span> <span class="cm">/* max number of file descriptors tracked */</span>
-</span><span class='line'>    <span class="kt">long</span> <span class="kt">long</span> <span class="n">timeEventNextId</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">time_t</span> <span class="n">lastTime</span><span class="p">;</span>     <span class="cm">/* Used to detect system clock skew */</span>
-</span><span class='line'>    <span class="n">aeFileEvent</span> <span class="o">*</span><span class="n">events</span><span class="p">;</span> <span class="cm">/* Registered events */</span>
-</span><span class='line'>    <span class="n">aeFiredEvent</span> <span class="o">*</span><span class="n">fired</span><span class="p">;</span> <span class="cm">/* Fired events */</span>
-</span><span class='line'>    <span class="n">aeTimeEvent</span> <span class="o">*</span><span class="n">timeEventHead</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">stop</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">void</span> <span class="o">*</span><span class="n">apidata</span><span class="p">;</span> <span class="cm">/* This is used for polling API specific data */</span>
-</span><span class='line'>    <span class="n">aeBeforeSleepProc</span> <span class="o">*</span><span class="n">beforesleep</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span> <span class="n">aeEventLoop</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="cm">/* Prototypes */</span>
-</span><span class='line'><span class="n">aeEventLoop</span> <span class="o">*</span><span class="nf">aeCreateEventLoop</span><span class="p">(</span><span class="kt">int</span> <span class="n">setsize</span><span class="p">);</span>
-</span><span class='line'><span class="kt">void</span> <span class="nf">aeDeleteEventLoop</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">);</span>
-</span><span class='line'><span class="kt">void</span> <span class="nf">aeStop</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">);</span>
-</span><span class='line'><span class="kt">int</span> <span class="nf">aeCreateFileEvent</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">int</span> <span class="n">mask</span><span class="p">,</span>
-</span><span class='line'>        <span class="n">aeFileProc</span> <span class="o">*</span><span class="n">proc</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">clientData</span><span class="p">);</span>
-</span><span class='line'><span class="kt">void</span> <span class="nf">aeDeleteFileEvent</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">int</span> <span class="n">mask</span><span class="p">);</span>
-</span><span class='line'><span class="kt">int</span> <span class="nf">aeGetFileEvents</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">int</span> <span class="n">fd</span><span class="p">);</span>
-</span><span class='line'><span class="kt">long</span> <span class="kt">long</span> <span class="nf">aeCreateTimeEvent</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">long</span> <span class="kt">long</span> <span class="n">milliseconds</span><span class="p">,</span>
-</span><span class='line'>        <span class="n">aeTimeProc</span> <span class="o">*</span><span class="n">proc</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">clientData</span><span class="p">,</span>
-</span><span class='line'>        <span class="n">aeEventFinalizerProc</span> <span class="o">*</span><span class="n">finalizerProc</span><span class="p">);</span>
-</span><span class='line'><span class="kt">int</span> <span class="nf">aeDeleteTimeEvent</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">long</span> <span class="kt">long</span> <span class="n">id</span><span class="p">);</span>
-</span><span class='line'><span class="kt">int</span> <span class="nf">aeProcessEvents</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">);</span>
-</span><span class='line'><span class="kt">int</span> <span class="nf">aeWait</span><span class="p">(</span><span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">int</span> <span class="n">mask</span><span class="p">,</span> <span class="kt">long</span> <span class="kt">long</span> <span class="n">milliseconds</span><span class="p">);</span>
-</span><span class='line'><span class="kt">void</span> <span class="nf">aeMain</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">);</span>
-</span><span class='line'><span class="kt">char</span> <span class="o">*</span><span class="nf">aeGetApiName</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
-</span><span class='line'><span class="kt">void</span> <span class="nf">aeSetBeforeSleepProc</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="n">aeBeforeSleepProc</span> <span class="o">*</span><span class="n">beforesleep</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="cp">#endif</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Theo như ae.h, redis có 3 kiểu sự kiện khác nhau:</p>
-
-<ul>
-<li>Sự kiện trên File (đọc, ghi) (aeFileEvent)</li>
-<li>Sự kiện thời gian (aeTimeEvent)</li>
-<li>Sự kiện đã được triggered (aeFiredEvent)</li>
-</ul>
-
-
-<p>Các callback prototype đều nhận đối số đầu tiên là 1 con trỏ chỉ đến cấu trúc aeEventLoop. Cấu trúc này quản lý rất nhiều thông tin khác nhau như: số sự kiện được đăng ký, sự kiện được gọi, file descriptor lớn nhất đang quản lý, danh sách các <strong>sự kiện thời gian</strong> v.v</p>
-
-<h3>b. Chi tiết thực hiện</h3>
-
-<p>Toàn bộ quá trình xử lý sự kiện được bắt đầu bằng cách gọi aeMain. Xử lý trong aeMain thực chất là một vòng lặp gọi hàm xử lý sự kiện: aeProcessEvents. Tất cả các sự kiện sẽ được thực thi ở hàm aeProcessEvents này. Ta hãy cùng tìm hiểu công việc mà aeProcessEvent phải làm.</p>
-
-<figure class='code'><figcaption><span>ae.c </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="err">$</span> <span class="n">rails</span> <span class="n">generate</span> <span class="ss">chanko</span><span class="p">:</span><span class="n">unit</span> <span class="n">example_unit</span>
+</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span>
+</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span><span class="o">/</span><span class="n">example_unit</span><span class="o">.</span><span class="n">rb</span>
+</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span><span class="o">/</span><span class="n">views</span><span class="o">/.</span><span class="n">gitkeep</span>
+</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span><span class="o">/</span><span class="n">images</span><span class="o">/.</span><span class="n">gitkeep</span>
+</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span><span class="o">/</span><span class="n">javascripts</span><span class="o">/.</span><span class="n">gitkeep</span>
+</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span><span class="o">/</span><span class="n">stylesheets</span><span class="o">/.</span><span class="n">gitkeep</span>
+</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">assets</span><span class="o">/</span><span class="n">images</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span>
+</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">assets</span><span class="o">/</span><span class="n">javascripts</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span>
+</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">assets</span><span class="o">/</span><span class="n">stylesheets</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Chúng ta có thể thấy chanko generator gần tương tự như scaffold generator của rails. unit ở đây là một đơn vị chức năng.</p>
+<p>Ví dụ khi bạn cần add chức năng search button thì bạn sẽ <code>generate chanko:unit add_search_button</code>, khi đó chanko sẽ tự động tạo folder add_search_button ở trong app/units, và tạo sẵn file add_search_button_unit.rb và thư mục view để chứa view của chức năng mới này. File add_search_button.rb này sẽ chứa logic của cả model/controller của chức năng add_search_button mà chúng ta cần thêm vào.</p>
+<p>Các bạn có thể thấy rõ ý tưởng của chanko là tách logic và cả asset của chức năng mới cần thêm vào càng tách biệt với các chức năng cũ càng tốt. Việc này có tác dụng là chúng ta có thể thêm, bớt chức năng vào hệ thống cũ bằng một flow rất clean , và độ ảnh hưởng với hệ thống cũ cực kì thấp. Vậy nếu tách unit mới ra dưới dạng gần như một thư viện riêng như vậy, chúng ta sẽ intergrate unit này vào rails ra sao?</p>
+<p>Việc intergrate unit được tạo ra bởi chanko vào rails được thể hiện qua các chức năng dưới đây:</p>
+<h2 id="invoke">2.1 Invoke</h2>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># app/controllers/users_controller.rb</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">UsersController</span> <span class="o">&lt;</span> <span class="no">ApplicationController</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">index</span>
+</span><span class='line'>    <span class="n">invoke</span><span class="p">(</span><span class="ss">:add_search_button_unit</span><span class="p">,</span> <span class="ss">:index</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>      <span class="vi">@users</span> <span class="o">=</span> <span class="no">User</span><span class="o">.</span><span class="n">all</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">AddSearchButtonUnit</span>
+</span><span class='line'>  <span class="kp">include</span> <span class="ss">Chanko</span><span class="p">:</span><span class="ss">:Unit</span>
+</span><span class='line'>  <span class="n">function</span> <span class="p">(</span><span class="ss">:index</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>    <span class="vi">@users</span> <span class="o">=</span> <span class="no">Users</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">active</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Hàm invoke này sẽ đưa logic của hàm <code>index</code> được định nghĩa trong <code>add_search_button_unit.rb</code> vào trong logic của hàm hiện tại. Block được pass vào hàm invoke sẽ là fallback function, được execute khi có lỗi hày có vấn đề gì xảy ra với hàm invoke. Chúng ta có thể hình dung đơn giản chức năng invoke dùng để extend logic của một hàm của một unit (chức năng mới) và logic của controller (chức năng cũ)</p>
+<h2 id="unit-module">2.2 Unit module</h2>
+<p>Unit module chính là module của chức năng mới được thêm vào, ở đây chính là module AddSearchButton mà chúng ta đã nói đến ở trên. Trong module này sẽ định nghĩa logic cho controller, model và cả view helper cho chức năng mới. Tất cả MVC logic đều được nhét vào 1 file có thể hơi khó nhìn khi chức năng của chúng ta có nhiều logic phức tạp , tuy nhiên khi dừng lại ở mức prototyping thì việc này có thể chấp nhận được.</p>
+<strong>Logic của controller</strong> được add vào thông qua hàm <code>scope(:controller)</code>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -351,209 +229,28 @@ aeCreateEventLLoop, aeStop, aeMain, aeCreateFileEvent, aeCreateTimeEvent&#8230;<
 <span class='line-number'>7</span>
 <span class='line-number'>8</span>
 <span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-<span class='line-number'>64</span>
-<span class='line-number'>65</span>
-<span class='line-number'>66</span>
-<span class='line-number'>67</span>
-<span class='line-number'>68</span>
-<span class='line-number'>69</span>
-<span class='line-number'>70</span>
-<span class='line-number'>71</span>
-<span class='line-number'>72</span>
-<span class='line-number'>73</span>
-<span class='line-number'>74</span>
-<span class='line-number'>75</span>
-<span class='line-number'>76</span>
-<span class='line-number'>77</span>
-<span class='line-number'>78</span>
-<span class='line-number'>79</span>
-<span class='line-number'>80</span>
-<span class='line-number'>81</span>
-<span class='line-number'>82</span>
-<span class='line-number'>83</span>
-<span class='line-number'>84</span>
-<span class='line-number'>85</span>
-<span class='line-number'>86</span>
-<span class='line-number'>87</span>
-<span class='line-number'>88</span>
-<span class='line-number'>89</span>
-<span class='line-number'>90</span>
-<span class='line-number'>91</span>
-<span class='line-number'>92</span>
-<span class='line-number'>93</span>
-<span class='line-number'>94</span>
-<span class='line-number'>95</span>
-<span class='line-number'>96</span>
-<span class='line-number'>97</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">aeMain</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">stop</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">while</span> <span class="p">(</span><span class="o">!</span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">stop</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">beforesleep</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span>
-</span><span class='line'>            <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">beforesleep</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">aeProcessEvents</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">,</span> <span class="n">AE_ALL_EVENTS</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">scope</span><span class="p">(</span><span class="ss">:controller</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">function</span><span class="p">(</span><span class="ss">:show</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>    <span class="vi">@user</span> <span class="o">=</span> <span class="no">User</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">params</span><span class="o">[</span><span class="ss">:id</span><span class="o">]</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
 </span><span class='line'>
-</span><span class='line'><span class="cm">/* Process every pending time event, then every pending file event</span>
-</span><span class='line'><span class="cm"> * (that may be registered by time event callbacks just processed).</span>
-</span><span class='line'><span class="cm"> * Without special flags the function sleeps until some file event</span>
-</span><span class='line'><span class="cm"> * fires, or when the next time event occurs (if any).</span>
-</span><span class='line'><span class="cm"> *</span>
-</span><span class='line'><span class="cm"> * If flags is 0, the function does nothing and returns.</span>
-</span><span class='line'><span class="cm"> * if flags has AE_ALL_EVENTS set, all the kind of events are processed.</span>
-</span><span class='line'><span class="cm"> * if flags has AE_FILE_EVENTS set, file events are processed.</span>
-</span><span class='line'><span class="cm"> * if flags has AE_TIME_EVENTS set, time events are processed.</span>
-</span><span class='line'><span class="cm"> * if flags has AE_DONT_WAIT set the function returns ASAP until all</span>
-</span><span class='line'><span class="cm"> * the events that&#39;s possible to process without to wait are processed.</span>
-</span><span class='line'><span class="cm"> *</span>
-</span><span class='line'><span class="cm"> * The function returns the number of events processed. */</span>
-</span><span class='line'><span class="kt">int</span> <span class="nf">aeProcessEvents</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">processed</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">numevents</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cm">/* Nothing to do? return ASAP */</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AE_TIME_EVENTS</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AE_FILE_EVENTS</span><span class="p">))</span> <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cm">/* Note that we want call select() even if there are no</span>
-</span><span class='line'><span class="cm">     * file events to process as long as we want to process time</span>
-</span><span class='line'><span class="cm">     * events, in order to sleep until the next time event is ready</span>
-</span><span class='line'><span class="cm">     * to fire. */</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">maxfd</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">||</span>
-</span><span class='line'>        <span class="p">((</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AE_TIME_EVENTS</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AE_DONT_WAIT</span><span class="p">)))</span> <span class="p">{</span>
-</span><span class='line'>        <span class="kt">int</span> <span class="n">j</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">aeTimeEvent</span> <span class="o">*</span><span class="n">shortest</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">struct</span> <span class="n">timeval</span> <span class="n">tv</span><span class="p">,</span> <span class="o">*</span><span class="n">tvp</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AE_TIME_EVENTS</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AE_DONT_WAIT</span><span class="p">))</span>
-</span><span class='line'>            <span class="n">shortest</span> <span class="o">=</span> <span class="n">aeSearchNearestTimer</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">shortest</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>            <span class="kt">long</span> <span class="n">now_sec</span><span class="p">,</span> <span class="n">now_ms</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>            <span class="cm">/* Calculate the time missing for the nearest</span>
-</span><span class='line'><span class="cm">             * timer to fire. */</span>
-</span><span class='line'>            <span class="n">aeGetTime</span><span class="p">(</span><span class="o">&amp;</span><span class="n">now_sec</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">now_ms</span><span class="p">);</span>
-</span><span class='line'>            <span class="n">tvp</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">tv</span><span class="p">;</span>
-</span><span class='line'>            <span class="n">tvp</span><span class="o">-&gt;</span><span class="n">tv_sec</span> <span class="o">=</span> <span class="n">shortest</span><span class="o">-&gt;</span><span class="n">when_sec</span> <span class="o">-</span> <span class="n">now_sec</span><span class="p">;</span>
-</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">shortest</span><span class="o">-&gt;</span><span class="n">when_ms</span> <span class="o">&lt;</span> <span class="n">now_ms</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>                <span class="n">tvp</span><span class="o">-&gt;</span><span class="n">tv_usec</span> <span class="o">=</span> <span class="p">((</span><span class="n">shortest</span><span class="o">-&gt;</span><span class="n">when_ms</span><span class="o">+</span><span class="mi">1000</span><span class="p">)</span> <span class="o">-</span> <span class="n">now_ms</span><span class="p">)</span><span class="o">*</span><span class="mi">1000</span><span class="p">;</span>
-</span><span class='line'>                <span class="n">tvp</span><span class="o">-&gt;</span><span class="n">tv_sec</span> <span class="o">--</span><span class="p">;</span>
-</span><span class='line'>            <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-</span><span class='line'>                <span class="n">tvp</span><span class="o">-&gt;</span><span class="n">tv_usec</span> <span class="o">=</span> <span class="p">(</span><span class="n">shortest</span><span class="o">-&gt;</span><span class="n">when_ms</span> <span class="o">-</span> <span class="n">now_ms</span><span class="p">)</span><span class="o">*</span><span class="mi">1000</span><span class="p">;</span>
-</span><span class='line'>            <span class="p">}</span>
-</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">tvp</span><span class="o">-&gt;</span><span class="n">tv_sec</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="n">tvp</span><span class="o">-&gt;</span><span class="n">tv_sec</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">tvp</span><span class="o">-&gt;</span><span class="n">tv_usec</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="n">tvp</span><span class="o">-&gt;</span><span class="n">tv_usec</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-</span><span class='line'>            <span class="cm">/* If we have to check for events but need to return</span>
-</span><span class='line'><span class="cm">             * ASAP because of AE_DONT_WAIT we need to set the timeout</span>
-</span><span class='line'><span class="cm">             * to zero */</span>
-</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AE_DONT_WAIT</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>                <span class="n">tv</span><span class="p">.</span><span class="n">tv_sec</span> <span class="o">=</span> <span class="n">tv</span><span class="p">.</span><span class="n">tv_usec</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>                <span class="n">tvp</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">tv</span><span class="p">;</span>
-</span><span class='line'>            <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-</span><span class='line'>                <span class="cm">/* Otherwise we can block */</span>
-</span><span class='line'>                <span class="n">tvp</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span> <span class="cm">/* wait forever */</span>
-</span><span class='line'>            <span class="p">}</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="n">numevents</span> <span class="o">=</span> <span class="n">aeApiPoll</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">,</span> <span class="n">tvp</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">for</span> <span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">numevents</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>            <span class="n">aeFileEvent</span> <span class="o">*</span><span class="n">fe</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">events</span><span class="p">[</span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">fired</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">fd</span><span class="p">];</span>
-</span><span class='line'>            <span class="kt">int</span> <span class="n">mask</span> <span class="o">=</span> <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">fired</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">mask</span><span class="p">;</span>
-</span><span class='line'>            <span class="kt">int</span> <span class="n">fd</span> <span class="o">=</span> <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">fired</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">fd</span><span class="p">;</span>
-</span><span class='line'>            <span class="kt">int</span> <span class="n">rfired</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>      <span class="cm">/* note the fe-&gt;mask &amp; mask &amp; ... code: maybe an already processed</span>
-</span><span class='line'><span class="cm">             * event removed an element that fired and we still didn&#39;t</span>
-</span><span class='line'><span class="cm">             * processed, so we check if the event is still valid. */</span>
-</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">mask</span> <span class="o">&amp;</span> <span class="n">mask</span> <span class="o">&amp;</span> <span class="n">AE_READABLE</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>                <span class="n">rfired</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class='line'>                <span class="n">fe</span><span class="o">-&gt;</span><span class="n">rfileProc</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">,</span><span class="n">fd</span><span class="p">,</span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">clientData</span><span class="p">,</span><span class="n">mask</span><span class="p">);</span>
-</span><span class='line'>            <span class="p">}</span>
-</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">mask</span> <span class="o">&amp;</span> <span class="n">mask</span> <span class="o">&amp;</span> <span class="n">AE_WRITABLE</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>                <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">rfired</span> <span class="o">||</span> <span class="n">fe</span><span class="o">-&gt;</span><span class="n">wfileProc</span> <span class="o">!=</span> <span class="n">fe</span><span class="o">-&gt;</span><span class="n">rfileProc</span><span class="p">)</span>
-</span><span class='line'>                    <span class="n">fe</span><span class="o">-&gt;</span><span class="n">wfileProc</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">,</span><span class="n">fd</span><span class="p">,</span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">clientData</span><span class="p">,</span><span class="n">mask</span><span class="p">);</span>
-</span><span class='line'>            <span class="p">}</span>
-</span><span class='line'>            <span class="n">processed</span><span class="o">++</span><span class="p">;</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="cm">/* Check time events */</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AE_TIME_EVENTS</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">processed</span> <span class="o">+=</span> <span class="n">processTimeEvents</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">return</span> <span class="n">processed</span><span class="p">;</span> <span class="cm">/* return the number of processed file/time events */</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Hàm aeProcessEvents làm 3 nhiệm vụ chính:</p>
-
-<ul>
-<li>Tìm sự kiện có thời gian timeout gần nhất</li>
-<li>Lắng nghe sự kiện File, với thời gian poll không quá thời gian sự kiện gần nhất ở trên.</li>
-<li>Với các sự kiện được triggered (file có thể đọc, ghi; thời gian timeout đã đến), chạy các callback được đăng ký với các sự kiện.</li>
-</ul>
-
-
-<p>Việc tìm thời gian timeout gần nhất ở đầu vòng lặp nhằm hạn chế thấp nhất khả năng delay của các sự kiện thời gian (Nên nhớ serverCron chạy với thời gian timeout 1ms trên 1 lần).</p>
-
-<p>Sau khi xử lý lần lượt các xử lý các sự kiện file, redis sẽ xử lý các sự kiện thời gian. Xử lý sự kiện thời gian cũng khá đơn giản. Redis lần lượt xét từng sự kiện thời gian trong danh sách các sự kiện thời gian và gọi callback với các sự kiện đã quá thời hạn. Tuy nhiên, ta sẽ thấy 1 đoạn code khá <strong>mập mờ</strong> ở đầu xử lý sự kiện thời gian, với comment như dưới đây:</p>
-
-<figure class='code'><figcaption><span>ae.c </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</span><span class='line'>  <span class="n">function</span><span class="p">(</span><span class="ss">:index</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>    <span class="vi">@users</span> <span class="o">=</span> <span class="no">User</span><span class="o">.</span><span class="n">active</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Gần tương tự, <strong>Logic của của model</strong> sẽ được thực hiện thông qua hàm <code>model</code>. Một điểm hơi khác là trong block pass vào thì chúng ta phải extend model mà chúng ta muốn thêm chức năng vào. Một điều đặc biệt ở đây là các hàm được extend cho một model X sẽ không được add trực tiếp vào model X thông qua monkey patch, mà sẽ add gián tiếp thông qua một proxy tên là unit. Do đó giả sử chúng ta một thêm hàm <code>method</code> vào model X thì chúng ta sẽ gọi nó thông qua <code>X.unit.method</code>. Như ở ví dụ dưới đây thì hàm active? sẽ được gọi thông qua user.unit.active?</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -562,68 +259,64 @@ aeCreateEventLLoop, aeStop, aeMain, aeCreateFileEvent, aeCreateTimeEvent&#8230;<
 <span class='line-number'>7</span>
 <span class='line-number'>8</span>
 <span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'>    <span class="cm">/* If the system clock is moved to the future, and then set back to the</span>
-</span><span class='line'><span class="cm">     * right value, time events may be delayed in a random way. Often this</span>
-</span><span class='line'><span class="cm">     * means that scheduled operations will not be performed soon enough.</span>
-</span><span class='line'><span class="cm">     *</span>
-</span><span class='line'><span class="cm">     * Here we try to detect system clock skews, and force all the time</span>
-</span><span class='line'><span class="cm">     * events to be processed ASAP when this happens: the idea is that</span>
-</span><span class='line'><span class="cm">     * processing events earlier is less dangerous than delaying them</span>
-</span><span class='line'><span class="cm">     * indefinitely, and practice suggests it is. */</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">now</span> <span class="o">&lt;</span> <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">lastTime</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="n">te</span> <span class="o">=</span> <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">timeEventHead</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">while</span><span class="p">(</span><span class="n">te</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>            <span class="n">te</span><span class="o">-&gt;</span><span class="n">when_sec</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>            <span class="n">te</span> <span class="o">=</span> <span class="n">te</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">lastTime</span> <span class="o">=</span> <span class="n">now</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">...</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Làm sao thời gian hệ thống trả về bởi time(NULL) có thể nhỏ hơn thời gian xử lý được ghi nhận lần trước đấy được? Thực chất ở đây, antirez đã cân nhắc rất kỹ 1 tính huống có thể xảy ra với hệ thống thời gian của Linux. Trong điều kiện hoạt động bình thường, thời gian hệ thống sẽ luôn tăng. Tuy vậy, với 1 số trường hợp rủi ro:</p>
-
-<ul>
-<li>Nguồn cung cấp điện không đủ.</li>
-<li>Pin CMOS có vấn đề.</li>
-</ul>
-
-
-<p>1s trong máy tính có thể bằng 2, 3s trong thời gian thực, nói cách khác đồng hồ máy tính sẽ bị chạy chậm đi. Với tình huống này các sự kiện thời gian sẽ bị sai lệch và redis sẽ hoạt động không bình thường. Đấy chính là lý do antirez thêm đoạn code trên.</p>
-
-<h2>4. Redis dùng framework này như thế nào?</h2>
-
-<ul>
-<li>Sự kiện file được sử dụng ở redis client và cluster. Thực chất các redis instance cần phải liên lạc với nhau để trao đổi dữ liệu. Việc trao đổi này tiến hành qua mạng và vì vậy hệ thống không thể nào biết khi nào dữ liệu mới sẽ đến. Thay vì phải chờ dữ liệu, bằng cách dùng framework sự kiện, hệ thống có thể tiến hành các xử lý có ưu tiên cao hơn môt cách <strong>bất đồng bộ</strong>, nâng cao hiệu năng của hệ thống.</li>
-<li>Sự kiện thời gian được sử dụng để định kỳ gọi cronServer (Nhiệm vụ của cronServer: <a href="http://ktmt.github.io/blog/2013/07/02/tim-hieu-redis/">tìm hiểu redis phần 1</a>).</li>
-</ul>
-
-
-<h2>5. Kết luận</h2>
-
-<p>Redis sử dụng phương pháp lập trình hướng sự kiện để định kỳ gọi các thủ tục backup dữ liệu cũng như quản lý các kết nối từ client. Redis hỗ trợ kqueue, epoll và event port nên hiệu năng đạt được khá cao.</p>
-
-<h2>6. Tham khảo</h2>
-
-<ol>
-<li><a href="http://www.kegel.com/c10k.html">C10K</a></li>
-<li><a href="people.freebsd.org/~jlemon/papers/kqueue.pdf">kqueue</a></li>
-<li><a href="http://man7.org/linux/man-pages/man7/epoll.7.html">epoll</a></li>
-<li><a href="http://docs.oracle.com/cd/E19082-01/819-2243/port-associate-3c/index.html">event ports</a></li>
-<li><a href="https://groups.google.com/forum/#!forum/redis-db">redis mailing list</a></li>
-<li>IOCP <a href="http://en.wikipedia.org/wiki/Input/output_completion_port">Input/output completion port</a></li>
-</ol>
-
-
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">models</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">expand</span><span class="p">(</span><span class="ss">:User</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">scope</span> <span class="ss">:active</span><span class="p">,</span> <span class="nb">lambda</span> <span class="p">{</span> <span class="n">where</span><span class="p">(</span><span class="ss">:deleted_at</span> <span class="o">=&gt;</span> <span class="kp">nil</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">active?</span>
+</span><span class='line'>      <span class="n">deleted_at</span><span class="o">.</span><span class="n">nil?</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Logic của view được thực hiện thêm vào thông qua hàm <code>scope(:view)</code> và qua file view được add vào thư mục /units/unit_name/views (file view này sẽ có extension là slim)</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">scope</span><span class="p">(</span><span class="ss">:view</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">function</span><span class="p">(</span><span class="ss">:active</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">render</span> <span class="s1">&#39;/active&#39;</span> <span class="k">if</span> <span class="n">user</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">active?</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Hàm view này sẽ render view active.html.slim nằm trong app/units/unit_name/views</p>
+<p>Ngoài việc add logic của unit vào controller/model/view thông qua các hàm scope và model như đã giới thiệu ở trên. Chanko::Unit cung cấp cho chúng ta một hàm rất hữu ích là <code>active_if</code>. Hàm này giống như một dạng functionality toggle, giúp chúng ta có thể on/off một chức năng mới cực kì dễ dàng. Block được pass vào active_if sẽ quyêt định chức unit có được enable không, nếu không được enable thì tất cả các logic của unit sẽ không được execute.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">active_if</span> <span class="k">do</span> <span class="o">|</span><span class="n">context</span><span class="p">,</span> <span class="n">options</span><span class="o">|</span>
+</span><span class='line'>  <span class="kp">true</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<h1 id="kết-luận">3. Kết luận</h1>
+<p>Qua bài viết này chúng ta đã biết cách sử dụng gem chanko để có thể prototype chức năng mới một cách dễ dàng hơn, và ít ảnh hưởng đến hệ thống cũ nhất. Một cách đơn giản thì chanko đưa logic của cả model/view/controller vào tập trung trong 1 file, và cung cấp các helper function để giúp logic của hệ thống cũ có thể invoke các chức năng của unit mới một cách đơn giản nhất.</p>
+<p>Các bạn có thể tham khảo chi tiết thông qua <a href="http://cookpad.github.io/chanko/">homepage của chanko</a></p>
 		
 		
 	</div>
@@ -645,37 +338,57 @@ aeCreateEventLLoop, aeStop, aeMain, aeCreateFileEvent, aeCreateTimeEvent&#8230;<
   
 
 
-<time datetime="2013-07-15T02:02:00+09:00" data-updated="true" itemprop="datePublished">Jul 15<span>th</span>, 2013</time></div>
+<time datetime="2013-09-08T11:30:00+09:00" data-updated="true" itemprop="datePublished">Sep 8<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/di/'>DI</a>, <a class='category' href='/blog/categories/design-pattern/'>Design pattern</a>, <a class='category' href='/blog/categories/ioc/'>IoC</a>, <a class='category' href='/blog/categories/php/'>PHP</a>
+	<a class='category' href='/blog/categories/python/'>python</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/07/15/inversion-of-control-and-dependency-injection/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/09/08/gioi-thieu-ve-python-descriptor/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/15/inversion-of-control-and-dependency-injection/" itemprop="url">Inversion of Control and Dependency Injection</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/09/08/gioi-thieu-ve-python-descriptor/" itemprop="url">Giới Thiệu về Python Descriptor</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h2>Preface</h2>
-
-<p>Trước khi đọc bài này, tôi có 1 vài recommend cho độc giả :)</p>
-
-<ol>
-<li><p>Bạn nên đọc trước bài viết về <a href="http://ktmt.github.io/blog/2013/06/14/design-pattern-ap-dung-builder-pattern-trong-test-java/">Builder Pattern trong Java</a> cũng trong blog ktmt, sẽ có 1 cái nhìn tổng quát và hình dung dễ dàng hơn về ứng dụng của các pattern trong programming.</p></li>
-<li><p>Có hàng tá bài viết về Inversion Of Control và Dependency Injection. Try to google it first.</p></li>
-<li><p>Nếu không, nhớ google thêm sau khi đọc bài viết :D</p></li>
-</ol>
-
-
-<h2>Dependency Injection</h2>
-
-<p>Chúng ta sẽ bắt đầu với 1 ví dụ gần giống ví dụ trong bài viết về Builder Pattern ở trên. Xem đoạn code sau. Ngôn ngữ ở đây là PHP.</p>
-
-<figure class='code'><figcaption><span>Book.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+		<p>Trong các bài viết trước, chúng tôi đã giới thiệu về các kiến thức cơ bản trong python, như <a href="/blog/2613/04/29/python-object-model/">object trong python</a>, <a href="/blog/2613/05/06/memoization-and-decorator/">decorators</a>.</p>
+<p>Bài viết này sẽ giới thiệu một kỹ nâng cao trong Python, đó là <code>descriptor</code></p>
+<h1 id="ví-dụ-về-descriptor">1. Ví dụ về descriptor</h1>
+<p>Xét ví dụ khi chúng ta muốn xây dựng mô hình cho bài toán về các lập trình viên</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>programmer.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">salary</span><span class="p">,</span> <span class="n">rating</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="n">age</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">salary</span> <span class="o">=</span> <span class="n">salary</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">rating</span> <span class="o">=</span> <span class="n">rating</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Giờ nếu bạn muốn thêm một điều kiện là tuổi của lập trình viên phải luôn lớn hơn 0, bạn có thể cài đặt như sau</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>programmer.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -685,83 +398,43 @@ aeCreateEventLLoop, aeStop, aeMain, aeCreateFileEvent, aeCreateTimeEvent&#8230;<
 <span class='line-number'>8</span>
 <span class='line-number'>9</span>
 <span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">Book</span> <span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">title</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Title</span><span class="p">;</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Author</span><span class="p">;</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">genre</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Genre</span><span class="p">;</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">publishDate</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">PublishDate</span><span class="p">;</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">ISBN</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ISBN</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="o">...</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">salary</span><span class="p">,</span> <span class="n">rating</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">salary</span> <span class="o">=</span> <span class="n">salary</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">rating</span> <span class="o">=</span> <span class="n">rating</span>
 </span><span class='line'>
-</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Ở đây giả sử Title, Author, Genre, PublishDate hay ISBN đều là các class đã được định nghĩa trước. Như vậy class Book có 5 <strong>dependency</strong> là 5 class kể trên.</p>
-
-<p>Về mặt technical, chẳng có gì là không ổn với 1 class như trên cả.
-Tuy nhiên programmer có kinh nghiệm sẽ dễ dàng nhận thấy chúng ta đã hardcoded 5 dependency trên vào trong Book.
-Nói cách khác nếu muốn Book chứa những dependency khác, chẳng có cách nào khác là sửa lại định nghĩa class.</p>
-
-<p>Như vậy, để tránh những phiền phức nói trên và tạo độ linh hoạt khi sử dụng, class Book nên được viết lại như sau:</p>
-
-<figure class='code'><figcaption><span>Book.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</span><span class='line'>        <span class="k">if</span> <span class="n">age</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="n">age</span>
+</span><span class='line'>        <span class="k">else</span><span class="p">:</span>
+</span><span class='line'>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Negative value not allowed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">age</span><span class="p">)</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Tuy nhiên với cách làm này, bạn vẫn có thể làm cho <code>age</code> &lt; 0, nếu gán giá trị của <code>age</code> trực tiếp từ instance của Programmer</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'>
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">Book</span> <span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nv">$title</span><span class="p">,</span> <span class="nv">$author</span><span class="p">,</span> <span class="nv">$genre</span><span class="p">,</span> <span class="nv">$publishdate</span><span class="p">,</span> <span class="nv">$isbn</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">title</span> <span class="o">=</span> <span class="nv">$title</span><span class="p">;</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="nv">$author</span><span class="p">;</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">genre</span> <span class="o">=</span> <span class="nv">$genre</span><span class="p">;</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">publishDate</span> <span class="o">=</span> <span class="nv">$publishdate</span><span class="p">;</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">ISBN</span> <span class="o">=</span> <span class="nv">$isbn</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'>
-</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span> <span class="p">(</span><span class="k">new</span> <span class="nx">Title</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Author</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Genre</span><span class="p">,</span> <span class="k">new</span> <span class="nx">PublishDate</span><span class="p">,</span> <span class="k">new</span> <span class="nx">ISBN</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Bạn có thể thấy, ý tưởng của Dependency Injection(DI) thực ra rất đơn giản, chỉ là bạn vẫn thường sử dụng và không để ý.
-Dependency có thể được inject theo nhiều kiểu, ví dụ bên trên là constructor injection.
-Chúng ta còn có setter injection như sau:</p>
-
-<figure class='code'><figcaption><span>Book.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> kiennt = Programmer('kiennt', 26, 500, 5)
+</span><span class='line'>>>> kiennt.age = -10</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>May mắn thay, ta có thể sử dụng <code>property</code> để giải quyết vấn đề này</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>programmer.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -780,174 +453,63 @@ Chúng ta còn có setter injection như sau:</p>
 <span class='line-number'>17</span>
 <span class='line-number'>18</span>
 <span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">Book</span> <span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>    <span class="p">}</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">salary</span><span class="p">,</span> <span class="n">rating</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">_age</span> <span class="o">=</span> <span class="bp">None</span> <span class="c"># tạo một thuộc tính private cho age</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">setTitle</span><span class="p">(</span><span class="nv">$title</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">title</span> <span class="o">=</span> <span class="nv">$title</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="n">age</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">salary</span> <span class="o">=</span> <span class="n">salary</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">rating</span> <span class="o">=</span> <span class="n">rating</span>
 </span><span class='line'>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'><span class="c1">// Here we have 4 more methods : setAuthor ,setGenre, setPublishDate, setISBN</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="o">...</span>
+</span><span class='line'>    <span class="nd">@property</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">age</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_age</span>
 </span><span class='line'>
-</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
-</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setTitle</span><span class="p">(</span><span class="k">new</span> <span class="nx">Title</span><span class="p">);</span>
-</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">);</span>
-</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setGenre</span><span class="p">(</span><span class="k">new</span> <span class="nx">Genre</span><span class="p">);</span>
-</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setPublishDate</span><span class="p">(</span><span class="k">new</span> <span class="nx">PublishDate</span><span class="p">);</span>
-</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setISBN</span><span class="p">(</span><span class="k">new</span> <span class="nx">ISBN</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Và vấn đề mới lại nảy sinh! Có quá nhiều setter và điều đó biến Book thành 1 class phức tạp khi sử dụng.
-Việc viết lại tất cả các setter khi khởi tạo 1 Book thật là painful !</p>
-
-<p>Để giải quyết vấn đề kể trên, chúng ta sẽ đến với design pattern tiếp theo: Inversion of Control (IoC)</p>
-
-<h2>Inversion of Control</h2>
-
-<blockquote><p>In software engineering, inversion of control (IoC) is a programming technique, expressed here in terms of object-oriented programming, in which object coupling is bound at run time by an assembler object and is typically not known at compile time using static analysis.</p></blockquote>
-
-<p>Giải thích lý thuyết về IoC có lẽ sẽ tốn nhiều công sức,
-như recommend trên đầu bài, bạn có thể google 1 chút về IoC.
-Ở đây tôi sẽ đưa ra luôn 1 implement để sử dụng với class Book kể trên.</p>
-
-<figure class='code'><figcaption><span>IoC.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</span><span class='line'>    <span class="nd">@age.setter</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">age</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">if</span> <span class="n">age</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">_age</span> <span class="o">=</span> <span class="n">value</span>
+</span><span class='line'>        <span class="k">else</span><span class="p">:</span>
+</span><span class='line'>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Negative value not allowed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">age</span><span class="p">)</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>python </span>
+</figcaption>
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">IoC</span> <span class="p">{</span>
-</span><span class='line'>   <span class="k">protected</span> <span class="k">static</span> <span class="nv">$registry</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
-</span><span class='line'>
-</span><span class='line'>   <span class="c1">// Register</span>
-</span><span class='line'>   <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">register</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nx">Closure</span> <span class="nv">$resolve</span><span class="p">)</span>
-</span><span class='line'>   <span class="p">{</span>
-</span><span class='line'>      <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">[</span><span class="nv">$name</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$resolve</span><span class="p">;</span>
-</span><span class='line'>   <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>   <span class="c1">// Resolve</span>
-</span><span class='line'>   <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">resolve</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
-</span><span class='line'>   <span class="p">{</span>
-</span><span class='line'>      <span class="k">if</span> <span class="p">(</span> <span class="k">static</span><span class="o">::</span><span class="na">registered</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span> <span class="p">)</span>
-</span><span class='line'>      <span class="p">{</span>
-</span><span class='line'>         <span class="nv">$name</span> <span class="o">=</span> <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">[</span><span class="nv">$name</span><span class="p">];</span>
-</span><span class='line'>         <span class="k">return</span> <span class="nv">$name</span><span class="p">();</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>      <span class="k">throw</span> <span class="k">new</span> <span class="nx">Exception</span><span class="p">(</span><span class="s1">&#39;Nothing registered with that name, fool.&#39;</span><span class="p">);</span>
-</span><span class='line'>   <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>   <span class="c1">// Check resigtered or not</span>
-</span><span class='line'>   <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">registered</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
-</span><span class='line'>   <span class="p">{</span>
-</span><span class='line'>      <span class="k">return</span> <span class="nb">array_key_exists</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">);</span>
-</span><span class='line'>   <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>WTH! Cái khỉ gì trông lằng nhằng quá phải không :D</p>
-
-<p>Đừng lo lắng, để hiểu đoạn code trên trước hết hãy để ý rằng ở đây chúng ta có rất nhiều các static function.
-Static function có thể gọi trục tiếp trên class chứ không phải trên instance thông qua cách gọi &#8220;Class::StaticMethod()&#8221;.
-Ngoài ra Closure là 1 anonymous function.
-Bạn sẽ hiểu ngay khi xem cách dùng dưới đây</p>
-
-<figure class='code'><figcaption><span>Book.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="nx">IoC</span><span class="o">::</span><span class="na">register</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">,</span> <span class="k">function</span><span class="p">(){</span>
-</span><span class='line'>    <span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setTitle</span><span class="p">(</span><span class="k">new</span> <span class="nx">Title</span><span class="p">);</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">);</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setGenre</span><span class="p">(</span><span class="k">new</span> <span class="nx">Genre</span><span class="p">);</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setPublishDate</span><span class="p">(</span><span class="k">new</span> <span class="nx">PublishDate</span><span class="p">);</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setISBN</span><span class="p">(</span><span class="k">new</span> <span class="nx">ISBN</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">return</span> <span class="nv">$book</span><span class="p">;</span>
-</span><span class='line'><span class="p">});</span>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'>
-</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="nx">IoC</span><span class="o">::</span><span class="na">resolve</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Woo! Bây giở mỗi khi muốn tạo 1 instance của Book với đầy đủ các dependency, chỉ cần <code>IoC::resolve('book')</code>.
-Cùng với đó, các dependency có thể inject thông qua <code>IoC::register('book',function(){...})</code>.
-Đến khi unit test, bạn có thể dùng <code>IoC::register</code> để mocking các dependency và test Book mà không khởi tạo Title,Author&#8230;</p>
-
-<h2>Singleton pattern with IoC</h2>
-
-<p>Bạn thử tưởng tượng, nếu như phần register &#8216;book&#8217; bên trên chiếm nhiều tài nguyên, có thể bạn sẽ không muốn mỗi lần resolve lại khởi tạo 1 instance mới.
-Nói cách khác, bạn chỉ muốn chỉ có 1 Book với đầy đủ Title, Author, &#8230; được khởi tạo 1 lần, và lần sau muốn sử dụng thì gọi lại chính instance đã được tạo.</p>
-
-<p>Đây là đất diễn của Singleton design pattern :)
-Tôi sẽ thêm static function <code>singleton</code> cho IoC như sau:</p>
-
-<figure class='code'><figcaption><span>IoC.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> kiennt = Programmer('kiennt', 26, 500, 5)
+</span><span class='line'>>>> try:
+</span><span class='line'>        kiennt.age = -10
+</span><span class='line'>    except ValueError:
+</span><span class='line'>        print "Cannot set negative value"
+</span><span class='line'>Cannot set negative value</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Cách chúng ta làm ở đây đó là tạo ra một biến private <code>_age</code> để chứa giá trị thật của <code>age</code>. Và sử dụng <span class="citation" data-cites="getter">@getter</span> và <span class="citation" data-cites="setter">@setter</span> để bind thuộc tính <code>age</code> với 2 method. Trong 2 method này, chúng ta sẽ cài đặt logic cho việc gán trị của <code>age</code>. Khi chúng ta gọi <code>kiennt.age = value</code>, python sẽ tự động gọi đến setter của <code>age</code>, còn nếu chỉ gọi <code>kiennt.age</code> (không có gán giá trị), thì getter sẽ được gọi.</p>
+<h1 id="vấn-đề-của-getter-và-setter">2. Vấn đề của getter và setter</h1>
+<p>Nếu giờ, chúng ta cũng muốn kiểm tra giá trị của hai thuộc tính <code>salary</code> và <code>rating</code>. Chúng ta có thể làm tương tự như sau</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>programmer.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -990,70 +552,65 @@ Tôi sẽ thêm static function <code>singleton</code> cho IoC như sau:</p>
 <span class='line-number'>41</span>
 <span class='line-number'>42</span>
 <span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">IoC</span> <span class="p">{</span>
-</span><span class='line'>  <span class="k">protected</span> <span class="k">static</span> <span class="nv">$registry</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
-</span><span class='line'>  <span class="k">protected</span> <span class="k">static</span> <span class="nv">$shared</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">salary</span><span class="p">,</span> <span class="n">rating</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">_age</span> <span class="o">=</span> <span class="bp">None</span> <span class="c"># tạo một thuộc tính private cho age</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">_salary</span> <span class="o">=</span> <span class="bp">None</span> <span class="c"># tạo một thuộc tính private cho salary</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">_rating</span> <span class="o">=</span> <span class="bp">None</span> <span class="c"># tạo một thuộc tính private cho rating</span>
 </span><span class='line'>
-</span><span class='line'>  <span class="c1">// Register, here save the Closure to static::$registry</span>
-</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">register</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nx">Closure</span> <span class="nv">$resolve</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>     <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">[</span><span class="nv">$name</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$resolve</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="n">age</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">salary</span> <span class="o">=</span> <span class="n">salary</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">rating</span> <span class="o">=</span> <span class="n">rating</span>
 </span><span class='line'>
-</span><span class='line'>  <span class="c1">// Singleton, Note that here we save the result of Closure, not the Closure</span>
-</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">singleton</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nx">Closure</span> <span class="nv">$resolve</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>    <span class="k">static</span><span class="o">::</span><span class="nv">$shared</span><span class="p">[</span><span class="nv">$name</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$resolve</span><span class="p">();</span>
-</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>    <span class="nd">@property</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">age</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_age</span>
 </span><span class='line'>
-</span><span class='line'>  <span class="c1">// Resolve, consider register or singleton here</span>
-</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">resolve</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span> <span class="k">static</span><span class="o">::</span><span class="na">registered</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span> <span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="nv">$name</span> <span class="o">=</span> <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">[</span><span class="nv">$name</span><span class="p">];</span>
-</span><span class='line'>      <span class="k">return</span> <span class="nv">$name</span><span class="p">();</span>
-</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="nd">@age.setter</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">age</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">if</span> <span class="n">age</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">_age</span> <span class="o">=</span> <span class="n">value</span>
+</span><span class='line'>        <span class="k">else</span><span class="p">:</span>
+</span><span class='line'>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Negative value not allowed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">age</span><span class="p">)</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span> <span class="k">static</span><span class="o">::</span><span class="na">singletoned</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span> <span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="nv">$instance</span> <span class="o">=</span> <span class="k">static</span><span class="o">::</span><span class="nv">$shared</span><span class="p">[</span><span class="nv">$name</span><span class="p">];</span>
-</span><span class='line'>      <span class="k">return</span> <span class="nv">$instance</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="nd">@property</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">salary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_salary</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="k">throw</span> <span class="k">new</span> <span class="nx">Exception</span><span class="p">(</span><span class="s1">&#39;Nothing registered with that name, fool.&#39;</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>    <span class="nd">@age.setter</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">salary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">if</span> <span class="n">salary</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">_salary</span> <span class="o">=</span> <span class="n">value</span>
+</span><span class='line'>        <span class="k">else</span><span class="p">:</span>
+</span><span class='line'>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Negative value not allowed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">age</span><span class="p">)</span>
 </span><span class='line'>
-</span><span class='line'>  <span class="c1">// Check resigtered or not</span>
-</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">registered</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>     <span class="k">return</span> <span class="nb">array_key_exists</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>    <span class="nd">@property</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">rating</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rating</span>
 </span><span class='line'>
-</span><span class='line'>
-</span><span class='line'>  <span class="c1">// Check singleton object or not</span>
-</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">singletoned</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="nb">array_key_exists</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="k">static</span><span class="o">::</span><span class="nv">$shared</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Và bây giờ</p>
-
-<figure class='code'><figcaption><span>Book.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</span><span class='line'>    <span class="nd">@age.setter</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">rating</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">if</span> <span class="n">rating</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">_rating</span> <span class="o">=</span> <span class="n">value</span>
+</span><span class='line'>        <span class="k">else</span><span class="p">:</span>
+</span><span class='line'>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Negative value not allowed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">age</span><span class="p">)</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Tuy nhiên cách làm này làm cho code của chúng ta có qúa nhiều đoạn code lặp về logic. Đây chính là lúc <code>descriptor</code> có thể sử dụng.</p>
+<h1 id="descriptor">3. Descriptor</h1>
+<p>Descriptor cho phép chúng ta bind cách xử lý truy cập của một thuộc tính trong class A với một class B khác. Nói cách khác, nó cho phép đưa việc truy cập thuộc tính ra ngoài class. Sau đây là cách cài đặt đối với bài toán của chúng ta</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>programmer.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -1070,40 +627,76 @@ Tôi sẽ thêm static function <code>singleton</code> cho IoC như sau:</p>
 <span class='line-number'>15</span>
 <span class='line-number'>16</span>
 <span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="nx">IoC</span><span class="o">::</span><span class="na">singleton</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">,</span> <span class="k">function</span><span class="p">(){</span>
-</span><span class='line'>    <span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setTitle</span><span class="p">(</span><span class="k">new</span> <span class="nx">Title</span><span class="p">);</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">);</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setGenre</span><span class="p">(</span><span class="k">new</span> <span class="nx">Genre</span><span class="p">);</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setPublishDate</span><span class="p">(</span><span class="k">new</span> <span class="nx">PublishDate</span><span class="p">);</span>
-</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setISBN</span><span class="p">(</span><span class="k">new</span> <span class="nx">ISBN</span><span class="p">);</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">NonNegativeDescriptor</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">label</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="k">return</span> <span class="nv">$book</span><span class="p">;</span>
-</span><span class='line'><span class="p">});</span>
-</span><span class='line'><span class="o">...</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">owner</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">instance</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
 </span><span class='line'>
-</span><span class='line'><span class="nv">$book1</span> <span class="o">=</span> <span class="nx">IoC</span><span class="o">::</span><span class="na">resolve</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">);</span>
-</span><span class='line'><span class="nv">$book2</span> <span class="o">=</span> <span class="nx">IoC</span><span class="o">::</span><span class="na">resolve</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">);</span> <span class="c1">// exactly same instance with $book1</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">if</span> <span class="n">value</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">instance</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+</span><span class='line'>        <span class="k">else</span><span class="p">:</span>
+</span><span class='line'>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Negative value not allowed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">age</span><span class="p">)</span>
 </span><span class='line'>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Bạn có thể lấy <a href="https://gist.github.com/DTVD/5997723">đoạn code sample trên Gist</a> về chạy thử.
-Have fun with IoC :)</p>
-
-<h2>Real-World Use Case</h2>
-
-<p>Đọc đến đây có thể bạn sẽ hỏi tôi, việc quái gì phải xoắn cái IoC này thế, nó có thực sự hữu dụng hay chỉ là 1 cái pattern mang tính demo biếu diễn ?</p>
-
-<p>Chúng ta hãy cùng ghé qua <a href="http://laravel.com/docs/ioc">Laravel</a>, 1 framework hiện đại của PHP.</p>
-
-<p>Ở Laravel, <a href="http://laravel.com/docs/ioc">IoC</a> đã được chuẩn bị sẵn và không chỉ dùng 1 mình, còn kết hợp với <a href="http://laravel.com/docs/ioc#service-providers">ServiceProviders</a> và <a href="http://laravel.com/docs/facades">Facades</a> để tăng tối đa độ linh hoạt của code base.
-Một Facades (lại là 1 design pattern khác - hãy google sau khi đọc bài này :) ) có thể được kết nối với IoC và UnitTest như sau :</p>
-
-<figure class='code'><figcaption><span>Facades.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">age</span> <span class="o">=</span> <span class="n">NonNegativeDescriptor</span><span class="p">(</span><span class="s">&#39;age&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">salary</span> <span class="o">=</span> <span class="n">NonNegativeDescriptor</span><span class="p">(</span><span class="s">&#39;salary&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">rating</span> <span class="o">=</span> <span class="n">NonNegativeDescriptor</span><span class="p">(</span><span class="s">&#39;rating&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">salary</span><span class="p">,</span> <span class="n">rating</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="n">age</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">salary</span> <span class="o">=</span> <span class="n">salary</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">rating</span> <span class="o">=</span> <span class="n">rating</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>python </span>
+</figcaption>
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> kiennt = Programmer('kiennt', 26, 500, 5)
+</span><span class='line'>>>> print kiennt.age
+</span><span class='line'>>>> kiennt.age = 20</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>NonNegativeDescriptor là một descriptor vì class này cài đặt 2 phương thức <code>__get__</code> và <code>__set__</code>. Python nhận ra một class là descriptor nếu như class đó implement một trong 3 phương thức.</p>
+<ul>
+<li><code>__get__</code>: Nhận 2 tham số <code>instance</code> và <code>owner</code>. <code>instance</code> là instance của class mà Descriptor được bind tới. <code>owner</code> là class của <code>instance</code>. Trong trường hợp, không có <code>instance</code> nào được gọi, <code>owner</code> sẽ là None.</li>
+<li><code>__set__</code>: Nhận 2 tham số <code>instance</code> và <code>value</code>. <code>instance</code> có ý nghĩa như trong <code>__get__</code>, value là giá trị muốn set cho thuộc tính của <code>instance</code></li>
+<li><code>__delete__</code>: Nhận 1 tham số <code>instance</code></li>
+</ul>
+<p>Trong class <code>Programmer</code>, chúng ta tạo ra 3 Descriptor ở mức class là <code>age</code>, <code>salary</code> và <code>rating</code>. Khi gọi <code>print kiennt.age</code>, python sẽ nhận ra age là một descriptor, nên nó sẽ gọi đến hàm <code>__get__</code> của descriptor <code>NonNegativeDescriptor.__get__(kiennt, Programmer)</code>. Tương tự khi gán giá trị cho <code>kiennt.age = 20</code>, hàm <code>__set__</code> của descriptor cũng được gọi <code>NonNegativeDescriptor.__set__(kiennt, 20)</code>.</p>
+<p>Nếu chúng ta gọi <code>Programmer.age</code>, thì hàm <code>__get__</code> sẽ được gọi với <code>owner</code> = None.</p>
+<h1 id="descriptor-và-metaclass">4. Descriptor và Metaclass</h1>
+<p>Một điểm cần lưu ý đó là trong descriptor, có sử dụng biến label để bind giữa descriptor và thuộc tính của class. Ta có thể sử dụng Metaclass để giải quyết vấn đề này</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>programmer.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -1118,55 +711,58 @@ Một Facades (lại là 1 design pattern khác - hãy google sau khi đọc bà
 <span class='line-number'>13</span>
 <span class='line-number'>14</span>
 <span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">NonNegativeDescriptor</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">label</span>
 </span><span class='line'>
-</span><span class='line'><span class="c1">// binding IoC</span>
-</span><span class='line'><span class="nx">App</span><span class="o">::</span><span class="na">bind</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">,</span> <span class="k">function</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
-</span><span class='line'><span class="p">});</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">owner</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">instance</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
 </span><span class='line'>
-</span><span class='line'><span class="c1">// binding facades to IoC</span>
-</span><span class='line'><span class="k">use</span> <span class="nx">Illuminate\Support\Facades\Facade</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">instance</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 </span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">FacadesBook</span> <span class="k">extends</span> <span class="nx">Facade</span> <span class="p">{</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">DescriptorMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+</span><span class='line'>            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">NonNegativeDescriptor</span><span class="p">):</span>
+</span><span class='line'>                <span class="n">v</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">k</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">DescriptorMeta</span><span class="p">,</span> <span class="n">cls</span><span class="p">)</span><span class="o">.</span><span class="n">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">)</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="k">protected</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">getFacadeAccessor</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="s1">&#39;book&#39;</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Tại sao đã bind class Book vào IoC <code>book</code> rồi, lại còn tiếp tục bind IoC <code>book</code> và Facades <code>FacadesBook</code> lần nữa?</p>
-
-<p>Facades trong Laravel có thể &#8220;biến thành&#8221; Mock object sau khi gọi method <code>shouldReceive</code> (a magic method :D)</p>
-
-<figure class='code'><figcaption><span>Facades.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="c1">//Use Book as usual:</span>
-</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="nx">FacadesBook</span><span class="o">::</span><span class="na">AnInstanceMethodOfBookClass</span><span class="p">(</span><span class="nv">$AParams</span><span class="p">);</span>
-</span><span class='line'><span class="c1">//Mocking for UnitTest:</span>
-</span><span class='line'><span class="nx">FacadesBook</span><span class="o">::</span><span class="na">shouldReceive</span><span class="p">(</span><span class="s1">&#39;AnInstanceMethodOfBookClass&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">once</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">with</span><span class="p">(</span><span class="nv">$AParams</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">andReturn</span><span class="p">(</span><span class="nv">$FakeValue</span><span class="p">);</span>
-</span><span class='line'><span class="nv">$mockBook</span> <span class="o">=</span> <span class="nx">FacadesBook</span><span class="o">::</span><span class="na">AnInstanceMethodOfBookClass</span><span class="p">(</span><span class="nv">$AParams</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><code>$book</code> sẽ trả về giá trị thực khi thực hiện method <code>AnInstanceMethodOfBookClass</code> của class Book, trong khi đó <code>$mockBook</code> sẽ trả về <code>$FakeValue</code>.</p>
-
-<h2>Summary</h2>
-
+</span><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">age</span> <span class="o">=</span> <span class="n">NonNegativeDescriptor</span><span class="p">()</span>
+</span><span class='line'>    <span class="n">salary</span> <span class="o">=</span> <span class="n">NonNegativeDescriptor</span><span class="p">()</span>
+</span><span class='line'>    <span class="n">rating</span> <span class="o">=</span> <span class="n">NonNegativeDescriptor</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">salary</span><span class="p">,</span> <span class="n">rating</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="n">age</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">salary</span> <span class="o">=</span> <span class="n">salary</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">rating</span> <span class="o">=</span> <span class="n">rating</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Metaclass hoạt động như thế nào, sẽ được giới thiệu trong bài viết tiếp theo.</p>
+<h1 id="kết-luận">Kết luận</h1>
+<p>Bài viết này giới thiệu với các bạn về descriptor trong Python. Với descriptor, chúng ta có thể chuyển việc can thiệp vào từng thuộc tính của một instance trong class tới việc can thiệp vào thuộc tính ở mức class. Cùng với metaclass, descriptor được sử dụng như một <code>ma thuật đen</code> (black magic) trong metaprogramming. Descriptor được sử dụng rất nhiều khi xây dựng các bộ thư viện về ORM (django ORM, peewee, redisco)</p>
+<h1 id="tham-khảo">Tham khảo</h1>
 <ul>
-<li><strong>Dependency Injection</strong>: Đưa các dependency vào class thông qua constructor hoặc setter, không khỏi tạo trực tiếp bên trong class.</li>
-<li><strong>Inversion of Control</strong>: bind object vào thời điểm run time, không phải vào thời điểm compile time.</li>
-<li><strong>Singleton</strong>: Design pattern, cho phép trong 1 hệ thống chỉ có 1 instance duy nhất của class được tồn tại.</li>
+<li><p><a href="http://nbviewer.ipython.org/urls/gist.github.com/ChrisBeaumont/5758381/raw/descriptor_writeup.ipynb">Python Descriptors Demystified</a></p></li>
+<li><p><a href="http://dabeaz.com/py3meta/Py3Meta.pdf">Python 3 Metaprogramming</a></p></li>
 </ul>
-
-
 		
 		
 	</div>
@@ -1188,268 +784,278 @@ Một Facades (lại là 1 design pattern khác - hãy google sau khi đọc bà
   
 
 
-<time datetime="2013-07-10T15:24:00+09:00" data-updated="true" itemprop="datePublished">Jul 10<span>th</span>, 2013</time></div>
+<time datetime="2013-08-26T22:06:00+09:00" data-updated="true" itemprop="datePublished">Aug 26<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/redis/'>redis</a>, <a class='category' href='/blog/categories/sinatra/'>sinatra</a>, <a class='category' href='/blog/categories/tutorial/'>tutorial</a>
+	<a class='category' href='/blog/categories/mysql/'>mysql</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/07/10/tu-tao-dich-vu-thu-gon-url-voi-sinatra-va-redis/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/08/26/nang-phien-ban-mysql/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/10/tu-tao-dich-vu-thu-gon-url-voi-sinatra-va-redis/" itemprop="url">Tự tạo Dịch vụ Thu Gọn Url Với Sinatra và Redis</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/08/26/nang-phien-ban-mysql/" itemprop="url">Nâng Phiên Bản Mysql 5.6</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h2>Mở đầu</h2>
-
-<p>Chắc hẳn các bạn đã biết về các dịch vụ rút gọn url, điển hình là bit.ly. Mục đích của dịch vụ này là nhằm thu gọn là những url rất dài để tiết kiệm chữ (cho những dịch vụ giới hạn về số kí tự như twitter chẳng hạn) và để cho url nhìn gọn hơn.
-Cơ chế của một dịch vụ rút gọn url khá đơn giản, vậy tại sao không tự làm một dịch vụ cho chính mình. Bài này mình sẽ hướng dẫn cách làm một url shorten service đơn giản dựa trên sinatra và redis.</p>
-
-<h2>Cài đặt</h2>
-
-<p>Để cài đặt sinatra thì bạn phải có ruby đã cài sẵn trên máy, việc cài đặt sinatra khá đơn giản thông qua <strong>gem</strong>:</p>
-
-<figure class='code'><figcaption><span>sinatra_install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>  gem install sinatra
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Tiếp đến là redis, để cài đặt redis thì tùy thuộc vào hệ điều hành, trên mac-osx các bạn có thể cài đặt rất dễ dàng thông qua <strong>brew</strong>:</p>
-
-<figure class='code'><figcaption><span>redis_install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>  brew install redis
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Trên linux hoặc windows các bạn có thể google để tìm ra hướng dẫn  cài tương ứng.
-Các bạn khởi động redis thông qua, khi khởi động redis mà không set option với config gì cả thì redis sẽ chạy trên localhost và port là 6789:</p>
-
-<figure class='code'><figcaption><span>redis_install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>  redis-server
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>Giới thiệu qua về sinatra và redis</h2>
-
-<p>Sinatra là một mini webframework based trên Rack(Rack là web server interface rút gọn nhất có thể rất nổi tiếng trên ruby). Sinatra cung cấp cho bạn một DSL(Domain specific language) để có thể build một web app một cách dễ dàng nhất. Các bạn có thể tìm hiểu về sinatra ở <a href="http://www.sinatrarb.com/intro.html">trang chủ của sinatra</a>.</p>
-
-<p>Redis là hệ thống lưu trữ key-value với rất nhiều tính năng và được sử dụng rộng rãi. KTMT blog đã có <a href="http://ktmt.github.io/blog/2013/07/02/tim-hieu-redis/">một bài viết về redis</a> cách đây không lâu, các bạn có thể tham khảo lại. Về cách sử dụng redis, các bạn có thể tham khảo tại <a href="http://redis.io/documentation">trang chủ redis</a></p>
-
-<h2>Thiết kế chương trình</h2>
-
-<p>Cơ chế của một dịch vụ thu gọn hết sức đơn giản, được thể hiện ở diagram dưới đây:</p>
-
-<p><img src="/images/urlshorten/url-shorten-flow.png"></p>
-
-<p>Chắc bạn nào đã dùng bit.ly sẽ tưởng tượng ra usage flow một dịch vụ rút gọn url nên có. Cơ chế chúng ta dùng ở bài viết này như sau: đầu tiên user sẽ gửi url cần rút gọn thông qua form input. Web server nhận được request này sẽ hash url lại thành một chuỗi ngắn hơn, thông thường từ 5~10 kí tự, webserver sẽ lưu lại cặp &lt;hash, origin url> vào redis, và trả lại chuỗi hash đó được ghép vào url của dịch vụ : http://your-service.com/hash.</p>
-
-<p>Khi user click vào http://your-service.com/hash, đầu tiên server sẽ dùng chuỗi hash tìm original url trên redis, sau đó sẽ trả về response 301 (redirect) với location mới là original url, nhờ vậy mà user sẽ được redirect đến original url.</p>
-
-<p>Như vậy là đã định hình ý tưởng nên làm gì, chúng ta sẽ bắt tay vào code</p>
-
-<h2>Coding</h2>
-
-<ol>
-<li>Tạo khung
-Đầu tiên là sườn của một Sinatra app, có get, post. Chúng ta tạo folder cho app của chúng ta và tạo 1 file là app.rb chính là sinatra app:</li>
+		<h2 id="giới-thiệu">1. Giới thiệu</h2>
+<p>Trong quá trình vận hành 1 website chúng ta thường có các task như nâng phiên bản máy chủ web, nâng phiên bản cơ sở dữ liệu (vì mục đích nâng cao hiệu năng hoặc đảm bảo bảo mật). Với những hệ thống sẵn có, quản lý lượng dữ liệu lớn, tác vụ này thường không hề đơn giản, đòi hỏi 1 trình tự hơp lý. Bài viết này tổng kết là trình tự nâng cấp mysql từ phiên bản 5.0.x lên phiên bản 5.6.x và những vấn đề mình gặp phải trong quá trình nâng cấp này.</p>
+<h2 id="bài-toán">2. Bài toán</h2>
+<p>Website sử dụng hệ thống cơ sơ dữ liệu mysql, dưới mô hình master/slave. Cả master/slave đều đang chạy mysql 5.0. Ta cần nâng cấp mysql lên phiên bản 5.6.</p>
+<h4 id="điều-kiện">Điều kiện</h4>
+<p>Mọi bài toán đều không có gì khó nếu như không có giới hạn gì. Ở đây ta bắt gặp 1 vài giới hạn cần chú ý như sau:</p>
+<ul>
+<li>Các query được dùng trong website có thể không tương thích với mysql phiên bản mới.</li>
+<li>Nâng cấp master đồng thời với slave sẽ có rủi ro khi mà cả 2 gặp lỗi.</li>
+<li>Dung lượng ổ cứng: khi dung lượng ổ cứng sao lưu không cho phép, ta sẽ phải thực hiện các thao tác công phu hơn 1 chút.</li>
+</ul>
+<p>Do vậy, cách tốt nhất là nâng cấp lần lượt slave -&gt; master. Tức là slave sẽ chạy mysql5.6 và master sẽ chạy mysql5.0</p>
+<h4 id="phương-pháp">Phương pháp</h4>
+<p>Có 2 cách nâng cấp mysql.</p>
+<ul>
+<li><a href="http://dev.mysql.com/doc/refman/5.6/en/upgrading.html">Cách truyền thống</a> như được viết trong tài liệu hướng dẫn nâng cấp. Cụ thể ta nâng cấp dần dần qua các phiên bản trung gian bằng script mysql_upgrade.</li>
+<li>Cách ngắn gọn: dump toàn bộ dữ liệu ở phiên bản cũ và import lại vào phiên bản mới.</li>
+</ul>
+<p>Mỗi cách có ưu nhược điểm riêng; cụ thể cách 1 đảm bảo khả năng thành công cao, tuy vậy lại có nhược điểm là chuẩn bị môi trường cho các phiên bản rườm rà, tốn thời gian. Với khoảng cách 2 phiên bản lớn (5.0 -&gt; 5.6: qua 5.1, 5.5) thì việc upgrade khá tốn thời gian.</p>
+<p>Cách 2 có ưu điểm nhanh, tuy vậy lại có nhược điểm là tính tương thích giũa 2 phiên bản không tốt, dẫn đến khả năng lỗi sau khi upgrade cao.</p>
+<p>Bài viết sẽ trình bày quy trình upgrade theo cách 2.</p>
+<h2 id="quy-trình">3. Quy trình:</h2>
+<h4 id="bước-1-dump-toàn-bộ-dữ-liệu">Bước 1: dump toàn bộ dữ liệu</h4>
+<p>Ta có thể dump toàn bộ dữ liệu từ slave hoặc master hiện tại.</p>
+<ol type="a">
+<li>Dump dữ liệu từ slave
+<div>
+<pre><code class='bash'>mysql&gt; stop slave
+mysql&gt; show slave status;</code></pre></li>
 </ol>
+</div>
 
 
-<figure class='code'><figcaption><span>make.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>mkdir url_shorten <span class="o">&amp;&amp;</span> <span class="nb">cd </span>url_shorten
-</span><span class='line'>touch app.rb <span class="o">&amp;&amp;</span> vim app.rb
-</span></code></pre></td></tr></table></div></figure>
 
-
-<p>Sau đó chúng ta sẽ tạo cái khung cho sinatra app như dưới đây:</p>
-
-<figure class='code'><figcaption><span>url_shorten.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'><span class="nb">require</span> <span class="s1">&#39;sinatra/base&#39;</span>
-</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;redis&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">UrlShort</span> <span class="o">&lt;</span> <span class="ss">Sinatra</span><span class="p">:</span><span class="ss">:Base</span>
-</span><span class='line'>  <span class="n">set</span> <span class="ss">:public_dir</span><span class="p">,</span> <span class="no">File</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">__FILE__</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;/static&#39;</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="n">get</span> <span class="s1">&#39;/&#39;</span> <span class="k">do</span>
-</span><span class='line'>    <span class="n">erb</span> <span class="ss">:index</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="no">UrlShort</span><span class="o">.</span><span class="n">run!</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Sinatra có syntax dạng DSL: get &#8216;some info&#8217; do &#8216;something&#8217; để represent cho &#8216;get&#8217; request rất dễ hiểu. Đoạn code trên có nghĩa là khi request đến &#8216;/&#8217; (root) thì sẽ render file index nằm trong views.
-Như vậy chúng ta đã có cái khung đơn giản nhất của một web service, nhận request, trả về view. (erb là template engine có sẵn của ruby, nó sẽ render file có đuôi erb ra html)</p>
-
-<p>Tiếp đến chúng ta sẽ thực hiện xử lý hash url. Về mặt lý thuyết thì gọi là hash không đúng lắm vì hash phải là nhận đầu vào X và trả lại Y là kết quả của việc hash X, bài toán của chúng ta ở đây chỉ đơn thuần là generate ra một chuỗi random để represent cho một cái url, như vậy bài toán của chúng ta sẽ là một hàm random_hash(N) nhận đầu vào N là độ dài của chuỗi input và đầu ra là một chuỗi random (cả chữ cả số) có độ dài N, ví dụ như sau:</p>
-
-<figure class='code'><figcaption><span>hash.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'>  <span class="n">rand_hash</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span> <span class="c1">#=&gt; &quot;s4xA6&quot;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Để giải quyết bài toán này thì có khá nhiều hướng đi:</p>
-
-<ol>
-<li>Loop từ 1 đến 5 rồi với mỗi lần loop bạn random ra một số hoặc chữ cái.</li>
-<li>Tạo ra 1 array có độ dài 64 gồm từ [0..9] [a..z] và [A..Z] và random ra 5 vị trí trong đó (việc này có thể thực hiện rất dễ dàng thông qua Array#sample của ruby).</li>
-<li>Sử dụng base64. base64 có một đặc điểm là sẽ biến 1 số M thành 1 chuỗi cả chữ cả số có độ dài max là log(64)(M). Do đó để tạo ra một chuỗi random có length N thì chúng ta chỉ cần random một số M nằm trong khoảng 64<sup>(N-1)</sup> đến 64<sup>(N)</sup> và chuyển nó về base 64.</li>
-<li>Sử dụng một số kĩ thuật generate 64bit (mà đã được giới thiệu ở <a href="http://ktmt.github.io/blog/2013/06/09/xay-dung-he-thong-sinh-64bit-unique-id/">bài viết về generate 64bit uid</a> trên KTMT gần đây.</li>
+<p>Ghi nhớ các thông tin: master_host, master_port, replication_user, relay_master_log_file,</p>
+<div>
+<pre><code class='bash'>$ mysqldump -u username -p --all-database --single-transaction | gzip -f &gt; dumpfile.gz</code></pre>
+</div>
+<div>
+<pre><code class='bash'>mysql&gt; start slave;</code></pre>
+</div>
+<ol start="2" type="a">
+<li>Dump dữ liệu từ master</li>
 </ol>
+<div>
+<pre><code class='bash'>mysql&gt; flush tables with read lock;
+mysql&gt; show master status;</code></pre>
+</div>
+<div>
+<pre><code class='bash'>mysqldump -u username -p --all-database --single-transaction | gzip -f &gt; dumpfile.gz</code></pre>
+</div>
+<div>
+<pre><code class='bash'>mysql&gt; unlock tables;</code></pre>
+</div>
+<h4 id="bước-2-cài-đặt-mysql-phiên-bản-5.6">Bước 2: Cài đặt mysql phiên bản 5.6</h4>
+<div>
+<pre><code class='bash'>$ /etc/init.d/mysql stop                 # stop mysql-5.0
+$ cd /usr/local
+$ wget http://dev.mysql.com/get/Downloads/MySQL-5.6/mysql-5.6.13-linux-glibc2.5-x86_64.tar.gz/from/http://cdn.mysql.com/
+ 
+$ tar xfz mysql-5.6.13-linux-glibc2.5-x86_64.tar.gz
+$ mv mysql-5.6.13-linux-glibc2.5-x86_64 mysql-5.6.13
+ 
+# symbolic link張替える
+$ rm mysql
+$ ln -sf mysql-5.6.13 mysql
+$ cd mysql
+$ chown -R mysql:mysql .</code></pre>
+</div>
+<h4 id="bước-3-khởi-động-mysql-và-import-dữ-liệu">Bước 3: Khởi động mysql và import dữ liệu</h4>
+<div>
+<pre><code class='bash'>$ cp /tmp/my.cnf /usr/local/mysql
+ 
+# データ容量そろえる
+$ cd /dbdata/data
+$ rm -rf *
+ 
+# 起動するため、テンポラリデータフォルダを作る
+$ cd /usr/local/mysql
+$ cd data                             # 空きフォルダか確認
+$ ll 
+$ cd ..
+$ ./scripts/mysql_install_db --user=mysql
+$ cp support-files/mysql.server /etc/init.d/mysql
+$ /etc/init.d/mysql start
+$ mysqladmin -u root password 'pass'
+ 
+ 
+# data フォルダは /dbdata/dataにする
+$ mv data data.bk
+$ ln -sf /dbdata/data data
 
+# import data file
+$ mysql -u root -p &lt; バックアップファイル</code></pre>
+</div>
+<h4 id="bước-4-khởi-động-lại-mysql.">Bước 4: Khởi động lại mysql.</h4>
+<div>
+<pre><code class='bash'>$ /etc/init.d/mysql stop
+$ /etc/init.d/mysql start</code></pre>
+</div>
+<h4 id="bước-5-cài-đặt-sao-chép-replication">Bước 5: Cài đặt sao chép (replication)</h4>
+<div>
+<pre><code class='bash'>$ mysql -u root -p
+mysql&gt; show slave status¥G;   # replication されてない確認
+ 
+....
+ 
+mysql&gt; change master to master_host='master ip',
+         master_user='レプリケーションユーザ名',
+         master_password='パスワード',
+         master_log_file='mysql-bin.000003',
+         master_log_pos=73;
+  Query OK, 0 rows affected (0.03 sec)
+mysql&gt;
+mysql&gt; show slave status¥G
+*************************** 1. row ***************************
+             Slave_IO_State:
+                Master_Host: master ip
+                Master_User: レプリケーションユーザ名
+                Master_Port: 3306
+              Connect_Retry: 60
+            Master_Log_File: mysql-bin.001378
+        Read_Master_Log_Pos: 348578503
+             Relay_Log_File: mysqld-relay-bin.000001
+              Relay_Log_Pos: 4
+      Relay_Master_Log_File: mysql-bin.001378
+           Slave_IO_Running: No
+          Slave_SQL_Running: No
+            Replicate_Do_DB:
+        Replicate_Ignore_DB:
+         Replicate_Do_Table:
+     Replicate_Ignore_Table:
+    Replicate_Wild_Do_Table:
+Replicate_Wild_Ignore_Table:
+                 Last_Errno: 0
+                 Last_Error:
+               Skip_Counter: 0
+        Exec_Master_Log_Pos: 348578503
+            Relay_Log_Space: 98
+            Until_Condition: None
+             Until_Log_File:
+              Until_Log_Pos: 0
+         Master_SSL_Allowed: No
+         Master_SSL_CA_File:
+         Master_SSL_CA_Path:
+            Master_SSL_Cert:
+          Master_SSL_Cipher:
+             Master_SSL_Key:
+      Seconds_Behind_Master: NULL
+1 row in set (0.00 sec)
+  
+mysql&gt; start slave;</code></pre>
+</div>
+<h4 id="bước-6-kiểm-tra-cài-đặt-replication.">Bước 6: Kiểm tra cài đặt replication.</h4>
+<div>
+<pre><code class='bash'>mysql&gt; show slave status¥G
+*************************** 1. row ***************************
+             Slave_IO_State:
+                Master_Host: master ip
+                Master_User: レプリケーションユーザ名
+                Master_Port: 3306
+              Connect_Retry: 60
+            Master_Log_File: mysql-bin.001378
+        Read_Master_Log_Pos: 348578503
+             Relay_Log_File: mysqld-relay-bin.000001
+              Relay_Log_Pos: 4
+      Relay_Master_Log_File: mysql-bin.001378
+           Slave_IO_Running: No
+          Slave_SQL_Running: No
+            Replicate_Do_DB:
+        Replicate_Ignore_DB:
+         Replicate_Do_Table:
+     Replicate_Ignore_Table:
+    Replicate_Wild_Do_Table:
+Replicate_Wild_Ignore_Table:
+                 Last_Errno: 0
+                 Last_Error:
+               Skip_Counter: 0
+        Exec_Master_Log_Pos: 348578503
+            Relay_Log_Space: 98
+            Until_Condition: None
+             Until_Log_File:
+              Until_Log_Pos: 0
+         Master_SSL_Allowed: No
+         Master_SSL_CA_File:
+         Master_SSL_CA_Path:
+            Master_SSL_Cert:
+          Master_SSL_Cipher:
+             Master_SSL_Key:
+      Seconds_Behind_Master: NULL
+1 row in set (0.00 sec)
+  
+mysql&gt; start slave;</code></pre>
+</div>
+<h2 id="các-lỗi-có-thể-có">4. Các lỗi có thể có</h2>
+<p>Nếu làm mọi việc suôn sẻ, ta có thể hoàn thành thao tác nâng cấp ở bước 4. Tuy vậy tuỳ vào đặc tính dữ liệu, mà mọi việc có thể không suôn sẻ như vậy. Trong lần nâng cấp này, mình gặp 1 lỗi sau sau khi khởi động mysql.</p>
+<div>
+<pre><code class='bash'>2013-08-25 11:07:00 19807 [Note] Server socket created on IP: '0.0.0.0'.
+02:07:00 UTC - mysqld got signal 11 ;
+This could be because you hit a bug. It is also possible that this binary
+or one of the libraries it was linked against is corrupt, improperly built,
+or misconfigured. This error can also be caused by malfunctioning hardware.
+We will try our best to scrape up some info that will hopefully help
+diagnose the problem, but since we have already crashed,
+something is definitely wrong and this may fail.
 
-<p>Ở bài viết này chúng ta sẽ sử dụng kĩ thuật số (3). Chúng ta đưa hàm generate hash vào trong helper của sinatra thông qua hàm helpers như sau:</p>
+key_buffer_size=134217728
+read_buffer_size=2097152
+max_used_connections=0
+max_threads=100
+thread_count=0
+connection_count=0
+It is possible that mysqld could use up to
+key_buffer_size + (read_buffer_size + sort_buffer_size)*max_threads = 542029 K  bytes of memory
+Hope that's ok; if not, decrease some variables in the equation.
 
-<figure class='code'><figcaption><span>hash.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'><span class="k">class</span> <span class="nc">UrlShort</span> <span class="o">&lt;</span> <span class="ss">Sinatra</span><span class="p">:</span><span class="ss">:Base</span>
-</span><span class='line'>  <span class="o">.</span><span class="n">.</span>
-</span><span class='line'>  <span class="n">helpers</span> <span class="k">do</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">rand_hash</span><span class="p">(</span><span class="n">length</span><span class="p">)</span>
-</span><span class='line'>      <span class="n">gap</span> <span class="o">=</span> <span class="mi">64</span><span class="o">**</span><span class="p">(</span><span class="n">length</span><span class="p">)</span> <span class="o">-</span> <span class="mi">64</span><span class="o">**</span><span class="p">(</span><span class="n">length</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>      <span class="p">(</span><span class="nb">rand</span><span class="p">(</span><span class="n">gap</span><span class="p">)</span> <span class="o">+</span> <span class="mi">64</span><span class="o">**</span><span class="p">(</span><span class="n">length</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">to_s</span><span class="p">(</span><span class="mi">64</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>  <span class="o">.</span><span class="n">.</span><span class="o">.</span>
-</span></code></pre></td></tr></table></div></figure>
+Thread pointer: 0xe57de70
+Attempting backtrace. You can use the following information to find out
+where mysqld died. If you see no messages after this, something went
+terribly wrong...
+stack_bottom = 7fffd70eced8 thread_stack 0x40000
+/usr/local/mysql/bin/mysqld(my_print_stacktrace+0x35)[0x8fa385]
+/usr/local/mysql/bin/mysqld(handle_fatal_signal+0x3e8)[0x66cfd8]
+/lib64/libpthread.so.0[0x3a9300eb10]
+/usr/local/mysql/bin/mysqld(_Z9get_fieldP11st_mem_rootP5Field+0x3c)[0x77b16c]
+/usr/local/mysql/bin/mysqld[0x68c5bc]
+/usr/local/mysql/bin/mysqld(_Z10acl_reloadP3THD+0x459)[0x68f059]
+/usr/local/mysql/bin/mysqld(_Z8acl_initb+0x117)[0x6901c7]
+/usr/local/mysql/bin/mysqld(_Z11mysqld_mainiPPc+0x543)[0x582e13]
+/lib64/libc.so.6(__libc_start_main+0xf4)[0x3a9241d994]
+/usr/local/mysql/bin/mysqld(__gxx_personality_v0+0x2e1)[0x5779e9]
 
+Trying to get some variables.
+Some pointers may be invalid and cause the dump to abort.
+Query (0): is an invalid pointer
+Connection ID (thread ID): 0
+Status: NOT_KILLED
 
-<p>Tiếp theo chúng ta sẽ làm nhiệm vụ gắn hash thu được với url thành một cặp key-value và ghi vào redis. Để làm nhiệm vụ này thì đầu tiên chúng ta cần khởi tạo redis, mình khởi tạo redis bằng cách overwrite constructor của app và đưa redis instance vào thành 1 instance property. Ngoài ra, chúng ta cũng không muốn 1 url mà mỗi lần request lại tạo một hash khác nhau , rất tốn tài nguyên, do đó mỗi lần gen hash mình sẽ lưu duplicate thành 2 cặp key-value. Một cặp chứa url làm key và hash làm value, và một cặp chứ hash làm key và url là value, điều này đảm bảo mối liên hệ giữa url/hash là 1/1.</p>
-
-<figure class='code'><figcaption><span>implement.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'><span class="n">post</span> <span class="s1">&#39;/&#39;</span> <span class="k">do</span>
-</span><span class='line'>  <span class="vi">@error</span> <span class="o">=</span> <span class="kp">nil</span>
-</span><span class='line'>  <span class="vi">@error</span> <span class="o">=</span> <span class="s1">&#39;please enter url&#39;</span> <span class="k">if</span> <span class="no">URI</span><span class="o">.</span><span class="n">regexp</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">params</span><span class="o">[</span><span class="ss">:url</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">nil?</span>
-</span><span class='line'>  <span class="vi">@success</span> <span class="o">=</span> <span class="kp">false</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">unless</span> <span class="vi">@error</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">params</span><span class="o">[</span><span class="ss">:url</span><span class="o">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">params</span><span class="o">[</span><span class="ss">:url</span><span class="o">].</span><span class="n">empty?</span>
-</span><span class='line'>      <span class="vi">@url</span> <span class="o">=</span> <span class="n">params</span><span class="o">[</span><span class="ss">:url</span><span class="o">]</span>
-</span><span class='line'>      <span class="vi">@hash</span> <span class="o">=</span> <span class="n">rand_hash</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
-</span><span class='line'>      <span class="n">exist</span> <span class="o">=</span> <span class="vi">@redis</span><span class="o">.</span><span class="n">setnx</span> <span class="s2">&quot;url:</span><span class="si">#{</span><span class="vi">@url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="vi">@hash</span>
-</span><span class='line'>      <span class="k">if</span> <span class="n">exist</span> <span class="c1">#key not set</span>
-</span><span class='line'>        <span class="vi">@redis</span><span class="o">.</span><span class="n">setnx</span> <span class="s2">&quot;hash:</span><span class="si">#{</span><span class="vi">@hash</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="vi">@url</span>
-</span><span class='line'>      <span class="k">else</span>
-</span><span class='line'>        <span class="vi">@hash</span> <span class="o">=</span> <span class="vi">@redis</span><span class="o">.</span><span class="n">get</span> <span class="s2">&quot;url:</span><span class="si">#{</span><span class="vi">@url</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>      <span class="k">end</span>
-</span><span class='line'>      <span class="vi">@success</span> <span class="o">=</span> <span class="kp">true</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="n">erb</span> <span class="ss">:index</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Như vậy chúng ta đã có @hash để trả về cho user, chúng ta sẽ ghep hash vào trong views để hiển thị cho user (views/index.rb)</p>
-
-<figure class='code'><figcaption><span>index.erb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='erb'><span class='line'><span class="x">&lt;form id=&quot;form&quot; method=&quot;post&quot;&gt;</span>
-</span><span class='line'><span class="x">  &lt;input type=&quot;text&quot; value=&quot;&quot; name=&quot;url&quot; id=&quot;url&quot;/&gt;</span>
-</span><span class='line'><span class="x">  &lt;input type=&quot;submit&quot; value=&quot;shorten&quot; id=&quot;submit&quot; class=&quot;submit&quot;/&gt;</span>
-</span><span class='line'><span class="x">&lt;/form&gt;</span>
-</span><span class='line'><span class="x">&lt;hr/&gt;</span>
-</span><span class='line'><span class="x">&lt;div class=&quot;mes&quot;&gt;Result&lt;/div&gt;</span>
-</span><span class='line'><span class="cp">&lt;%</span> <span class="k">if</span> <span class="vi">@error</span> <span class="cp">%&gt;</span><span class="x"></span>
-</span><span class='line'><span class="x">  &lt;div id=&#39;error&#39;&gt;</span>
-</span><span class='line'><span class="x">    </span><span class="cp">&lt;%=</span> <span class="vi">@error</span> <span class="cp">%&gt;</span><span class="x"></span>
-</span><span class='line'><span class="x">  &lt;/div&gt;</span>
-</span><span class='line'><span class="cp">&lt;%</span> <span class="k">else</span> <span class="cp">%&gt;</span><span class="x"></span>
-</span><span class='line'><span class="x">  </span><span class="cp">&lt;%</span> <span class="k">if</span> <span class="vi">@success</span> <span class="cp">%&gt;</span><span class="x"></span>
-</span><span class='line'><span class="x">    &lt;a id=&quot;result&quot; href=&#39;</span><span class="cp">&lt;%=</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">escape_html</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="si">}#{</span><span class="vi">@hash</span><span class="si">}</span><span class="s2">&quot;</span> <span class="cp">%&gt;</span><span class="x">&#39;&gt;</span><span class="cp">&lt;%=</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">escape_html</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="si">}#{</span><span class="vi">@hash</span><span class="si">}</span><span class="s2">&quot;</span> <span class="cp">%&gt;</span><span class="x">&lt;/a&gt;</span>
-</span><span class='line'><span class="x">    &lt;input data-clipboard-text=&#39;</span><span class="cp">&lt;%=</span><span class="s2">&quot;</span><span class="si">#{</span><span class="n">escape_html</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="si">}#{</span><span class="vi">@hash</span><span class="si">}</span><span class="s2">&quot;</span> <span class="cp">%&gt;</span><span class="x">&#39; type=&quot;button&quot; id=&quot;yank&quot; class=&quot;submit&quot; value=&quot;yank&quot;/&gt;</span>
-</span><span class='line'><span class="x">  </span><span class="cp">&lt;%</span> <span class="k">end</span> <span class="cp">%&gt;</span><span class="x">  </span>
-</span><span class='line'><span class="cp">&lt;%</span> <span class="k">end</span> <span class="cp">%&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Phần việc còn lại chúng ta phải giải quyết là khi user click vào link. Link của chúng ta có dạng là www.my-application.com/#{hash}, với sinatra để lọc phần hash hết sức đon giản vì sinatra đã tự động lọc hộ chúng ta và đưa vào biến global params, do đó chúng ta chỉ cần lấy hash từ params, tìm trong redis, và redirect user là ok:</p>
-
-<figure class='code'><figcaption><span>redirect.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'>  <span class="n">get</span> <span class="s1">&#39;/:hash&#39;</span> <span class="k">do</span>
-</span><span class='line'>    <span class="n">url</span> <span class="o">=</span> <span class="vi">@redis</span><span class="o">.</span><span class="n">get</span> <span class="s2">&quot;hash:</span><span class="si">#{</span><span class="n">params</span><span class="o">[</span><span class="ss">:hash</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>    <span class="n">redirect</span> <span class="n">url</span>
-</span><span class='line'>  <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Như vậy chúng ta đã có một flow hoàn chỉnh rồi, thêm tí css và sử dụng <a href="https://github.com/zeroclipboard/ZeroClipboard">ZeroClipboard</a> để có nút yank để copy url vào clipboard, chúng ta đã có một dịch vụ rút gọn url cho riêng mình!</p>
-
-<p><img src="/images/urlshorten/background.png"></p>
-
-<p>Toàn bộ source code cho tutorial này mình đang để ở đây, mọi người có thể sử dụng tùy ý :).
-<a href="https://github.com/ktmt/link_shorttener">https://github.com/ktmt/link_shorttener</a></p>
-
+The manual page at http://dev.mysql.com/doc/mysql/en/crashing.html contains
+information that should help you find out what is causing the crash.
+130825 11:07:00 mysqld_safe Number of processes running now: 0
+130825 11:07:00 mysqld_safe mysqld restarted
+2013-08-25 11:07:01 0 [Warning] TIMESTAMP with implicit DEFAULT value is deprecated. Please use --explicit_defaults_for_timestamp server option (see documentation for more details).
+2013-08-25 11:07:01 19847 [Note] Plugin 'FEDERATED' is disabled.
+2013-08-25 11:07:01 19847 [Note] InnoDB: The InnoDB memory heap is disabled
+2013-08-25 11:07:01 19847 [Note] InnoDB: Mutexes and rw_locks use GCC atomic builtins
+2013-08-25 11:07:01 19847 [Note] InnoDB: Compressed tables use zlib 1.2.3
+2013-08-25 11:07:01 19847 [Note] InnoDB: Using Linux native AIO
+2013-08-25 11:07:01 19847 [Note] InnoDB: Not using CPU crc32 instructions
+2013-08-25 11:07:01 19847 [Note] InnoDB: Initializing buffer pool, size = 512.0M
+2013-08-25 11:07:01 19847 [Note] InnoDB: Completed initialization of buffer pool
+2013-08-25 11:07:01 19847 [Note] InnoDB: Highest supported file format is Barracuda.
+130825 11:07:09 mysqld_safe mysqld from pid file /usr/local/mysql/data/nl-dbdev-slave.pid ended</code></pre>
+</div>
+<p>mysql khởi động gặp bug về bộ nhớ (segmentation fault) và bị kill bởi signal 11. Mysql liên tục khởi động và bị kill.</p>
+<p>Để tránh trường hợp này, sau khi import dữ liệu ta nên chạy mysql_upgrade 1 lần để script này sửa các bảng trong trạng thái lỗi trước khi khởi động lại để tránh lỗi ở trên.</p>
+<h2 id="tổng-kết">5. Tổng kết</h2>
+<p>Bài viết tóm tắt quy trình nâng cấp phiên bản mysql cũng như cách dump toàn bộ dữ liệu trong mysql cũng như lỗi có thể gặp phải + cách giải quyết. Hy vọng với tóm tắt này, bạn sẽ không bở ngỡ khi phải backup hay nâng cấp phiên bản cho mysql.</p>
 		
 		
 	</div>
@@ -1467,7 +1073,7 @@ Như vậy chúng ta đã có cái khung đơn giản nhất của một web ser
     <div class="center"><a href="/blog/archives">Blog Archives</a></div>
 </nav></div>
 			</div>
-			<footer id="footer" class="inner">Copyright &copy; 2013
+			<footer id="footer" class="inner">Copyright &copy; 2014
 
     kỹ thuật máy tính
 

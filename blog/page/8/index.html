@@ -7,7 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jul 7th, 2013 git Comments Githook và Server Hook (Tiếp) Ở bài viết trước, tôi đã giới thiệu về githook, client hook và các user case hay sử dụng &hellip;">
+	<meta name="description" content="Aug 26th, 2013 iOS Comments Những Mẹo Lập Trình Với Objective-C Mở đầu
+Đối với những lập trình viên khi mới tiếp xúc với Objective-C, chắc hẳn sẽ &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -17,11 +18,17 @@
 
 	<link href="/atom.xml" rel="alternate" title="Blog kỹ thuật máy tính" type="application/atom+xml">
 	
-	<link rel="canonical" href="http://ktmt.github.com/blog/page/8/">
+	<link rel="canonical" href="http://git@github.com.github.com/blog/page/8/">
 	<link href="/favicon.png" rel="shortcut icon">
 	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
 	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+    });
+  </script>
 	<link href='http://fonts.googleapis.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
 	
 </head>
@@ -44,6 +51,8 @@
 </nav>
 <nav id="sub-nav">
 	<div class="social">
+		
+		<a class="facebook" href="http://www.facebook.com/pages/ktmtgithubio/486208978117754" title="Facebook">Facebook</a>
 		
 		
 		
@@ -84,107 +93,31 @@
   
 
 
-<time datetime="2013-07-07T22:54:00+09:00" data-updated="true" itemprop="datePublished">Jul 7<span>th</span>, 2013</time></div>
+<time datetime="2013-08-26T09:30:00+09:00" data-updated="true" itemprop="datePublished">Aug 26<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/git/'>git</a>
+	<a class='category' href='/blog/categories/ios/'>iOS</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/07/07/git-server-hook-dot-markdown/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/08/26/nhung-meo-lap-trinh-voi-objective-c/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/07/git-server-hook-dot-markdown/" itemprop="url">Githook và Server Hook (Tiếp)</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/08/26/nhung-meo-lap-trinh-voi-objective-c/" itemprop="url">Những Mẹo Lập Trình Với Objective-C</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<p>Ở bài viết <a href="/blog/2013/06/25/using-githook-to-automatically-test-your-app/">trước</a>, tôi đã giới thiệu về githook, client hook và các user case hay sử dụng với client hook. Bài viết này, tôi sẽ giới thiệu thêm về server hook và các ứng dụng của chúng trong thực tế</p>
-
-<h1>Server-side hooks</h1>
-
-<p>Bên cạnh việc sử dụng các client-side hooks, bạn có thể sử dụng một vài server-side hook như là một hệ thống admin để áp đặt một cơ chế quán lý cho project của bạn. Những script này sẽ được chạy trước và sau khi commit được đẩy lên server. Những pre-hooks có thể trả về giá trị khác 0 ở bất cứ thời điểm nào để loại bỏ một push từ client, cũng như để in ra một error message cho client</p>
-
-<h2>pre-receive và post-receive</h2>
-
-<p>Script đầu tiên được chạy khi server nhận được một push từ client đó là <code>pre-receive</code>. Script này nhận một list các tham chiếu sẽ được push từ stdin. Nếu nó trả về giá trị khác 0, không có tham chiếu nào được chấp nhận. Bạn có thể sử dụng hook này để làm những việc như đảm bảo không có bất cứ tham chiếu nào là <code>non-fast-forwards</code>.</p>
-
-<p><code>post-receive</code> hook chạy sau khi toàn bộ quá trình được hoàn tất và có thể sử dụng để update các service khác hoặc để notify uer. Nó nhận cùng dữ liệu từ stdin như <code>pre-receive</code> hook. Ví dụ bao gồm gửi email chó một list các developer liên quan, notify CI server, hoặc update ticket tracking system. Bạn thậm chí có thể parse commit message để kiểm tra xem có bất cứ ticket nào cần open, modified hoặc update hay không. <code>post-receive</code> không thể làm ngừng lại quá trình push, nhưng client sẽ không đóng kết nối tới server cho đên khi <code>post-receive</code> kết thúc. Ví thế hãy cẩn thận khi bạn muốn làm những việc tốn thời gian. Cách tốt nhất là hãy sử dụng các background process để xử lý các tác vụ tốn thời gian.</p>
-
-<h2>update</h2>
-
-<p>Update script là tương tự với <code>pre-receive</code> script, ngoại trừ việc nó chỉ chạy một làn cho mỗi branch mà pusher muốn update. Nếu pusher muốn update nhiều branch, <code>pre-receive</code> chỉ chạy duy nhất một lần, nhưng update sẽ chạy một lần cho mỗi branch mà chúng được push. Thay vì đọc dữ liệu từ stdin, script này sẽ nhận 3 tham số đầu vào: tên của branch, SHA-1 trỏ đến commit trước khi được push, và SHA-1 user đang muốn push. Nếu update script trả về kết quả khác 0, chỉ branch ứng với script này bị reject, các branch khác vẫn được update bình thường</p>
-
-<h1>Ví dụ</h1>
-
-<p>Trong ví dụ này, chúng ta sẽ bắt buộc mỗi commit message phải có phần mở đầu của message tuân theo một định dạng. Cụ thể mỗi mesage phải có dạng &#8220;ref:1234&#8221; bởi vì mỗi một commit sẽ ứng với một ticket trong hệ thống.</p>
-
-<p>Để làm việc này, sẻver sẽ phải kiểm tra tất cả các commit được push để xem string trong commit message có đúng format hay không. Nếu commit message là không đúng format, trả về giá trị khác 0 và reject push.</p>
-
-<p>Chúng ta sẽ viết một update hook để làm việc này. Chú ý rắng, update hook nhận 3 giá trị đầu vào: tên của branch được update, SHA-1 của commit trước khi được push, và SHA-1 của commit sau khi được push. Các đoạn code dưới đây được minh hoạ bằng ruby, bạn có thể sử dụng ngôn ngữ lập trình khác nếu muốn</p>
-
-<figure class='code'><figcaption><span>update </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1">#!/usr/bin/env ruby</span>
-</span><span class='line'>
-</span><span class='line'><span class="vg">$refname</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span>
-</span><span class='line'><span class="vg">$oldrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span>
-</span><span class='line'><span class="vg">$newrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Để lấy các commit từ <code>$oldrev</code> tới <code>$newrev</code>, chúng ta sử dụng lệnh <code>git rev-lít</code>. Lệnh này sẽ trả về danh sách các SHA-1 cho các commit nằm giữa 2 commit mà chúng ta truyền vào</p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>git rev-list 538c33..d14fc7
-</span><span class='line'>d14fc7c847ab946ec39590d87783c69b031bdfb7
-</span><span class='line'>9f585da4401b0a3999e84113824d15245c13f0be
-</span><span class='line'>234071a1be950e2a8d078e6141f5cd20c1e61ad3
-</span><span class='line'>dfa04c9ef3d5197182f13fb5b9b1fb7717d2222a
-</span><span class='line'>17716ec0f1ff5c77eff40b7fe912f9f6cfd0e475
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Sau đó, chúng ta sử dụng lệnh <code>git cat-file</code> đẻ duyệt qua từng commit và lấy nội dụng của commit message.</p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>git cat-file commit ca82a6
-</span><span class='line'>tree cfda3bf379e4f8dba8717dee55aab78aef7f4daf
-</span><span class='line'>parent 085bb3bcb608e1e8451d4b2432f8ecbe6306e7e7
-</span><span class='line'>author kiennt &lt;kiennt@gmail.com&gt; 1205815931 -0700
-</span><span class='line'>committer kiennt &lt;schacon@gmail.com&gt; 1240030591 -0700
-</span><span class='line'>
-</span><span class='line'>Add new post about githook
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Cách đơn giản để lấy commit message từ một commit là khi có SHA-1 , chúng ta xác định dòng blank đầu tiên và lấy tất cả phần đằng sau nó. Chúng ta có thể sử dụng <code>sed</code> để làm điều này</p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>git cat-file commit ca82a6 | sed <span class="s1">&#39;1,/^$/d&#39;</span>
-</span><span class='line'>Add new post about githook
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Sau đây là toàn bộ đoạn code ruby để hoàn thành tác vụ trên</p>
-
-<figure class='code'><figcaption><span>update </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+		<h1 id="mở-đầu">Mở đầu</h1>
+<p>Đối với những lập trình viên khi mới tiếp xúc với Objective-C, chắc hẳn sẽ gặp phải 1 số bỡ ngỡ với các cú pháp của nó. Tuy được kế thừa từ C nhưng Objective-C lại có cách gọi hàm, sử dụng biến khác hẳn. Vì thế, bài viết này sẽ giới thiệu cho mọi người 1 số mẹo để lập trình hiệu quả với Objective-C, đặc biệt là đối với những ai chưa có thời gian dài tiếp xúc với nó.</p>
+<h1 id="objective-c-literals">Objective-C Literals</h1>
+<ul>
+<li>Thứ nhất là đối với NSNumber, thay vì phải khởi tạo dài dòng như <code>[NSNumber numberWithInt:x]</code>… chúng ta có thể thay thế bằng các cách dưới đây:</li>
+</ul>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'> 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -203,136 +136,99 @@
 <span class='line-number'>17</span>
 <span class='line-number'>18</span>
 <span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1">#!/usr/bin/env ruby</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="c1">// character literals.</span>
+</span><span class='line'>  <span class="n">NSNumber</span> <span class="o">*</span><span class="n">theLetterZ</span> <span class="o">=</span> <span class="sc">@&#39;Z&#39;</span><span class="p">;</span>          <span class="c1">// tương đương với [NSNumber numberWithChar:&#39;Z&#39;]</span>
 </span><span class='line'>
-</span><span class='line'><span class="vg">$refname</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span>
-</span><span class='line'><span class="vg">$oldrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span>
-</span><span class='line'><span class="vg">$newrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span>
-</span><span class='line'><span class="vg">$regex</span> <span class="o">=</span> <span class="sr">/\[ref: (\d+)\]/</span>
+</span><span class='line'>  <span class="c1">// integral literals.</span>
+</span><span class='line'>  <span class="n">NSNumber</span> <span class="o">*</span><span class="n">fortyTwo</span> <span class="o">=</span> <span class="err">@</span><span class="mi">42</span><span class="p">;</span>             <span class="c1">// tương đương với [NSNumber numberWithInt:42]</span>
+</span><span class='line'>  <span class="n">NSNumber</span> <span class="o">*</span><span class="n">fortyTwoUnsigned</span> <span class="o">=</span> <span class="err">@</span><span class="mi">42</span><span class="n">U</span><span class="p">;</span>    <span class="c1">// tương đương với [NSNumber numberWithUnsignedInt:42U]</span>
+</span><span class='line'>  <span class="n">NSNumber</span> <span class="o">*</span><span class="n">fortyTwoLong</span> <span class="o">=</span> <span class="err">@</span><span class="mi">42L</span><span class="p">;</span>        <span class="c1">// tương đương với [NSNumber numberWithLong:42L]</span>
+</span><span class='line'>  <span class="n">NSNumber</span> <span class="o">*</span><span class="n">fortyTwoLongLong</span> <span class="o">=</span> <span class="err">@</span><span class="mi">42L</span><span class="n">L</span><span class="p">;</span>   <span class="c1">// tương đương với [NSNumber numberWithLongLong:42LL]</span>
 </span><span class='line'>
-</span><span class='line'><span class="c1"># enforced custom commit message format</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">check_message_format</span>
-</span><span class='line'>  <span class="n">missed_revs</span> <span class="o">=</span> <span class="sb">`git rev-list </span><span class="si">#{</span><span class="vg">$oldrev</span><span class="si">}</span><span class="sb">..</span><span class="si">#{</span><span class="vg">$newrev</span><span class="si">}</span><span class="sb">`</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">missed_revs</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">rev</span><span class="o">|</span>
-</span><span class='line'>    <span class="n">message</span> <span class="o">=</span> <span class="sb">`git cat-file commit </span><span class="si">#{</span><span class="n">rev</span><span class="si">}</span><span class="sb"> | sed &#39;1,/^$/d&#39;`</span>
-</span><span class='line'>    <span class="k">if</span> <span class="o">!</span><span class="vg">$regex</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
-</span><span class='line'>      <span class="nb">puts</span> <span class="s2">&quot;[POLICY] Your message is not formatted correctly&quot;</span>
-</span><span class='line'>      <span class="nb">exit</span> <span class="mi">1</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'><span class="n">check_message_format</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h1>Kết luận</h1>
-
-<p>Qua 2 bài viết về githook, bạn đã nắm được phần nào các hooks trong git, và các ứng dụng liên quan đến chúng. Giờ bạn có thể sử dụng githook để tạo nên workflow phù hợp nhất với git cho project của mình</p>
-
-<h1>Tham khảo</h1>
-
-<p><a href="http://git-scm.com/book/en/Customizing-Git-Git-Hooks">Githook documentation</a>
-<a href="http://git-scm.com/book/en/Customizing-Git-An-Example-Git-Enforced-Policy">Customizing Git</a></p>
-
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-07-06T16:44:00+09:00" data-updated="true" itemprop="datePublished">Jul 6<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/ios/'>iOS</a>, <a class='category' href='/blog/categories/iphone/'>iPhone</a>
-
-
+</span><span class='line'>  <span class="c1">// floating point literals.</span>
+</span><span class='line'>  <span class="n">NSNumber</span> <span class="o">*</span><span class="n">piFloat</span> <span class="o">=</span> <span class="err">@</span><span class="mf">3.141592654F</span><span class="p">;</span>    <span class="c1">// tương đương với [NSNumber numberWithFloat:3.141592654F]</span>
+</span><span class='line'>  <span class="n">NSNumber</span> <span class="o">*</span><span class="n">piDouble</span> <span class="o">=</span> <span class="err">@</span><span class="mf">3.1415926535</span><span class="p">;</span>   <span class="c1">// tương đương với [NSNumber numberWithDouble:3.1415926535]</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// BOOL literals.</span>
+</span><span class='line'>  <span class="n">NSNumber</span> <span class="o">*</span><span class="n">yesNumber</span> <span class="o">=</span> <span class="err">@</span><span class="n">YES</span><span class="p">;</span>           <span class="c1">// tương đương với [NSNumber numberWithBool:YES]</span>
+</span><span class='line'>  <span class="n">NSNumber</span> <span class="o">*</span><span class="n">noNumber</span> <span class="o">=</span> <span class="err">@</span><span class="n">NO</span><span class="p">;</span>             <span class="c1">// tương đương với [NSNumber numberWithBool:NO]</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#ifdef __cplusplus</span>
+</span><span class='line'>  <span class="n">NSNumber</span> <span class="o">*</span><span class="n">trueNumber</span> <span class="o">=</span> <span class="err">@</span><span class="n">true</span><span class="p">;</span>         <span class="c1">// tương đương với [NSNumber numberWithBool:(BOOL)true]</span>
+</span><span class='line'>  <span class="n">NSNumber</span> <span class="o">*</span><span class="n">falseNumber</span> <span class="o">=</span> <span class="err">@</span><span class="n">false</span><span class="p">;</span>       <span class="c1">// tương đương với [NSNumber numberWithBool:(BOOL)false]</span>
+</span><span class='line'><span class="cp">#endif</span>
+</span></code></pre></td></tr></table>
 </div>
-		
-			<span class="comments"><a href="/blog/2013/07/06/tu-tao-uitableviewcell/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/06/tu-tao-uitableviewcell/" itemprop="url">Tự tạo UITableViewCell</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<p>UITableView là 1 trong những control được sử dụng nhiều nhất trong các ứng dụng iOS. Tuy nhiên, các kiểu cơ bản của UITableViewCell có rất nhiều hạn chế cho người sử dụng bởi vì sự đơn giản của nó. Trong bài viết này, tôi sẽ hướng dẫn các bạn tạo ra tuỳ chỉnh 1 UITableViewCell của riêng mình.</p>
-
-<p>Trong bài viết này, chúng ta sẽ tạo ra 1 Table View Cell đơn giản chứa 1 tiêu đề, 1 button và 1 switcher. Bạn hoàn toàn có thể thay thế các thành phần này theo mục đích riêng của mình.</p>
-
-<p>Trước hết, hãy tạo 1 class mới kế thừa từ UITableViewCell, tạm gọi là CustomTableCell. Tiếp theo, tạo 1 file xib mới đặt tên trùng với 2 file class đã tạo: New -> File -> User Interface -> View</p>
-
-<p><img src="/images/CustomCell/new_xib.png"></p>
-
-<p>Trên file xib, hãy xoá đi View hiện tại và kéo vào 1 UITableViewCell từ panel bên phải vào:</p>
-
-<p><img src="/images/CustomCell/pull_xib.png"></p>
-
-<p>Sau đó, hãy kéo các thành phần bạn muốn vào trong view này, trong ví dụ này là 1 UILabel, 1 UIButton, 1 Switch.</p>
-
-<p>Tiếp theo chúng ta phải khai báo class cho file xib này. Bấm vào View và chuyển sang tab Identity inspector của panel bên phải, mục Custom Class đặt tên là CustomTableCell (tên của class chúng ta vừa kế thừa từ UITableViewCell):</p>
-
-<p><img src="/images/CustomCell/class_name.png"></p>
-
-<p>Mỗi UITableViewCell đều có 1 định danh để có thể sử dụng lại trong 1 TableView. Chúng ta có thể set trường này trong tab Attributes inspector của panel bên phải trong mục Identifier. Đặt 1 id bất kỳ cho trường này, trong ví dụ là &#8220;CustomIdentifier&#8221;:</p>
-
-<p><img src="/images/CustomCell/name_iden.png"></p>
-
-<p>Vẫn ở tab Identity Inspector này, bấm vào File&#8217;s Owner ở panel bên trái, mục custom class đặt tên là UIViewController. Điều này có thể hiểu nôm na là chúng ta sẽ khởi tạo CustomTableCell từ 1 UIViewController:</p>
-
-<p><img src="/images/CustomCell/owner_name.png"></p>
-
-<p>Bước tiếp theo là kéo Outlet cho các thành phần của View. Bấm vào File&#8217;s Owner rồi chuyển sang tab Connections inspector của pannel bên phải, kéo Outlet View vào Custom Table Cell ở panel bên trái. Điều này giúp kết nối file xib của bạn với class định nghĩa trong file h, m</p>
-
-<p><img src="/images/CustomCell/outlet_view.png">
-Để sử dụng được label, button và switch trên table cell, chúng ta phải khai báo Outlet trong file .h bằng đoạn code:</p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</figure>
+</notextile>
+</div>
+<ul>
+<li>Tạo mảng nhanh: Thay vì dùng khởi tạo <code>[NSArray arrayWithObjects:…]</code> chúng ta có thể dùng:</li>
+</ul>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'> 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">NSArray</span> <span class="o">*</span><span class="n">array</span> <span class="o">=</span> <span class="err">@</span><span class="p">[</span> <span class="s">@&quot;Hello&quot;</span><span class="p">,</span> <span class="n">NSApp</span><span class="p">,</span> <span class="p">[</span><span class="n">NSNumber</span> <span class="nl">numberWithInt:</span><span class="mi">42</span><span class="p">]</span> <span class="p">];</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Và tạo NSDictionary:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'> 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="n">nonatomic</span><span class="p">,</span> <span class="n">unsafe_unretained</span><span class="p">)</span> <span class="kt">IBOutlet</span> <span class="n">UILabel</span> <span class="o">*</span><span class="n">nameLabel</span><span class="p">;</span>
-</span><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="n">nonatomic</span><span class="p">,</span> <span class="n">unsafe_unretained</span><span class="p">)</span> <span class="kt">IBOutlet</span> <span class="n">UISwitch</span> <span class="o">*</span><span class="n">switcher</span><span class="p">;</span>
-</span><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="n">nonatomic</span><span class="p">,</span> <span class="n">unsafe_unretained</span><span class="p">)</span> <span class="kt">IBOutlet</span> <span class="n">UIButton</span> <span class="o">*</span><span class="n">aButton</span><span class="p">;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Sau đó, chuyển sang file xib, bấm vào Custom Table Cell ở panel bên trái, bấm vào Connections Inspector tab ở panel bên phải rồi kéo outlet vào các thành phần của view:</p>
-
-<p><img src="/images/CustomCell/outlet_component.png"></p>
-
-<p>Vậy là đã xong các bước cài đặt cho Custom Table Cell. Tiếp đến là sử dụng TableCell này như thế nào. Hãy cùng so sánh 2 đoạn code của hàm -(UITableViewCell <em>)tableView:(UITableView </em>)tableView_ cellForRowAtIndexPath:(NSIndexPath *)indexPath:</p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">NSDictionary</span> <span class="o">*</span><span class="n">dictionary</span> <span class="o">=</span> <span class="err">@</span><span class="p">{</span>
+</span><span class='line'>    <span class="s">@&quot;name&quot;</span> <span class="o">:</span> <span class="n">name1</span><span class="p">,</span>
+</span><span class='line'>    <span class="s">@&quot;date&quot;</span> <span class="o">:</span> <span class="p">[</span><span class="n">NSDate</span> <span class="n">date</span><span class="p">],</span>
+</span><span class='line'>    <span class="s">@&quot;processInfo&quot;</span> <span class="o">:</span> <span class="p">[</span><span class="n">ProcessInfo</span> <span class="n">processInfo</span><span class="p">]</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Cách gọi trên kia sẽ tạo ra 1 NSDictionary với 3 key: name, date, processInfo và các value tương ứng. Các value phải là đối tượng của ObjectiveC và phải khác nil (nếu không sẽ crash). Tiện thể với dictionary, khi khởi tạo 1 NSDictionary:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'> 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">static</span> <span class="n">NSString</span> <span class="o">*</span><span class="n">identifier</span> <span class="o">=</span> <span class="s">@&quot;NormalCell&quot;</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">UITableViewCell</span> <span class="o">*</span><span class="n">cell</span> <span class="o">=</span> <span class="p">[</span><span class="n">tableView</span> <span class="nl">dequeueReusableCellWithIdentifier:</span><span class="n">identifier</span><span class="p">];</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">cell</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="n">cell</span> <span class="o">=</span> <span class="p">[[</span><span class="n">UITableViewCell</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithStyle:</span><span class="n">UITableViewCellStyleDefault</span> <span class="nl">reuseIdentifier:</span><span class="n">identifier</span><span class="p">];</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">cell</span><span class="p">;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="p">[</span><span class="n">NSDictionary</span> <span class="nl">dictionaryWithObjectsAndKeys:</span>
+</span><span class='line'>                <span class="n">value_1</span><span class="p">,</span> <span class="s">@&quot;key1&quot;</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">value_2</span><span class="p">,</span> <span class="s">@&quot;key2&quot;</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">value_3</span><span class="p">,</span> <span class="s">@&quot;key3&quot;</span><span class="p">,</span>
+</span><span class='line'>                <span class="p">...</span>
+</span><span class='line'>                <span class="n">value_n</span><span class="p">,</span> <span class="s">@&quot;keyn&quot;</span><span class="p">,</span> <span class="nb">nil</span><span class="p">]</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Nếu có 1 trong các value từ <code>value_1</code> đến <code>value_n</code> bằng nil, vd là <code>value_i</code>, thì NSDictionary được tạo ra sẽ chỉ nhận được các key và value trong khoảng từ <code>value_1</code> đến <code>value_(i-1)</code> chứ không làm crash chương trình. Vì vậy, trong lúc lập trình, nên chú ý điều này để tránh việc tìm không ra lỗi.</p>
+<ul>
+<li>Sử dụng toán tử chỉ số cho array và dictionary giống C:</li>
+</ul>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'> 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -340,36 +236,34 @@
 <span class='line-number'>6</span>
 <span class='line-number'>7</span>
 <span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">static</span> <span class="n">NSString</span> <span class="o">*</span><span class="n">identifier</span> <span class="o">=</span> <span class="s">@&quot;CustomIdentifier&quot;</span><span class="p">;</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">NSMutableArray</span> <span class="o">*</span><span class="n">array</span> <span class="o">=</span> <span class="p">...;</span>
+</span><span class='line'><span class="n">NSUInteger</span> <span class="n">idx</span> <span class="o">=</span> <span class="p">...;</span>
+</span><span class='line'><span class="kt">id</span> <span class="n">newObject</span> <span class="o">=</span> <span class="p">...;</span>
+</span><span class='line'><span class="kt">id</span> <span class="n">oldObject</span> <span class="o">=</span> <span class="n">array</span><span class="p">[</span><span class="n">idx</span><span class="p">];</span>  <span class="c1">// tương đương với oldObject = [array objectAtIndex:idx]</span>
+</span><span class='line'><span class="n">array</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">newObject</span><span class="p">;</span>         <span class="c1">// tương đương với [array replaceObjectAtIndex:idx withObject:newObject]</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="n">CustomTableCell</span> <span class="o">*</span><span class="n">cell</span> <span class="o">=</span> <span class="p">[</span><span class="n">tableView</span> <span class="nl">dequeueReusableCellWithIdentifier:</span><span class="n">identifier</span><span class="p">];</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">cell</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="n">UIViewController</span> <span class="o">*</span><span class="n">tempVC</span> <span class="o">=</span> <span class="p">[[</span><span class="n">UIViewController</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithNibName:</span><span class="s">@&quot;CustomTableCell&quot;</span> <span class="nl">bundle:</span><span class="nb">nil</span><span class="p">];</span>
-</span><span class='line'>        <span class="n">cell</span> <span class="o">=</span> <span class="p">(</span><span class="n">CustomTableCell</span> <span class="o">*</span><span class="p">)</span><span class="n">tempVC</span><span class="p">.</span><span class="n">view</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="k">return</span> <span class="n">cell</span><span class="p">;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Đoạn code đầu tiên là cách khởi tạo UITableViewCell bình thường. Cách thứ 2 là khởi tạo CustomTableCell. Hãy chú ý là identifier được sử dụng chính là identifier chúng ta đã đặt trong file xib, và biến này phải được để là static. Tại vì sao lại để là static thì tôi sẽ đề cập trong 1 bài viết khác.</p>
-
-<p>Sau khi khởi tạo Cell xong, chúng ta có thể tuỳ chỉnh nó, như trong ví dụ:</p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="c1">// Set up cell</span>
-</span><span class='line'>    <span class="n">cell</span><span class="p">.</span><span class="n">nameLabel</span><span class="p">.</span><span class="n">text</span> <span class="o">=</span> <span class="p">[</span><span class="n">NSString</span> <span class="nl">stringWithFormat:</span><span class="s">@&quot;Cell %d&quot;</span><span class="p">,</span> <span class="n">indexPath</span><span class="p">.</span><span class="n">row</span><span class="p">];</span>
-</span><span class='line'>    <span class="n">cell</span><span class="p">.</span><span class="n">switcher</span><span class="p">.</span><span class="n">on</span> <span class="o">=</span> <span class="n">indexPath</span><span class="p">.</span><span class="n">row</span> <span class="o">%</span> <span class="mi">2</span><span class="p">;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Vậy là xong. Hãy viết nốt đoạn code cho TableView và đây là kết quả cuối cùng:</p>
-
-<p><img src="/images/CustomCell/final.png" width="320" height="480"></p>
-
-<p>Toàn bộ code của ví dụ bạn có thể download ở đây https://github.com/toandk/Custom-UITableViewCell</p>
-
+</span><span class='line'><span class="n">NSMutableDictionary</span> <span class="o">*</span><span class="n">dictionary</span> <span class="o">=</span> <span class="p">...;</span>
+</span><span class='line'><span class="n">NSString</span> <span class="o">*</span><span class="n">key</span> <span class="o">=</span> <span class="p">...;</span>
+</span><span class='line'><span class="n">oldObject</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="n">key</span><span class="p">];</span>    <span class="c1">// tương đương với oldObject = [dictionary objectForKey:key]</span>
+</span><span class='line'><span class="n">dictionary</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">newObject</span><span class="p">;</span>    <span class="c1">// tương đương với [dictionary setObject:newObject forKey:key]</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Chú ý là replace object chỉ dùng được cho NSMutableArray và NSMutableDictionary, không dùng được cho NSArray và NSDictionary.</p>
+<h1 id="mẹo-debug-với-xcode">Mẹo debug với XCode</h1>
+<p>Khi debug code Objective C, chương trình sẽ nhảy ra hàm main <code>int retVal = UIApplicationMain(argc, argv, nil, @&quot;AppDelegate&quot;);</code> mỗi khi có crash. Màn hình log thì có quá ít thông tin để giúp cho việc debug lỗi crash này. Vậy thì làm thế nào để khắc phục điều này, giúp cho XCode stop lại ở đúng nơi nó bị crash? Đầu tiên là mở panel Breakpoint Navigator và click vào button + ở góc trái dưới màn hình, chọn Add Exception Breakpoint:</p>
+<p><img src="/images/meo_objective_c/addex.png"></p>
+<p>Sau đó ấn Done button để tạo 1 exception breakpoint mới:</p>
+<p><img src="/images/meo_objective_c/doneex.png"></p>
+<p>Chuột phải vào breakpoint mới tạo ra, chọn Move breakpoint to &gt; User để áp dụng cho tất cả các workspaces khác:</p>
+<p><img src="/images/meo_objective_c/senduser.png"></p>
+<p>Vậy là xong, kể từ bây giờ bạn sẽ được nhìn thấy nơi chôn rau cắt rốn của đống crash :)</p>
+<h1 id="tổng-kết">Tổng kết</h1>
+<p>Những tips trong bài viết này tuy nhỏ nhưng có thể sẽ rất hữu ích trong quá trình code của bạn, giúp code ngắn gọn và sáng sủa hơn. Tất nhiên vẫn còn rất nhiều kỹ thuật đặc biệt khác trong Objective-C mà trong khuôn khổ bài viết này chưa thể đề cập hết được. Vì thế, hãy đợi bài viết sau nhé :)</p>
 		
 		
 	</div>
@@ -391,61 +285,27 @@
   
 
 
-<time datetime="2013-07-04T06:20:00+09:00" data-updated="true" itemprop="datePublished">Jul 4<span>th</span>, 2013</time></div>
+<time datetime="2013-08-12T00:11:00+09:00" data-updated="true" itemprop="datePublished">Aug 12<span>th</span>, 2013</time></div>
 		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/database/'>Database</a>, <a class='category' href='/blog/categories/oracle/'>Oracle</a>, <a class='category' href='/blog/categories/plsql/'>PLSQL</a>
-
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/07/04/gioi-thieu-mot-so-object-cua-oracle-2/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/08/12/tao-class-datasource-cho-tableview/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/04/gioi-thieu-mot-so-object-cua-oracle-2/" itemprop="url">Giới Thiệu Một Số Object Của Oracle - Phần 2</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/08/12/tao-class-datasource-cho-tableview/" itemprop="url">Tạo Class DataSource Cho TableView</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h2>Tổng quan về Oracle và những điểm mạnh</h2>
-
-<p>Như đã giới thiệu với độc giả từ bài viết trước. Oracle là hệ cơ sở dữ liệu có nhiều object tiện dụng được chuẩn bị sẵn, và những hỗ trợ mạnh mẽ từ các công cụ trên top của tầng RDBMS.</p>
-
-<p>Bài viết lần này sẽ giới thiệu tiếp về những object còn lại, và về chính ngôn ngữ của Oracle DB : PL/SQL</p>
-
-<h2>MATERIALIZED VIEW LOG</h2>
-
-<p>MATERIALIZED VIEW LOG là object bắt buộc phải có nếu bạn lựa chọn chiến lược FAST REFRESH của object MATERIALIZED VIEW trong bài trước.
-Chúng ta sẽ nhắc lại 1 chút về chiến lược REFRESH của object MATERIALZED VIEW.</p>
-
-<p>MATERIALIZED VIEW có 3 kiểu REFRESH sau:</p>
-
-<ul>
-<li>COMPLETE: REFRESH mới hoàn toàn, Oracle sẽ query lại và tính toán lại, Nếu Table chứa lượng data lớn và việc tính toán mất nhiều thời gian thì mỗi lần COMPLETE REFRESH sẽ tốn nhiều thời gian,</li>
-<li>FAST: REFRESH những phần mới từ lần gần đây nhất. thời gian cho mỗi lần FAST REFRESH sẽ được rút ngắn tối thiểu.</li>
-<li>FORCE: là default của REFRESH. Oracle sẽ cố FAST REFRESH, và nếu không được thì sẽ COMPLETE REFRESH</li>
-</ul>
-
-
-<p>Bạn có thể hình dung mỗi lần Oracle tính toán và ra kết quả cho MATERIALZED VIEW, bạn sẽ có 1 snapshot.
-Đến lần sau khi FAST REFRESH bạn sẽ update laị kết quả từ last snapshot lần trước.
-Tất nhiên cái giá phải trả cho việc có được thời gian REFRESH ngắn là sẽ mất thêm dung lượng đĩa cứng để lưu các snapshot !
-Tuy nhiên để application chạy được smoothly hết mức có thể thì tốc độ luôn là ưu tiên hàng đầu :D</p>
-
-<p>Vậy snapshot (hay là change log) của MATERIALZED VIEW là gì ? Chúng ta đang nói đến object đề cập ở bên trên: MATERIALIZED VIEW LOG</p>
-
-<p>Cần lưu ý là COMPLETE hay FAST là phương pháp REFRESH (how).
-Còn thời điểm REFRESH (when) sẽ định nghĩa khi nào thì MATERIALZIED VIEW được REFRESH. Có 2 mode cơ bản là manually (ON DEMAND) và automatically (ON COMMIT, DBMS_JOB).
-ON DEMAND là khi nào bạn (user) ra lệnh REFRESH, ON COMMIT là khi nào MATERIALZED bị thay đổi (COMMIT), còn DBMS_JOB là cho REFRESH thành 1 job được đặt lịch sẵn (giống như cron của Unix system :D)</p>
-
-<p>MATERIALIZED còn có nhiều điểm cần lưu ý khi áp dụng cụ thể. Bài viết chỉ trình bày những khái niệm cơ bản nhất. Bạn có thể xem thêm các restriction và cách create cụ thể tại <a href="http://docs.oracle.com/cd/E11882_01/server.112/e10706/repmview.htm">Oracle Doc</a></p>
-
-<h2>TRIGGER</h2>
-
-<p>Nếu bạn đã biết TRIGGER trong MySQL thì sẽ không thấy lạ lẫm với obejct này. TRIGGER về cơ bản là để định nghĩa các action tự động khi có 1 event xảy ra.</p>
-
-<p>Ví dụ: Khi bạn có table Users và 2 table Students, Teachers. Bạn muốn khi 1 User mới được INSERT vào table Users, có thể phán đoán dựa theo conđition để cùng insert vào table Students hoặc Teachers</p>
-
-<figure class='code'><figcaption><span>materialized_view.sql </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+		<h1 id="mở-đầu">Mở đầu</h1>
+<p>Để tiếp nối chuỗi bài về TableView, hôm nay mình cũng viết một bài liên quan đến TableView. Trong iOS TableView là class được dùng khá nhiều. Khi dùng TableView chúng ta thường phải set datasource và delegate cho TableView. Thường thì datasource của TableView là một array.</p>
+<p>Khá nhiều bạn thường set datasource cho Tableview ngay trong ViewController (<code>tableview.datasource = self</code>). Và khi đấy trong ViewController chúng ta luôn luôn phải implement delegate cho TableViewDataSource như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>TmpViewController.m </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -468,86 +328,623 @@ ON DEMAND là khi nào bạn (user) ra lệnh REFRESH, ON COMMIT là khi nào MA
 <span class='line-number'>21</span>
 <span class='line-number'>22</span>
 <span class='line-number'>23</span>
-</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="k">CREATE</span> <span class="k">OR</span> <span class="k">REPLACE</span> <span class="k">TRIGGER</span> <span class="n">teacher_trigger</span>
-</span><span class='line'>   <span class="k">BEFORE</span> <span class="k">INSERT</span>
-</span><span class='line'>   <span class="k">ON</span> <span class="n">USERS</span>
-</span><span class='line'>   <span class="k">FOR</span> <span class="k">EACH</span> <span class="k">ROW</span>
-</span><span class='line'>   <span class="k">WHEN</span> <span class="p">(</span><span class="k">NEW</span><span class="p">.</span><span class="n">FIELD1</span><span class="o">=</span> <span class="s1">&#39;TEACHER_CONDITION&#39;</span><span class="p">)</span> <span class="c1">-- Or any other condition</span>
-</span><span class='line'><span class="k">BEGIN</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="cp">#pragma mark - UITableViewDataSource delegate</span>
+</span><span class='line'><span class="k">-</span> <span class="p">(</span><span class="n">NSInteger</span><span class="p">)</span><span class="nf">tableView:</span><span class="p">(</span><span class="n">UITalbeView</span> <span class="o">*</span><span class="p">)</span><span class="nv">tableView</span> <span class="nf">numberOfRowsInSection:</span><span class="p">(</span><span class="n">NSInteger</span><span class="p">)</span><span class="nv">section</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">dataArray</span> <span class="n">count</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">TEACHERS</span> <span class="p">(</span><span class="n">col1</span><span class="p">,</span> <span class="n">col2</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col1</span><span class="p">,</span> <span class="p">:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col2</span><span class="p">);</span>
+</span><span class='line'><span class="k">-</span> <span class="p">(</span><span class="n">UITableViewCell</span> <span class="o">*</span><span class="p">)</span><span class="nf">tableView:</span><span class="p">(</span><span class="n">UITableView</span> <span class="o">*</span><span class="p">)</span><span class="nv">tableView</span> <span class="nf">cellForRowAtIndexPath:</span><span class="p">(</span><span class="n">NSIndexPath</span> <span class="o">*</span><span class="p">)</span><span class="nv">indexPath</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">static</span> <span class="n">NSString</span> <span class="o">*</span><span class="n">cellIdentifier</span> <span class="o">=</span> <span class="s">@&quot;MyCell&quot;</span><span class="p">;</span>
+</span><span class='line'>  <span class="c1">// lấy cell có sẵn</span>
+</span><span class='line'>  <span class="n">UITableViewCell</span> <span class="o">*</span><span class="n">cell</span> <span class="o">=</span> <span class="p">[</span><span class="n">tableView</span> <span class="nl">dequeueReusableCellWithIdentifier:</span><span class="n">cellIdentifier</span><span class="p">];</span>
+</span><span class='line'>  <span class="c1">// nếu không có cell có sẵn thì tạo cell mới</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="n">cell</span> <span class="o">==</span> <span class="nb">nil</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">cell</span> <span class="o">=</span> <span class="p">[</span><span class="n">UITableViewCell</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithStyle:</span><span class="n">UITableViewCellStyleDefault</span>
+</span><span class='line'>                                 <span class="nl">reuseIdentifier:</span><span class="n">cellIdentifier</span><span class="p">];</span>
+</span><span class='line'>  <span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'><span class="k">END</span><span class="p">;</span>
+</span><span class='line'>  <span class="c1">// lấy dữ liệu cho cell hiện tại. (Ví dụ dữ liệu là NSString)</span>
+</span><span class='line'>  <span class="n">NSString</span> <span class="o">*</span><span class="n">item</span> <span class="o">=</span> <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">dataArray</span> <span class="nl">objectAtIndex:</span><span class="n">indexPath</span><span class="p">.</span><span class="n">row</span><span class="p">];</span>
+</span><span class='line'>  <span class="c1">// gán dữ liệu cho cell</span>
+</span><span class='line'>  <span class="p">[</span><span class="n">cell</span><span class="p">.</span><span class="n">textLabel</span> <span class="nl">setText:</span><span class="n">item</span><span class="p">];</span>
 </span><span class='line'>
-</span><span class='line'><span class="k">CREATE</span> <span class="k">OR</span> <span class="k">REPLACE</span> <span class="k">TRIGGER</span> <span class="n">student_trigger</span>
-</span><span class='line'>   <span class="k">AFTER</span> <span class="k">INSERT</span>
-</span><span class='line'>   <span class="k">ON</span> <span class="n">USERS</span>
-</span><span class='line'>   <span class="k">FOR</span> <span class="k">EACH</span> <span class="k">ROW</span>
-</span><span class='line'>   <span class="k">WHEN</span> <span class="p">(</span><span class="k">NEW</span><span class="p">.</span><span class="n">FIELD1</span><span class="o">=</span> <span class="s1">&#39;STUDENT_CONDITION&#39;</span><span class="p">)</span> <span class="c1">-- Or any other condition</span>
-</span><span class='line'><span class="k">BEGIN</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">cell</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Việc viết như trên đối với những ứng dụng nhỏ thì không vấn đề gì nhưng khi ứng dụng sử dụng nhiều tableview thì trong từng ViewController chúng ta luôn phải viết đi viết lại đoạn code trên. Nếu nhìn kỹ đoạn code trên bạn sẽ thấy thực ra với mỗi TableView khác nhau chúng ta chỉ cần thay đổi phần <code>#gán dữ liệu cho cell</code> tuỳ theo cấu trúc của từng cell. Còn đâu những phần còn lại chúng ta có thể sử dụng lại code. Ngoài ra nếu chúng ta để những đoạn code này trong ViewController sẽ khiến ViewController trở nên dài hơn bởi vì bản thân ViewController đã chứa rất nhiều code như delegate, code xử lý sự kiện, gesture. Vì vậy để có một ViewController ngắn gọn hơn, dễ hiểu hơn, lại tăng tính sử dụng lại code chúng ta sẽ tạo 1 class datasource riêng tên là TVArrayDataSource.</p>
+<h1 id="tạo-class-tvarraydatasource">Tạo class TVArrayDataSource</h1>
+<p>Vậy chúng ta sẽ chuyển hết code ở trên sang class TVArrayDataSource và trong các ViewController chúng ta chỉ cần viết phần <code>#gán dữ liệu cho cell</code> tuỳ theo cấu trúc của cell. Vậy trong TVArrayDataSource cần những property gì?</p>
+<p>Đầu tiên là <code>NSArray *items</code> trỏ đến array data của chúng ta trong ViewController để chúng ta có thể lấy data tương ứng cho từng cell và cell identifier <code>NSString *cellIdentifier</code> là string dùng để định danh cell.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>TVArrayDatasource.m </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">@interface</span> <span class="nc">TVArrayDataSource</span><span class="p">()</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">STUDENTS</span> <span class="p">(</span><span class="n">col1</span><span class="p">,</span> <span class="n">col2</span><span class="p">,</span> <span class="n">col3</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col1</span><span class="p">,</span> <span class="p">:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col2</span><span class="p">,</span> <span class="p">:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col3</span><span class="p">);</span>
+</span><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="n">strong</span><span class="p">,</span> <span class="n">nonatomic</span><span class="p">)</span> <span class="n">NSArray</span> <span class="o">*</span><span class="n">items</span><span class="p">;</span>
+</span><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="n">copy</span><span class="p">,</span> <span class="n">nonatomic</span><span class="p">)</span> <span class="n">NSString</span> <span class="o">*</span><span class="n">cellIdentifier</span><span class="p">;</span>
 </span><span class='line'>
-</span><span class='line'><span class="k">END</span><span class="p">;</span>
+</span><span class='line'><span class="k">@end</span>
 </span><span class='line'>
-</span><span class='line'><span class="o">/</span>
-</span></code></pre></td></tr></table></div></figure>
+</span><span class='line'><span class="k">@implementation</span> <span class="nc">TVArrayDataSource</span>
+</span><span class='line'><span class="k">-</span> <span class="p">(</span><span class="n">NSInteger</span><span class="p">)</span><span class="nf">tableView:</span><span class="p">(</span><span class="n">UITableView</span> <span class="o">*</span><span class="p">)</span><span class="nv">tableView</span> <span class="nf">numberOfRowsInSection:</span><span class="p">(</span><span class="n">NSInteger</span><span class="p">)</span><span class="nv">section</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">items</span> <span class="n">count</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="k">-</span> <span class="p">(</span><span class="n">UITableViewCell</span> <span class="o">*</span><span class="p">)</span><span class="nf">tableView:</span><span class="p">(</span><span class="n">UITableView</span> <span class="o">*</span><span class="p">)</span><span class="nv">tableView</span> <span class="nf">cellForRowAtIndexPath:</span><span class="p">(</span><span class="n">NSIndexPath</span> <span class="o">*</span><span class="p">)</span><span class="nv">indexPath</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c1">// tìm cell có sẵn</span>
+</span><span class='line'>    <span class="n">UITableViewCell</span> <span class="o">*</span><span class="n">cell</span> <span class="o">=</span> <span class="p">[</span><span class="n">tableView</span> <span class="nl">dequeueReusableCellWithIdentifier:</span><span class="n">self</span><span class="p">.</span><span class="n">cellIdentifier</span><span class="p">];</span>
+</span><span class='line'>    <span class="c1">// tạo cell mới nếu không tìm thấy</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">cell</span> <span class="o">==</span> <span class="nb">nil</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="p">...</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// lấy data cho cell</span>
+</span><span class='line'>    <span class="kt">id</span> <span class="n">item</span> <span class="o">=</span> <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">items</span> <span class="nl">objectAtIndex:</span><span class="n">indexPath</span><span class="p">.</span><span class="n">row</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// gán dữ liệu cho cell</span>
+</span><span class='line'>    <span class="p">...</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">cell</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">@end</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Đầu tiên chúng ta sẽ nói về đoạn <code>...</code> tại phần gán dữ liệu cho cell. Tại vì tuỳ từng trường hợp của tableview mà cell của chúng ta có cấu trúc khác nhau, data source có cấu trúc khác nhau nên phần gán dữ liệu này là khác nhau. Do đó tại đây chúng ta có thể gọi đến các hàm callback trong ViewController để gán dữ liệu cho cell theo cách mà chúng ta muốn. Có nhiều cách như dùng block, selector hay delegate. Mình thì thấy tiện nhất và ngắn nhất là block và selector nên mình sẽ tạo class TVArrayDataSource có thể dùng block hoặc selector.</p>
+<p>Với block thì chúng ta cần tạo 1 property để lưu block và execute block tại đoạn gán dữ liệu. Chúng ta sẽ thêm block property vào TVArrayDataSource.m và tạo 1 method khởi tạo dataSource với block như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>TVArrayDataSource.m </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">typedef</span> <span class="nf">void</span> <span class="p">(</span><span class="o">^</span><span class="n">TVCellConfigureBlock</span><span class="p">)(</span><span class="kt">id</span><span class="p">,</span> <span class="kt">id</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">@interface</span> <span class="nc">TVArrayDataSource</span> : <span class="nc">NSObject</span> <span class="o">&lt;</span><span class="n">UITableViewDataSource</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/* khởi tạo datasource với block */</span>
+</span><span class='line'><span class="o">-</span> <span class="p">(</span><span class="kt">id</span><span class="p">)</span><span class="nl">initWithItems:</span><span class="p">(</span><span class="n">NSArray</span> <span class="o">*</span><span class="p">)</span><span class="n">items</span>
+</span><span class='line'>     <span class="nl">cellIdentifier:</span><span class="p">(</span><span class="n">NSString</span> <span class="o">*</span><span class="p">)</span><span class="n">cellIdentifier</span>
+</span><span class='line'> <span class="nl">cellConfigureBlock:</span><span class="p">(</span><span class="n">TVCellConfigureBlock</span><span class="p">)</span> <span class="n">configureBlock</span><span class="p">;</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>TVArrayDataSource.m </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="p">...</span>
+</span><span class='line'><span class="c1">// thêm block property vào</span>
+</span><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="n">copy</span><span class="p">,</span> <span class="n">nonatomic</span><span class="p">)</span> <span class="n">TVCellConfigureBlock</span> <span class="n">configureBlock</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// và method khởi tạo chỉ đơn giản như sau</span>
+</span><span class='line'><span class="k">-</span> <span class="p">(</span><span class="kt">id</span><span class="p">)</span><span class="nf">initWithItems:</span><span class="p">(</span><span class="n">NSArray</span> <span class="o">*</span><span class="p">)</span><span class="nv">items</span>
+</span><span class='line'>     <span class="nf">cellIdentifier:</span><span class="p">(</span><span class="n">NSString</span> <span class="o">*</span><span class="p">)</span><span class="nv">cellIdentifier</span>
+</span><span class='line'> <span class="nf">cellConfigureBlock:</span><span class="p">(</span><span class="n">TVCellConfigureBlock</span><span class="p">)</span><span class="nv">configureBlock</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">self</span> <span class="o">=</span> <span class="p">[</span><span class="n">super</span> <span class="n">init</span><span class="p">];</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">self</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">self</span><span class="p">.</span><span class="n">items</span> <span class="o">=</span> <span class="n">items</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">self</span><span class="p">.</span><span class="n">cellIdentifier</span> <span class="o">=</span> <span class="n">cellIdentifier</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">self</span><span class="p">.</span><span class="n">configureBlock</span> <span class="o">=</span> <span class="n">configureBlock</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">self</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// và chúng ta thêm phần execute block tại đoạn gán dữ liệu cho cell</span>
+</span><span class='line'><span class="k">-</span> <span class="p">(</span><span class="n">UITableViewCell</span> <span class="o">*</span><span class="p">)</span><span class="nf">tableView:</span><span class="p">(</span><span class="n">UITableView</span> <span class="o">*</span><span class="p">)</span><span class="nv">tableView</span> <span class="nf">cellForRowAtIndexPath:</span><span class="p">(</span><span class="n">NSIndexPath</span> <span class="o">*</span><span class="p">)</span><span class="nv">indexPath</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>   <span class="c1">// tìm cell có sẵn</span>
+</span><span class='line'>    <span class="n">UITableViewCell</span> <span class="o">*</span><span class="n">cell</span> <span class="o">=</span> <span class="p">[</span><span class="n">tableView</span> <span class="nl">dequeueReusableCellWithIdentifier:</span><span class="n">self</span><span class="p">.</span><span class="n">cellIdentifier</span><span class="p">];</span>
+</span><span class='line'>    <span class="c1">// tạo cell mới nếu không tìm thấy</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">cell</span> <span class="o">==</span> <span class="nb">nil</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="p">...</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// lấy data cho cell</span>
+</span><span class='line'>    <span class="kt">id</span> <span class="n">item</span> <span class="o">=</span> <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">items</span> <span class="nl">objectAtIndex:</span><span class="n">indexPath</span><span class="p">.</span><span class="n">row</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// execute block để gán dữ liệu cho cell</span>
+</span><span class='line'>    <span class="n">self</span><span class="p">.</span><span class="n">configureBlock</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">item</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">cell</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Khi đó bên ViewController chúng ta chỉ cần tạo 1 block để thực hiện việc gán dữ liệu cho cell. Và block này sẽ được execute bằng <code>self.configureBlock(cell, item)</code> với tham số là cell hiện tại và data tương ứng của cell. Bởi vì tham số của block là cell hiện tại và data cho cell đấy nênchúng ta hoàn toàn có thể tự do tuỳ chỉnh cell theo ý muốn. Và code bên ViewController sẽ rất ngắn và đẹp như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>ViewController1.m </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="c1">// configure block. Kiểu tham số có thể tuỳ chỉnh theo kiểu data bất kỳ của bạn.</span>
+</span><span class='line'><span class="n">TVCellConfigureBlock</span> <span class="n">configureCell</span> <span class="o">=</span> <span class="o">^</span><span class="p">(</span><span class="n">CellClassName</span> <span class="o">*</span><span class="n">cell</span><span class="p">,</span> <span class="n">DataType</span> <span class="o">*</span><span class="n">name</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">// gán dữ liệu cho cell. ví dụ như sau:</span>
+</span><span class='line'>  <span class="p">[</span><span class="n">cell</span><span class="p">.</span><span class="n">title</span> <span class="nl">setText:</span><span class="n">name</span><span class="p">];</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'><span class="c1">// tạo instance dataSource của TVArrayDataSource và khởi tạo với block ở trên</span>
+</span><span class='line'><span class="n">dataSource</span> <span class="o">=</span> <span class="p">[[</span><span class="n">TVArrayDataSource</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithItems:</span><span class="n">items</span>
+</span><span class='line'>                                       <span class="nl">cellIdentifier:</span><span class="s">@&quot;MYCELL&quot;</span>
+</span><span class='line'>                                   <span class="nl">cellConfigureBlock:</span><span class="n">configureCell</span><span class="p">];</span>
+</span><span class='line'><span class="n">tableView</span><span class="p">.</span><span class="n">datasource</span> <span class="o">=</span> <span class="n">dataSource</span><span class="p">;</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Bạn thấy đấy giờ trong ViewController thì phần code cho dataSource của tableView khá là đẹp. Đôi khi bạn muốn viết đoạn gán dữ liệu cho cell vào một method khác trong class ViewController thay vì dùng block. Để cho những trường hợp đó như đã nói ở trên chúng ta có thể dùng selector. Tương tự như block chúng ta cũng sẽ tạo một <code>@property (assign, nonatomic) SEL configureSelector;</code> và đối tượng để execute method của selector này <code>@property (weak, nonatomic) id target;</code> (Đối tượng này chính là ViewController). Chúng ta cũng cần tạo một hàm khởi tạo datasource khác với selector. Cuối cùng trong phần gán dữ liệu cho cell chúng ta execute method của selector với <code>objc_msgSend(self.target, self.configureSelector, cell, item);</code>. Do phần này tương tự như đối với block nên mình không giải thích thêm mà các bạn có thể xem code trên github.</p>
+<p>Tiếp theo còn một đoạn <code>...</code> tại phần tạo cell mới khi mà không tìm thấy cell có thể dùng lại. Như bạn thấy đấy để tạo cell mới chúng ta cần biết Class của cell. Với Objective-C chúng ta có thể tạo 1 instance từ tên class. Khi đó chúng ta có thể tạo 1 cell như sau:</p>
+<p><code>cell = [[NSClassFromString(CELL_CLASS_NAME) alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:self.cellIdentifier];</code></p>
+<p>Như vậy class TVArrayDataSource chỉ cần có thêm thông tin là tên class của cell là mọi việc có thể hoàn tất. Ngoài ra nhiều khi chúng ta muốn tạo cell từ file Xib. Để tạo cell từ file xib chúng ta cũng chỉ cần biết thêm tên file xib. Thế nên mình tạo thêm một property <code>cellName</code> để lưu tên class của cell hoặc tên file Xib tuỳ theo trường hợp cell tạo từ file xib hay từ code. Như vậy việc tạo class TVArrayDatasource đã hoàn thành. Và bây giờ trong ViewController chúng ta chỉ implement đoạn code ngắn như sau: Khi sử dụng với block</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>ViewController.m </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="c1">// tạo block</span>
+</span><span class='line'><span class="n">TVCellConfigureBlock</span> <span class="n">configureCell</span> <span class="o">=</span> <span class="o">^</span><span class="p">(</span><span class="n">CELL_CLASS_NAME</span> <span class="o">*</span><span class="n">cell</span><span class="p">,</span> <span class="n">DATATYPE</span> <span class="o">*</span><span class="n">name</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="p">[</span><span class="n">cell</span><span class="p">.</span><span class="n">title</span> <span class="nl">setText:</span><span class="n">name</span><span class="p">];</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">dataSource</span> <span class="o">=</span> <span class="p">[[</span><span class="n">TVArrayDataSource</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithItems:</span><span class="n">items</span>
+</span><span class='line'>                                       <span class="nl">cellIdentifier:</span><span class="s">@&quot;MYCELL&quot;</span>
+</span><span class='line'>                                   <span class="nl">cellConfigureBlock:</span><span class="n">configureCell</span><span class="p">];</span>
+</span><span class='line'><span class="p">[</span><span class="n">dataSource</span> <span class="nl">setXibFileName:</span><span class="s">@&quot;XibFileName&quot;</span><span class="p">];</span>
+</span><span class='line'><span class="n">tableview</span><span class="p">.</span><span class="n">datasource</span> <span class="o">=</span> <span class="n">dataSource</span><span class="p">;</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Hoặc khi sử dụng với selector.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>ViewController.m </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">dataSource</span> <span class="o">=</span> <span class="p">[[</span><span class="n">TVArrayDataSource</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithItems:</span><span class="n">items</span>
+</span><span class='line'>                                       <span class="nl">cellIdentifier:</span><span class="s">@&quot;MYCELL&quot;</span>
+</span><span class='line'>                                               <span class="nl">target:</span><span class="n">self</span>
+</span><span class='line'>                                     <span class="nl">cellConfigureSel:</span><span class="k">@selector</span><span class="p">(</span><span class="nl">configureCell:andItem:</span><span class="p">)];</span>
+</span><span class='line'><span class="p">[</span><span class="n">dataSource</span> <span class="nl">setCellClassName:</span><span class="s">@&quot;CELL_CLASS_NAME&quot;</span><span class="p">];</span>
+</span><span class='line'><span class="n">tableView</span><span class="p">.</span><span class="n">dataSource</span> <span class="o">=</span> <span class="n">dataSource</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// selector</span>
+</span><span class='line'><span class="k">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">configureCell:</span><span class="p">(</span><span class="n">CELL_CLASS_NAME</span> <span class="o">*</span><span class="p">)</span><span class="nv">cell</span> <span class="nf">andItem:</span><span class="p">(</span><span class="n">DATA_TYPE</span> <span class="o">*</span><span class="p">)</span><span class="nv">item</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="p">[</span><span class="n">cell</span><span class="p">.</span><span class="n">title</span> <span class="nl">setText:</span><span class="n">item</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<h1 id="tổng-kết">Tổng kết</h1>
+<p>Bài viết trình bày về cách tạo class datasource riêng cho tableView thay vì implement trực tiếp trong ViewController. Điều này sẽ giúp ViewController ngắn gọn hơn và code trông đẹp hơn, cũng như tăng khả năng sử dụng lại code. Chúng ta có thể dùng lại class TVArrayDataSource tại nhiều ViewController mà không cần phải implement lại các hàm delegate của TableViewDataSource. Thế nhưng hiện tại class này chỉ dùng cho những tableview có 1 section. Toàn bộ code của class này cũng như sample bạn có thể tham khảo tại: <a href="https://github.com/ktmt/TVDataSource">https://github.com/ktmt/TVDataSource</a></p>
+<p>Hoặc để sử dụng class này bạn có thể cài qua coccoapod bằng cách thêm <code>pod 'TVArrayDataSource'</code> vào Podfile.</p>
+		
+		
+	</div>
+
+</article>
 
 
-<p>Bạn có thể thấy ở đoạn code trên, TRIGGER có thể được fire BEFORE hoặc AFTER event mà bạn định nghĩa.
-Event trong trường hợp này là INSERT vào table USERS, thuộc loại DML statements (INSERT, UPDATE, DELETE trong các table&#8230;).
-TRIGGER còn có thể fire on DDL statements (CREATE hoặc ALTER table &#8230;) và Database events (logon. logoff, startup, shutdown ..)</p>
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
 
-<h2>PL/SQL (Procedural Language/Structured Query Language) và PACKAGE Object</h2>
 
-<p>PL/SQL Là 1 procedutal programming language, trong khi SQL chỉ là declarative language.
-Điều đó có nghĩa bạn có thể viết PL/SQL giống như các ngôn ngữ phổ biến khác.
-PL/SQL cũng có variable, có try catch exception, có if-statement, loop, function, regex, convert, file reader &#8230; đẩy đủ các builtin function mà Oracle đã chuẩn bị sẵn.
-PL/SQL còn nắm lợi thế là thao tác trực tiếp với cursor, table, view, materialized view&#8230; các object của Database, remote action qua DB_LINK &#8230;</p>
 
-<p>Như vậy với năng lực của 1 ngôn ngữ hoàn chỉnh, cộng với khả năng tương tác với DB giống như SQL, PL/SQL được dùng để đóng gói xử lý trên DB server.</p>
 
-<p>Bạn có thể developer web application = Java, Ruby, PHP v.v&#8230; chỉ gọi đến DB thông qua các PACKAGE object.
-Mỗi PACKAGE (viết bằng PL/SQL) là 1 &#8220;gói&#8221; được viết như 1 module xử lỹ nội bộ trong Oracle DB.
-Ưu điểm của phương pháp này là tốc độ xử lý sẽ được cải thiện, và communication giữa Application server vs DB server (chỉ là truyền parameter cho PACKAGE và nhận lại result từ PACKAGE) được giảm thiểu.</p>
 
-<p>VD: với xử lý như sau:</p>
 
+
+
+  
+
+
+<time datetime="2013-08-06T17:37:00+09:00" data-updated="true" itemprop="datePublished">Aug 6<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/08/06/a-little-bit-about-news-ranking/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/08/06/a-little-bit-about-news-ranking/" itemprop="url">Survey About News Ranking</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1 id="mở-đầu">Mở đầu:</h1>
 <ul>
-<li>PHP validate 1 string ADD_ME và nhận 1 string UserId từ user input (trong request gửi đến web server)</li>
-<li>Nếu ADD_ME không tồn tại trong table USERS, insert 1 record mới vào table USERS</li>
-<li>Nếu ADD_ME = &#8220;teacher&#8221;, kiểm tra xem trong table TEACHERS có tồn tại UserID không</li>
-<li>Nếu trong table TEACHERS không có UserID, INSERT 1 record vào table TEACHERS</li>
-<li>Nếu ADD_ME = &#8220;student&#8221;, kiểm tra xem trong table STUDENTS có tồn tại UserID không</li>
-<li>Nếu trong table STUDENTS không có UserID, INSERT 1 record vào table STUDENTS
-&#8230;
-(Lặp lại n lần với n table khác nhau)</li>
+<li><p><strong>Problem</strong>: Bạn là web programmer, bạn sở hữu một trang web đăng tin tức với rất nhiều users. Users của bạn sẽ vote up hoặc down cho một tin tức nào đó, Vấn đề là không gian hiển thị tin luôn là hữu hạn và nhỏ hơn rất nhiều so với số lượng tin được đăng. Do vậy việc sắp xếp tin nào hot lên trên , ít hot hơn xuông dưới là một bài toán cần giải quyết. Việc sắp xếp ở đây được thông qua độ hot hay là hot-score. Một thuật toán quyết định <strong>hot-score</strong> tốt sẽ giúp cho user luôn theo dõi được các trend hiện tại, và tìm ra được tin mình muốn theo dõi.</p></li>
+<li><p><strong>Giải quyết</strong>: Định nghĩa về việc định nghĩa hot-score thế nào là tốt là một việc khá khó vì không có cách nào đánh giá cụ thể được, vì vậy ở bài viết này chúng ta sẽ tìm hiểu các thuật toán đã và đang được áp dụng trên reddit, hacker-news và trên <a href="https://github.com/antirez/lamernews">lamernews</a> ( một open source clone hackernews )</p></li>
 </ul>
-
-
-<p>Như vậy trong các bước kể trên, ngoại trừ bước đầu tiên, tất cả các bước còn lại đều phải init connection từ Application server đến DB server. (Không quan tâm bạn dùng DAO hay ORM hay execute query thẳng trên DB)</p>
-
-<p>Tôi có thể design lại xử lý trên như sau:</p>
-
+<h1 id="idea-để-giải-quyết-bài-toán-hot-score">Idea để giải quyết bài toán <strong>hot-score</strong></h1>
 <ul>
-<li>PHP validate 1 string ADD_ME và nhận 1 string UserId từ user input (trong request gửi đến web server)</li>
-<li>PHP truyền parameter ADD_ME và UserId cho PACKAGE &#8220;EVALUATE_USER&#8221; của Oracle</li>
-<li>&#8220;EVALUATE_USER&#8221; does all the stuff :D</li>
-<li>&#8220;EVALUATE_USER&#8221; trả kết quả về cho PHP : 0: kết thúc không có lỗi, 1: Kết thúc với lỗi ở TABLE USERS, 2: Kết thúc với lỗi ở TABLE TEACHER, &#8230;..</li>
+<li>Đầu tiên hãy nói về mặt ý tưởng. Thường với những hệ thống có chức năng vote, chúng ta sẽ nghĩ ngay đến công thức :</li>
 </ul>
-
-
-<p>Như vậy connection từ Application server sang DB server chỉ phát sinh ở bước 2 và bước 4. Tôi dám cá là hệ thống sẽ speedup với 1 tốc độ không nhỏ :D</p>
-
-<h2>Kết luận</h2>
-
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>score.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="n">score</span> <span class="o">=</span> <span class="n">up_vote</span> <span class="o">-</span> <span class="n">down_vote</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Tuy nhiên công thức trên có gì không tốt? Giả sử một item có 1000 up votes và 500 down votes, như vậy score của item đó sẽ là 500, tỉ lệ là 66.6% positive (1000/1500). Một item khác có 2000 up votes và 1300 down votes, có score là 700, nhưng tỉ lệ lại chỉ có 60.6% (2000/3300). So sánh 2 item trên thì về mặt logic thông thường chúng ta sẽ muốn item thứ nhất, với tỉ lệ positive cao hơn hẳn và số lượng sample (mẫu) votes không quá tầm thường (1500 votes).</p>
 <ul>
-<li>MATERIALIZED VIEW LOG : là snapshot, là object bắt buộc phải có khi dùng MATERIALZED VIEW với chiến lược FAST REFRESH .</li>
-<li>TRIGGER: Là object định nghĩa sẽ fire event nào khi các action nào được thực hiện trong database.</li>
-<li>PL/SQL: Là extend của SQL, produceral programming language của Oracle, cho phép thao tác trực tiếp với các object của Database trên Database server với đầy đủ năng lực xử lý như 1 ngôn ngữ hoàn chỉnh</li>
+<li>Từ ví dụ trên, chúng ta lại nảy ra ý nghĩ sử dụng tỉ lệ (portion) thay vì khoảng cách (distance) ở công thức trên</li>
 </ul>
-
-
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>score.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="n">score</span> <span class="o">=</span> <span class="n">up_vote</span> <span class="o">/</span> <span class="n">down_vote</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Tuy nhiên công thức trên không tốt ở đâu? Vấn đề thứ 1 của công thức trên chính là việc dùng phép chia. Vấn đề dùng phép chia sẽ gặp phải bài toán chia cho 0 (divide by zero), do đó là 1 item với 2 up votes và 0 down votes sẽ có giá trị là Inf, có độ lớn vô tận. Vấn đề này có thể giải quyết một cách đơn giản bằng cách cộng thêm 1 vào cả up votes và down votes.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>score.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="n">score</span> <span class="o">=</span> <span class="p">(</span><span class="n">up_vote</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">down_vote</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Tuy nhiên mặc dù có cộng thêm một, vẫn còn một vấn đề nữa, là vấn đề thời gian. Công thức trên hoàn toàn không có parameter liên quan đến thời gian. Việc đó sẽ gây ra điều gì? Chúng ta dễ dàng nhận thấy là những item được post sớm sẽ có chiều hướng được rank cao hơn. Lý do là vì những item được post sớm sẽ được nhìn thấy nhiều hơn, được vote nhiều hơn, do đó nó dễ dàng ngự trị ở vị trí top-score một cách ổn định. Do đó việc có một parameter để quyết định độ “cũ” (stale) của một item là cần thiết.</p>
+<p>Như vậy chúng ta cần một thuật toán tính toán hot-score dựa trên up votes, down votes, và thời gian (thời gian ở đây chính là khoảng thời gian từ lúc post bài cho đến thời điểm hiện tại).</p>
+<h1 id="một-số-cách-giải-quyết-của-các-website-nổi-tiếng">Một số cách giải quyết của các website nổi tiếng</h1>
+<h2 id="reddit">Reddit</h2>
+<ul>
+<li>Đầu tiên đến với <a href="http://reddit.com">reddit</a>. Reddit là một web-site chuyên đăng tin tức với comment vào dạng lớn nhất trên thế giới. Source code của reddit được open tại <a href="https://github.com/reddit/reddit">https://github.com/reddit/reddit</a>. Thuật toán tính toán hot-score của reddit nằm tại đoạn code ./r2/r2/lib/db/_sorts.pyx :</li>
+</ul>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>reddit_implement.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="n">epoch</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">1970</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">tzinfo</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">tz</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">cpdef</span> <span class="n">double</span> <span class="n">epoch_seconds</span><span class="p">(</span><span class="n">date</span><span class="p">):</span>
+</span><span class='line'>    <span class="sd">&quot;&quot;&quot;Returns the number of seconds from the epoch to date. Should</span>
+</span><span class='line'><span class="sd">       match the number returned by the equivalent function in</span>
+</span><span class='line'><span class="sd">       postgres.&quot;&quot;&quot;</span>
+</span><span class='line'>    <span class="n">td</span> <span class="o">=</span> <span class="n">date</span> <span class="o">-</span> <span class="n">epoch</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">td</span><span class="o">.</span><span class="n">days</span> <span class="o">*</span> <span class="mi">86400</span> <span class="o">+</span> <span class="n">td</span><span class="o">.</span><span class="n">seconds</span> <span class="o">+</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">td</span><span class="o">.</span><span class="n">microseconds</span><span class="p">)</span> <span class="o">/</span> <span class="mi">1000000</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">cpdef</span> <span class="nb">long</span> <span class="n">score</span><span class="p">(</span><span class="nb">long</span> <span class="n">ups</span><span class="p">,</span> <span class="nb">long</span> <span class="n">downs</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">ups</span> <span class="o">-</span> <span class="n">downs</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">cpdef</span> <span class="n">double</span> <span class="n">_hot</span><span class="p">(</span><span class="nb">long</span> <span class="n">ups</span><span class="p">,</span> <span class="nb">long</span> <span class="n">downs</span><span class="p">,</span> <span class="n">double</span> <span class="n">date</span><span class="p">):</span>
+</span><span class='line'>    <span class="sd">&quot;&quot;&quot;The hot formula. Should match the equivalent function in postgres.&quot;&quot;&quot;</span>
+</span><span class='line'>    <span class="n">s</span> <span class="o">=</span> <span class="n">score</span><span class="p">(</span><span class="n">ups</span><span class="p">,</span> <span class="n">downs</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">order</span> <span class="o">=</span> <span class="n">log10</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">s</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">s</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">sign</span> <span class="o">=</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="k">elif</span> <span class="n">s</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">sign</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+</span><span class='line'>    <span class="k">else</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">sign</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="n">seconds</span> <span class="o">=</span> <span class="n">date</span> <span class="o">-</span> <span class="mi">1134028003</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nb">round</span><span class="p">(</span><span class="n">order</span> <span class="o">+</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">seconds</span> <span class="o">/</span> <span class="mi">45000</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Đoạn code trên được implement bằng cython. Đoạn code hơi dài, nhưng chúng ta chỉ cần chú ý đến dòng cuối cùng</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>reddit_rank.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'>  <span class="nb">round</span><span class="p">(</span><span class="n">order</span> <span class="o">+</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">seconds</span> <span class="o">/</span> <span class="mi">45000</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Ở đây seconds chính là thời gian tính từ 1970/1/1 đến giờ theo seconds. sign là giá trị mà (-1) khi có số vote âm, (+1) khi có số vote dương và (0) khi có số vote 0. order chính là log10(số vote). Từ công thức trên chúng ta có thể thấy độ hot của một item, khi có số vote âm mà càng cũ (seconds lớn) thì sẽ tụt rất nhanh về phía dưới. Việc sử dụng log scale, và chia time-lapse cho một con số khá lớn (45000) giúp cho giá trị vote không ảnh hưởng quá nhiều đến ranking. Do đó chúng ta có thể thấy rằng ở công thức của reddit thì:</p>
+<ul>
+<li>Thời gian post bài có giá trị quan trọng nhất, thường thì bài mới hơn sẽ rank cao hơn bài cũ.</li>
+<li>Giá trị votes không quá ảnh hưởng đến bài, một bài viết với 10 up votes và một bài viết với 100 up votes không quá chênh lệch nhau về rank.</li>
+</ul>
+<h2 id="hackernews">Hackernews</h2>
+<ul>
+<li>Tiếp theo chúng ta sẽ đến với thuật toán của hacker-news. Source code của hacker-news (ycombinator) được viết bằng Arc, một ngôn ngữ gần giống Lisp và được open source ở <a href="http://arclanguage.org/">http://arclanguage.org/</a></li>
+</ul>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>hnrank.sh </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="o">(=</span> gravity* 1.8 timebase* 120 front-threshold* 1
+</span><span class='line'>       nourl-factor* .4 lightweight-factor* .17 gag-factor* .1<span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="o">(</span>def frontpage-rank <span class="o">(</span>s <span class="o">(</span>o scorefn realscore<span class="o">)</span> <span class="o">(</span>o gravity gravity*<span class="o">))</span>
+</span><span class='line'>      <span class="o">(</span>* <span class="o">(</span>/ <span class="o">(</span><span class="nb">let </span>base <span class="o">(</span>- <span class="o">(</span>scorefn s<span class="o">)</span> 1<span class="o">)</span>
+</span><span class='line'>              <span class="o">(</span><span class="k">if</span> <span class="o">(</span>&gt; base 0<span class="o">)</span> <span class="o">(</span>expt base .8<span class="o">)</span> base<span class="o">))</span>
+</span><span class='line'>            <span class="o">(</span>expt <span class="o">(</span>/ <span class="o">(</span>+ <span class="o">(</span>item-age s<span class="o">)</span> timebase*<span class="o">)</span> 60<span class="o">)</span> gravity<span class="o">))</span>
+</span><span class='line'>         <span class="o">(</span><span class="k">if</span> <span class="o">(</span>no <span class="o">(</span>in s!type <span class="s1">&#39;story &#39;</span>poll<span class="o">))</span>  .8
+</span><span class='line'>             <span class="o">(</span>blank s!url<span class="o">)</span>                  nourl-factor*
+</span><span class='line'>             <span class="o">(</span>mem <span class="s1">&#39;bury s!keys)             .001</span>
+</span><span class='line'><span class="s1">                                            (* (contro-factor s)</span>
+</span><span class='line'><span class="s1">                                               (if (mem &#39;</span>gag s!keys<span class="o">)</span>
+</span><span class='line'>                                                    gag-factor*
+</span><span class='line'>                                                   <span class="o">(</span>lightweight s<span class="o">)</span>
+</span><span class='line'>                                                    lightweight-factor*
+</span><span class='line'>                                                   1<span class="o">)))))</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Đoạn code trên viết theo poland notation nên hơi khó nhìn một chút, về mặt bản chất thì đoạn code trên tương đương với</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>hnrank.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="n">votes</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">gravity</span><span class="o">=</span><span class="mf">1.8</span><span class="p">):</span>
+</span><span class='line'>  <span class="p">(</span><span class="n">votes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="nb">pow</span><span class="p">((</span><span class="n">age</span><span class="o">+</span><span class="mi">2</span><span class="p">),</span> <span class="n">gravity</span><span class="p">);</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Chúng ta có thể rút ra được 2 điều:</p>
+<ul>
+<li>Thời gian càng tăng (age &gt;&gt;) thì score càng giảm với tốc độ rất nhanh theo hàm power</li>
+<li>Bài viết càng cũ thì dù up votes có tăng nhanh nhưng cũng không thể kéo được rank.</li>
+</ul>
+<p>Công thức của ycombinator đã phản ánh rất đúng power law về pupularity ranking, là popularity của một data source bao giờ cũng có dạng long-tail. Định lý này nói lên rằng tỉ lện những item dominate (có rank cao) chỉ chiếm tầm 20% so với tổng số item, nên rule này còn được gọi là 80/20 rule.</p>
+<p><img src="/images/long_tail.png"></p>
+<h2 id="lamernews">Lamernews</h2>
+<ul>
+<li>Lamernews được viết bởi creator của redis, và được open source tại <a href="https://github.com/antirez/lamernews">https://github.com/antirez/lamernews</a>. Lamernews được viết bằng ruby (sinatra) và thuật toàn của lamernews được viết khá đơn giản như sau:</li>
+</ul>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>lamerrank.rb </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='rb'><span class='line'><span class="k">def</span> <span class="nf">compute_news_rank</span><span class="p">(</span><span class="n">news</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">age</span> <span class="o">=</span> <span class="p">(</span><span class="no">Time</span><span class="o">.</span><span class="n">now</span><span class="o">.</span><span class="n">to_i</span> <span class="o">-</span> <span class="n">news</span><span class="o">[</span><span class="s2">&quot;ctime&quot;</span><span class="o">].</span><span class="n">to_i</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">rank</span> <span class="o">=</span> <span class="p">((</span><span class="n">news</span><span class="o">[</span><span class="s2">&quot;score&quot;</span><span class="o">].</span><span class="n">to_f</span><span class="p">)</span><span class="o">*</span><span class="mi">1000000</span><span class="p">)</span><span class="o">/</span><span class="p">((</span><span class="n">age</span><span class="o">+</span><span class="no">NewsAgePadding</span><span class="p">)</span><span class="o">**</span><span class="no">RankAgingFactor</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">rank</span> <span class="o">=</span> <span class="o">-</span><span class="n">age</span> <span class="k">if</span> <span class="p">(</span><span class="n">age</span> <span class="o">&gt;</span> <span class="no">TopNewsAgeLimit</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">rank</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Chúng ta có thể thấy thuật toán này khá giống với ycombinator nên sẽ không bàn thêm về hiệu quả của nó ở đây</p>
+<h1 id="kết-luận">Kết luận</h1>
+<p>Như vậy chúng ta đã lướt qua một số thuật toán ranking được implement bởi các web service nổi tiếng. Việc quyết định thuật toán nào tùy thuộc vào chúng ta muốn chú trọng đến cái gì. Với một service có tốc độ post bài và comment rất nhanh như reddit thì nên dùng một thuật toán base chủ yếu vào aging. Còn nếu muốn chú trọng hơn vào số lương votes và giữ một tốc độ giảm rank đều với các bài viết cũ, thì chúng ta có thể sử dụng thuật toán của ycombinator</p>
+<p>Chi tiết các bạn có thể tham khảo:</p>
+<ul>
+<li><a href="http://amix.dk/blog/post/19588">http://amix.dk/blog/post/19588</a></li>
+<li><a href="http://possiblywrong.wordpress.com/2011/06/05/reddits-comment-ranking-algorithm/">http://possiblywrong.wordpress.com/2011/06/05/reddits-comment-ranking-algorithm/</a></li>
+<li><a href="http://amix.dk/blog/post/19574">http://amix.dk/blog/post/19574</a></li>
+<li><a href="http://www.evanmiller.org/how-not-to-sort-by-average-rating.html">http://www.evanmiller.org/how-not-to-sort-by-average-rating.html</a></li>
+</ul>
 		
 		
 	</div>
@@ -565,7 +962,7 @@ Mỗi PACKAGE (viết bằng PL/SQL) là 1 &#8220;gói&#8221; được viết nh
     <div class="center"><a href="/blog/archives">Blog Archives</a></div>
 </nav></div>
 			</div>
-			<footer id="footer" class="inner">Copyright &copy; 2013
+			<footer id="footer" class="inner">Copyright &copy; 2014
 
     kỹ thuật máy tính
 

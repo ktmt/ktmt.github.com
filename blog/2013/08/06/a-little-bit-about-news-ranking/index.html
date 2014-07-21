@@ -17,11 +17,17 @@
 
 	<link href="/atom.xml" rel="alternate" title="Blog kỹ thuật máy tính" type="application/atom+xml">
 	
-	<link rel="canonical" href="http://ktmt.github.com/blog/2013/08/06/a-little-bit-about-news-ranking/">
+	<link rel="canonical" href="http://git@github.com.github.com/blog/2013/08/06/a-little-bit-about-news-ranking/">
 	<link href="/favicon.png" rel="shortcut icon">
 	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
 	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+    });
+  </script>
 	<link href='http://fonts.googleapis.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
 	
 </head>
@@ -44,6 +50,8 @@
 </nav>
 <nav id="sub-nav">
 	<div class="social">
+		
+		<a class="facebook" href="http://www.facebook.com/pages/ktmtgithubio/486208978117754" title="Facebook">Facebook</a>
 		
 		
 		
@@ -68,64 +76,77 @@
 			<div class="mid-col-container">
 				<div id="content" class="inner"><article class="post" itemscope itemtype="http://schema.org/BlogPosting">
 	<h1 class="title" itemprop="name">Survey About News Ranking</h1>
-	<div class="entry-content" itemprop="articleBody"><h1>Mở đầu:</h1>
-
+	<div class="entry-content" itemprop="articleBody"><h1 id="mở-đầu">Mở đầu:</h1>
 <ul>
 <li><p><strong>Problem</strong>: Bạn là web programmer, bạn sở hữu một trang web đăng tin tức với rất nhiều users. Users của bạn sẽ vote up hoặc down cho một tin tức nào đó, Vấn đề là không gian hiển thị tin luôn là hữu hạn và nhỏ hơn rất nhiều so với số lượng tin được đăng. Do vậy việc sắp xếp tin nào hot lên trên , ít hot hơn xuông dưới là một bài toán cần giải quyết. Việc sắp xếp ở đây được thông qua độ hot hay là hot-score. Một thuật toán quyết định <strong>hot-score</strong> tốt sẽ giúp cho user luôn theo dõi được các trend hiện tại, và tìm ra được tin mình muốn theo dõi.</p></li>
 <li><p><strong>Giải quyết</strong>: Định nghĩa về việc định nghĩa hot-score thế nào là tốt là một việc khá khó vì không có cách nào đánh giá cụ thể được, vì vậy ở bài viết này chúng ta sẽ tìm hiểu các thuật toán đã và đang được áp dụng trên reddit, hacker-news và trên <a href="https://github.com/antirez/lamernews">lamernews</a> ( một open source clone hackernews )</p></li>
 </ul>
-
-
-<h1>Idea để giải quyết bài toán <strong>hot-score</strong></h1>
-
+<h1 id="idea-để-giải-quyết-bài-toán-hot-score">Idea để giải quyết bài toán <strong>hot-score</strong></h1>
 <ul>
 <li>Đầu tiên hãy nói về mặt ý tưởng. Thường với những hệ thống có chức năng vote, chúng ta sẽ nghĩ ngay đến công thức :</li>
 </ul>
-
-
-<figure class='code'><figcaption><span>score.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>score.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='py'><span class='line'><span class="n">score</span> <span class="o">=</span> <span class="n">up_vote</span> <span class="o">-</span> <span class="n">down_vote</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Tuy nhiên công thức trên có gì không tốt?
-Giả sử một item có 1000 up votes và 500 down votes, như vậy score của item đó sẽ là 500, tỉ lệ là 66.6% positive (1000/1500). Một item khác có 2000 up votes và 1300 down votes, có score là 700, nhưng tỉ lệ lại chỉ có 60.6% (2000/3300). So sánh 2 item trên thì về mặt logic thông thường chúng ta sẽ muốn item thứ nhất, với tỉ lệ positive cao hơn hẳn và số lượng sample (mẫu) votes không quá tầm thường (1500 votes).</p>
-
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Tuy nhiên công thức trên có gì không tốt? Giả sử một item có 1000 up votes và 500 down votes, như vậy score của item đó sẽ là 500, tỉ lệ là 66.6% positive (1000/1500). Một item khác có 2000 up votes và 1300 down votes, có score là 700, nhưng tỉ lệ lại chỉ có 60.6% (2000/3300). So sánh 2 item trên thì về mặt logic thông thường chúng ta sẽ muốn item thứ nhất, với tỉ lệ positive cao hơn hẳn và số lượng sample (mẫu) votes không quá tầm thường (1500 votes).</p>
 <ul>
 <li>Từ ví dụ trên, chúng ta lại nảy ra ý nghĩ sử dụng tỉ lệ (portion) thay vì khoảng cách (distance) ở công thức trên</li>
 </ul>
-
-
-<figure class='code'><figcaption><span>score.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>score.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='py'><span class='line'><span class="n">score</span> <span class="o">=</span> <span class="n">up_vote</span> <span class="o">/</span> <span class="n">down_vote</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
 <p>Tuy nhiên công thức trên không tốt ở đâu? Vấn đề thứ 1 của công thức trên chính là việc dùng phép chia. Vấn đề dùng phép chia sẽ gặp phải bài toán chia cho 0 (divide by zero), do đó là 1 item với 2 up votes và 0 down votes sẽ có giá trị là Inf, có độ lớn vô tận. Vấn đề này có thể giải quyết một cách đơn giản bằng cách cộng thêm 1 vào cả up votes và down votes.</p>
-
-<figure class='code'><figcaption><span>score.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>score.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='py'><span class='line'><span class="n">score</span> <span class="o">=</span> <span class="p">(</span><span class="n">up_vote</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">down_vote</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Tuy nhiên mặc dù có cộng thêm một, vẫn còn một vấn đề nữa, là vấn đề thời gian. Công thức trên hoàn toàn không có parameter liên quan đến thời gian. Việc đó sẽ gây ra điều gì? Chúng ta dễ dàng nhận thấy là những item được post sớm sẽ có chiều hướng được rank cao hơn. Lý do là vì những item được post sớm sẽ được nhìn thấy nhiều hơn, được vote nhiều hơn, do đó nó dễ dàng ngự trị ở vị trí top-score một cách ổn định. Do đó việc có một parameter để quyết định độ &#8220;cũ&#8221; (stale) của một item là cần thiết.</p>
-
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Tuy nhiên mặc dù có cộng thêm một, vẫn còn một vấn đề nữa, là vấn đề thời gian. Công thức trên hoàn toàn không có parameter liên quan đến thời gian. Việc đó sẽ gây ra điều gì? Chúng ta dễ dàng nhận thấy là những item được post sớm sẽ có chiều hướng được rank cao hơn. Lý do là vì những item được post sớm sẽ được nhìn thấy nhiều hơn, được vote nhiều hơn, do đó nó dễ dàng ngự trị ở vị trí top-score một cách ổn định. Do đó việc có một parameter để quyết định độ “cũ” (stale) của một item là cần thiết.</p>
 <p>Như vậy chúng ta cần một thuật toán tính toán hot-score dựa trên up votes, down votes, và thời gian (thời gian ở đây chính là khoảng thời gian từ lúc post bài cho đến thời điểm hiện tại).</p>
-
-<h1>Một số cách giải quyết của các website nổi tiếng</h1>
-
-<h2>Reddit</h2>
-
+<h1 id="một-số-cách-giải-quyết-của-các-website-nổi-tiếng">Một số cách giải quyết của các website nổi tiếng</h1>
+<h2 id="reddit">Reddit</h2>
 <ul>
 <li>Đầu tiên đến với <a href="http://reddit.com">reddit</a>. Reddit là một web-site chuyên đăng tin tức với comment vào dạng lớn nhất trên thế giới. Source code của reddit được open tại <a href="https://github.com/reddit/reddit">https://github.com/reddit/reddit</a>. Thuật toán tính toán hot-score của reddit nằm tại đoạn code ./r2/r2/lib/db/_sorts.pyx :</li>
 </ul>
-
-
-<figure class='code'><figcaption><span>reddit_implement.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>reddit_implement.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -173,34 +194,43 @@ Giả sử một item có 1000 up votes và 500 down votes, như vậy score c�
 </span><span class='line'>        <span class="n">sign</span> <span class="o">=</span> <span class="mi">0</span>
 </span><span class='line'>    <span class="n">seconds</span> <span class="o">=</span> <span class="n">date</span> <span class="o">-</span> <span class="mi">1134028003</span>
 </span><span class='line'>    <span class="k">return</span> <span class="nb">round</span><span class="p">(</span><span class="n">order</span> <span class="o">+</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">seconds</span> <span class="o">/</span> <span class="mi">45000</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
 <p>Đoạn code trên được implement bằng cython. Đoạn code hơi dài, nhưng chúng ta chỉ cần chú ý đến dòng cuối cùng</p>
-
-<figure class='code'><figcaption><span>reddit_rank.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>reddit_rank.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='py'><span class='line'>  <span class="nb">round</span><span class="p">(</span><span class="n">order</span> <span class="o">+</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">seconds</span> <span class="o">/</span> <span class="mi">45000</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
 <p>Ở đây seconds chính là thời gian tính từ 1970/1/1 đến giờ theo seconds. sign là giá trị mà (-1) khi có số vote âm, (+1) khi có số vote dương và (0) khi có số vote 0. order chính là log10(số vote). Từ công thức trên chúng ta có thể thấy độ hot của một item, khi có số vote âm mà càng cũ (seconds lớn) thì sẽ tụt rất nhanh về phía dưới. Việc sử dụng log scale, và chia time-lapse cho một con số khá lớn (45000) giúp cho giá trị vote không ảnh hưởng quá nhiều đến ranking. Do đó chúng ta có thể thấy rằng ở công thức của reddit thì:</p>
-
 <ul>
 <li>Thời gian post bài có giá trị quan trọng nhất, thường thì bài mới hơn sẽ rank cao hơn bài cũ.</li>
 <li>Giá trị votes không quá ảnh hưởng đến bài, một bài viết với 10 up votes và một bài viết với 100 up votes không quá chênh lệch nhau về rank.</li>
 </ul>
-
-
-<h2>Hackernews</h2>
-
+<h2 id="hackernews">Hackernews</h2>
 <ul>
 <li>Tiếp theo chúng ta sẽ đến với thuật toán của hacker-news. Source code của hacker-news (ycombinator) được viết bằng Arc, một ngôn ngữ gần giống Lisp và được open source ở <a href="http://arclanguage.org/">http://arclanguage.org/</a></li>
 </ul>
-
-
-<figure class='code'><figcaption><span>hnrank.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>hnrank.sh </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -232,40 +262,47 @@ Giả sử một item có 1000 up votes và 500 down votes, như vậy score c�
 </span><span class='line'>                                                   <span class="o">(</span>lightweight s<span class="o">)</span>
 </span><span class='line'>                                                    lightweight-factor*
 </span><span class='line'>                                                   1<span class="o">)))))</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
 <p>Đoạn code trên viết theo poland notation nên hơi khó nhìn một chút, về mặt bản chất thì đoạn code trên tương đương với</p>
-
-<figure class='code'><figcaption><span>hnrank.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>hnrank.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 </pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="n">votes</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">gravity</span><span class="o">=</span><span class="mf">1.8</span><span class="p">):</span>
 </span><span class='line'>  <span class="p">(</span><span class="n">votes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="nb">pow</span><span class="p">((</span><span class="n">age</span><span class="o">+</span><span class="mi">2</span><span class="p">),</span> <span class="n">gravity</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
 <p>Chúng ta có thể rút ra được 2 điều:</p>
-
 <ul>
-<li>Thời gian càng tăng (age >>) thì score càng giảm với tốc độ rất nhanh theo hàm power</li>
+<li>Thời gian càng tăng (age &gt;&gt;) thì score càng giảm với tốc độ rất nhanh theo hàm power</li>
 <li>Bài viết càng cũ thì dù up votes có tăng nhanh nhưng cũng không thể kéo được rank.</li>
 </ul>
-
-
 <p>Công thức của ycombinator đã phản ánh rất đúng power law về pupularity ranking, là popularity của một data source bao giờ cũng có dạng long-tail. Định lý này nói lên rằng tỉ lện những item dominate (có rank cao) chỉ chiếm tầm 20% so với tổng số item, nên rule này còn được gọi là 80/20 rule.</p>
-
 <p><img src="/images/long_tail.png"></p>
-
-<h2>Lamernews</h2>
-
+<h2 id="lamernews">Lamernews</h2>
 <ul>
 <li>Lamernews được viết bởi creator của redis, và được open source tại <a href="https://github.com/antirez/lamernews">https://github.com/antirez/lamernews</a>. Lamernews được viết bằng ruby (sinatra) và thuật toàn của lamernews được viết khá đơn giản như sau:</li>
 </ul>
-
-
-<figure class='code'><figcaption><span>lamerrank.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>lamerrank.rb </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -277,25 +314,21 @@ Giả sử một item có 1000 up votes và 500 down votes, như vậy score c�
 </span><span class='line'>    <span class="n">rank</span> <span class="o">=</span> <span class="o">-</span><span class="n">age</span> <span class="k">if</span> <span class="p">(</span><span class="n">age</span> <span class="o">&gt;</span> <span class="no">TopNewsAgeLimit</span><span class="p">)</span>
 </span><span class='line'>    <span class="k">return</span> <span class="n">rank</span>
 </span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
 <p>Chúng ta có thể thấy thuật toán này khá giống với ycombinator nên sẽ không bàn thêm về hiệu quả của nó ở đây</p>
-
-<h1>Kết luận</h1>
-
+<h1 id="kết-luận">Kết luận</h1>
 <p>Như vậy chúng ta đã lướt qua một số thuật toán ranking được implement bởi các web service nổi tiếng. Việc quyết định thuật toán nào tùy thuộc vào chúng ta muốn chú trọng đến cái gì. Với một service có tốc độ post bài và comment rất nhanh như reddit thì nên dùng một thuật toán base chủ yếu vào aging. Còn nếu muốn chú trọng hơn vào số lương votes và giữ một tốc độ giảm rank đều với các bài viết cũ, thì chúng ta có thể sử dụng thuật toán của ycombinator</p>
-
 <p>Chi tiết các bạn có thể tham khảo:</p>
-
 <ul>
 <li><a href="http://amix.dk/blog/post/19588">http://amix.dk/blog/post/19588</a></li>
 <li><a href="http://possiblywrong.wordpress.com/2011/06/05/reddits-comment-ranking-algorithm/">http://possiblywrong.wordpress.com/2011/06/05/reddits-comment-ranking-algorithm/</a></li>
 <li><a href="http://amix.dk/blog/post/19574">http://amix.dk/blog/post/19574</a></li>
 <li><a href="http://www.evanmiller.org/how-not-to-sort-by-average-rating.html">http://www.evanmiller.org/how-not-to-sort-by-average-rating.html</a></li>
-</ul>
-
-</div>
+</ul></div>
 
 </article>
 
@@ -322,7 +355,7 @@ Giả sử một item có 1000 up votes và 500 down votes, như vậy score c�
 </section>
 </div>
 			</div>
-			<footer id="footer" class="inner">Copyright &copy; 2013
+			<footer id="footer" class="inner">Copyright &copy; 2014
 
     kỹ thuật máy tính
 
@@ -342,8 +375,8 @@ Giả sử một item có 1000 up votes và 500 down votes, như vậy score c�
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://ktmt.github.com/blog/2013/08/06/a-little-bit-about-news-ranking/';
-        var disqus_url = 'http://ktmt.github.com/blog/2013/08/06/a-little-bit-about-news-ranking/';
+        var disqus_identifier = 'http://git@github.com.github.com/blog/2013/08/06/a-little-bit-about-news-ranking/';
+        var disqus_url = 'http://git@github.com.github.com/blog/2013/08/06/a-little-bit-about-news-ranking/';
         var disqus_script = 'embed.js';
       
     (function () {

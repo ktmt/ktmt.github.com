@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Category: linux | Blog kỹ thuật máy tính]]></title>
-  <link href="http://ktmt.github.com/blog/categories/linux/atom.xml" rel="self"/>
-  <link href="http://ktmt.github.com/"/>
-  <updated>2013-09-18T01:15:24+09:00</updated>
-  <id>http://ktmt.github.com/</id>
+  <title><![CDATA[Category: linux, | Blog kỹ thuật máy tính]]></title>
+  <link href="http://git@github.com.github.com/blog/categories/linux/atom.xml" rel="self"/>
+  <link href="http://git@github.com.github.com/"/>
+  <updated>2014-07-21T22:37:14+09:00</updated>
+  <id>http://git@github.com.github.com/</id>
   <author>
     <name><![CDATA[kỹ thuật máy tính]]></name>
     
@@ -14,978 +14,123 @@
 
   
   <entry>
-    <title type="html"><![CDATA[Tìm hiểu redis (phần 3): đối tượng trong redis (redis objects)]]></title>
-    <link href="http://ktmt.github.com/blog/2013/08/04/tim-hieu-redis-3/"/>
-    <updated>2013-08-04T21:05:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/08/04/tim-hieu-redis-3</id>
-    <content type="html"><![CDATA[<h2>1. Giới thiệu</h2>
+    <title type="html"><![CDATA[Trở lại với cơ bản (2): Load Average]]></title>
+    <link href="http://git@github.com.github.com/blog/2014/07/20/load-average/"/>
+    <updated>2014-07-20T19:31:00+09:00</updated>
+    <id>http://git@github.com.github.com/blog/2014/07/20/load-average</id>
+    <content type="html"><![CDATA[<h1 id="giới-thiệu">Giới thiệu</h1>
+<p>Load Average – tạm dịch là “giá trị tải trung bình” – là một chỉ số liên quan đến CPU rất cơ bản và quan trọng. Việc nắm rõ ý nghĩa của chỉ số này giúp chúng ta đánh giá được hiệu năng hiện thời của máy tính cũng như sử dụng CPU nói riêng, máy tính nói chung một cách hiệu quả nhất</p>
+<p>Bài viết này bắt đầu bằng việc giải thích ý nghĩa của “giá trị tải trung bình”. Sau đó bài viết sẽ trình bày cách đánh giá chỉ số này trong thực tế. Cuối cùng bài viết đưa ra một trường hợp thực tế về cách đánh giá hiệu năng máy tính theo chỉ số này.</p>
+<h1 id="tải-trung-bình-là-gì">“Tải trung bình” là gì?</h1>
+<h2 id="ví-dụ-trạm-thu-phí">Ví dụ trạm thu phí</h2>
+<p>Để hiểu *tải trung bình&quot; là gì ta sẽ xem xét một ví dụ thực tế như sau.</p>
+<p>Bạn đang tham gia giao thông trên đường cao tốc và trước mặt của bạn là trạm thu phí đường bộ. Bạn giảm tốc để chuẩn bị qua cửa soát vé. Trạm xoát vé có 4 cửa soát vé. Tất cả các cửa đều trống và bạn chọn cửa số 1 như dưới đây.</p>
+<pre><code>    H                               &lt;-- Xe ôtô của bạn
+|   1   |   2   |   3   |   4   |   &lt;-- Trạm thu phí</code></pre>
+<p>Bạn đánh xe đến cửa số 1, trả phí cho nhân viên soát vé. Nhân viên soát vé mở barrier chắn, và bạn đi qua. Có duy nhất xe bạn qua trạm nên từ phía trạm thu phí, <em>trạm đang phục vụ 1 xe</em>.</p>
+<pre><code>|   H   |   2   |   3   |   4   |</code></pre>
+<p>Giờ tưởng tượng có nhiều xe khác cũng lưu thông trên đường cao tốc. Giả sử có trước khi bạn đến trạm thu phí, đang có 2 xe khác làm thủ tục ở cửa số 1 và số 2, bạn chú ý cửa số 3,4 còn trống nên lái xe qua cửa số 3 và làm thủ tục mà không phải chờ đợi. <em>Trạm phục vụ 3 xe</em>.</p>
+<pre><code>|   H&#39;   |   H&#39;   |   H   |   4   |</code></pre>
+<p>Có thể thấy ở 2 trường hợp trên, trạm thu phí đang làm việc khá <em>hiệu quả</em>. Các xe ôtô đi qua với thời gian chờ đợi bằng 0. Các xe ôtô đi qua trạm xoát vé một cách nhanh chóng. Người lái xe là bạn cảm thấy thoải mái vì không phải chờ đợi.</p>
+<p>Giả sử hôm nay là ngày nghỉ lễ, mọi người về quê đông nên xe khách chạy rất đông. Các gia đình tranh thủ ngày lễ nên cũng đánh xe đi chơi xa. Đường cao tốc trở nên đông đúc. Bạn đến trạm thu phí và nhận ra rằng 4 cửa đang có xe làm thủ tục. Chưa kể bạn còn đến sau 2 xe khác và phải đợi xếp hàng sau 2 xe này.</p>
+<pre><code>    H                                   &lt;-- Xe ôtô của bạn
+    H&#39;
+    H&#39;
+|   H&#39;   |   H&#39;   |   H&#39;   |   H&#39;   |   &lt;-- Trạm thu phí</code></pre>
+<p>Trong trường hợp này, bạn chắc chắn sẽ phải chờ, không những chờ các xe đang làm thủ tục tại cửa trạm mà còn chờ cả các xe đến trước bạn. Thời gian có thể bị kéo dài vì nhiều lý do như 1 xe làm thủ tục mất thời gian hơn các xe khác hoặc có sự cố ở cửa soát vé. Đứng từ góc độ của trạm thu phí, trạm đang phải xử lý số lượng xe (7 xe) nhiều hơn khả năng của trạm (4 cửa). Tại thời điểm hiện tại, trạm đang bị <em>quá tải</em>.</p>
+<p>Ta định nghĩa số lượng tải trung bình của trạm là số lượng xe mà trạm phải phục vụ trong một đơn vị thời gian. Như vậy ở ví dụ trên <em>trung bình tải</em> của trạm thu phí tại thời điểm bạn đến là 7.</p>
+<h2 id="load-average-của-cpu">Load Average của CPU</h2>
+<p>Tương tự như ví dụ trạm soát vé, “Load Average” của CPU được định nghĩa là số lượng process cần tài nguyên tính toán của CPU tại thời điểm nhất định. Giả sử tải trung bình của máy tính bạn hiện tại là 3.2, điều đó có nghĩa là tại thời điểm đó đang có trung bình 3.2 processes cần CPU xử lý. Tại thời điểm process cần CPU, nếu CPU đang rảnh process sẽ được OS cho chạy trên CPU rảnh.</p>
+<p>Mổi “cửa soát vé” trong CPU máy tính sẽ là 1 lõi CPU. Với các CPU thế hệ mới trang bị công nghệ Hyperthreading, mỗi lõi vật lý có thể hoạt động được như 2 lõi logic. Vì vậy OS sẽ nhận diện 8 lõi. Ví dụ máy tính của bạn được trang bị chip mới nhất hiện tại Corei7 MQ– 4 cores 8 threads với công nghệ Hyperthreading thì đối với hệ điều hành máy tính của bạn có 8 cores.</p>
+<p>Để kiểm tra máy tính của bạn có bao nhiêu lõi (cores), trên windows bạn có thể kiểm tra qua TaskManager &gt; Performance. Bên cạnh biểu đồ tỉ lệ sử dụng CPU nói chung là tỉ lệ sử dụng CPU của từng lõi. Số lượng cửa sổ bên tay phải là số lượng lõi logic.</p>
+<p>Trên Linux bạn có thể kiểm tra bằng nhiều cách:</p>
+<pre><code>$ top
+# ấn 1
+top - 20:38:48 up 2 days,  4:50,  1 user,  load average: 11.30, 11.54, 10.17
+Tasks: 430 total,   2 running, 428 sleeping,   0 stopped,   0 zombie
+Cpu0  : 20.5%us,  2.4%sy,  0.0%ni, 76.2%id,  0.4%wa,  0.0%hi,  0.5%si,  0.0%st
+Cpu1  : 20.2%us,  1.9%sy,  0.0%ni, 77.4%id,  0.5%wa,  0.0%hi,  0.1%si,  0.0%st
+Cpu2  : 19.9%us,  1.8%sy,  0.0%ni, 77.7%id,  0.5%wa,  0.0%hi,  0.1%si,  0.0%st
+Cpu3  : 19.9%us,  2.3%sy,  0.0%ni, 77.2%id,  0.2%wa,  0.0%hi,  0.4%si,  0.0%st
+Cpu4  : 19.8%us,  2.3%sy,  0.0%ni, 77.1%id,  0.4%wa,  0.0%hi,  0.4%si,  0.0%st
+Cpu5  : 19.7%us,  2.3%sy,  0.0%ni, 77.4%id,  0.2%wa,  0.0%hi,  0.4%si,  0.0%st
+Cpu6  : 20.1%us,  1.6%sy,  0.0%ni, 78.1%id,  0.1%wa,  0.0%hi,  0.0%si,  0.0%st
+Cpu7  : 19.6%us,  2.2%sy,  0.0%ni, 77.7%id,  0.1%wa,  0.0%hi,  0.3%si,  0.0%st
+Cpu8  : 19.4%us,  2.2%sy,  0.0%ni, 78.0%id,  0.1%wa,  0.0%hi,  0.3%si,  0.0%st
+Cpu9  : 19.8%us,  2.2%sy,  0.0%ni, 77.6%id,  0.1%wa,  0.0%hi,  0.3%si,  0.0%st
+Cpu10 : 19.5%us,  1.6%sy,  0.0%ni, 78.8%id,  0.1%wa,  0.0%hi,  0.0%si,  0.0%st
+Cpu11 : 19.9%us,  2.2%sy,  0.0%ni, 77.5%id,  0.1%wa,  0.0%hi,  0.3%si,  0.0%st
+Mem:  32846220k total, 32593588k used,   252632k free,   434464k buffers
+Swap:  4194296k total,        0k used,  4194296k free, 22380012k cached
 
-<p>Trong các bài viết trước mình đã trình bày về <a href="http://ktmt.github.io/blog/2013/07/02/tim-hieu-redis/">cách redis sao lưu dữ liệu</a> cũng như <a href="http://ktmt.github.io/blog/2013/07/16/tim-hieu-redis-2/">framework lập trình hướng sự kiện của redis</a>. Trong bài viết này mình trình bày về các đối tượng và kiểu dữ liệu trong redis.</p>
+PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND
+14489 hadoop    20   0 1643m 684m  16m S 104.7  2.1  32:15.93 java
+14496 hadoop    20   0 1635m 705m  16m S 104.7  2.2  32:14.63 java
+16194 hadoop    20   0 1637m 655m  16m S 104.7  2.0  29:45.06 java
+16243 hadoop    20   0 1630m 687m  16m S 104.7  2.1  29:28.34 java</code></pre>
+<p>hoặc</p>
+<pre><code>$ mpstat -P ALL
+Linux 2.6.32-358.11.1.el6.x86_64 (bb2-dn07)     07/20/2014      _x86_64_        (12 CPU)
 
-<h2>2. Khái quát</h2>
-
-<p>Redis là một hệ thống cơ sở dữ liệu key-value - mỗi giá trị được quản lý bởi 1 cặp khóa và giá trị (key-value). Khi ghi dữ liệu, ta phải chỉ định rõ cặp khóa và giá trị. Khi đọc dữ liệu, ta phải chỉ ra ta muốn đọc dữ liệu của khóa nào. Trong Redis, khóa (key) có thể là một chuỗi. <strong>giá trị của dữ liệu</strong> (value) có thể là một trong một số kiểu dữ liệu thông dụng</p>
-
+08:39:53 PM  CPU    %usr   %nice    %sys %iowait    %irq   %soft  %steal  %guest   %idle
+08:39:53 PM  all   19.88    0.00    2.09    0.23    0.00    0.27    0.00    0.00   77.53
+08:39:53 PM    0   20.52    0.00    2.38    0.42    0.00    0.46    0.00    0.00   76.21
+08:39:53 PM    1   20.19    0.00    1.85    0.51    0.00    0.11    0.00    0.00   77.35
+08:39:53 PM    2   19.95    0.00    1.81    0.48    0.00    0.11    0.00    0.00   77.65
+08:39:53 PM    3   19.92    0.00    2.33    0.20    0.00    0.38    0.00    0.00   77.16
+08:39:53 PM    4   19.82    0.00    2.28    0.39    0.00    0.45    0.00    0.00   77.07
+08:39:53 PM    5   19.74    0.00    2.33    0.19    0.00    0.38    0.00    0.00   77.36
+08:39:53 PM    6   20.14    0.00    1.64    0.13    0.00    0.01    0.00    0.00   78.09
+08:39:53 PM    7   19.65    0.00    2.19    0.13    0.00    0.35    0.00    0.00   77.69
+08:39:53 PM    8   19.38    0.00    2.20    0.11    0.00    0.34    0.00    0.00   77.97
+08:39:53 PM    9   19.78    0.00    2.23    0.07    0.00    0.35    0.00    0.00   77.57
+08:39:53 PM   10   19.53    0.00    1.59    0.11    0.00    0.01    0.00    0.00   78.76
+08:39:53 PM   11   19.93    0.00    2.21    0.07    0.00    0.34    0.00    0.00   77.45</code></pre>
+<p>hoặc</p>
+<pre><code>$　cat /proc/cpuinfo
+.....</code></pre>
+<h1 id="hiểu-và-đánh-giá-tải-trung-bình-như-thế-nào">Hiểu và đánh giá “tải trung bình” như thế nào?</h1>
+<p>Bên cạnh chỉ số tận dụng CPU bạn có thêm 1 chỉ số nữa gọi là “tải trung bình”. Bạn nên hiểu 2 giá trị này thế nào?</p>
+<p>Tỉ lệ tận dụng CPU nói rằng một process sử dụng CPU nhiều hay ít. Giả sử bạn có một tính toán khá lớn (ví dụ sắp xếp 10GB dữ liệu), phần lớn thời gian của CPU của bạn chắc chắn sẽ bận rộn so sánh và di chuyển dữ liệu. Phần trăm sử dụng CPU sẽ cao, thời gian rảnh (idle) của CPU chắc sẽ thấp.</p>
+<p>Tải trung bình nói rằng số lượng process đang đợi CPU là lớn hay nhỏ. Nếu số lượng process đợi CPU lớn, thời gian một process đợi sẽ dài, thời gian hoàn thành tác vụ của process đó sẽ dài. Bạn sẽ phải chờ kết quả lâu hơn. Ngược lại nếu số lượng process đợi thấp, bạn sẽ không phải đợi các process khác. Thời gian bạn đợi kết quả sẽ chỉ là thời gian tính toán.</p>
+<p>Làm thế nào để biết được số lượng process đang đợi CPU là lớn hay nhỏ? Giống như trường hợp trạm thu phí, nếu số lượng process lớn hơn số lượng lõi CPU, chắc chắn sẽ phải có process đợi. Ngược lại nếu số lượng process nhỏ hơn số lượng lõi CPU, các process hầu như sẽ không phải xếp hàng chờ đợi mà sẽ được OS gán cho lõi đang rảnh rỗi tính toán.</p>
+<p>Từ đây đặt ra câu hỏi: “đánh giá hiệu năng máy tính dựa vào tỉ lệ sử dụng CPU và tải trung bình như thế nào?”.</p>
+<p>Việc đánh giá hiệu năng CPU tùy thuộc vào từng bài toán cụ thể. Ta sẽ đánh giá về hiệu năng sử dụng CPU qua các trường hợp sau (giả sử máy tính có 6 cores 12 threads - ví dụ Intel Xeon):</p>
 <ul>
-<li>tập hợp (set)</li>
-<li>tập hợp đã sắp xếp (sorted set)</li>
-<li>chuỗi (string)</li>
-<li>danh sách (list)</li>
+<li>Tỉ lệ sử dụng CPU thấp (1%), tải CPU thấp (3 - 3 processes / 12 cores)</li>
+<li>Tỉ lệ sử dụng CPU cao (80%), tải CPU thấp (3 - 3 processes / 12 cores)</li>
+<li>Tỉ lệ sử dụng CPU thấp (1%), tải CPU cao (18 - 18 processes / 12 cores)</li>
+<li>Tỉ lệ sử dụng CPU cao (80%), tải CPU cao (18 - 18 processes / 12 cores)</li>
 </ul>
-
-
-<p>Để hỗ trợ các kiểu dữ liệu ở trên, đồng thời đảm bảo tính mở rộng (phát triển thêm các kiểu dữ liệu mới) cũng để dễ dàng quản lý đối tượng trong phần core db, redis thêm 1 layer mô tả dữ liệu trung gian gọi là robj. Các thao tác của core db (đọc, ghi, hash, encoding...) sẽ được thao tác trực tiếp với robj. Các kiểu dữ liệu người dùng ở trên sẽ được chuyển đổi (convert) qua lại đến robj. Nói cách khác, phần core db chỉ biết đến sự tồn tại của robj, các kiểu dữ liệu ở trên muốn được quản lý bởi coredb cần phải được chuyển qua robj.</p>
-
-<p>Về mặt tổ chức mã, bạn có thể tham khảo sơ đồ dưới đây:</p>
-
-<pre><code>╒===============╕
-|  t_hash.c     |
-|  t_list.c     |       ╒============╕      ╒=====================╕
-|  t_set.c      |   &lt;=&gt; |  object.c  |  &lt;=&gt; |  db.c (robj -&gt; sds) | 
-|  t_string.c   |       ╘============╛      ╘=====================╛
-|  t_zset.c     |
-╘===============╛
-</code></pre>
-
-<h2>3. Chi tiết về robj</h2>
-
-<p>Chi tiết về cấu trúc của robj được khai báo trong file <a href="https://github.com/antirez/redis/blob/unstable/src/redis.h">redis.h</a></p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>robj.c </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">A</span> <span class="n">redis</span> <span class="n">object</span><span class="p">,</span> <span class="n">that</span> <span class="n">is</span> <span class="n">a</span> <span class="n">type</span> <span class="n">able</span> <span class="n">to</span> <span class="n">hold</span> <span class="n">a</span> <span class="n">string</span> <span class="o">/</span> <span class="n">list</span> <span class="o">/</span> <span class="n">set</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">The</span> <span class="n">actual</span> <span class="n">Redis</span> <span class="n">Object</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">REDIS_LRU_CLOCK_MAX</span> <span class="p">((</span><span class="mi">1</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="mi">21</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">Max</span> <span class="n">value</span> <span class="n">of</span> <span class="n">obj</span><span class="o">-&gt;</span><span class="n">lru</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">REDIS_LRU_CLOCK_RESOLUTION</span> <span class="mi">10</span> <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">LRU</span> <span class="n">clock</span> <span class="n">resolution</span> <span class="n">in</span> <span class="n">seconds</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">typedef</span> <span class="k">struct</span> <span class="n">redisObject</span> <span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kt">unsigned</span> <span class="n">type</span><span class="o">:</span><span class="mi">4</span><span class="p">;</span>
-</span><span class='line'><span class="kt">unsigned</span> <span class="n">notused</span><span class="o">:</span><span class="mi">2</span><span class="p">;</span>     <span class="cm">/* Not used */</span>
-</span><span class='line'><span class="kt">unsigned</span> <span class="n">encoding</span><span class="o">:</span><span class="mi">4</span><span class="p">;</span>
-</span><span class='line'><span class="kt">unsigned</span> <span class="n">lru</span><span class="o">:</span><span class="mi">22</span><span class="p">;</span>        <span class="cm">/* lru time (relative to server.lruclock) */</span>
-</span><span class='line'><span class="kt">int</span> <span class="n">refcount</span><span class="p">;</span>
-</span><span class='line'><span class="kt">void</span> <span class="o">*</span><span class="n">ptr</span><span class="p">;</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span> <span class="n">robj</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">Macro</span> <span class="n">used</span> <span class="n">to</span> <span class="n">initialize</span> <span class="n">a</span> <span class="n">Redis</span> <span class="n">object</span> <span class="n">allocated</span> <span class="n">on</span> <span class="n">the</span> <span class="n">stack</span><span class="p">.</span>
-</span><span class='line'> <span class="o">*</span> <span class="n">Note</span> <span class="n">that</span> <span class="n">this</span> <span class="n">macro</span> <span class="n">is</span> <span class="n">taken</span> <span class="n">near</span> <span class="n">the</span> <span class="n">structure</span> <span class="n">definition</span> <span class="n">to</span> <span class="n">make</span> <span class="n">sure</span>
-</span><span class='line'> <span class="o">*</span> <span class="n">we</span><span class="err">&#39;</span><span class="n">ll</span> <span class="n">update</span> <span class="n">it</span> <span class="n">when</span> <span class="n">the</span> <span class="n">structure</span> <span class="n">is</span> <span class="n">changed</span><span class="p">,</span> <span class="n">to</span> <span class="n">avoid</span> <span class="n">bugs</span> <span class="n">like</span>
-</span><span class='line'> <span class="o">*</span> <span class="n">bug</span> <span class="err">#</span><span class="mi">85</span> <span class="n">introduced</span> <span class="n">exactly</span> <span class="n">in</span> <span class="n">this</span> <span class="n">way</span><span class="p">.</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">initStaticStringObject</span><span class="p">(</span><span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">var</span><span class="p">,</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">ptr</span><span class="p">)</span> <span class="k">do</span> <span class="p">{</span> <span class="err">\</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">_var</span><span class="p">.</span><span class="n">refcount</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> \
-</span><span class='line'><span class="n">_var</span><span class="p">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">REDIS_STRING</span><span class="p">;</span> \
-</span><span class='line'><span class="n">_var</span><span class="p">.</span><span class="n">encoding</span> <span class="o">=</span> <span class="n">REDIS_ENCODING_RAW</span><span class="p">;</span> \
-</span><span class='line'><span class="n">_var</span><span class="p">.</span><span class="n">ptr</span> <span class="o">=</span> <span class="n">_ptr</span><span class="p">;</span> \
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span> <span class="k">while</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>Qua đó ta có thể thấy robj gồm có các trường như:</p>
-
-<ul>
-<li>kiểu dữ liệu type</li>
-<li>loại encoding: kiểu dữ liệu type có thể hiểu là kiểu dữ liệu người dùng, còn encoding có thể hiểu là kiểu dữ liệu ở backend được quản lý ở  core db của redis để đảm bảo hiệu năng.</li>
-<li>lru (<a href="http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used">least-recently used</a>): là trường đại diện cho thời gian tồn tại tương đối của redis object. Redis hỗ trợ 1 tính năng đối với các đối tượng được ghi vào cơ sở dữ liệu redis: <a href="http://www.redis.io/commands/expire">expire</a>. Các đối tượng quá thời gian chỉ  định trước sẽ được loại bỏ khỏi cơ sở dữ liệu. Trường này dùng để quản lý <strong>thời gian hết hiệu lực</strong> này.</li>
-<li>refcount: là một biến kiểu số nguyên, đại diện cho số lượng reference đến robj này. Mỗi lần có một truy cập đến robj, đại lượng reference sẽ được tăng lên 1, và sẽ bị giảm đi 1 mỗi khi đối tượng <strong>expired</strong> hoặc không được tiếp tục tham chiếu.</li>
-<li>*ptr: con trỏ trỏ trực tiếp đến dữ liệu</li>
-<li>notused??</li>
-</ul>
-
-
-<p>Ở đây, ta gặp một kiểu khai báo <strong>rất lạ</strong> đặt ra nhiều câu hỏi. Thay vì khai báo unsigned type tác giả sử dụng unsigned type:4, điều này có ý nghĩa là gì? Sử dụng cả trường notused và lru:22 có ý nghĩa là gì?</p>
-
-<p>Thực chất khai báo :số nguyên sau kiểu dữ liệu unsigned trong C biểu thị số bit mà trường này muốn sử dụng. Như vậy kiểu type ở trên có độ dài 4 bits. Tương tự như vậy độ dài của encoding là 4 bits. Với độ dài này, redis có thể hỗ trợ tối đa 2<sup>4</sup> = 16 kiểu dữ liệu khác nhau! LRU có độ dài 22 bits. Thực chất trường LRU này đại diện cho thời gian tương đối tính từ <a href="https://github.com/antirez/redis/blob/unstable/src/redis.h#L725">server.lruclock</a>. Thời gian này được tính bằng số phút theo thời gian tương đối này. Để ý với 4 bits cho type, 4 bits cho encoding và 22 bits cho lru, ta mới dùng có 30 bits cho cấu trúc robj này. Do các hệ thống x86 thường căn chỉnh cấu trúc dữ liệu theo bội số của 16 (liên quan đến cơ chế làm việc của CPU cache) nên ta cần padding thêm 2 bits và việc padding 2 bits này chính là nhiệm vụ của notused!</p>
-
-<p>Mã của robj khá gọn gàng, trong sáng, ngắn gọn và dễ hiểu. Bạn có thể tham khảo tại file <a href="https://github.com/antirez/redis/blob/unstable/src/object.c">object.c</a>. Ở đây tôi sẽ trình bày 2 điểm quan trọng về robj:</p>
-
-<ul>
-<li>Tại sao phải encode <strong>robj</strong></li>
-<li>Vai trò của refcount.</li>
-</ul>
-
-
-<p><strong>Tại sao phải encode robj?</strong> Như trong danh sách các kiểu dữ liệu người dùng ở trên, ta thấy có chuỗi là kiểu dữ liệu cơ bản. Các kiểu dữ liệu còn lại (hast, set, list) đều là kiểu dữ liệu xoay quanh chuỗi, số nguyên hoặc các kiểu dữ liệu khác. Bản thân chuỗi thường có nhiều ký tự lặp lại, vì vậy bằng việc encoding chuỗi dữ liệu ta sẽ tiết kiệm được lượng bộ nhớ mà redis sử dụng. Encoding ở đây thực chất là làm giảm kích thước các object. Thuật toán encode chuỗi có thể tham khảo thủ tục <a href="https://github.com/antirez/redis/blob/unstable/src/object.c#L339">tryObjectEncoding</a> và và các thủ tục trong file <a href="https://github.com/antirez/redis/blob/unstable/src/util.c">util.c</a>. Thử tưởng tượng bạn có 1 key trỏ đến danh sách gồm 100 chuỗi, mỗi chuỗi chỉ cần tiết kiệm được 1 byte, thì việc encode này sẽ giúp bạn tiết kiệm được 100 bytes bộ nhớ. Lượng bộ nhớ tiết kiệm này sẽ có ý nghĩa khi bạn có hàng triệu key và value!</p>
-
-<p><strong>Vai trò của refcount</strong> Refcount thường được dùng để chia sẻ dữ liệu giống nhau của các đối tượng khác nhau. Ví dụ bạn có 2 xâu a, b cùng giá trị "Chào Thế giới!" thì không việc gì ta phải có 2 chuỗi "Chào Thế giới!" trong bộ nhớ. Chuỗi a và b có thể cùng trỏ tới 1 chuỗi trên bộ nhớ và chỉ thật sự cần có 1 bản copy riêng khi mà 2 chuỗi khác nhau. Đây là cách sử dụng thường gặp của "<a href="http://en.wikipedia.org/wiki/Reference_counting"><strong>reference count idiom</strong></a>". Tuy vậy ở redis hiếm khi ta thấy 2 object cùng chia sẻ giá trị như trường hợp ở trên. Vậy vai trò của reference count ở đây là gì?</p>
-
-<p>Thực chất tác giả sử dụng refcount ở đây 1 cách khá sáng tạo (dù mình không biết là có thật sự là 1 cách dùng mới hay không). Thử tưởng tượng 1 trường hợp sau đây: 1 thread đang đọc giá trị của robj trong khi 1 thread khác đang gửi command del robj. Nếu command del được tiến hành ngay lập tức, thread đọc robj có thể bị lỗi và trả về giá trị không đúng (1 list có 10 phần tử nhưng phần tử nhưng khi đọc thì redis báo giá trị không tồn tại :-)). Nếu như command del không được thực thi, khóa trên sẽ vẫn tồn tại trong bộ nhớ, và kết quả thực hiện del sẽ thất bại. Chắc là bạn không muốn command del thất bại liên tục (khi số lượng đọc ghi cực lớn, khả năng xảy ra lỗi này là khá cao!). Để giải quyết bài toán trên, tác giả của redis sử dụng refcount. Khi một object được truy cập bởi nhiều thread, refcount của object sẽ được tăng lên 1 đơn vị và giảm 1 khi không được tham chiếu nữa. Như vậy command del sẽ chỉ giảm refcount của robj đi 1. Nếu như tại thời điểm này không có tham chiếu nào đến robj này, robj này sẽ bị thu hồi ngay lập tức. Tuy vậy nếu có 1 thread khác đang tham chiếu robj này, refcount của robj sẽ lớn hơn 1, và do đó tại thời điểm command del được thực thi, giá trị của refcount giảm xuống còn 1. Khi thread khác hoàn thành công việc, thread này sẽ giảm refcount xuống tiếp 1 đơn vị nữa, lúc này robj refcount sẽ về 0 và robj sẽ được giải phóng!</p>
-
-<h2>4. Các cấu trúc dữ liệu người dùng</h2>
-
-<p>Tôi gọi các cấu trúc dữ liệu người dùng để phân biệt chúng với cấu trúc dữ liệu redis dùng để tăng hiệu năng ở core. Các cấu trúc dữ liệu này gồm list, hash, set và string được viết ở các file có tiền tố <strong>t_</strong> tương ứng. Như trình bày ở trên phần db core không biết gì ngoài robj vì vậy các cấu trúc dữ liệu này có nhiệm vụ là convert cách biểu diễn dữ liệu về robj.</p>
-
-<p>Nếu xem các file này, bạn sẽ thấy mỗi file đều có các hàm convert sang robj như: hashTypeConvert, listTypeConvert, ... Mỗi cấu trúc dữ liệu có cách viết khác nhau, nhưng đều cùng cấu trúc và khá ngắn gọn và đơn giản. Bạn có thể tham khảo từng file trên để  tìm hiểu rõ hơn về cách redis hỗ trợ các kiểu dữ liệu.</p>
-
-<p><div>
-  <pre><code class='bash'>src git:(unstable) wc -l t_*.c
-   761 t_hash.c
-  1149 t_list.c
-   913 t_set.c
-   459 t_string.c
-  2205 t_zset.c
-  5487 total</code></pre>
-</div>
-</p>
-
-<h2>5. Kết luận:</h2>
-
-<p>Bài viết trình bày về cách redis tổ chức các kiểu dữ liệu người dùng cũng như cách tổ chức phần "<strong>frontend</strong>" của redis db. Bài viết cũng trình bày chi tiết về robj, về ý nghĩa và vai trò của các trường trong robj cũng như vai trò của robj với backend db. Trong bài viết sau, mình sẽ cố gắng trình bày chi tiết về phần backend server.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Tìm hiểu redis (phần 2): Framework lập trình sự kiện]]></title>
-    <link href="http://ktmt.github.com/blog/2013/07/16/tim-hieu-redis-2/"/>
-    <updated>2013-07-16T00:00:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/07/16/tim-hieu-redis-2</id>
-    <content type="html"><![CDATA[<h2>1. Giới thiệu</h2>
-
-<p>Trong bài viết <a href="http://ktmt.github.io/blog/2013/07/02/tim-hieu-redis/">tìm hiểu redis phần 1</a>, chúng ta đã tìm hiểu cách redis quản lý dữ liệu (AOF và RDB) cũng như cách redis tận dụng các tính năng của OS (fsync) để sao lưu dữ liệu. Bài viết này tập trung trình bày cụ thể hơn về framework lập trình hướng sự kiện của redis.</p>
-
-<h2>2. Lập trình hướng sự kiện</h2>
-
-<p><a href="http://en.wikipedia.org/wiki/Event-driven_programming">Lập trình hướng sự kiện</a> không phải là khái niệm mới, mà là một paradigm dược sử dụng từ rất lâu. Trong lập trình GUI (Giao diện đồ họa), khi người dùng click hay di chuyển chuột, các framework đồ họa thường hỗ trợ các phương pháp như onClick, onMouseMove ... cho phép người dùng định nghĩa hành vi của hệ thống cho những sự kiện đấy.</p>
-
-<p>Các hệ thống Unix(BSD, MacOS)/Linux/Solaris từ lâu đã hỗ trợ lập trình hướng sự kiện. Mỗi hệ điều hành cung cấp API cho phép lập trình viên chỉ định 1 tập các file descriptor hoặc mốc thời gian (time-event) cần theo dõi và sẽ trigger mỗi sự kiện khi các file descriptor thay đổi trạng thái (có đọc hoặc ghi) hoặc khi một mốc thời gian quan trọng đã đến. Lập trình viên hệ thống chỉ cần cung cấp 1 hàm callback và các API này sẽ thực hiện chạy các callback này. Cụ thể:</p>
-
-<ul>
-<li><a href="http://en.wikipedia.org/wiki/Select_%28Unix%29">select</a> Chuẩn POSIX đình nghĩa hàm này.</li>
-<li>Unix (BSD, MacOS): <a href="people.freebsd.org/~jlemon/papers/kqueue.pdf">kqueue</a></li>
-<li>Linux: poll, <a href="http://man7.org/linux/man-pages/man7/epoll.7.html">epoll</a> (edge-trigger)</li>
-<li>Solaris: <a href="http://docs.oracle.com/cd/E19082-01/819-2243/port-associate-3c/index.html">event ports</a> (port_associate)</li>
-</ul>
-
-
-<p>Việc các hệ thống đều hỗ trơ cơ chế event multiplexing là điều tốt (hệ thống của bạn sẽ không phải thay đổi design nếu muốn hỗ trợ 1 hệ thống đặc biệt) tuy vậy có một khó khăn đó là: các API này có interface khác nhau. Do vậy đoạn code dùng epoll sẽ không thể nào chạy trên các Unix based và ngược lại một đoạn code dùng kqueue sẽ không chạy được trên linux. Để giải quyết vấn đề này, redis cung cấp 1 layer hướng sự kiện và thay đổi backend API (kqueue, event ports, epoll) theo hệ thống mà redis được biên dịch trên đó.</p>
-
-<h2>3. Framework</h2>
-
-<h3>a. Kiến trúc</h3>
-
-<pre><code>                    ╒========================╕
-                    |  Redis layer cao hơn   | (aof, rdb, cron...)
-                    ╘========================╛
-
-                    ╒========================╕
-                    |     API layer hướng    | frontend: aeCreateEventLoop, aeStop, aeCreateFileEvent... 
-                    |       sự kiện          | backend: aeAddEvent, aeDelEvent, aeApiPoll...
-                    ╘========================╛
-
-    ╒=============╕     ╒=============╕     ╒=============╕     ╒=============╕
-    |   select    |     |   kqueue    |     |   epoll     |     | event ports |
-    ╘=============╛     ╘=============╛     ╘=============╛     ╘=============╛
-    ae_select.c     ae_kqueue.c             ae_epoll.c               ae_evport.c
-</code></pre>
-
-<p>Để hỗ trợ các event multiplexing api khác nhau của các hệ điều hành, redis xây dựng 1 api layer đứng giữa các layer cao hơn và các api của OS (như trong hình vẽ). Layer này có 2 loại api khác nhau: frontend và backend.</p>
-
-<ul>
-<li>frontend api: là các api cho phép các layer ở trên thao tác với các sự kiện và <strong>vòng lặp sự kiện</strong> (event loop). Các api này gồm có:
-aeCreateEventLLoop, aeStop, aeMain, aeCreateFileEvent, aeCreateTimeEvent...</li>
-<li>backend api: thực chất là interface api. Các api hệ thống khác nhau sẽ được viết để phù hợp với interface này. Interface này gồm các api như: aeAddEvent, aeDelEvent, aeApiPoll, aeApiName.</li>
-</ul>
-
-
-<p>frontend api sẽ gọi backend api để taoji các sự kiện, poll các file descriptor... Các backend api sẽ đối chiếu sử dụng tương ứng với api của hệ thống. Việc sử dụng api nào sẽ được quyết định lúc biên dịch.</p>
-
-<p>Để thống nhất các polling api khác nhau về cùng 1 interface, redis định nghĩa các cấu trúc dữ liệu giống nhau với mỗi api, cụ thể là các sự kiện và <strong>vòng lặp sự kiện</strong>. Các cấu trúc này được viết trong file ae.h</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>ae.c </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-<span class='line-number'>64</span>
-<span class='line-number'>65</span>
-<span class='line-number'>66</span>
-<span class='line-number'>67</span>
-<span class='line-number'>68</span>
-<span class='line-number'>69</span>
-<span class='line-number'>70</span>
-<span class='line-number'>71</span>
-<span class='line-number'>72</span>
-<span class='line-number'>73</span>
-<span class='line-number'>74</span>
-<span class='line-number'>75</span>
-<span class='line-number'>76</span>
-<span class='line-number'>77</span>
-<span class='line-number'>78</span>
-<span class='line-number'>79</span>
-<span class='line-number'>80</span>
-<span class='line-number'>81</span>
-<span class='line-number'>82</span>
-<span class='line-number'>83</span>
-<span class='line-number'>84</span>
-<span class='line-number'>85</span>
-<span class='line-number'>86</span>
-<span class='line-number'>87</span>
-<span class='line-number'>88</span>
-<span class='line-number'>89</span>
-<span class='line-number'>90</span>
-<span class='line-number'>91</span>
-<span class='line-number'>92</span>
-<span class='line-number'>93</span>
-<span class='line-number'>94</span>
-<span class='line-number'>95</span>
-<span class='line-number'>96</span>
-<span class='line-number'>97</span>
-<span class='line-number'>98</span>
-<span class='line-number'>99</span>
-<span class='line-number'>100</span>
-<span class='line-number'>101</span>
-<span class='line-number'>102</span>
-<span class='line-number'>103</span>
-<span class='line-number'>104</span>
-<span class='line-number'>105</span>
-<span class='line-number'>106</span>
-<span class='line-number'>107</span>
-<span class='line-number'>108</span>
-<span class='line-number'>109</span>
-<span class='line-number'>110</span>
-<span class='line-number'>111</span>
-<span class='line-number'>112</span>
-<span class='line-number'>113</span>
-<span class='line-number'>114</span>
-<span class='line-number'>115</span>
-<span class='line-number'>116</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">ifndef</span> <span class="o">&lt;</span><span class="n">strong</span><span class="o">&gt;</span><span class="n">AE_H</span><span class="o">&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="o">&lt;</span><span class="n">strong</span><span class="o">&gt;</span><span class="n">AE_H</span><span class="o">&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">AE_OK</span> <span class="mi">0</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">AE_ERR</span> <span class="o">-</span><span class="mi">1</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">AE_NONE</span> <span class="mi">0</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">AE_READABLE</span> <span class="mi">1</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">AE_WRITABLE</span> <span class="mi">2</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">AE_FILE_EVENTS</span> <span class="mi">1</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">AE_TIME_EVENTS</span> <span class="mi">2</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">AE_ALL_EVENTS</span> <span class="p">(</span><span class="n">AE_FILE_EVENTS</span><span class="o">|</span><span class="n">AE_TIME_EVENTS</span><span class="p">)</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">AE_DONT_WAIT</span> <span class="mi">4</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">AE_NOMORE</span> <span class="o">-</span><span class="mi">1</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">Macros</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">AE_NOTUSED</span><span class="p">(</span><span class="n">V</span><span class="p">)</span> <span class="p">((</span><span class="kt">void</span><span class="p">)</span> <span class="n">V</span><span class="p">)</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">aeEventLoop</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">Types</span> <span class="n">and</span> <span class="n">data</span> <span class="n">structures</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
-</span><span class='line'><span class="k">typedef</span> <span class="kt">void</span> <span class="n">aeFileProc</span><span class="p">(</span><span class="k">struct</span> <span class="n">aeEventLoop</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">void</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">clientData</span><span class="p">,</span> <span class="kt">int</span> <span class="n">mask</span><span class="p">);</span>
-</span><span class='line'><span class="k">typedef</span> <span class="kt">int</span> <span class="nf">aeTimeProc</span><span class="p">(</span><span class="k">struct</span> <span class="n">aeEventLoop</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">long</span> <span class="kt">long</span> <span class="n">id</span><span class="p">,</span> <span class="kt">void</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">clientData</span><span class="p">);</span>
-</span><span class='line'><span class="k">typedef</span> <span class="kt">void</span> <span class="nf">aeEventFinalizerProc</span><span class="p">(</span><span class="k">struct</span> <span class="n">aeEventLoop</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">void</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">clientData</span><span class="p">);</span>
-</span><span class='line'><span class="k">typedef</span> <span class="kt">void</span> <span class="nf">aeBeforeSleepProc</span><span class="p">(</span><span class="k">struct</span> <span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">File</span> <span class="n">event</span> <span class="n">structure</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
-</span><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">aeFileEvent</span> <span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">mask</span><span class="p">;</span> <span class="cm">/* one of AE_(READABLE|WRITABLE) */</span>
-</span><span class='line'><span class="n">aeFileProc</span> <span class="o">*</span><span class="n">rfileProc</span><span class="p">;</span>
-</span><span class='line'><span class="n">aeFileProc</span> <span class="o">*</span><span class="n">wfileProc</span><span class="p">;</span>
-</span><span class='line'><span class="kt">void</span> <span class="o">*</span><span class="n">clientData</span><span class="p">;</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span> <span class="n">aeFileEvent</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">Time</span> <span class="n">event</span> <span class="n">structure</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
-</span><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">aeTimeEvent</span> <span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kt">long</span> <span class="kt">long</span> <span class="n">id</span><span class="p">;</span> <span class="cm">/* time event identifier. */</span>
-</span><span class='line'><span class="kt">long</span> <span class="n">when_sec</span><span class="p">;</span> <span class="cm">/* seconds */</span>
-</span><span class='line'><span class="kt">long</span> <span class="n">when_ms</span><span class="p">;</span> <span class="cm">/* milliseconds */</span>
-</span><span class='line'><span class="n">aeTimeProc</span> <span class="o">*</span><span class="n">timeProc</span><span class="p">;</span>
-</span><span class='line'><span class="n">aeEventFinalizerProc</span> <span class="o">*</span><span class="n">finalizerProc</span><span class="p">;</span>
-</span><span class='line'><span class="kt">void</span> <span class="o">*</span><span class="n">clientData</span><span class="p">;</span>
-</span><span class='line'><span class="k">struct</span> <span class="n">aeTimeEvent</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span> <span class="n">aeTimeEvent</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">A</span> <span class="n">fired</span> <span class="n">event</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
-</span><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">aeFiredEvent</span> <span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">fd</span><span class="p">;</span>
-</span><span class='line'><span class="kt">int</span> <span class="n">mask</span><span class="p">;</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span> <span class="n">aeFiredEvent</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">State</span> <span class="n">of</span> <span class="n">an</span> <span class="n">event</span> <span class="n">based</span> <span class="n">program</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
-</span><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">aeEventLoop</span> <span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">maxfd</span><span class="p">;</span>   <span class="cm">/* highest file descriptor currently registered */</span>
-</span><span class='line'><span class="kt">int</span> <span class="n">setsize</span><span class="p">;</span> <span class="cm">/* max number of file descriptors tracked */</span>
-</span><span class='line'><span class="kt">long</span> <span class="kt">long</span> <span class="n">timeEventNextId</span><span class="p">;</span>
-</span><span class='line'><span class="kt">time_t</span> <span class="n">lastTime</span><span class="p">;</span>     <span class="cm">/* Used to detect system clock skew */</span>
-</span><span class='line'><span class="n">aeFileEvent</span> <span class="o">*</span><span class="n">events</span><span class="p">;</span> <span class="cm">/* Registered events */</span>
-</span><span class='line'><span class="n">aeFiredEvent</span> <span class="o">*</span><span class="n">fired</span><span class="p">;</span> <span class="cm">/* Fired events */</span>
-</span><span class='line'><span class="n">aeTimeEvent</span> <span class="o">*</span><span class="n">timeEventHead</span><span class="p">;</span>
-</span><span class='line'><span class="kt">int</span> <span class="n">stop</span><span class="p">;</span>
-</span><span class='line'><span class="kt">void</span> <span class="o">*</span><span class="n">apidata</span><span class="p">;</span> <span class="cm">/* This is used for polling API specific data */</span>
-</span><span class='line'><span class="n">aeBeforeSleepProc</span> <span class="o">*</span><span class="n">beforesleep</span><span class="p">;</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span> <span class="n">aeEventLoop</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">Prototypes</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
-</span><span class='line'><span class="n">aeEventLoop</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">aeCreateEventLoop</span><span class="p">(</span><span class="kt">int</span> <span class="n">setsize</span><span class="p">);</span>
-</span><span class='line'><span class="kt">void</span> <span class="nf">aeDeleteEventLoop</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">eventLoop</span><span class="p">);</span>
-</span><span class='line'><span class="kt">void</span> <span class="nf">aeStop</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">eventLoop</span><span class="p">);</span>
-</span><span class='line'><span class="kt">int</span> <span class="nf">aeCreateFileEvent</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">int</span> <span class="n">mask</span><span class="p">,</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span>    <span class="n">aeFileProc</span> <span class="o">*</span><span class="n">proc</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">clientData</span><span class="p">);</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">aeDeleteFileEvent</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">int</span> <span class="n">mask</span><span class="p">);</span>
-</span><span class='line'><span class="kt">int</span> <span class="nf">aeGetFileEvents</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">int</span> <span class="n">fd</span><span class="p">);</span>
-</span><span class='line'><span class="kt">long</span> <span class="kt">long</span> <span class="nf">aeCreateTimeEvent</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">long</span> <span class="kt">long</span> <span class="n">milliseconds</span><span class="p">,</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span>    <span class="n">aeTimeProc</span> <span class="o">*</span><span class="n">proc</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">clientData</span><span class="p">,</span>
-</span><span class='line'>    <span class="n">aeEventFinalizerProc</span> <span class="o">*</span><span class="n">finalizerProc</span><span class="p">);</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">aeDeleteTimeEvent</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">long</span> <span class="kt">long</span> <span class="n">id</span><span class="p">);</span>
-</span><span class='line'><span class="kt">int</span> <span class="nf">aeProcessEvents</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">);</span>
-</span><span class='line'><span class="kt">int</span> <span class="nf">aeWait</span><span class="p">(</span><span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">int</span> <span class="n">mask</span><span class="p">,</span> <span class="kt">long</span> <span class="kt">long</span> <span class="n">milliseconds</span><span class="p">);</span>
-</span><span class='line'><span class="kt">void</span> <span class="nf">aeMain</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">eventLoop</span><span class="p">);</span>
-</span><span class='line'><span class="kt">char</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">aeGetApiName</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
-</span><span class='line'><span class="kt">void</span> <span class="nf">aeSetBeforeSleepProc</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">eventLoop</span><span class="p">,</span> <span class="n">aeBeforeSleepProc</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">beforesleep</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">endif</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>Theo như ae.h, redis có 3 kiểu sự kiện khác nhau:</p>
-
-<ul>
-<li>Sự kiện trên File (đọc, ghi) (aeFileEvent)</li>
-<li>Sự kiện thời gian (aeTimeEvent)</li>
-<li>Sự kiện đã được triggered (aeFiredEvent)</li>
-</ul>
-
-
-<p>Các callback prototype đều nhận đối số đầu tiên là 1 con trỏ chỉ đến cấu trúc aeEventLoop. Cấu trúc này quản lý rất nhiều thông tin khác nhau như: số sự kiện được đăng ký, sự kiện được gọi, file descriptor lớn nhất đang quản lý, danh sách các <strong>sự kiện thời gian</strong> v.v</p>
-
-<h3>b. Chi tiết thực hiện</h3>
-
-<p>Toàn bộ quá trình xử lý sự kiện được bắt đầu bằng cách gọi aeMain. Xử lý trong aeMain thực chất là một vòng lặp gọi hàm xử lý sự kiện: aeProcessEvents. Tất cả các sự kiện sẽ được thực thi ở hàm aeProcessEvents này. Ta hãy cùng tìm hiểu công việc mà aeProcessEvent phải làm.</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>ae.c </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-<span class='line-number'>64</span>
-<span class='line-number'>65</span>
-<span class='line-number'>66</span>
-<span class='line-number'>67</span>
-<span class='line-number'>68</span>
-<span class='line-number'>69</span>
-<span class='line-number'>70</span>
-<span class='line-number'>71</span>
-<span class='line-number'>72</span>
-<span class='line-number'>73</span>
-<span class='line-number'>74</span>
-<span class='line-number'>75</span>
-<span class='line-number'>76</span>
-<span class='line-number'>77</span>
-<span class='line-number'>78</span>
-<span class='line-number'>79</span>
-<span class='line-number'>80</span>
-<span class='line-number'>81</span>
-<span class='line-number'>82</span>
-<span class='line-number'>83</span>
-<span class='line-number'>84</span>
-<span class='line-number'>85</span>
-<span class='line-number'>86</span>
-<span class='line-number'>87</span>
-<span class='line-number'>88</span>
-<span class='line-number'>89</span>
-<span class='line-number'>90</span>
-<span class='line-number'>91</span>
-<span class='line-number'>92</span>
-<span class='line-number'>93</span>
-<span class='line-number'>94</span>
-<span class='line-number'>95</span>
-<span class='line-number'>96</span>
-<span class='line-number'>97</span>
-<span class='line-number'>98</span>
-<span class='line-number'>99</span>
-<span class='line-number'>100</span>
-<span class='line-number'>101</span>
-<span class='line-number'>102</span>
-<span class='line-number'>103</span>
-<span class='line-number'>104</span>
-<span class='line-number'>105</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">aeMain</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">)</span> <span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">eventLoop</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">stop</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'><span class="k">while</span> <span class="p">(</span><span class="o">!</span><span class="n">eventLoop</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">stop</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">eventLoop</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">beforesleep</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">eventLoop</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">beforesleep</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">aeProcessEvents</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">,</span> <span class="n">AE_ALL_EVENTS</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">Process</span> <span class="n">every</span> <span class="n">pending</span> <span class="n">time</span> <span class="n">event</span><span class="p">,</span> <span class="n">then</span> <span class="n">every</span> <span class="n">pending</span> <span class="n">file</span> <span class="n">event</span>
-</span><span class='line'> <span class="o">*</span> <span class="p">(</span><span class="n">that</span> <span class="n">may</span> <span class="n">be</span> <span class="n">registered</span> <span class="n">by</span> <span class="n">time</span> <span class="n">event</span> <span class="n">callbacks</span> <span class="n">just</span> <span class="n">processed</span><span class="p">).</span>
-</span><span class='line'> <span class="o">*</span> <span class="n">Without</span> <span class="n">special</span> <span class="n">flags</span> <span class="n">the</span> <span class="n">function</span> <span class="n">sleeps</span> <span class="n">until</span> <span class="n">some</span> <span class="n">file</span> <span class="n">event</span>
-</span><span class='line'> <span class="o">*</span> <span class="n">fires</span><span class="p">,</span> <span class="n">or</span> <span class="n">when</span> <span class="n">the</span> <span class="n">next</span> <span class="n">time</span> <span class="n">event</span> <span class="n">occurs</span> <span class="p">(</span><span class="k">if</span> <span class="n">any</span><span class="p">).</span>
-</span><span class='line'> <span class="o">*</span>
-</span><span class='line'> <span class="o">*</span> <span class="n">If</span> <span class="n">flags</span> <span class="n">is</span> <span class="mi">0</span><span class="p">,</span> <span class="n">the</span> <span class="n">function</span> <span class="n">does</span> <span class="n">nothing</span> <span class="n">and</span> <span class="n">returns</span><span class="p">.</span>
-</span><span class='line'> <span class="o">*</span> <span class="k">if</span> <span class="n">flags</span> <span class="n">has</span> <span class="n">AE_ALL_EVENTS</span> <span class="n">set</span><span class="p">,</span> <span class="n">all</span> <span class="n">the</span> <span class="n">kind</span> <span class="n">of</span> <span class="n">events</span> <span class="n">are</span> <span class="n">processed</span><span class="p">.</span>
-</span><span class='line'> <span class="o">*</span> <span class="k">if</span> <span class="n">flags</span> <span class="n">has</span> <span class="n">AE_FILE_EVENTS</span> <span class="n">set</span><span class="p">,</span> <span class="n">file</span> <span class="n">events</span> <span class="n">are</span> <span class="n">processed</span><span class="p">.</span>
-</span><span class='line'> <span class="o">*</span> <span class="k">if</span> <span class="n">flags</span> <span class="n">has</span> <span class="n">AE_TIME_EVENTS</span> <span class="n">set</span><span class="p">,</span> <span class="n">time</span> <span class="n">events</span> <span class="n">are</span> <span class="n">processed</span><span class="p">.</span>
-</span><span class='line'> <span class="o">*</span> <span class="k">if</span> <span class="n">flags</span> <span class="n">has</span> <span class="n">AE_DONT_WAIT</span> <span class="n">set</span> <span class="n">the</span> <span class="n">function</span> <span class="n">returns</span> <span class="n">ASAP</span> <span class="n">until</span> <span class="n">all</span>
-</span><span class='line'> <span class="o">*</span> <span class="n">the</span> <span class="n">events</span> <span class="n">that</span><span class="err">&#39;</span><span class="n">s</span> <span class="n">possible</span> <span class="n">to</span> <span class="n">process</span> <span class="n">without</span> <span class="n">to</span> <span class="n">wait</span> <span class="n">are</span> <span class="n">processed</span><span class="p">.</span>
-</span><span class='line'> <span class="o">*</span>
-</span><span class='line'> <span class="o">*</span> <span class="n">The</span> <span class="n">function</span> <span class="n">returns</span> <span class="n">the</span> <span class="n">number</span> <span class="n">of</span> <span class="n">events</span> <span class="n">processed</span><span class="p">.</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
-</span><span class='line'><span class="kt">int</span> <span class="n">aeProcessEvents</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">processed</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">numevents</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="cm">/* Nothing to do? return ASAP */</span>
-</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">AE_TIME_EVENTS</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="o">!</span><span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">AE_FILE_EVENTS</span><span class="p">))</span> <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="cm">/* Note that we want call select() even if there are no</span>
-</span><span class='line'><span class="cm"> * file events to process as long as we want to process time</span>
-</span><span class='line'><span class="cm"> * events, in order to sleep until the next time event is ready</span>
-</span><span class='line'><span class="cm"> * to fire. */</span>
-</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">eventLoop</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">maxfd</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">||</span>
-</span><span class='line'>    <span class="p">((</span><span class="n">flags</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">AE_TIME_EVENTS</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="o">!</span><span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">AE_DONT_WAIT</span><span class="p">)))</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">j</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">aeTimeEvent</span> <span class="o">*</span><span class="n">shortest</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">struct</span> <span class="n">timeval</span> <span class="n">tv</span><span class="p">,</span> <span class="o">*</span><span class="n">tvp</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">AE_TIME_EVENTS</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="o">!</span><span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">AE_DONT_WAIT</span><span class="p">))</span>
-</span><span class='line'>        <span class="n">shortest</span> <span class="o">=</span> <span class="n">aeSearchNearestTimer</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">shortest</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="kt">long</span> <span class="n">now_sec</span><span class="p">,</span> <span class="n">now_ms</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="cm">/* Calculate the time missing for the nearest</span>
-</span><span class='line'><span class="cm">         * timer to fire. */</span>
-</span><span class='line'>        <span class="n">aeGetTime</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">now_sec</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">now_ms</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">tvp</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">tv</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">tvp</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">tv_sec</span> <span class="o">=</span> <span class="n">shortest</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">when_sec</span> <span class="o">-</span> <span class="n">now_sec</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">shortest</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">when_ms</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">now_ms</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>            <span class="n">tvp</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">tv_usec</span> <span class="o">=</span> <span class="p">((</span><span class="n">shortest</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">when_ms</span><span class="o">+</span><span class="mi">1000</span><span class="p">)</span> <span class="o">-</span> <span class="n">now_ms</span><span class="p">)</span><span class="o">*</span><span class="mi">1000</span><span class="p">;</span>
-</span><span class='line'>            <span class="n">tvp</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">tv_sec</span> <span class="o">--</span><span class="p">;</span>
-</span><span class='line'>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-</span><span class='line'>            <span class="n">tvp</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">tv_usec</span> <span class="o">=</span> <span class="p">(</span><span class="n">shortest</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">when_ms</span> <span class="o">-</span> <span class="n">now_ms</span><span class="p">)</span><span class="o">*</span><span class="mi">1000</span><span class="p">;</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">tvp</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">tv_sec</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span><span class="p">)</span> <span class="n">tvp</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">tv_sec</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">tvp</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">tv_usec</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span><span class="p">)</span> <span class="n">tvp</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">tv_usec</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-</span><span class='line'>        <span class="cm">/* If we have to check for events but need to return</span>
-</span><span class='line'><span class="cm">         * ASAP because of AE_DONT_WAIT we need to set the timeout</span>
-</span><span class='line'><span class="cm">         * to zero */</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">AE_DONT_WAIT</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>            <span class="n">tv</span><span class="p">.</span><span class="n">tv_sec</span> <span class="o">=</span> <span class="n">tv</span><span class="p">.</span><span class="n">tv_usec</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>            <span class="n">tvp</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">tv</span><span class="p">;</span>
-</span><span class='line'>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-</span><span class='line'>            <span class="cm">/* Otherwise we can block */</span>
-</span><span class='line'>            <span class="n">tvp</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span> <span class="cm">/* wait forever */</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">numevents</span> <span class="o">=</span> <span class="n">aeApiPoll</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">,</span> <span class="n">tvp</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">numevents</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="n">aeFileEvent</span> <span class="o">*</span><span class="n">fe</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">eventLoop</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">events</span><span class="p">[</span><span class="n">eventLoop</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">fired</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">fd</span><span class="p">];</span>
-</span><span class='line'>        <span class="kt">int</span> <span class="n">mask</span> <span class="o">=</span> <span class="n">eventLoop</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">fired</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">mask</span><span class="p">;</span>
-</span><span class='line'>        <span class="kt">int</span> <span class="n">fd</span> <span class="o">=</span> <span class="n">eventLoop</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">fired</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">fd</span><span class="p">;</span>
-</span><span class='line'>        <span class="kt">int</span> <span class="n">rfired</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cm">/* note the fe-&amp;gt;mask &amp;amp; mask &amp;amp; ... code: maybe an already processed</span>
-</span><span class='line'><span class="cm">         * event removed an element that fired and we still didn&#39;t</span>
-</span><span class='line'><span class="cm">         * processed, so we check if the event is still valid. */</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">fe</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">mask</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">mask</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">AE_READABLE</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>            <span class="n">rfired</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class='line'>            <span class="n">fe</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">rfileProc</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">,</span><span class="n">fd</span><span class="p">,</span><span class="n">fe</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">clientData</span><span class="p">,</span><span class="n">mask</span><span class="p">);</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">fe</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">mask</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">mask</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">AE_WRITABLE</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">rfired</span> <span class="o">||</span> <span class="n">fe</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">wfileProc</span> <span class="o">!=</span> <span class="n">fe</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">rfileProc</span><span class="p">)</span>
-</span><span class='line'>                <span class="n">fe</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">wfileProc</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">,</span><span class="n">fd</span><span class="p">,</span><span class="n">fe</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">clientData</span><span class="p">,</span><span class="n">mask</span><span class="p">);</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>        <span class="n">processed</span><span class="o">++</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="cm">/* Check time events */</span>
-</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">AE_TIME_EVENTS</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">processed</span> <span class="o">+=</span> <span class="n">processTimeEvents</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">return</span> <span class="n">processed</span><span class="p">;</span> <span class="cm">/* return the number of processed file/time events */</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>Hàm aeProcessEvents làm 3 nhiệm vụ chính:</p>
-
-<ul>
-<li>Tìm sự kiện có thời gian timeout gần nhất</li>
-<li>Lắng nghe sự kiện File, với thời gian poll không quá thời gian sự kiện gần nhất ở trên.</li>
-<li>Với các sự kiện được triggered (file có thể đọc, ghi; thời gian timeout đã đến), chạy các callback được đăng ký với các sự kiện.</li>
-</ul>
-
-
-<p>Việc tìm thời gian timeout gần nhất ở đầu vòng lặp nhằm hạn chế thấp nhất khả năng delay của các sự kiện thời gian (Nên nhớ serverCron chạy với thời gian timeout 1ms trên 1 lần).</p>
-
-<p>Sau khi xử lý lần lượt các xử lý các sự kiện file, redis sẽ xử lý các sự kiện thời gian. Xử lý sự kiện thời gian cũng khá đơn giản. Redis lần lượt xét từng sự kiện thời gian trong danh sách các sự kiện thời gian và gọi callback với các sự kiện đã quá thời hạn. Tuy nhiên, ta sẽ thấy 1 đoạn code khá <strong>mập mờ</strong> ở đầu xử lý sự kiện thời gian, với comment như dưới đây:</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>ae.c </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="cm">/* If the system clock is moved to the future, and then set back to the</span>
-</span><span class='line'><span class="cm"> * right value, time events may be delayed in a random way. Often this</span>
-</span><span class='line'><span class="cm"> * means that scheduled operations will not be performed soon enough.</span>
-</span><span class='line'><span class="cm"> *</span>
-</span><span class='line'><span class="cm"> * Here we try to detect system clock skews, and force all the time</span>
-</span><span class='line'><span class="cm"> * events to be processed ASAP when this happens: the idea is that</span>
-</span><span class='line'><span class="cm"> * processing events earlier is less dangerous than delaying them</span>
-</span><span class='line'><span class="cm"> * indefinitely, and practice suggests it is. */</span>
-</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">now</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">eventLoop</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">lastTime</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="n">te</span> <span class="o">=</span> <span class="n">eventLoop</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">timeEventHead</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">while</span><span class="p">(</span><span class="n">te</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="n">te</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">when_sec</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">te</span> <span class="o">=</span> <span class="n">te</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">next</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="n">eventLoop</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">lastTime</span> <span class="o">=</span> <span class="n">now</span><span class="p">;</span>
-</span><span class='line'><span class="p">...</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>Làm sao thời gian hệ thống trả về bởi time(NULL) có thể nhỏ hơn thời gian xử lý được ghi nhận lần trước đấy được? Thực chất ở đây, antirez đã cân nhắc rất kỹ 1 tính huống có thể xảy ra với hệ thống thời gian của Linux. Trong điều kiện hoạt động bình thường, thời gian hệ thống sẽ luôn tăng. Tuy vậy, với 1 số trường hợp rủi ro:</p>
-
-<ul>
-<li>Nguồn cung cấp điện không đủ.</li>
-<li>Pin CMOS có vấn đề.</li>
-</ul>
-
-
-<p>1s trong máy tính có thể bằng 2, 3s trong thời gian thực, nói cách khác đồng hồ máy tính sẽ bị chạy chậm đi. Với tình huống này các sự kiện thời gian sẽ bị sai lệch và redis sẽ hoạt động không bình thường. Đấy chính là lý do antirez thêm đoạn code trên.</p>
-
-<h2>4. Redis dùng framework này như thế nào?</h2>
-
-<ul>
-<li>Sự kiện file được sử dụng ở redis client và cluster. Thực chất các redis instance cần phải liên lạc với nhau để trao đổi dữ liệu. Việc trao đổi này tiến hành qua mạng và vì vậy hệ thống không thể nào biết khi nào dữ liệu mới sẽ đến. Thay vì phải chờ dữ liệu, bằng cách dùng framework sự kiện, hệ thống có thể tiến hành các xử lý có ưu tiên cao hơn môt cách <strong>bất đồng bộ</strong>, nâng cao hiệu năng của hệ thống.</li>
-<li>Sự kiện thời gian được sử dụng để định kỳ gọi cronServer (Nhiệm vụ của cronServer: <a href="http://ktmt.github.io/blog/2013/07/02/tim-hieu-redis/">tìm hiểu redis phần 1</a>).</li>
-</ul>
-
-
-<h2>5. Kết luận</h2>
-
-<p>Redis sử dụng phương pháp lập trình hướng sự kiện để định kỳ gọi các thủ tục backup dữ liệu cũng như quản lý các kết nối từ client. Redis hỗ trợ kqueue, epoll và event port nên hiệu năng đạt được khá cao.</p>
-
-<h2>6. Tham khảo</h2>
-
-<ol>
-<li><a href="http://www.kegel.com/c10k.html">C10K</a></li>
-<li><a href="people.freebsd.org/~jlemon/papers/kqueue.pdf">kqueue</a></li>
-<li><a href="http://man7.org/linux/man-pages/man7/epoll.7.html">epoll</a></li>
-<li><a href="http://docs.oracle.com/cd/E19082-01/819-2243/port-associate-3c/index.html">event ports</a></li>
-<li><a href="https://groups.google.com/forum/#!forum/redis-db">redis mailing list</a></li>
-<li>IOCP <a href="http://en.wikipedia.org/wiki/Input/output_completion_port">Input/output completion port</a></li>
-</ol>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Tìm hiểu redis - phần 1]]></title>
-    <link href="http://ktmt.github.com/blog/2013/07/02/tim-hieu-redis/"/>
-    <updated>2013-07-02T23:38:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/07/02/tim-hieu-redis</id>
-    <content type="html"><![CDATA[<h2>1. Giới thiệu</h2>
-
-<p><a href="www.redis.io">Redis</a> là hệ thống lưu trữ key-value với rất nhiều tính năng và được <a href="http://redis.io/topics/whos-using-redis">sử dụng rộng rãi</a>. Redis nổi bật bởi việc hỗ trợ nhiều cấu trúc dữ liệu cơ bản (hash, list, set, sorted set, string), đồng thời cho phép scripting bằng ngôn ngữ lua. Bên cạnh lưu trữ key-value trên RAM với hiệu năng cao, redis còn hỗ trợ lưu trữ dữ liệu trên đĩa cứng (persistent redis) cho phép phục hồi dữ liệu khi gặp sự cố. Ngoài tính năng replicatation (sao chép giữa master-client), tính năng cluster (sao lưu master-master) cũng đang được phát triển . Để sử dụng một cách hiệu quả những tính năng redis hỗ trợ cũng như vận hành redis với hiệu suất cao nhất thì việc am hiểu hệ thống lưu trữ này là điều không thể thiếu. Chính vì lý do này, mình quyết định tìm hiểu mã nguồn redis. Loạt bài viết về redis này tóm tắt những điều mình tìm hiểu được từ việc đọc mã nguồn của redis.</p>
-
-<h2>2. Khái quát</h2>
-
-<p>Bạn có thể clone mã nguồn redis về máy tính mình bằng câu lệnh dưới đây:</p>
-
-<p><div>
-  <pre><code class='bash'>git clone https://github.com/antirez/redis.git</code></pre>
-</div>
-</p>
-
-<p>Trước hết là một số thống kê nho nhỏ về redis (tại thời điểm bài viết):
-* Số lượng file mã nguồn: 55
-<div>
-  <pre><code class='bash'>ls &lt;em&gt;.c | wc -l
-55</code></pre>
-</div>
-
-* Số lượng file header: 30
-<div>
-  <pre><code class='bash'>ls &lt;/em&gt;.h | wc -l
-30</code></pre>
-</div>
-
-* Tổng số dòng code: 43829
-<div>
-  <pre><code class='bash'>wc -l *.[ch]
-341    adlist.c     197   pqsort.c            228   sha1.c          810   dict.c
-93     adlist.h     40    pqsort.h            17    sha1.h          173   dict.h
-435    ae.c         359   pubsub.c            169   slowlog.c       124   endianconv.c
-130    ae_epoll.c   93    rand.c              47    slowlog.h       64    endianconv.h
-315    ae_evport.c  38    rand.h              50    solarisfixes.h  52    fmacros.h
-118    ae.h         1230  rdb.c               530   sort.c          759   help.h
-132    ae_kqueue.c  114   rdb.h               144   syncio.c        483   intset.c
-99     ae_select.c  683   redis-benchmark.c   57    testhelp.h      50    intset.h
-441    anet.c       3008  redis.c             761   t_hash.c        295   lzf_c.c
-60     anet.h       218   redis-check-aof.c   1149  t_list.c        150   lzf_d.c
-1178   aof.c        768   redis-check-dump.c  913   t_set.c         100   lzf.h
-47     asciilogo.h  1556  redis-cli.c         459   t_string.c      159   lzfP.h
-220    bio.c        1517  redis.h             2205  t_zset.c        279   memtest.c
-41     bio.h        52    release.c           520   util.c          323   multi.c
-412    bitops.c     3     release.h           41    util.h          1444  networking.c
-2866   cluster.c    1658  replication.c       1     version.h       128   notify.c
-1726   config.c     198   rio.c               1534  ziplist.c       580   object.c
-195    config.h     104   rio.h               46    ziplist.h
-88     crc16.c      1065  scripting.c         467   zipmap.c
-191    crc64.c      732   sds.c               49    zipmap.h
-8      crc64.h      99    sds.h               351   zmalloc.c
-815    db.c         3160  sentinel.c          85    zmalloc.h
-929    debug.c      261   setproctitle.c
-43829  total</code></pre>
-</div>
-</p>
-
-<p>Một số thư viện được sử dụng: <a href="http://www.canonware.com/jemalloc/">jemalloc</a>, <a href="https://github.com/antirez/linenoise">linenoise</a>, <a href="http://www.lua.org/">lua</a></p>
-
-<h2>3. Các modules</h2>
-
-<p>Redis bao gồm các module sau:</p>
-
-<ul>
-<li>Framework hỗ trợ xử lý bất đồng bộ, networking: ae, anet</li>
-<li>Mô tả dữ liệu: sds.c, t_hash.c, t_list.c, t_string.c, t_zset.c, object.c, notify.c (pub-sub)</li>
-<li>Lưu trữ dữ liệu, cơ sở dữ liệu: db.c, dict.c, ziplist.c, zipmap.c, adlist.c</li>
-<li>Module hỗ trợ IO/persistent redis: rdb.c, aof.c, bio.c, rio.c</li>
-<li>Utilities: crc16.c, crc64.c, pqsort.c, lzf_c.c, lzf_d.c</li>
-</ul>
-
-
-<p>Mình sẽ lần lượt giới thiệu các modules trong các bài viết sau. Ở bài viết này, mình sẽ tập trung vào module IO/persistent redis.</p>
-
-<h2>4. Persistent redis</h2>
-
-<p>Bên cạnh việc lưu key-value trên bộ nhớ RAM, Redis có 2 background threads chuyên làm nhiệm vụ định kỳ ghi dữ liệu lên đĩa cứng.</p>
-
-<p>Có 2 loại file được ghi xuống đĩa cứng:</p>
-
-<ul>
-<li>RDB</li>
-<li>AOF</li>
-</ul>
-
-
-<p>RDB lưu dữ liệu dưới dạng đã mã hóa. AOF lưu lại toàn bộ dưới liệu dưới dạng command, giống như command mà redis client gửi đến server để thao tác bằng cách ghi đè xuống cuối file.</p>
-
-<p>File rdb có thể coi là một snapshot của cơ sở dữ liệu tại một thời điểm nhất định. File dữ liệu này được dùng với 2 mục đích</p>
-
-<ul>
-<li>Cho phép redis có thể phục hồi lại dữ liệu trên memory bằng việc đọc file</li>
-<li>Bản thân dữ liệu được ghi ra file rdb sẽ được gửi đến các redis slave server, phục vụ mục đích sao lưu server.</li>
-</ul>
-
-
-<p>Dữ liệu ghi ra file rdb được chỉnh sửa và mã hóa để giảm kích thước ghi trên đĩa, đồng thời tằng tốc độ replication. Cụ thể  định dạng của file rdb như sau.</p>
-
-<p>Với những key ngắn, việc dùng 32 bit để mô tả key là thừa thãi, do vậy redis quy định những key ngắn được mã hóa sử dụng 2 bit đầu tiên của 1 byte. Cụ thể:</p>
-
-<pre><code>00|000000 =&gt; 00, độ dài dữ liệu mô tả  bởi 6 bit 
-01|000000 00000000 =&gt; 01, độ dài dữ liệu là 14 bit
-10|000000 [số 32 bit] =&gt; 1 chuỗi độ dài 32 bit sẽ theo sau
-11|000000 =&gt; obj được encode đặc biệt sẽ theo sau byte này. 6 bit sau sẽ xác định kiểu object.
-</code></pre>
-
-<p>Kiểu object ở đây cụ thể như sau:
-<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>rdb.c </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">When</span> <span class="n">a</span> <span class="n">length</span> <span class="n">of</span> <span class="n">a</span> <span class="n">string</span> <span class="n">object</span> <span class="n">stored</span> <span class="n">on</span> <span class="n">disk</span> <span class="n">has</span> <span class="n">the</span> <span class="n">first</span> <span class="n">two</span> <span class="n">bits</span>
-</span><span class='line'> <span class="o">*</span> <span class="n">set</span><span class="p">,</span> <span class="n">the</span> <span class="n">remaining</span> <span class="n">two</span> <span class="n">bits</span> <span class="n">specify</span> <span class="n">a</span> <span class="n">special</span> <span class="n">encoding</span> <span class="k">for</span> <span class="n">the</span> <span class="n">object</span>
-</span><span class='line'> <span class="o">*</span> <span class="n">accordingly</span> <span class="n">to</span> <span class="n">the</span> <span class="n">following</span> <span class="n">defines</span><span class="o">:</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">REDIS_RDB_ENC_INT8</span> <span class="mi">0</span>        <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="mi">8</span> <span class="n">bit</span> <span class="kt">signed</span> <span class="n">integer</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">REDIS_RDB_ENC_INT16</span> <span class="mi">1</span>       <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="mi">16</span> <span class="n">bit</span> <span class="kt">signed</span> <span class="n">integer</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">REDIS_RDB_ENC_INT32</span> <span class="mi">2</span>       <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="mi">32</span> <span class="n">bit</span> <span class="kt">signed</span> <span class="n">integer</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">REDIS_RDB_ENC_LZF</span> <span class="mi">3</span>         <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">string</span> <span class="n">compressed</span> <span class="n">with</span> <span class="n">FASTLZ</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>Với AOF file, các command sẽ được nhóm thành các block. Các block được tổ chức dưới dạng danh sách liên kết. Mỗi block có độ lớn 10MB là vì trong trường hợp redis server chịu tải cao, số lượng key được cập nhật lớn, nếu kích thước buffer lớn, việc realloc buffer dùng cho các command với tốc độ lớn không đảm bảo.</p>
-
-<p>Trong trường hợp file rdb, redis fork 1 process con và thực hiện ghi dữ liệu xuống đĩa cứng sử dụng rio (stream IO).</p>
-
-<p>Trong trường hợp file aof, việc thực hiện ghi dữ liệu là của background threads. Toàn bộ chức năng này được code trong file bio.c (background IO?). Thiết kế background IO này khá đơn giản. Môt loạt thread sẽ chia sẻ 1 job queue và thay nhau đợi việc từ job queue. Mỗi khi có job mới, thread sẽ chạy và thực thi job được mô tả. Có 2 loại job đơn giản:</p>
-
-<ul>
-<li>REDIS_BIO_CLOSE_FILE: đóng file</li>
-<li><p>REDIS_BIO_AOF_FSYNC: thực hiện việc flush dữ liệu từ buffer của kernel xuống buffer của đĩa cứng.</p>
-
-<p>  process -> job 1 -> job2 -> ... background threads</p></li>
-</ul>
-
-
-<p>Tạo ra các job là công việc của child process. Để thực hiện ghi dữ liệu ra đĩa cứng, redis sẽ fork ra 1 process con. Process con này sẽ tạo ra việc cho các background threads. Một đặc điểm cùa aof file đấy là dữ liệu trong các block mới sẽ không được ghi trực tiếp vào file aof hiện tại, mà sẽ được ghi vào file tạm thời. Khi việc ghi dữ liệu hoàn thành, redis mới tiến hành ghi đè file tạm lên file thật. Việc này đảm bảo trong trường hợp hệ thống có sự cố, file aof cũ vẫn được duy trì, giúp phục hồi phần nào dữ liệu.</p>
-
-<p>Trong cả 2 trường hợp, redis sử dụng tính năng <a href="http://en.wikipedia.org/wiki/Copy-on-write">Copy-on-Write</a> của linux khi fork process con, do vậy hiệu năng không vì fork process con mà suy giảm.</p>
-
-<p>Đến đây, sau khi tìm hiểu về định dạng của 2 files dữ liệu cũng như phương thức ghi dữ liệu của từng loại file, ta vẫn còn những câu hỏi mở về persistent redis như sau:</p>
-
-<ul>
-<li>Tần suất ghi dữ liệu là bao nhiêu?</li>
-<li>Ai chịu trách nhiệm fork process con.</li>
-</ul>
-
-
-<p>Thực chất redis định nghĩa 1 giá trị gọi là tần số ghi: REDIS_DEFAULT_HZ với giá trị mặc định là 10 (redis.h). Như vậy trong 1s, redis sẽ thực hiện 10 lần việc gọi hàm fork. Toàn bộ thao tác ghi dữ liệu redis và thao tác với các key hết hạn được thực hiện bởi 1 hệ thống các "cron". Hàm cron thực hiện việc validate các key là: databaseCron. Hàm cron thực hiện ghi dữ liệu là serverCron. Hàm serverCron sẽ được gọi theo cơ chế bất đồng bộ (dùng thư viện bất đồng bộ của chính redis) với tần số 1/1000s. Với REDIS_DEFAULT_HZ là 10, cứ 100 lần gọi, serverCron sẽ thực hiện fork child process 1 lần để ghi dữ liệu xuống bộ đĩa cứng.</p>
-
-<h2>5. Tại sao phải fsync</h2>
-
-<p>Đến đây chắc bạn đã hiểu phần nào về cơ chế persistent của redis. Tuy nhiên ta vẫn còn 1 câu hỏi nhỏ khá thú vị: tại sao phải flush liên tục như vậy (100ms / lần)? Tại sao không chỉ dùng hàm write/read của kernel và mặc định việc ghi dữ liệu xuống đĩa cứng cho kernel. Để trả lời câu hỏi nhỏ này, ta cần hiểu mối liên quan giữa OS - đĩa cứng - buffer của tầng ứng dụng.</p>
-
-<p>Về mặt trực quan tra có mô hình như sau:</p>
-
-<pre><code>buffer ---(Write) --| (kernel buffer) ---&gt; hard disk buffer ---&gt; đĩa từ.
-</code></pre>
-
-<p>Một thao tác ghi dùng write/read api của kernel sẽ copy dữ liệu từ buffer tần ứng dụng xuống buffer của kernel. Đây là thao tác cơ bản của write api. Tại buffer của kernel, kernel có toàn quyền quyết định với buffer này như: khi nào ghi, ghi bao nhiêu bytes... Khi kernel ghi dữ liệu (sử dụng các hàm IO của đĩa), dữ liệu sẽ được ghi xuống hard disk buffer và được schedule ghi xuống đĩa từ. Do vậy nếu tại tầng kernel hệ thống gặp sự cố, dữ liệu vẫn có thể bị mất dù rằng write <strong>thành công</strong> (và tầng ứng dụng không có cách nào biết write không thành công). Bằng việc định kỳ gọi fsync, ứng dụng có thể  <strong>thoát khỏi sử quản lý của kernel</strong>, ghi thằng dữ liệu đang có ở buffer xuống hard disk buffer. Bằng việc gọi fsync, ta tránh khỏi được rủi ro mất dữ liệu do đổ vớ ở tầng ứng dụng. Tất nhiên dữ liệu hard disk vẫn chưa hoàn toàn an toàn (ví dụ trường hợp đĩa cứng bị hỏng).</p>
-
-<p>Đây là cách làm chung của các hệ thống cơ sở dữ liệu RDMS hiện hành.</p>
-
-<h2>6. Kết luận</h2>
-
-<p>Bài viết giới thiệu khái quát các module redis, đồng thời trình bày cụ thể cơ chế ghi dữ liệu của redis. Bài viết cũng làm rõ hơn ý nghĩa của fsync cũng như quy trình ghi dữ liệu của hệ điều hành. Hy vọng qua bài viết, người đọc hiểu phần nào cơ chế, hành vi của redis, qua đó sử dụng công cụ này hiệu quả hơn.</p>
-
-<h2>7. Tham khảo</h2>
-
-<ol>
-<li><a href="http://redis.io/topics/persistence">persistent redis</a></li>
-<li><a href="http://redis.io/topics/virtual-memory">vm</a></li>
-<li><a href="http://www.redhat.com/magazine/001nov04/features/vm/">Understanding Virtual Memory</a></li>
-<li><a href="http://openmymind.net/redis.pdf">redis book</a></li>
-</ol>
-
-]]></content>
+<p>Trong trường hợp đầu, máy tính của bạn hầu như không dùng CPU mấy. CPU dành hầu hết thời gian cho tính toán thấp, số lượng process cũng không cao. Đứng từ góc độ chi phí, bạn đã chi tiền mua 1 CPu quá tốt so với nhu cầu thực tế :-)</p>
+<p>Trường hợp 2, bạn đang sử dụng CPU ở mức khá. Bạn bắt CPU tính toán cật lực. Tuy vậy tải trung bình của CPU chỉ có 3, có nghĩa là năng lực CPU của bạn vẫn còn rất lớn mà bạn hoàn toàn có thể tận dụng. Bạn hoàn toán có thể bật thêm 9 processes với mức tính toán như hiện tại mới có thể tận dụng được hết hiệu năng của CPU.</p>
+<p>Trường hợp 3 khá lý thú. CPU của bạn được dùng cho những tính toán rất nhẹ nhàng có thể xong ngay lập tức nhưng số lượng process cần CPU lại khá cao. Điều này nói lên rằng CPU của bạn đang bị quá tải process. Có nhiều lý do dẫn đến trường hợp này và mỗi trường hợp có nhiều cách giải quyết khác nhau. Một ví dụ cho trường hợp này là máy chủ web. Việc render các trang web là tính toán không hề nặng, tuy vậy với các máy chủ web chịu trafic lớn (số lượng connection lớn), các process phục vụ request sẽ phải xếp hàng dẫn đến tình trạng trang web bị phục vụ thời gian kéo dài hơn. Một ví dụ khác là máy chủ dành thời gian chủ yếu đợi thao tác vào ra (I/O) chẳng hạn nhưng truy vấn cơ sở dữ liệu. Số lượng query lớn, số lượng truy vấn cần sắp xếp lớn nhưng dữ liệu cần sắp xếp lại bé, thời gian đợi dữ liệu từ đĩa cứng lại cao. Vì vậy phần lớn CPU sẽ idle, nhưng tải CPU vẫn cao. Đối với trường hợp này, ta chỉ có cách là mua CPU với tần số thấp hơn và chia tải ra nhiều máy hơn để tối ưu hóa chi phí.</p>
+<p>Trường hợp 4 là trường hợp bạn đang sử dụng CPU một cách hiệu quả nhất. Mỗi cores đều bận rộn tính toán và hầu hết các cores đều được cho sử dụng. Tùy bài toán tính toán mà trường hợp này có thể là tốt hay xấu. Nếu đây là máy chủ web có lẽ đã đến lúc bạn mua thêm máy tính.</p>
+<h1 id="trường-hợp-thực-tế">Trường hợp thực tế</h1>
+<p>Hiểu được ý nghĩa của tải trung bình, chúng ta hiểu rằng sử dụng CPU hiệu quả có nghĩa là phải overload CPU. Một máy tính với CPU được sử dụng hết công suất suất là một máy tính được sử dụng tốt. Nắm được cách sử dụng vũ khí tải trung bình, chúng ta sẽ thử áp dụng cho 2 trường hợp thực tế.</p>
+<h3 id="cấu-hình-máy-chủ-web-1">Cấu hình máy chủ web 1</h3>
+<p>Bạn có máy tính chuyên trả về file static (css, image, js). Bạn sử dụng nginx và cấu hình để nginx trả về dữ liệu trong một thư mục nhất định. Bạn sẽ cấu hình nginx với bao nhiêu workers.</p>
+<p>Trả lời: 12! Nếu bạn cấu hình ít hơn 12 workers, khả năng cao là CPU của máy tính bạn đang không được sử dụng hết công suất. Tại một thời điểm nào đó sẽ có một vì cores rong chơi.</p>
+<h3 id="cấu-hình-máy-chủ-web-2">Cấu hình máy chủ web 2</h3>
+<p>Giả sử bạn có máy chủ web 12 cores (logic :-)) và load average hiện tại là 5. Liệu đã đến lúc bạn mua thêm máy chủ mới chưa?</p>
+<p>Trả lời: Không biết :-). Nếu máy chủ của bạn dành phần lớn thời gian idle đợi dữ liệu từ đĩa cứng hoặc cơ sở dữ liệu, nút thắt cổ chai hệ thống của bạn không phải là CPU mà có thể là cơ sở dữ liệu hoặc là đĩa cứng (thao tác I/O). Nếu cơ sở dữ liệu của bạn chưa hết công suất (I/O chưa hết công suất), bạn hoàn toàn không cần mua thêm máy chủ web. Bạn có thể cầu hình lại nginx / gunicorn…) để load average cao hơn (không quá 12 - số lượng cores) nhằm tận dụng hết năng lực của CPU của máy tính hiện tại).</p>
+<h3 id="cấu-hình-hadoop">Cấu hình hadoop</h3>
+<p>hadoop nổi tiếng trong giới BigData. Một datanode chạy các thủ tục map / reduce viết bằng java để lấy 1 block dữ liệu từ ổ cứng; chạy thao tác map để trích xuất dữ liệu; chạy thao tác reduce để tổng hợp dữ liệu. Một datanode thực hiện rất nhiều truy vấn dữ liệu từ ổ cúng cũng như sử dụng rất nhiều cpu cho thao tác sắp xếp, tổng hợp dữ liệu. Với 1 máy tính 12 cores, bạn sẽ cấu hình bao nhiêu java process cho thao tác map/reduce?</p>
+<p>Trả lời: Không biết :-) nhưng chắc chắn là lớn hơn 12. Bạn sẽ bất ngờ vì thấy câu trả lời hơi khác máy chủ web dù rằng bài toán có vẻ giống nhau! Lý do là: mô hình map/reduce của hadoop cần rất nhiều dữ liệu do vậy truy vấn đĩa cứng sẽ rất cao, thao tác I/O lớn. Dù thao tác sắp xếp dữ liệu cũng khá tốn CPU nhưng để có dữ liệu sắp xếp, 1 map process vẫn cần thời gian để chờ dữ liệu từ ổ cúng. Trong khoảng thời gian này CPU sẽ idle. Nếu bạn chỉ cấu hình số lượng map/reduce là 12 (bằng số lượng cores), sẽ có 1 khoảng thời gian mà các cores không làm việc vì phải chờ đĩa cứng. Vì vậy CPU thực chất sẽ có những lúc rất bận và những lúc rất rảnh. Để hạn chế thời gian rảnh của CPU, “best-practice” sẽ là overload CPU bằng cách cấu hình cho số lượng process lớn hơn số cores. Tỉ lệ được khuyến cáo là 1.5 lần. Nhờ vậy trong khi có những process đợi I/O, CPU sẽ bận rộn với các process trước đó.</p>
+<p><strong>Cấu hình cụ thể là bài toán tùy trường hợp. Bạn nên xem bản chất bài toán và hành vi của máy chủ trước khi cấu hình</strong></p>
+<h1 id="kết-luận">Kết luận</h1>
+<p>Bài viết đã giải thích ý nghĩa của load-average, một chỉ số quan trọng cũng như giới thiệu một số trường hợp cấu hình thực tế liên quan đến load-average. Hy vọng qua bài viết này, bạn hiểu được ý nghĩa của load-average, áp dụng vào thực tiễn công việc sử dụng máy tính hiệu quả nhất với chi phí tốt nhất.</p>
+<h1 id="câu-hỏi-phụ--">Câu hỏi phụ :-)</h1>
+<p>Một câu hỏi phỏng vấn vị trí SRE của Google:</p>
+<blockquote>
+<p>Lệnh uptime trả về 3 kết quả Load Average. 3 con số này là gì?</p>
+</blockquote>
+<h1 id="tài-liệu-tham-khảo">Tài liệu tham khảo</h1>
+<ol type="1">
+<li><a href="http://shop.oreilly.com/product/0636920025085.do">hadoop operations</a></li>
+<li><a href="http://www.amazon.com/Computer-Architecture-Quantitative-Approach-Edition/dp/0123704901">Computer Architecture, A Quantitative Approach</a></li>
+<li><a href="http://nginx.org/en/docs/">http://nginx.org/en/docs/</a></li>
+</ol>]]></content>
   </entry>
   
 </feed>

@@ -7,7 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Giới Thiệu Một Số Storage Engine Của Mysql Giới thiệu MySQL là một trong những hệ thống cơ sở dữ liệu quan hệ phổ biến số một thế giới, được sử dụng &hellip;">
+	<meta name="description" content="Giới Thiệu Một Số Storage Engine Của Mysql Giới thiệu
+MySQL là một trong những hệ thống cơ sở dữ liệu quan hệ phổ biến số một thế giới, được sử dụng &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -17,11 +18,17 @@
 
 	<link href="/atom.xml" rel="alternate" title="Blog kỹ thuật máy tính" type="application/atom+xml">
 	
-	<link rel="canonical" href="http://ktmt.github.com/blog/2013/05/07/storageenginemysql/">
+	<link rel="canonical" href="http://git@github.com.github.com/blog/2013/05/07/storageenginemysql/">
 	<link href="/favicon.png" rel="shortcut icon">
 	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
 	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+    });
+  </script>
 	<link href='http://fonts.googleapis.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
 	
 </head>
@@ -44,6 +51,8 @@
 </nav>
 <nav id="sub-nav">
 	<div class="social">
+		
+		<a class="facebook" href="http://www.facebook.com/pages/ktmtgithubio/486208978117754" title="Facebook">Facebook</a>
 		
 		
 		
@@ -68,16 +77,11 @@
 			<div class="mid-col-container">
 				<div id="content" class="inner"><article class="post" itemscope itemtype="http://schema.org/BlogPosting">
 	<h1 class="title" itemprop="name">Giới Thiệu Một Số Storage Engine Của Mysql</h1>
-	<div class="entry-content" itemprop="articleBody"><h1>Giới thiệu</h1>
-
+	<div class="entry-content" itemprop="articleBody"><h1 id="giới-thiệu">Giới thiệu</h1>
 <p>MySQL là một trong những hệ thống cơ sở dữ liệu quan hệ phổ biến số một thế giới, được sử dụng bởi hầu hết các website lớn. Do vậy, việc nắm vững MySQL là yêu cầu không thể thiếu đối với một webmaster.</p>
-
 <p>Kiến trúc logic của MySQL nhìn tổng quan có thể được mô tả như hình dưới đây</p>
-
 <p><img src="/images/logical_mysql_architecture.jpeg"></p>
-
 <p>Ta có thể thấy MySQL có các component cơ bản như ở dưới đây</p>
-
 <ul>
 <li>Connection/thread handling</li>
 <li>Query cache</li>
@@ -85,38 +89,26 @@
 <li>Optimizer</li>
 <li>Storage engine</li>
 </ul>
-
-
 <p>Việc nắm rõ từng chức năng và nhiệm vụ của từng thành phần là điều không thể thiếu trong việc sử dụng MySQL một cách hiệu quả. Bài viết sẽ tập trung giới thiệu về thành phần dưới cùng trong mô hình trên: Storage engine (Máy lưu trữ)</p>
-
-<h1>Storage Engine (Máy lưu trữ)</h1>
-
+<h1 id="storage-engine-máy-lưu-trữ">Storage Engine (Máy lưu trữ)</h1>
 <p>Storage Engine thực chất là cách MySQL lưu trữ dữ liệu trên đĩa cứng. MySQL lưu mỗi database như là một thư mục con nằm dưới thư mục data. Khi một table được tạo ra, MySQL sẽ lưu định nghĩa bảng ở file đuôi .frm và tên trùng với tên của bảng được tạo. Việc quản lý định nghĩa bảng là nhiệm vụ của MySQL server, dù rằng mỗi storage engine sẽ lưu trữ và đánh chỉ mục (index) dữ liệu khác nhau.</p>
-
-<p>Ví dụ: mình chỉ định &#8211;datadir là /usr/local/mysql/data và định nghĩa bảng users trong database tên là test như sau</p>
-
+<p>Ví dụ: mình chỉ định –datadir là /usr/local/mysql/data và định nghĩa bảng users trong database tên là test như sau</p>
 <div>
-  <pre><code class='bash'>create table users (
+<pre><code class='bash'>create table users (
     id int not null auto_increment, 
     name varchar(30), 
     password varchar(20), 
     primary key(id)
 );</code></pre>
 </div>
-
-
 <p>thì trong thư mục /usr/local/mysql/data sẽ có thư mục con là test, và dưới test sẽ có các file</p>
-
 <div>
-  <pre><code class='bash'>-rw-rw----  1 _mysql  wheel   8624  5  7 17:35 users.frm
+<pre><code class='bash'>-rw-rw----  1 _mysql  wheel   8624  5  7 17:35 users.frm
 -rw-rw----  1 _mysql  wheel  98304  5  7 17:35 users.ibd</code></pre>
 </div>
-
-
 <p>Để xem loại storage engine của bảng hiện tại, bạn có thể dùng câu lệnh <em>SHOW DATABASE STATUS</em></p>
-
 <div>
-  <pre><code class='bash'>mysql&gt; show table status like 'users' \G
+<pre><code class='bash'>mysql&gt; show table status like 'users' \G
 *************************** 1. row ***************************
            Name: users
          Engine: InnoDB
@@ -138,23 +130,10 @@ Max_data_length: 0
         Comment:
 1 row in set (0.01 sec)</code></pre>
 </div>
-
-
-<p>Cụ thể trong trường hợp này:</p>
-
-<pre><code>storage engine          : innodb
-loại row                : compact
-Số lượng row dữ liệu    : 2
-giá trị auto increment tiếp theo: 3
-...
-</code></pre>
-
-<h2>Tổng quan các engine</h2>
-
-<h3>1. MyISAM engine</h3>
-
-<h5>Đặc điểm</h5>
-
+<p>Cụ thể trong trường hợp này: storage engine : innodb loại row : compact Số lượng row dữ liệu : 2 giá trị auto increment tiếp theo: 3 …</p>
+<h2 id="tổng-quan-các-engine">Tổng quan các engine</h2>
+<h3 id="myisam-engine">1. MyISAM engine</h3>
+<h5 id="đặc-điểm">Đặc điểm</h5>
 <ul>
 <li>full-text indexing</li>
 <li>compression.</li>
@@ -162,14 +141,9 @@ giá trị auto increment tiếp theo: 3
 <li>Không hỗ trợ transactions</li>
 <li>Không hỗ trợ row-level lock.</li>
 </ul>
-
-
-<h5>Lưu trữ</h5>
-
+<h5 id="lưu-trữ">Lưu trữ</h5>
 <p>MyISAM lưu mỗi bảng dữ liệu trên 2 file: .MYD cho dữ liệu và .MYI cho chỉ mục. Row có 2 loại: dynamic và static (tuỳ thuộc bạn có dữ liệu thay đổi độ dài hay không). Số lượng row tối đa có thể lưu trữ bị giới hạn bởi hệ điều hành, dung lượng đĩa cứng. MyISAM mặc định sử dụng con trỏ độ dài 6 bytes để trỏ tới bản ghi dữ liệu, do vậy giới hạn kích thước dữ liệu xuống 256TB.</p>
-
-<h5>Tính năng:</h5>
-
+<h5 id="tính-năng">Tính năng:</h5>
 <ul>
 <li>MyISAM lock toàn bộ table. User (MySQL server) chiếm shared-lock khi đọc và chiếm exclusive-lock khi ghi. Tuy vậy, việc đọc ghi có thể diễn ra đồng thời!</li>
 <li>MyISAM có khả năng tự sửa chữa và phục hồi dữ liệu sau khi hệ thống crashed.</li>
@@ -178,102 +152,62 @@ giá trị auto increment tiếp theo: 3
 <li>MyISAM không ghi dữ liệu ngay vào ổ đĩa cứng, mà ghi vào 1 buffer trên memory (và chỉ ghi vào đĩa cứng sau 1 khoảng thời gian), do đó tăng tốc độ ghi. Tuy vậy, sau khi server crash, ta cần phải phục hồi dữ liệu bị hư hỏng bằng myisamchk.</li>
 <li>MyISAM hỗ trợ nén dữ liệu, hỗ trợ tăng tốc độ đọc dữ liệu. Mặc dù vậy dữ liệu sau khi nén không thể cập nhật được.</li>
 </ul>
-
-
-<h3>2. InnoDB engine</h3>
-
-<h5>Đặc điểm</h5>
-
+<h3 id="innodb-engine">2. InnoDB engine</h3>
+<h5 id="đặc-điểm-1">Đặc điểm</h5>
 <ul>
 <li>Là engine phức tạp nhất trong các engine của MySQL</li>
 <li>Hỗ trợ transactions</li>
 <li>Hỗ trợ phục hồi, sửa chữa tốt</li>
 </ul>
-
-
-<h5>Lưu trữ</h5>
-
+<h5 id="lưu-trữ-1">Lưu trữ</h5>
 <p>InnoDB lưu dữ liệu trên 1 file (thuật ngữ gọi là tablespace).</p>
-
-<h5>Tính năng:</h5>
-
+<h5 id="tính-năng-1">Tính năng:</h5>
 <ul>
 <li>InnoDB hỗ trợ MVCC (Multiversion Concurrency Control) để cải thiện việc truy cập đồng thời và hỗ trợ chiến thuật next-key locking.</li>
 <li>InnoDB được xây dựng dựa trên clustered index, do đó việc tìm kiếm theo primary key có hiệu năng rất cao. InnoDB không hỗ trợ sắp xếp index do vậy việc thay đổi cấu trúc bảng sẽ dẫn tới toàn bộ dữ liệu phải được đánh chỉ mục từ đầu (CHẬM với những bảng lớn).</li>
 </ul>
-
-
-<h3>3. Memory engine</h3>
-
-<h5>Đặc điểm</h5>
-
+<h3 id="memory-engine">3. Memory engine</h3>
+<h5 id="đặc-điểm-2">Đặc điểm</h5>
 <ul>
 <li>Còn được gọi là HEAP tables.</li>
 </ul>
-
-
-<h5>Lưu trữ</h5>
-
+<h5 id="lưu-trữ-2">Lưu trữ</h5>
 <p>Tất cả dữ liệu đều nằm trên memory.</p>
-
-<h5>Tính năng:</h5>
-
+<h5 id="tính-năng-2">Tính năng:</h5>
 <ul>
 <li>Sau khi server restart, cấu trúc bảng được bảo toàn, dữ liệu bị mất hết.</li>
 <li>Memory engine sử dụng HASH index nên rất nhanh cho query lookup.</li>
 <li>Memory engine dùng table-level locking do vậy tính concurrency không cao.</li>
 </ul>
-
-
-<h3>4. Archive engine</h3>
-
-<h5>Đặc điểm</h5>
-
+<h3 id="archive-engine">4. Archive engine</h3>
+<h5 id="đặc-điểm-3">Đặc điểm</h5>
 <ul>
 <li>Chỉ hỗ trợ Insert và Select.</li>
 <li>Không đánh chỉ mục</li>
 <li>Dữ liệu được buffer và nén bằng zlib nên tốn ít I/O, tốc độ ghi do đó cao.</li>
 </ul>
-
-
-<h5>Tính năng:</h5>
-
+<h5 id="tính-năng-3">Tính năng:</h5>
 <ul>
 <li>Tốc độ ghi cao, phù hợp cho ứng dụng log.</li>
 </ul>
-
-
-<h3>5. CSV engine</h3>
-
-<h5>Đặc điểm</h5>
-
+<h3 id="csv-engine">5. CSV engine</h3>
+<h5 id="đặc-điểm-4">Đặc điểm</h5>
 <ul>
 <li>Coi file CSV như là 1 table.</li>
 <li>Không hỗ trợ đánh chỉ mục</li>
 </ul>
-
-
-<h5>Tính năng:</h5>
-
+<h5 id="tính-năng-4">Tính năng:</h5>
 <ul>
 <li>Nếu bài toán là trích xuất thông tin từ file CSV và ghi vào cơ sở dữ liệu, đồng thời cần kết quả CSV ngay từ DB, engine này có vẻ thích hợp.</li>
 </ul>
-
-
-<h3>6. Falcon engine</h3>
-
-<h5>Đặc điểm</h5>
-
+<h3 id="falcon-engine">6. Falcon engine</h3>
+<h5 id="đặc-điểm-5">Đặc điểm</h5>
 <ul>
-<li>Được thiết kế cho phần cứng hiện đại: server 64 bit, bộ nhớ &#8220;thênh thang&#8221;</li>
+<li>Được thiết kế cho phần cứng hiện đại: server 64 bit, bộ nhớ “thênh thang”</li>
 <li>Vẫn còn khá mới, chưa có nhiều usercase</li>
 </ul>
-
-
-<h3>7. Maria engine (Cơ sở dữ liệu liên quan: <a href="https://mariadb.org/">MariaDB</a>)</h3>
-
-<h5>Đặc điểm</h5>
-
+<h3 id="maria-engine-cơ-sở-dữ-liệu-liên-quan-mariadb">7. Maria engine (Cơ sở dữ liệu liên quan: <a href="https://mariadb.org/">MariaDB</a>)</h3>
+<h5 id="đặc-điểm-6">Đặc điểm</h5>
 <ul>
 <li>Được thiết kế bởi những chiến tướng dày dạn kinh nghiêm của MySQL, với mục đích thay thế MyISAM</li>
 <li>Hỗ trợ transactions theo lựa chọn</li>
@@ -281,10 +215,7 @@ giá trị auto increment tiếp theo: 3
 <li>Row-level locking và MVCC</li>
 <li>Hỗ trợ BLOB tốt hơn.</li>
 </ul>
-
-
-<h2>Tiêu chí lựa chọn engine</h2>
-
+<h2 id="tiêu-chí-lựa-chọn-engine">Tiêu chí lựa chọn engine</h2>
 <ul>
 <li>Transactions: Nếu ứng dụng yêu cầu transactions, InnoDB là lựa chọn duy nhất. Nếu không yêu cầu transactions, MyISAM là lựa chọn tốt.</li>
 <li>Concurrency: Nếu yêu cầu chịu tải cao và không cần thiết transactions, MyISAM là lựa chọn số 1.</li>
@@ -292,23 +223,15 @@ giá trị auto increment tiếp theo: 3
 <li>Phục hồi sau crash: MyISAM có khả năng phục hồi sau crash kém hơn InnoDB.</li>
 <li>Tính năng theo yêu cầu hệ thống: Nếu yêu cầu là logging, MyISAM hoặc Archive là lựa chọn hợp lý. Nếu cần lưu trực tiếp CSV, CSV engine là lựa chọn đáng cân nhắc. Nếu ứng dụng không thay đổi dữ liệu mấy (ví dụ cơ sở dữ liệu sách), MyISAM và tính năng nén là lựa chọn phù hợp.</li>
 </ul>
-
-
-<h1>Kết luận</h1>
-
+<h1 id="kết-luận">Kết luận</h1>
 <p>Bài viết này đã giới thiệu tổng quan về storage engine, một thành phần quan trọng của hệ thống cơ sở dữ liệu. Một số engine tiêu biểu và tính năng đặc điểm cũng được đưa ra. Tiêu chí chọn lựa mỗi loại engine cũng được giới thiệu.</p>
-
 <p>Hy vọng qua bài viết, bạn có cái nhìn tổng quan về database storate engine nói chung, và MySQL storage engine nói riêng, đồng thời hiểu được tầm quan trọng của việc chọn lựa storage engine.</p>
-
-<h1>Tham khảo</h1>
-
-<ol>
+<h1 id="tham-khảo">Tham khảo</h1>
+<ol type="1">
 <li><a href="http://shop.oreilly.com/product/9780596101718.do">High performance MySQL, 2ed</a></li>
 <li><a href="http://dev.mysql.com/doc/refman/5.7/en/storage-engines.html">Storage Engines</a></li>
 <li><a href="http://www.linux.org/article/view/an-introduction-to-mysql-storage-engines">Storage Engine Introduction</a></li>
-</ol>
-
-</div>
+</ol></div>
 
 </article>
 
@@ -335,7 +258,7 @@ giá trị auto increment tiếp theo: 3
 </section>
 </div>
 			</div>
-			<footer id="footer" class="inner">Copyright &copy; 2013
+			<footer id="footer" class="inner">Copyright &copy; 2014
 
     kỹ thuật máy tính
 
@@ -355,8 +278,8 @@ giá trị auto increment tiếp theo: 3
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://ktmt.github.com/blog/2013/05/07/storageenginemysql/';
-        var disqus_url = 'http://ktmt.github.com/blog/2013/05/07/storageenginemysql/';
+        var disqus_identifier = 'http://git@github.com.github.com/blog/2013/05/07/storageenginemysql/';
+        var disqus_url = 'http://git@github.com.github.com/blog/2013/05/07/storageenginemysql/';
         var disqus_script = 'embed.js';
       
     (function () {

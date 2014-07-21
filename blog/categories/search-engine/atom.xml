@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: search-engine | Blog kỹ thuật máy tính]]></title>
+  <link href="http://git@github.com.github.com/blog/categories/search-engine/atom.xml" rel="self"/>
+  <link href="http://git@github.com.github.com/"/>
+  <updated>2014-07-21T22:37:14+09:00</updated>
+  <id>http://git@github.com.github.com/</id>
+  <author>
+    <name><![CDATA[kỹ thuật máy tính]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Full Text Search, từ khái niệm đến thực tiễn (phần 1)]]></title>
+    <link href="http://git@github.com.github.com/blog/2013/10/27/full-text-search-engine/"/>
+    <updated>2013-10-27T22:21:00+09:00</updated>
+    <id>http://git@github.com.github.com/blog/2013/10/27/full-text-search-engine</id>
+    <content type="html"><![CDATA[<h1 id="lời-nói-đầu">Lời nói đầu</h1>
+<p>Là một lập trình viên mà đã từng phải thao tác với cơ sở dữ liệu, hay đơn thuần là đã từng là một trang web bán hàng ,chắc hẳn các bạn đã từng nghe qua về khái niệm “Full text search”. Khái niệm này đã được định nghĩa khá cụ thể và đầy đủ trên <a href="http://en.wikipedia.org/wiki/Full_text_search">wikipedia</a>. Nói một cách đơn giản, “Full text search” là kĩ thuật tìm kiếm trên “Full text database”, ở đây “Full text database” là cơ sở dữ liệu chứa “toàn bộ” các kí tự (text) của một hoặc một số các tài liệu, bài báo.. (document), hoặc là của websites. Trong loạt bài viết này, mình sẽ giới thiệu về Full Text Search, từ khái niệm đến ứng dụng thực tiễn của kĩ thuật này. Chuỗi bài viết không nhằm giúp bạn tìm hiểu cụ thể về Full Text Search technique trong MySQL, Lucene hay bất kì search engine nào nói riêng, mà sẽ giúp bạn hiểu thêm vầ bản chất của kĩ thuật này nói chung. Ở bài viết cuối cùng, mình sẽ cùng các bạn implement thử một “Full Text Search engine” sử dụng python, qua đó giúp các bạn nắm rõ hơn cốt lõi của vấn đề.</p>
+<p>Trong phần đầu tiên mình sẽ giới thiệu về định nghĩa của Full text search, và khái niệm cơ bản nhất trong Full Text Search, đó là Inverted Index.</p>
+<h1 id="introduction">Introduction</h1>
+<p>Chắc hẳn các bạn đã từng dùng qua một kĩ thuật tìm kiếm rất cơ bản, đó là thông qua câu lệnh <strong>LIKE</strong> của SQL.</p>
+<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">SELECT</span> column_name(s)
+<span class="kw">FROM</span> table_name
+<span class="kw">WHERE</span> column_name <span class="kw">LIKE</span> pattern;</code></pre>
+<p>Sử dụng <strong>LIKE</strong>, các bạn sẽ chỉ phải tìm kiếm ở column đã định trước, do đó lượng thông tin phải tìm giới hạn lại chỉ trong các column đó. Câu lệnh LIKE cũng tương đương với việc bạn matching pattern cho “từng” chuỗi của từng dòng (rows) của field tương ứng, do đó về độ phức tạp sẽ là tuyến tính với số dòng, và số kí tự của từng dòng, hay chính là “toàn bộ kí tự chứa trong field cần tìm kiếm”. Do đó sử dụng <strong>LIKE</strong> query sẽ có 2 vấn đề: - 1) Chỉ search được trong row đã định trươc - 2) Performance không tốt.</p>
+<p>Như vậy chúng ta cần một kĩ thuật tìm kiếm khác, tốt hơn <strong>LIKE</strong> query, mềm dẻo hơn, tốt về performance hơn, đó chính là <strong>Full text searchi</strong>.</p>
+<h1 id="cơ-bản-về-kĩ-thuật-full-text-search">Cơ bản về kĩ thuật Full text search</h1>
+<p>Về mặt cơ bản, điều làm nên sự khác biệt giữa Full text search và các kĩ thuật search thông thường khác chính là “Inverted Index”. Vậy đầu tiên chúng ta sẽ tìm hiểu về Inverted Index</p>
+<h2 id="inverted-index-là-gì">Inverted Index là gì</h2>
+<p>Inverted Index là kĩ thuật thay vì index theo đơn vị row(document) giống như <a href="http://dev.mysql.com/doc/refman/5.0/en/mysql-indexes.html">mysql</a> thì chúng ta sẽ tiến hành index theo đơn vị term. Cụ thể hơn, Inverted Index là một cấu trúc dữ liệu, nhằm mục đích map giữa <strong>term</strong>, và <strong>các document chứa term đó</strong></p>
+<p>Hãy xem ví dụ cụ thể dưới đây, chúng ta có 3 documents D1, D2, D3</p>
+<pre><code>D1 = &quot;This is first document&quot;
+D2 = &quot;This is second one&quot;
+D3 = &quot;one two&quot;</code></pre>
+<p>Inverted Index của 3 documents đó sẽ được lưu dưới dạng như sau:</p>
+<pre><code>&quot;this&quot; =&gt; {D1, D2}
+&quot;is&quot; =&gt; {D1, D2}
+&quot;first&quot; =&gt; {D1}
+&quot;document&quot; =&gt; {D1}
+&quot;second&quot; =&gt; {D2}
+&quot;one&quot; =&gt; {D2, D3}
+&quot;two&quot; =&gt; {D3}</code></pre>
+<p>Từ ví dụ trên các bạn có thể hình dung được về thế nào là Inverted Index. Vậy việc tạo index theo term như trên có lợi thế nào? Việc đầu tiên là inverted index giúp cho việc tìm kiếm trên full text database trở nên nhanh hơn bao giờ hết. Hãy giả sử bạn muốn query cụm từ “This is first”, thì thay vì việc phải scan từng document một, bài toán tìm kiếm document chứa 3 term trên sẽ trở thành phép toán <strong>union</strong> của 3 tập hợp (document sets) của 3 term đó trong inverted index.</p>
+<pre><code>{D1, D2} union {D1, D2} union {D1} = {D1}</code></pre>
+<p>Một điểm lợi nữa chính là việc inverted index cực kì flexible trong việc tìm kiếm. Query đầu vào của bạn có thể là “This is first”, “first This is” hay “This first is” thì độ phức tạp tính toán của phép union kia vẫn là không đổi.</p>
+<p>Như vậy chúng ta đã hiểu phần nào về khái niệm “Thế nào là Inverted Index”. Trong phần tiếp theo chúng ta sẽ tìm hiểu về cụ thể về cách implement của inverted index, và ứng dụng của inverted index vào việc tìm kiếm thông tin thông qua các kĩ thuật chính như: <strong>tokenization technique</strong> (thông qua N-Gram hoặc Morphological Analysis), <strong>query technique</strong> và <strong>scoring technique</strong>.</p>]]></content>
+  </entry>
+  
+</feed>

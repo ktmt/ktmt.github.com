@@ -7,7 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Sử Dụng Ssl Trên Rubyonrails HTTPS trên rails Là RoR developer, khi phải làm việc với một số thông tin quan trọng như: thông tin cá nhân user, thông &hellip;">
+	<meta name="description" content="Sử Dụng Ssl Trên Rubyonrails HTTPS trên rails
+Là RoR developer, khi phải làm việc với một số thông tin quan trọng như: thông tin cá nhân user, thông &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -17,11 +18,17 @@
 
 	<link href="/atom.xml" rel="alternate" title="Blog kỹ thuật máy tính" type="application/atom+xml">
 	
-	<link rel="canonical" href="http://ktmt.github.com/blog/2013/05/15/su-dung-ssl-voi-rails-va-mot-so-chu-y/">
+	<link rel="canonical" href="http://git@github.com.github.com/blog/2013/05/15/su-dung-ssl-voi-rails-va-mot-so-chu-y/">
 	<link href="/favicon.png" rel="shortcut icon">
 	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
 	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+    });
+  </script>
 	<link href='http://fonts.googleapis.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
 	
 </head>
@@ -44,6 +51,8 @@
 </nav>
 <nav id="sub-nav">
 	<div class="social">
+		
+		<a class="facebook" href="http://www.facebook.com/pages/ktmtgithubio/486208978117754" title="Facebook">Facebook</a>
 		
 		
 		
@@ -68,17 +77,19 @@
 			<div class="mid-col-container">
 				<div id="content" class="inner"><article class="post" itemscope itemtype="http://schema.org/BlogPosting">
 	<h1 class="title" itemprop="name">Sử Dụng Ssl Trên Rubyonrails</h1>
-	<div class="entry-content" itemprop="articleBody"><h1>HTTPS trên rails</h1>
-
-<p>Là RoR developer, khi phải làm việc với một số thông tin quan trọng như: thông tin cá nhân user, thông tin về thanh toán trực tuyến thì thường bạn phải dùng kết nối có bảo mật (secure connection), và điển hình ở đây là sử dụng HTTPS. Để setup HTTPS trên rails, thì trước hết mình phải nhắc lại là các web server phổ biến trên rails như là webrick, unicorn hay thin đều không hỗ trợ HTTPS từ đầu.  Để sử dụng SSL thì có 2 cách:</p>
-
-<ol>
-<li>Add thêm plugin: ví dụ như với webrick thì bạn sử dụng &#8220;webrick/https&#8221;, nhưng cách này có một bất lợi là bạn phải setting từ đầu, và server đó sẽ luôn và chỉ phục vụ các request ssl:</li>
+	<div class="entry-content" itemprop="articleBody"><h1 id="https-trên-rails">HTTPS trên rails</h1>
+<p>Là RoR developer, khi phải làm việc với một số thông tin quan trọng như: thông tin cá nhân user, thông tin về thanh toán trực tuyến thì thường bạn phải dùng kết nối có bảo mật (secure connection), và điển hình ở đây là sử dụng HTTPS. Để setup HTTPS trên rails, thì trước hết mình phải nhắc lại là các web server phổ biến trên rails như là webrick, unicorn hay thin đều không hỗ trợ HTTPS từ đầu. Để sử dụng SSL thì có 2 cách:</p>
+<ol type="1">
+<li>Add thêm plugin: ví dụ như với webrick thì bạn sử dụng “webrick/https”, nhưng cách này có một bất lợi là bạn phải setting từ đầu, và server đó sẽ luôn và chỉ phục vụ các request ssl:</li>
 </ol>
-
-
-<figure class='code'><figcaption><span>webrickssl.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>webrickssl.rb </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -120,71 +131,105 @@
 </span><span class='line'>    <span class="k">end</span>
 </span><span class='line'>  <span class="k">end</span>
 </span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
 <p>Để switch được giữa ssl và non-ssl thì thường bạn sẽ phải chạy song song 2 bản webrick, một bản hỗ trợ ssl và một bản không</p>
-
-<ol>
+<ol start="2" type="1">
 <li>Bạn sử dụng <strong>Nginx</strong> như một ssl proxy, sau khi xử lý ssl request thì Nginx sẽ forward lại request cho rails-server. Ở bài viết này mình sẽ nói về thiết lập môi trường ssl ở dưới môi trường development sử dụng <strong>Pow</strong> và <strong>Nginx</strong></li>
 </ol>
-
-
-<h1>Pow + Nginx</h1>
-
+<h1 id="pow-nginx">Pow + Nginx</h1>
 <p>Tại sao lại sử dụng Pow? Pow là một rails-server rất hay được sử dụng trong công đoạn <strong>development</strong>. Lý do vì: dễ cài đặt, không phải config, và pow cho mỗi webapp của chúng ta một cái domain đẹp đẽ trên local. Để cài đặt pow thì vô cùng đơn giản:</p>
-
-<figure class='code'><figcaption><span>install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>install.sh </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$curl</span> get.pow.cx | sh
-</span></code></pre></td></tr></table></div></figure>
-
-
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
 <p>Pow không đi kèm một bộ tool dòng lệnh tốt lắm (command line tool), tuy nhiên rất may đã có người làm hộ chúng ta 1 cái gem tên là <strong>powder</strong>, có nó thì chúng ta sẽ sử dụng pow dễ dàng hơn:</p>
-
-<figure class='code'><figcaption><span>install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>install.sh </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$sudo</span> gem install powder
-</span></code></pre></td></tr></table></div></figure>
-
-
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
 <p>Sau khi install xong powder, chúng ta đi đến folder chứa rails app và chỉ cần [powder link appname] là đã xong phần cài đặt</p>
-
-<figure class='code'><figcaption><span>install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>install.sh </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 </pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">cd</span> ~/yourapp
 </span><span class='line'><span class="nv">$powder</span> link app-name
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Sau khi làm thao tác này thì một symlink với tên là app-name sẽ được tạo ra ở trong thư mục <strong>~/.pow</strong>
-Kết thúc thao tác này, powder đã tự động được khởi động, và chúng ta chỉ cần truy cập vào url [app-name.dev] là đã sử dụng được như bình thường :)</p>
-
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Sau khi làm thao tác này thì một symlink với tên là app-name sẽ được tạo ra ở trong thư mục <strong>~/.pow</strong> Kết thúc thao tác này, powder đã tự động được khởi động, và chúng ta chỉ cần truy cập vào url [app-name.dev] là đã sử dụng được như bình thường :)</p>
 <p>OK vậy là xong pow, giờ đến lượt nginx, để cài đặt nginx thì khá đơn giản trên mac, mình sử dụng brew:</p>
-
-<figure class='code'><figcaption><span>install.sh</span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>install.sh</span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='sh'><span class='line'>brew install nginx
-</span></code></pre></td></tr></table></div></figure>
-
-
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
 <p>Thường thì nginx sau khi được cài đặt xong sẽ nằm ở :[/usr/local/etc/nginx]</p>
-
 <p>Bạn đang muốn sử dụng HTTPS, nên công đoạn tiếp theo sẽ là setup để nginx nhận request HTTPS và forward lại cho pow. Đầu tiên là phải generate ra một cặp <strong>private key</strong> và <strong>certificate sign</strong>, tại sao lại cần cặp này thì các bạn có thể tự tìm hiểu về giao thức HTTPS.</p>
-
-<figure class='code'><figcaption><span>install.sh</span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>install.sh</span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 </pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$openssl</span> req -new -nodes -keyout server.key -out server.csr
 </span><span class='line'><span class="nv">$openssl</span> x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
-</span></code></pre></td></tr></table></div></figure>
-
-
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
 <p>Sau khi có cặp key và sign, rồi bạn copy cặp đó vào thư mục [/usr/local/etc/nginx/ssl] cho dễ config. Tiếp đến bạn mở config của nginx ra và config lại như dưới đây</p>
-
-<figure class='code'><figcaption><span>nginx </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>nginx </span>
+</figcaption>
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -275,27 +320,40 @@ Kết thúc thao tác này, powder đã tự động được khởi động, v�
 </span><span class='line'>          proxy_redirect     off;
 </span><span class='line'>        }
 </span><span class='line'>     }
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
+</span><span class='line'>}</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
 <p>Công việc cuối cùng chỉ là chạy nginx, bạn khởi động nginx với option -t để test config file có đúng và không có warning nào không:</p>
-
-<figure class='code'><figcaption><span>runnginx.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>runnginx.sh </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 </pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$ </span>sudo nginx -t
 </span><span class='line'>nginx: the configuration file /usr/local/etc/nginx/nginx.conf syntax is ok
 </span><span class='line'>nginx: configuration file /usr/local/etc/nginx/nginx.conf <span class="nb">test </span>is successful
-</span></code></pre></td></tr></table></div></figure>
-
-
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
 <p>Như vậy là mọi thứ đã OK, giờ chỉ việc dev thôi :D</p>
-
 <p>Để switch một cách đơn giản nhất giữa HTTPS và HTTP thì mình tạo 2 hàm sau trong application_controller:</p>
-
-<figure class='code'><figcaption><span>switch.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>switch.rb </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -325,14 +383,13 @@ Kết thúc thao tác này, powder đã tự động được khởi động, v�
 </span><span class='line'>      <span class="ss">protocol</span><span class="p">:</span> <span class="s1">&#39;http://&#39;</span>
 </span><span class='line'>  <span class="k">end</span>
 </span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Và với nhứng method nào cần sử dụng https thì mình chỉ cần gọi đến hàm redirect_to_https là ok :D.</p>
-
-<p>Các bạn có thể thấy bộ đôi pow và nginx rất dễ sử dụng đúng không.
-Gần đây mình có gặp phải một problem với bộ đôi này là mình sử dụng oauth2 để login với google account. Và google api <strong>không chấp nhận callback uri có domain có đuôi là .dev nhưng lại chấp nhận domain là localhost</strong>. Khi cài đặt powder thì default cái 127.0.0.1 sẽ không được trỏ đến app-name.dev của bạn, để làm việc này thì bạn chỉ cần vào ~/.pow, tạo một symlink với tên là <strong>default</strong> trỏ đến rails app của bạn là OK :D.</p>
+</span></code></pre></td></tr></table>
 </div>
+</figure>
+</notextile>
+</div>
+<p>Và với nhứng method nào cần sử dụng https thì mình chỉ cần gọi đến hàm redirect_to_https là ok :D.</p>
+<p>Các bạn có thể thấy bộ đôi pow và nginx rất dễ sử dụng đúng không. Gần đây mình có gặp phải một problem với bộ đôi này là mình sử dụng oauth2 để login với google account. Và google api <strong>không chấp nhận callback uri có domain có đuôi là .dev nhưng lại chấp nhận domain là localhost</strong>. Khi cài đặt powder thì default cái 127.0.0.1 sẽ không được trỏ đến app-name.dev của bạn, để làm việc này thì bạn chỉ cần vào ~/.pow, tạo một symlink với tên là <strong>default</strong> trỏ đến rails app của bạn là OK :D.</p></div>
 
 </article>
 
@@ -359,7 +416,7 @@ Gần đây mình có gặp phải một problem với bộ đôi này là mình
 </section>
 </div>
 			</div>
-			<footer id="footer" class="inner">Copyright &copy; 2013
+			<footer id="footer" class="inner">Copyright &copy; 2014
 
     kỹ thuật máy tính
 
@@ -379,8 +436,8 @@ Gần đây mình có gặp phải một problem với bộ đôi này là mình
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://ktmt.github.com/blog/2013/05/15/su-dung-ssl-voi-rails-va-mot-so-chu-y/';
-        var disqus_url = 'http://ktmt.github.com/blog/2013/05/15/su-dung-ssl-voi-rails-va-mot-so-chu-y/';
+        var disqus_identifier = 'http://git@github.com.github.com/blog/2013/05/15/su-dung-ssl-voi-rails-va-mot-so-chu-y/';
+        var disqus_url = 'http://git@github.com.github.com/blog/2013/05/15/su-dung-ssl-voi-rails-va-mot-so-chu-y/';
         var disqus_script = 'embed.js';
       
     (function () {

@@ -7,7 +7,7 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Apr 28th, 2013 linux, tips, tutorial Comments Fun With Unix Command Prompt Chắc hẳn là một unix user (có thể mac os hay linux), lại là một &hellip;">
+	<meta name="description" content="May 28th, 2013 unittest Comments Sử Dụng Unittest để Refactoring Code Ở bài viết trước tôi đã đề cập đến cách sử dụng mock để viết unittest. &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -17,11 +17,17 @@
 
 	<link href="/atom.xml" rel="alternate" title="Blog kỹ thuật máy tính" type="application/atom+xml">
 	
-	<link rel="canonical" href="http://ktmt.github.com/blog/page/18/">
+	<link rel="canonical" href="http://git@github.com.github.com/blog/page/18/">
 	<link href="/favicon.png" rel="shortcut icon">
 	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
 	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+    });
+  </script>
 	<link href='http://fonts.googleapis.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
 	
 </head>
@@ -44,6 +50,8 @@
 </nav>
 <nav id="sub-nav">
 	<div class="social">
+		
+		<a class="facebook" href="http://www.facebook.com/pages/ktmtgithubio/486208978117754" title="Facebook">Facebook</a>
 		
 		
 		
@@ -84,410 +92,31 @@
   
 
 
-<time datetime="2013-04-28T00:06:00+09:00" data-updated="true" itemprop="datePublished">Apr 28<span>th</span>, 2013</time></div>
+<time datetime="2013-05-28T16:53:00+09:00" data-updated="true" itemprop="datePublished">May 28<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/linux-tips-tutorial/'>linux, tips, tutorial</a>
+	<a class='category' href='/blog/categories/unittest/'>unittest</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/04/28/make-fun-with-unix-command-prompt/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/05/28/thiet-ke-huong-test/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/04/28/make-fun-with-unix-command-prompt/" itemprop="url">Fun With Unix Command Prompt</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/05/28/thiet-ke-huong-test/" itemprop="url">Sử Dụng Unittest để Refactoring Code</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<p><img src="/images/UnixCommandPrompt/unix.png"></p>
-
-<p>Chắc hẳn là một unix user (có thể mac os hay linux), lại là một programmer, bạn sẽ phải hàng ngày sử dụng terminal cho việc lập trình, quản lý source, monitoring hệ thống&#8230;. Và đã là người sử dụng terminal hàng ngày thì cái bạn phải nhìn thấy nhiều nhất chính là cái gọi là &#8220;Command prompt&#8221;</p>
-
-<p><img src="/images/UnixCommandPrompt/unix-terminal.png"></p>
-
-<p>Cái command prompt này thì tùy thuộc vào shell bạn đang dùng (bash hay zsh..) mà sẽ có những cách tùy chỉnh khác nhau. Mình thì đang dùng bash (chắc một ngày gần đây sẽ chuyển qua zsh), nên bài viết này sẽ áp dụng chủ yếu ở trên bash. Command prompt ở trên bash thì gồm có 4 biến môi trường (environment variable) chính: PS1, PS2, PS3, PS4 (Ngoài ra còn có COMMAND_PROMPT nữa nhưng thằng này na ná PS1 nên mình không đề cập đến). Để sử dụng các biến môi trường này thì bạn chỉ cần:</p>
-
-<figure class='code'><figcaption><span>export export.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">export </span><span class="nv">PS1</span> <span class="o">=</span> <span class="s2">&quot;abcxyz&quot;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>hoặc đặt đoạn code đó vào ~/.bash_profile hoặc ~/.bashrc rồi</p>
-
-<figure class='code'><figcaption><span>export export.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">source</span> ~/.bash_profile
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>để shell load lại các setting trong file tương ứng là biến môi trường đã được set.</p>
-
-<p>Dưới đây mình sẽ nói về việc sử dụng các biến môi trường này để biến cái command prompt của bạn trở nên <strong>màu mè</strong> và <strong>thân thiện</strong> hơn. Về thứ tự thì mình sẽ nói về cái có độ tùy biến thấp đến cao</p>
-
-<h2>PS2</h2>
-
-<p>Trong 5 biến mình nói ở trên thì biến PS2 là thằng nhàm chán nhất. PS2 gọi là Continuation interactive prompt. Tại sao lại gọi như vậy thì: khi một câu lệnh unix quá dài thì bạn thường dùng kí hiệu &#8220;&#92;&#8221; ở cuối dòng để làm cho câu lệnh đấy thành multiple-line (gõ được ở nhiều dòng). Và PS2 là biến quyết định <strong>cái gì được in ở đầu mỗi dòng đó</strong></p>
-
-<p><img src="/images/UnixCommandPrompt/PS2-1.png"></p>
-
-<p>Cách sử dụng thì vô cùng đơn giản:</p>
-
-<figure class='code'><figcaption><span>export export.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">export </span><span class="nv">PS2</span><span class="o">=</span><span class="s2">&quot;continue here -&gt; &quot;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Và kết quả là:</p>
-
-<p><img src="/images/UnixCommandPrompt/PS2-2.png"></p>
-
-<p>Chắc bạn cũng đã hình dung ra cách dùng PS2 thế nào rồi nhỉ, và hẳn bạn đang nghĩ, biến này chả có gì thú vị lắm nhỉ, mình cũng nghĩ thế :D. Thế nên chúng ta qua thằng tiếp theo nhé: PS3</p>
-
-<h2>PS3</h2>
-
-<p>PS3 gọi là biến dùng cho việc &#8220;select inside shell script&#8221;
-Giả sử bạn phải viết một đoạn script cho lựa chọn (ví dụ như bạn làm infra, phải viết script kiểu như: hãy chọn giữa install rvm hay rbenv chẳng hạn).Thì chắc đoạn script đó sẽ trông như sau:</p>
-
-<figure class='code'><figcaption><span>select select.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="o">==</span>&gt; code
-</span><span class='line'><span class="nb">echo</span> <span class="s2">&quot;Select your option:&quot;</span>
-</span><span class='line'><span class="k">select </span>i in 1<span class="o">)</span> 2<span class="o">)</span> 3<span class="o">)</span>
-</span><span class='line'><span class="k">do</span>
-</span><span class='line'><span class="k">  case</span> <span class="nv">$i</span> in
-</span><span class='line'>    x<span class="o">)</span>....
-</span><span class='line'>    y<span class="o">)</span>....
-</span><span class='line'>    z<span class="o">)</span>....
-</span><span class='line'>  <span class="k">esac</span>
-</span><span class='line'><span class="k">done</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">==</span>&gt; run
-</span><span class='line'><span class="c"># /.select.sh</span>
-</span><span class='line'>x<span class="o">)</span>....
-</span><span class='line'>y<span class="o">)</span>....
-</span><span class='line'>z<span class="o">)</span>....
-</span><span class='line'>
-</span><span class='line'><span class="c">#? 1</span>
-</span><span class='line'>x<span class="o">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Như các bạn thấy, prompt để lựa chọn khi không có setting gì sẽ là <strong>không hiện gì</strong>, quite boring
-Giờ nếu chúng ta chỉ cần setting PS3 cho đoạn code đó như sau</p>
-
-<figure class='code'><figcaption><span>select select.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="o">==</span>&gt; code
-</span><span class='line'><span class="nv">PS3</span><span class="o">=</span><span class="s2">&quot;Select an option of installer (1-3): &quot;</span>
-</span><span class='line'><span class="k">select </span>i in 1<span class="o">)</span> 2<span class="o">)</span> 3<span class="o">)</span>
-</span><span class='line'><span class="k">do</span>
-</span><span class='line'><span class="k">  case</span> <span class="nv">$i</span> in
-</span><span class='line'>    x<span class="o">)</span>....
-</span><span class='line'>    y<span class="o">)</span>....
-</span><span class='line'>    z<span class="o">)</span>....
-</span><span class='line'>  <span class="k">esac</span>
-</span><span class='line'><span class="k">done</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">==</span>&gt; run
-</span><span class='line'><span class="c"># /.select.sh</span>
-</span><span class='line'>x<span class="o">)</span>....
-</span><span class='line'>y<span class="o">)</span>....
-</span><span class='line'>z<span class="o">)</span>....
-</span><span class='line'>
-</span><span class='line'><span class="c">#? Select an option of installer (1-3): 1</span>
-</span><span class='line'>x<span class="o">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Như vậy là chúng ta sẽ có một cái prompt <strong>có hiện gì</strong>, use case để dùng thì chắc trong phần lớn các trường hợp sẽ là để cung cấp thông tin cho user về các option lựa chọn phía dưới. PS3 có vẻ khá useful trong một số case nhất định đúng không :D, tiếp theo chúng ta sẽ đến với PS4</p>
-
-<h2>PS4</h2>
-
-<p>Khi execute một đoạn script mà bạn muốn tracking output (để debug chẳng hạn), bạn sẽ dùng {set -x} để làm việc đó. ví dụ như đoạn code ở dưới đây:</p>
-
-<figure class='code'><figcaption><span>tracking tracking.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="o">==</span>&gt; code tracking.sh
-</span><span class='line'><span class="nb">set</span> -x
-</span><span class='line'>ls -all -lrt | grep xyz
-</span><span class='line'><span class="nb">pwd</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">==</span>&gt; run
-</span><span class='line'>++ ls -all -lrt
-</span><span class='line'>++ grep xyz
-</span><span class='line'>drwxr-xr-x   2 doxuanhuy  staff   68 Apr 28 11:45 xyz
-</span><span class='line'>++ <span class="nb">pwd</span>
-</span><span class='line'>/Users/doxuanhuy/cur-project/android-globalit
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Như các bạn thấy, {set -x} sẽ output ra các câu lệnh được execute và prefix bằng cái &#8220;++&#8221;. 2 kí tự này có vè không thể hiện được gì nhỉ, và với PS4, bạn có thể thêm thông tin hữu ích cho việc debug như line number thông qua biến $LINENO, hay function name thông qua biến $FUNCNAME, hay script name thông qua biến $0</p>
-
-<figure class='code'><figcaption><span>tracking tracking.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="o">==</span>&gt; code tracking.sh
-</span><span class='line'><span class="nb">export </span><span class="nv">PS4</span><span class="o">=</span><span class="s1">&#39;$0.$FUNCNAME $LINENO &#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="nb">set</span> -x
-</span><span class='line'>somefunction<span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>    ls -all -lrt | grep xyz
-</span><span class='line'>      <span class="nb">pwd</span>
-</span><span class='line'><span class="o">}</span>
-</span><span class='line'><span class="nv">somefunction</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">==</span>&gt; run
-</span><span class='line'>../test.sh. 8 somefunction
-</span><span class='line'>../test.sh.somefunction 5 ls -all -lrt
-</span><span class='line'>../test.sh.somefunction 5 grep xyz
-</span><span class='line'>drwxr-xr-x   2 doxuanhuy  staff   68 Apr 28 11:45 xyz
-</span><span class='line'>../test.sh.somefunction 6 <span class="nb">pwd</span>
-</span><span class='line'>/Users/doxuanhuy/cur-project/android-globalit
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Như vậy chúng ta đã có những thông tin khá hữu ích để debug đúng không.
-Và tiếp theo chúng ta sẽ đi đến bộ đôi thú vị nhất trong ngày: PS1 và COMMAND_PROMPT</p>
-
-<h2>PS1</h2>
-
-<p>Đây chính là biến quyết định cái gì sẽ hiện lên ở command prompt, và là biến có nhiều cái để hack nhất trong các loại PSx</p>
-
-<p><img src="/images/UnixCommandPrompt/PS1-1.png"></p>
-
-<p>Đầu tiên chúng ta sẽ nói về PS1
-Giả sử chúng ta muốn command prompt hiện lên Username, Hostname và full-path đến directory hiện tại, đơn giản chúng ta chỉ cần</p>
-
-<figure class='code'><figcaption><span>PS1 PS1.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">export </span><span class="nv">PS1</span><span class="o">=</span><span class="s2">&quot;\u@\h \w&gt; &quot;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Ở đây \u là Username, \h là Hostname và \w là full path của current dir.
-Như vậy chúng ta sẽ có 1 cái prompt như dưới đây</p>
-
-<figure class='code'><figcaption><span>PS1 PS1.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>doxuanhuy@xxx ~/cur-project/android-globalit&gt;
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Quite easy phải không :D
-Hay hơn chút nữa, bạn muốn hiện thêm current time, lên prompt, rất đơn giản:</p>
-
-<figure class='code'><figcaption><span>PS1 PS1.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">export </span><span class="nv">PS1</span><span class="o">=</span><span class="s2">&quot;\$(date +%k:%M:%S) \w&gt; &quot;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Ở đây (date +%k:%M:%S) là để format date và biến nó thành variable thông qua $</p>
-
-<p>Và kết quả là</p>
-
-<figure class='code'><figcaption><span>PS1 PS1.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>12:23:59 ~/cur-project/android-globalit&gt;
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Ngoài ra còn rất nhiều cái bạn có thể cho vào command prompt để biến nó thêm phần phong phú như:</p>
-
-<ul>
-<li>!: The history number of the command</li>
-<li>$kernel_version: The output of the uname -r command from $kernel_version variable</li>
-<li>\$?: Status of the last command</li>
-</ul>
-
-
-<p>Hacking thêm chút nữa, bạn có thể thay đổi màu của từng phần trên command prompt thông qua 3 metacharacter sau:</p>
-
-<ul>
-<li>\e[ - Indicates the beginning of color prompt ( giống như cái &#8221;<sup>&#8221;</sup> của regex vậy)</li>
-<li>x;ym - Indicates color code. Use the color code values mentioned below ( bạn đặt x;ym ở trước node nào thì node đó sẽ được colorize theo màu đó)</li>
-<li>\e[m - indicates the end of color prompt (giống như cái &#8220;$&#8221; của regex)</li>
-</ul>
-
-
-<p>Một ví dụ đơn giản:</p>
-
-<figure class='code'><figcaption><span>PS1 PS1.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">export </span><span class="nv">PS1</span><span class="o">=</span><span class="s2">&quot;\e[0;34m\u@\h \w&gt; \e[m&quot;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Đoạn code trên có nghĩa là gì:</p>
-
-<p><img src="/images/UnixCommandPrompt/PS1-2.png"></p>
-
-<p>Hacking thêm một chút nữa, bạn hiện là một developer đang sử dụng git với rất nhiều repo, rất nhiều branch. Mỗi lần vào một repo nào đấy bạn lại phải {git branch} để xem bạn đang ở branch nào, bất tiện vô cùng. Bạn muốn prompt của bạn sẽ hiện branch name mỗi khi bạn vào folder của một repo nào đấy? Thật đơn giản, với backquote để execute bash command và sự trợ giúp của sed, bạn làm điều đó thật đơn giản:</p>
-
-<figure class='code'><figcaption><span>PS1 PS1.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">export </span><span class="nv">PS1</span><span class="o">=</span><span class="s1">&#39;\e[0;36m\u⌘ \e[0;35m\W \e[0;33m`git branch 2&gt; /dev/null | grep -e ^* | sed -E  s/^\*\ \(.+\)$/\(\1\)\ /`\e[m\]&#39;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Trông có vẻ đáng sợ, nhưng thực ra lại rất đơn giản :D, Chúng ta sẽ đi từng phần nhé:</p>
-
-<ul>
-<li>\e[ : start của command prompt</li>
-<li>[0;36m\u⌘ : bạn tô màu phần user (\u) bởi 0;36m (màu xanh dương) và thêm vào đằng sau cái kí tự ⌘ (cho cool thôi :D)</li>
-<li>\e[0;35m\W : bạn tô màu phần directory hiện tại (\W) bởi 0;35m (màu hồng)</li>
-<li>\e[0;33m : tô màu <strong>toàn bộ phần đằng sau</strong> bởi màu 0;33m (màu vàng)</li>
-<li>git branch 2> /dev/null | grep -e ^* | sed -E  s/<sup>&#92;*\</sup> (.+)$/(&#92;\1)\ /: nguyên văn đoạn này sẽ như sau: đầu tiên bạn dùng &#8220;git branch&#8221; để lấy branch hiện tại. Trong trường hợp không ở trong git repo nào thì sẽ có lỗi ra stderr, bạn redirect cái lỗi này vào dev/null thông qua &#8220;2> /dev/null&#8221; để nó không hiện ra prompt (2 là stderr). Sau đấy bạn tìm line nào có * ở đầu (current git branch) thông qua việc pipe vào grep. Tìm được line đó rồi thì bạn sẽ tách phần đằng sau dấu * ra thông qua sed , và output phần đó ra ngoài với format (branch) thông qua $/(\1). Tất cả đoạn code này được để vào backquote để được execute trực tiếp mỗi khi PS1 được gọi. Và kết quả thật bất ngờ:</li>
-</ul>
-
-
-<p><img src="/images/UnixCommandPrompt/PS1-3.png"></p>
-
-<p>Looks so cool!!
-Ngoài ra bạn còn có rất nhiều thứ có thể hacking với PS1 như:</p>
-
-<ul>
-<li>\j the number of jobs currently managed by the shell</li>
-<li># the command number of this command</li>
-<li>\l the basename of the shell&#8217;s terminal device name
-&#8230;..
-mà bạn có thể tham khảo ở đây: http://www.thegeekstuff.com/2008/09/bash-shell-ps1-10-examples-to-make-your-linux-prompt-like-angelina-jolie/</li>
-</ul>
-
-
-<h2>Ending</h2>
-
-<p>Như vậy với PS[1-4], bạn đã có thể customize command prompt của bạn trở nên đẹp đẽ hơn, cool hơn và useful hơn. Trong các bài viết sắp tới mình sẽ nói về việc sử dụng các công cụ rất mạnh của unix family os như grep, sed, wc để giúp cho công việc development của bạn trở nên thú vị hơn :D. Happy hacking!</p>
-
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-04-25T00:00:00+09:00" data-updated="true" itemprop="datePublished">Apr 25<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/programming-bit-twiddling/'>programming, bit twiddling</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/04/25/dem-bit/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/04/25/dem-bit/" itemprop="url">Đếm Bit</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h2>Mở đầu</h2>
-
-<p>Bạn đang say sưa hacking code và bắt gặp một hàm với những con số bí ẩn như ở dưới đây:</p>
-
-<figure class='code'><figcaption><span>fbc.c </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">fbc</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">data</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">&amp;</span> <span class="mh">0x55555555</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">data</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x55555555</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">&amp;</span> <span class="mh">0x33333333</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">data</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x33333333</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">&amp;</span> <span class="mh">0x0F0F0F0F</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">data</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x0F0F0F0F</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">&amp;</span> <span class="mh">0x00FF00FF</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">data</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x00FF00FF</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">&amp;</span> <span class="mh">0x0000FFFF</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">data</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x0000FFFF</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">data</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Chắc hẳn bạn sẽ không khỏi hét lên: &#8220;what the fuck! Không hiểu gì hết&#8221; khi nhìn đoạn code này. Bạn hoàn toàn không hiểu mục đích của nó. Tên hàm không cho bạn một thông tin nào hữu ích. Những con số bí ẩn cùng phép toán >>, &amp;, + làm bạn rối.</p>
-
-<p>Nếu tôi nói với bạn fcb có nghĩa là &#8220;fast bit count&#8221; và hàm trên trả về số bit 1 của 1 số 32 bit (unsigned int trong C), tôi cá chắc chắn bạn sẽ không khỏi hoài nghi. Vậy chúng ta hãy thử  biên dịch chương trình và test thử hàm này. Tôi viết chương trình như dưới đây để test hàm fbc.</p>
-
-<figure class='code'><figcaption><span>test.c </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+		<p>Ở bài viết trước tôi đã đề cập đến <a href="http://ktmt.github.io/blog/2013/05/09/mock-with-unittest-in-python/">cách sử dụng mock để viết unittest</a>. Unittest có tác dụng không chỉ trong việc đảm bảo các đoạn code mới được viết thêm không phá vỡ các yêu cầu logic trước đó, trong bài viết này, tôi sẽ chia sẽ các kinh nghiệm sử dụng unittest để refactoring các đoạn code</p>
+<p>Một trong những vấn đề khi viết các hàm đó là các hàm thường quá phức tạp. <a href="http://en.wikipedia.org/wiki/Robert_Cecil_Martin">Robert Martin</a> trong cuốn sách “Clean code - a handbook of Agile Software Craftmenship” đã nói về nói về các quy tắc khi thiết kế hàm: Quy tắc đầu tiên của function đó là chúng nên nhỏ, quy tắc thứ hai là chúng nên nhỏ hơn thế nữa&quot; (The first rule ò functions is that they should be small. The second rule of functions is that they should be smaller than that). Function càng ngắn thì càng dễ hiểu, function càng ngắn thì nó càng tách biệt so với các hàm khác. Và hơn thế nữa hàm càng ngắn, thì test càng đơn giản. Vậy làm thế nào để biết function bạn viết là đủ ngắn hay chưa? Nếu để test 1 hàm cần tới hơn 20 dòng code, theo bản thân tôi, hàm đó nên được viết lại.</p>
+<p>Hãy xét một ví dụ sau</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>models.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -509,122 +138,273 @@ mà bạn có thể tham khảo ở đây: http://www.thegeekstuff.com/2008/09/b
 <span class='line-number'>20</span>
 <span class='line-number'>21</span>
 <span class='line-number'>22</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;assert.h&gt;</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Order</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+</span><span class='line'>    <span class="c"># define fields in here</span>
 </span><span class='line'>
-</span><span class='line'><span class="kt">int</span> <span class="nf">fbc</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">data</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">&amp;</span> <span class="mh">0x55555555</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">data</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x55555555</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">&amp;</span> <span class="mh">0x33333333</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">data</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x33333333</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">&amp;</span> <span class="mh">0x0F0F0F0F</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">data</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x0F0F0F0F</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">&amp;</span> <span class="mh">0x00FF00FF</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">data</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x00FF00FF</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">&amp;</span> <span class="mh">0x0000FFFF</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">data</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x0000FFFF</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">data</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>        <span class="kt">int</span> <span class="n">ans</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">ans</span> <span class="o">=</span> <span class="n">fbc</span><span class="p">(</span><span class="mi">5</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">assert</span><span class="p">(</span><span class="n">ans</span> <span class="o">==</span> <span class="mi">2</span><span class="p">);</span>  <span class="c1">// 5 = 101b</span>
-</span><span class='line'>        <span class="n">ans</span> <span class="o">=</span> <span class="n">fbc</span><span class="p">(</span><span class="mi">198123</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">assert</span><span class="p">(</span><span class="n">ans</span> <span class="o">==</span> <span class="mi">10</span><span class="p">);</span> <span class="c1">// 198123 = 110000010111101011b</span>
-</span><span class='line'>        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Kết quả chạy:</p>
-
-<div>
-  <pre><code class='bash'>$ gcc -o test test.c
-$ ./test
-$ echo $?
-0</code></pre>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">create_final_pdf_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_order_id</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">front_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">create_frontcover_image</span><span class="p">()</span>
+</span><span class='line'>        <span class="n">back_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">create_backcover_image</span><span class="p">(</span><span class="n">client_order_id</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_type</span> <span class="o">==</span> <span class="n">Order</span><span class="o">.</span><span class="n">SOFT_COVER</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">frontcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
+</span><span class='line'>                <span class="p">[</span><span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">front_image</span><span class="p">),</span> <span class="bp">None</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_size</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">backcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
+</span><span class='line'>                <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">back_image</span><span class="p">)],</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_size</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">frontcover_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached_pdf_file</span><span class="p">,</span> <span class="n">backcover_file</span><span class="p">]</span>
+</span><span class='line'>        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_type</span> <span class="o">==</span> <span class="n">Order</span><span class="o">.</span><span class="n">HARD_COVER</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">hardcover_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_hardcover_image</span><span class="p">(</span><span class="n">back_image</span><span class="p">,</span> <span class="n">front_image</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">hardcover_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PDF_SIZES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">size_type</span><span class="p">]</span>
+</span><span class='line'>            <span class="n">hardcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
+</span><span class='line'>                <span class="p">[</span><span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">hardcover_image</span><span class="p">)],</span> <span class="n">hardcover_size</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">hardcover_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached_pdf_file</span><span class="p">]</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">new_path</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">merge_pdf_files</span><span class="p">(</span><span class="n">input_files</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">new_path</span>
+</span></code></pre></td></tr></table>
 </div>
-
-
-<p>Chương trình chạy bình thường, cho kết quả bằng 0 chứng tỏ hàm fbc trả về giá trị như ta mong muốn.</p>
-
-<p><strong>Bạn sẽ thắc mắc</strong>: Tại sao hàm này lại có thể đếm được số bit 1? Chúng ta hãy cùng tìm hiểu cơ chế đếm của hàm này.</p>
-
-<h2>Cơ chế</h2>
-
-<p>Để có thể hiểu tại sao hàm này trả về số bit 1, ta hãy thử xem các con số 0x55555555, 0x33333333, 0x0F0F0F0F, 0x00FF00FF và 0x0000FFFF có ý nghĩa gì.</p>
-
-<p>Bằng cách ấn máy tính, đổi từ hệ 16 sang hệ 2, ta có giá trị nhị phân của các số trên như bảng dưới đây:</p>
-
-<pre><code>0x55555555      01010101010101010101010101010101   
-0x33333333      00110011001100110011001100110011     
-0x0F0F0F0F      00001111000011110000111100001111    
-0x00FF00FF      00000000111111110000000011111111   
-0x0000FFFF      00000000000000001111111111111111   
-</code></pre>
-
-<p>Ta nhận thấy các con số trên không hoàn toàn bí ẩn mà nó hoàn toàn có quy luật. Từ trên xuống dưới, các bit 1 xen kẽ nhau theo chu kỳ 1, 2, 4, 8, 16.</p>
-
-<p>Ta thử quay lại hàm <strong>fbc</strong> và xem cách con số này được sử dụng. Vì số 0x55555555 lên đến 32 bit nên rất khó theo dõi (nhiều 0 với 1 quá @.@), ta sẽ thử xét trường hợp số 8 bit với bit pattern không đổi (tức là số  0xFF). Dòng 1 của hàm fbc sẽ như dưới đây:</p>
-
-<pre><code>    data = (data &amp; 0x55) + ((data &gt;&gt; 1) &amp; 0x55);
-</code></pre>
-
-<p>Giả sử data = 10110011b, ta sẽ có:</p>
-
-<pre><code>    data = 10110011 &amp; 01010101 + ((10110011 &gt;&gt; 1 &amp; 01010101)
-</code></pre>
-
-<p><strong>&#8220;Dễ dàng&#8221;</strong> nhận thấy chuỗi bit của 0xFF có các bit 1 ở vị trí chẵn (0, 2, 4&#8230;) do vậy bằng cách &amp; data với 0xFF, ta đã loại trừ các bit 1 ở vị trí lẻ (1,3,5&#8230;). Do vậy kết quả của data &amp; 0x55 sẽ cho ra các bit 1 ở vị trí chẵn. Bằng cách dịch 1 bit của data, ta chuyển các bit từ vị trí lẻ sang vị trí chẵn, và lại &amp; với 0xFF, do đó đại lượng sau dấu cộng sẽ có các bit 1 ở vị trí chẵn. Kết quả của phép cộng sẽ cho ra số lượng bit ở vị trí lẻ và vị trí chẵn</p>
-
-<p>Lần tính 1</p>
-
-<pre><code>       data &amp; 01010101   00 01 00 01  
- (data &gt;&gt; 1)&amp; 01010101   01 01 00 01  
-                         01 10 00 10  
-</code></pre>
-
-<p>Do kết quả tối đa của phép + này là 2, khả năng kết quả phép cộng &#8220;tràn sang&#8221; vùng bit bên cạnh là không có. Sau lần tính thứ nhất, ta có kết quả của số bit 1 của cặp đôi bit cạnh nhau.</p>
-
-<p>Tất nhiên ở đây ta vẫn chua có kết quả số bit. Tuy nhiên ta sẽ áp dụng phương pháp tương tự cho cụm 4 bit.</p>
-
-<p>Nhìn dòng thứ 2 đoạn code bạn sẽ thấy: &#8230;1100110011b: 2 bit đan xen! Phép dịch bit bây giờ là >> 2.</p>
-
-<p>Lần tính 2</p>
-
-<pre><code>           data &amp; 00110011   00 10 00 10  
-     (data &gt;&gt; 2)&amp; 00110011   00 01 00 00  
-                             00 11 00 10  
-</code></pre>
-
-<p>Như vậy ta có 4 bit đằng sau có tổng số bit là 2, 4 bit đâu có tổng số bit là 11 (3 trong hệ thập phân)!!!</p>
-
-<p>Áp dụng cách tính tương tự, ta có kết quả như ở dưới.</p>
-
-<p>Lần tính 3</p>
-
-<pre><code>           data &amp; 00001111   00 00 00 10  
-     (data &gt;&gt; 4)&amp; 00001111   00 00 00 11  
-                             00 00 01 01  
-</code></pre>
-
-<p>Kết quả là 5, chính là số bit của data ban đầu!!</p>
-
-<p>Để tính số bit của 1 số 32 bit, ta chỉ việc tăng số bit của các &#8220;magic number&#8221; lên. Đấy là lý do ta có các số 0x55555555, 0x33333333, &#8230;</p>
-
-<p>Đến đây chắc hẳn bạn đã hiểu tại sao hàm <strong>fbc</strong> trả về số bit 1.</p>
-
-<h2>Tổng kết</h2>
-
-<p>Hy vọng với giải thích trên, bạn đã hiểu ý nghĩa sâu sắc đằng sau hàm fbc. Bạn sẽ vẫn hét &#8220;What the fuck!!!&#8221; nhưng lần này cho sự tuyệt vời không những cho sự ngắn gọn, tinh tế của đoạn code.</p>
-
-<h2>Tham khảo</h2>
-
-<ol>
-<li><a href="http://graphics.stanford.edu/~seander/bithacks.html">bithacks</a></li>
-<li><a href="http://www.drpaulcarter.com/pcasm/">assembly book</a></li>
-<li><a href="http://download.savannah.gnu.org/releases/pgubook/ProgrammingGroundUp-1-0-booksize.pdf">Programming groundup</a></li>
-</ol>
-
-
+</figure>
+</notextile>
+</div>
+<p>Hàm <code>create_final_pdf_file</code> nhận tham số là một <code>client_order_id</code>, tạo ra một pdf file tương ứng <code>client_order_id</code>, và trả về đường dẫn của pdf file đó. Hàm này tạo ra một ảnh cover trước, và ảnh cover sau, sau đó ghép với một file pdf có sẵn để tạo nên <code>final_pdf</code>.</p>
+<p>Tuy nhiên tuỳ theo giá trị của <code>self.order_type</code> mà cách tạo các ảnh trước và ảnh sau là khác nhau.</p>
+<p>Nếu chỉ dừng ở đây, bản thân tôi, thấy khá hài lòng với hàm <code>create_final_pdf_file</code>. Hàm dài vừa đủ, không quá dài (19 lines), chỉ có một input đầu vào, và 1 output đầu ra. Tuy nhiên, nếu viết testcase cho hàm này, chúng ta sẽ thấy có vấn đề</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>test_models.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">TestModel</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">tree</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">()</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="n">Order</span><span class="p">(</span><span class="n">tree</span><span class="o">=</span><span class="n">tree</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.image_helper.save_image&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.generator.pdf.merge_pdf_files&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.generator.pdf.create_pdf_from_images&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">test_create_final_pdf_file_soft_cover</span><span class="p">(</span>
+</span><span class='line'>            <span class="bp">self</span><span class="p">,</span> <span class="n">mock_create_pdf</span><span class="p">,</span> <span class="n">mock_merge_pdf</span><span class="p">,</span> <span class="n">mock_save_image</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">order_type</span> <span class="o">=</span> <span class="n">Order</span><span class="o">.</span><span class="n">SOFT_COVER</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">mock_cached_pdf</span> <span class="o">=</span> <span class="n">PropertyMock</span><span class="p">(</span>
+</span><span class='line'>            <span class="n">return_value</span><span class="o">=</span><span class="s">&#39;StoryTree/tests/fixtures/1.pdf&#39;</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_backcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_frontcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">with</span> <span class="n">nested</span><span class="p">(</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="s">&#39;cached_pdf_file&#39;</span><span class="p">,</span> <span class="n">mock_cached_pdf</span><span class="p">),</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="s">&#39;create_backcover_image&#39;</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="p">),</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="s">&#39;create_frontcover_image&#39;</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="p">)):</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">create_final_pdf_file</span><span class="p">(</span><span class="s">&#39;STORYTREE01111&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">mock_create_pdf</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">first_args</span> <span class="o">=</span> <span class="n">mock_create_pdf</span><span class="o">.</span><span class="n">call_args_list</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">first_args</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.image_helper.save_image&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.generator.pdf.merge_pdf_files&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.generator.pdf.create_pdf_from_images&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">test_create_final_pdf_file_hard_cover</span><span class="p">(</span>
+</span><span class='line'>            <span class="bp">self</span><span class="p">,</span> <span class="n">mock_create_pdf</span><span class="p">,</span> <span class="n">mock_merge_pdf</span><span class="p">,</span> <span class="n">mock_save_image</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">order_type</span> <span class="o">=</span> <span class="n">Order</span><span class="o">.</span><span class="n">HARD_COVER</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">mock_cached_pdf</span> <span class="o">=</span> <span class="n">PropertyMock</span><span class="p">(</span>
+</span><span class='line'>            <span class="n">return_value</span><span class="o">=</span><span class="s">&#39;StoryTree/tests/fixtures/1.pdf&#39;</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_backcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_frontcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_hardcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">with</span> <span class="n">nested</span><span class="p">(</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="s">&#39;create_backcover_image&#39;</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="p">),</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="s">&#39;create_frontcover_image&#39;</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="p">),</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="s">&#39;cached_pdf_file&#39;</span><span class="p">,</span> <span class="n">mock_cached_pdf</span><span class="p">),</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="s">&#39;create_hardcover_image&#39;</span><span class="p">,</span> <span class="n">mock_hardcover</span><span class="p">)):</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">create_final_pdf_file</span><span class="p">(</span><span class="s">&#39;STORYTREE01111&#39;</span><span class="p">)</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_hardcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_create_pdf</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Đoạn code test trên có vấn đề gì? Để test hàm <code>create_final_pdf_file</code>, chúng ta cần viết 2 test case, cho 2 trường hợp trong đoạn code if-else. Và 2 đoạn code test bị lặp lại khá nhiều, đặc biệt là ở việc mock các objects. Chúng ta có thể viết lại test case gọn hơn bằng cách viết một function chung, hoặc một function tạo ra các mock object và gọi nó trong từng hàm test. Nhưng liệu có phải đó là vấn đề chính.</p>
+<p>Điều tôi muốn nói ở đây là: Code smell trong test code có nguyên nhân từ test code, hay từ bản thân đoạn code chúng ta muốn test. Hãy xem lại hàm <code>create_final_pdf_file</code>. Hàm nãy đã thực sự tốt? Một hàm tốt, là một hàm chỉ nên làm một việc. Hàm <code>create_final_pdf_file</code> ở đây, ngoài việc gọi các hàm khác, còn thêm vào nó đoạn xử lý logic xét kiểu của <code>order</code>. Đoạn code if-else xử lý 2 logic khác nhau, chúng nên được tách ra thành một hàm khác.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>models.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Order</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">create_input_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">front_image</span><span class="p">,</span> <span class="n">back_image</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_type</span> <span class="o">==</span> <span class="n">Order</span><span class="o">.</span><span class="n">SOFT_COVER</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">frontcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
+</span><span class='line'>                <span class="p">[</span><span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">front_image</span><span class="p">),</span> <span class="bp">None</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_size</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">backcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
+</span><span class='line'>                <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">back_image</span><span class="p">)],</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_size</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">frontcover_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached_pdf_file</span><span class="p">,</span> <span class="n">backcover_file</span><span class="p">]</span>
+</span><span class='line'>        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_type</span> <span class="o">==</span> <span class="n">Order</span><span class="o">.</span><span class="n">HARD_COVER</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">hardcover_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_hardcover_image</span><span class="p">(</span><span class="n">back_image</span><span class="p">,</span> <span class="n">front_image</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">hardcover_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PDF_SIZES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">size_type</span><span class="p">]</span>
+</span><span class='line'>            <span class="n">hardcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
+</span><span class='line'>                <span class="p">[</span><span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">hardcover_image</span><span class="p">)],</span> <span class="n">hardcover_size</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">hardcover_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached_pdf_file</span><span class="p">]</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">input_files</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">create_final_pdf_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_order_id</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">front_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">create_frontcover_image</span><span class="p">()</span>
+</span><span class='line'>        <span class="n">back_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">create_backcover_image</span><span class="p">(</span><span class="n">client_order_id</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">input_files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_input_files</span><span class="p">(</span><span class="n">front_image</span><span class="p">,</span> <span class="n">back_image</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">new_path</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">merge_pdf_files</span><span class="p">(</span><span class="n">input_files</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">new_path</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Hàm <code>create_final_pdf_file</code> sau khi được refactoring, đã trở nên đơn giản và dễ đọc hơn, thay vì phải lướt qua 19 lines, và đọc hiểu logic của đoạn code if-else, giờ đây bạn có thể hiểu nó chỉ bằng <code>create_input_files</code>. Và code test mới cho hàm <code>create_final_pdf_file</code> như sau</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>test_models.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">TestModel</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="n">Order</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.generator.pdf.merge_pdf_files&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">test_create_final_pdf_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_merge_pdf</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">mock_cached_pdf</span> <span class="o">=</span> <span class="n">PropertyMock</span><span class="p">(</span>
+</span><span class='line'>            <span class="n">return_value</span><span class="o">=</span><span class="s">&#39;StoryTree/tests/fixtures/1.pdf&#39;</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_backcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_frontcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">mock_input_files</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_values</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;&#39;</span><span class="p">])</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">with</span> <span class="n">nested</span><span class="p">(</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="s">&#39;create_input_files&#39;</span><span class="p">,</span> <span class="n">mock_input_files</span><span class="p">)</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="s">&#39;cached_pdf_file&#39;</span><span class="p">,</span> <span class="n">mock_cached_pdf</span><span class="p">),</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="s">&#39;create_backcover_image&#39;</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="p">),</span>
+</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="s">&#39;create_frontcover_image&#39;</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="p">)):</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">create_final_pdf_file</span><span class="p">(</span><span class="s">&#39;STORYTREE01111&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEquals</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_input_files</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Việc tách logic của đoạn code tạo 2 input files ra thành một hàm <code>create_input_files</code>, làm cho hàm <code>create_final_pdf</code> dễ hiểu hơn, nói cách khác, nó che giấu thông tin không cần thiết cho lập trình viên khi đọc tới đoạn code của <code>create_final_pdf</code>. Hàm <code>create_final_test</code> giờ đây không làm gì khác ngoại việc gọi tới các hàm khác. Không có bất cứ logic nào được đặt trong hàm này. Trên thực tế rất nhiều lập trình viên sẽ không viết test cho những hàm như <code>create_final_pdf</code> nữa. Họ chỉ cần viết test cho 4 hàm <code>create_input_files</code>, <code>create_backcover_image</code>, <code>create_frontcover_image</code>, và <code>cached_pdf_file</code> là đủ.</p>
+<p>Tóm lại, bạn có thể tìm kiếm code smell trong unittest, và refactoring hàm mà unittest đó muốn test</p>
 		
 		
 	</div>
@@ -646,51 +426,250 @@ $ echo $?
   
 
 
-<time datetime="2013-04-24T23:33:00+09:00" data-updated="true" itemprop="datePublished">Apr 24<span>th</span>, 2013</time></div>
+<time datetime="2013-05-21T21:50:00+09:00" data-updated="true" itemprop="datePublished">May 21<span>st</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/motivation/'>motivation</a>
+	<a class='category' href='/blog/categories/c-plus-plus/'>c++</a>, <a class='category' href='/blog/categories/programming/'>programming</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/04/24/happy-programmer/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/05/21/quy-tac-xoan-oc/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/04/24/happy-programmer/" itemprop="url">Happy Programmer</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/05/21/quy-tac-xoan-oc/" itemprop="url">Quy Tắc Xoắn ốc</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<p>Happy programmer là gì nhỉ, chắc ai đọc xong title của bài post này cũng không hiểu ý mình định nói đến là gì :D. Đầu tiên với cá nhân mình thì happy programmer là những programmer(lập trình viên), có khả năng kiếm được tiền và sống tốt bằng việc lập trình, họ training liên tục để trở thành better programmer, và họ hạnh phúc với cuộc sống như vậy. Nếu bạn đã và đang là một programmer, có nhiều lý do để bạn nên happy với việc đấy. Lý do là:</p>
-
+		<h3 id="quy-tắc-xoắn-ốc">Quy tắc xoắn ốc</h3>
+<p>Có một quy tắc gọi là “quy tắc xoắn ốc” cho phép lập trình viên C/C++ phân tích trong đầu bất cứ khai báo nào. Quy tắc này rất đơn giản như sau:</p>
 <ul>
-<li><p>Lý do đầu tiên là không happy thì bạn sẽ không làm được gì cả, đơn giản là vậy thôi. Bạn làm công việc gì cũng vậy, nếu bạn cảm thấy không thoải mái với nó thì tốt nhất là không nên làm, mỗi người chỉ có một cuộc sống, đừng phí thời gian làm những gì bạn không thích.</p></li>
-<li><p>Lý do thứ hai, bạn có biết là programmer là một trong số hiếm các ngành bạn được <strong>làm đúng cái bạn được học ra</strong>, và có thể <strong>kiếm tiền đủ sống</strong> với nó (Định nghĩa đủ sống của mình là đủ ăn no, tiêu không phải dè sẻn, đủ để thi thoảng đi du lịch, để thi thoàng mua sắm, tính theo tiền Việt với mình cứ lương tầm 1k2 trở lên mình gọi là đủ sống). Tất nhiên để có cái đủ sống đó thì bạn không thể là một average programmer, ít ra bạn phải là một người có kĩ năng tương xứng.</p></li>
-<li><p>Lý do thứ ba, với mình là một người không thích cuộc sống nhàm chán, thì cái nghề lập trình là cái nghề mà mỗi ngày đều có cái để mình suy nghĩ, để giải quyết. Niềm vui lớn nhất của mình là có vấn đề, giải quyết, và đem solution đi khoe với thằng đồng nghiệp, rồi nó tròn mắt ra thán phục, kể cũng sướng.</p></li>
+<li>Bắt đầu bằng tên biến và di chuyển <strong>xoắn ốc</strong> theo chiều kim đồng hồ.</li>
+<li>Nếu gặp từ khóa const thì đối tượng nằm trên đường xoắn ốc trước const không đổi.</li>
+<li>Nếu gập ký tự * thì đối tượng trước khi đến * là một con trỏ.</li>
+<li>Nếu gặp [] thì đối tượng trước [] là một mảng.</li>
+<li>Nếu gặp (kiểu dữ liệu 1, kiểu dữ liệu 2), đối tượng trước đó là một function.</li>
 </ul>
-
-
-<p>Với từng đấy lý do thì chắc các bạn có thể thấy là, trở thành một happy programmer là một điều nên làm, đúng không :D. Chắc nhiều bạn thắc mắc mình có chỗ đứng thế nào mà lại khuyên bảo các bạn. Mình không kiếm nhiều tiền, và cũng không nổi tiếng, do đấy mình không thể khuyên bảo bất kì ai.Mình chỉ muốn chia sẻ là mình đang cực kì happy với việc mỗi ngày được code cái gì đó useful, tìm hiểu thêm được về công nghệ mới, bàn luận về thuật toán với mấy thằng bạn :D</p>
-
-<p> Hơi lạc đề một chút, thực trạng IT ở Việt Nam đang làm chúng ta không có nhiều happy programmer, hay đúng hơn là chỉ có một số ít programmer cảm thấy happy với công việc, mức lương và luôn cố gắng để hoàn thiện kĩ năng bản thân. IT Việt Nam hiện nay theo mình đang chia làm 2 mảng chính Start-up và Outsource. Ở bên Start-up với lực lượng chính là các venture (và một số các ông lớn như VNG) có vẻ xuất hiện nhiều happy programmer hơn,  mình chỉ biết sơ sơ về mảng này thông qua một vài người bạn, nên không dám nhận xét nhiều. Còn ở bên mảng Outsource, cái mảng mà đang chiếm phần lớn tỉ trọng trong mảng IT VN, thì thực trạng tỉ lệ công việc nhàm chán cao, không yêu cầu kĩ năng, cộng với tầm nhìn công nghệ hạn hẹp của các ông chủ thì đang có thực trạng là  các lập trình viên thường chăm chăm nhảy lên project manager. Việc đấy không có gì là sai cả, hoàn toàn đúng là khác, chỗ nào lương cao hơn, ta nhảy lên chỗ đó, là mình mình cũng làm thế. Cái sai ở đây là cái sai của những người lãnh đạo, mình nghĩ họ là những người không có tầm nhìn (đặc biệt là tầm nhìn về mặt công nghệ), họ có thể kiếm được tiền, rất nhiều tiền (có thể hàng chục tỉ, hàng trăm tỉ) nhưng cái đó chắc không còn lâu nữa, khi mà cái thị trường lao động rẻ màu mỡ VN không còn là duy nhất, và không còn chỗ để khai thác. Chính vì vậy nếu bạn là một người làm outsource, mà không cố để trở thành một happy programmer ngay khi còn có thể, thì không lâu nữa chắc mình sẽ gặp lại bạn ở đầu dốc Bưởi :D. Mình sẽ nói về outsource Việt Nam trong một bài khác.</p>
-
-<p>Quay lại vấn đề chính, hiện tại cá nhân mình thấy mình đang là một happy programmer :D. Tuy nhiên việc duy trì cái sự happy đấy đòi hỏi mình phải làm theo một số rule và duy trì một nhịp sống để luôn keep high motivation. Dưới đây là những cái mình đã và đang thực hiện hàng ngày,đó cũng là những rule chung mà nếu ai có điều kiện cũng nên thử làm, mình nghĩ nó sẽ ít nhiều có ích cho các bạn :</p>
-
+<h3 id="áp-dụng">Áp dụng</h3>
+<p>Ta tử áp dụng quy tắc trên để phân tích thử 1 số khai báo.</p>
+<h4 id="khai-báo-đơn-giản">1. Khai báo đơn giản</h4>
+<pre><code>                 +-------+
+                 | +-+   |
+                 | ^ |   |
+            char *str[10];
+             ^   ^   |   |
+             |   +---+   |
+             +-----------+</code></pre>
+<p><strong>Ý nghĩa</strong>: str là một mảng (10 ký tự) con trỏ có kiểu dữ liệu ký tự (char).</p>
+<h4 id="con-trỏ-hàm">2. Con trỏ hàm</h4>
+<pre><code>          +--------------------+
+          | +---+              |
+          | |+-+|              |                    
+          | |^ ||              |
+     char *(*fp)( int, float *);
+      ^   ^ ^  ||              |
+      |   | +--+|              |
+      |   +-----+              |
+      +------------------------+</code></pre>
+<p><strong>Ý nghĩa</strong>: fp là 1 con trỏ, trỏ đến 1 function (nhận 2 đối số là int, và con trỏ kiểu float), trả về 1 con trỏ có kiểu dữ liệu ký tự (char).</p>
+<h4 id="const">3. Const</h4>
 <ul>
-<li><p>Stay healthy: Một trong những đặc điểm chung của nerdy là sinh hoạt cực kì thiếu điều độ. Có một thời gian dài mình toàn ngủ lúc 4h, dậy lúc 12h, cho đến gần đây mình mới nhận thấy là sinh hoạt điều độ (ngủ lúc 12h, dậy 8h30, ngồi đọc sách, code một tí, ăn cơm, lên trường, tối về đúng giờ, ăn cơm đúng giờ, code một tí, đi ngủ) đem lại cho mình khả năng tập trung tốt hơn hẳn, và cũng đớ hẳn một số cảm giác khó chịu trước hay gặp như đầy bụng, buồn ngủ&#8230;</p></li>
-<li><p>Embrace the uncomfortable: sẵn sàng làm những việc không thoải mái cũng là những việc nên tập. Một ví dụ đơn giản nhất là làm unit-test. Đợt mới làm việc mình cực ghét unit-test (cũng một phần tại chỗ mình làm unit-test thiếu chuyên nghiệp quá). Kết quả thì là code bug , và khi code có thay đổi lớn về kiến trúc, không có unit-test thì chắc bạn chỉ có khóc, bạn sẽ không biết đoạn nào chạy đoạn nào không. Do đấy việc cố làm những gì mình cảm thấy không thoải mái vừa là một cách rèn luyện mình, mình tin là khi làm rồi bạn sẽ không còn cảm thấy việc gì là uncomfortable nữa.</p></li>
-<li><p>Learn a new programming language: Nhiều bạn chắc sẽ tự nghĩ, ngôn ngữ lập trình thì mình biết cả thùng, từ c, cpp, java, perl, python&#8230; Bạn nào nghĩ thế chắc nên đọc lại http://norvig.com/21-days.html của peter norvig. Học một ngôn ngữ mới, mình định nghĩa hiểu về ngôn ngũ đấy khi bạn có thể viết được một cái gì đấy useful bằng ngôn ngữ đó, một cái web crawler, một con chat-bot, một cái web,&#8230;, bạn hiểu ngôn ngữ đấy về mặt bản chất (vd như js thì ít ra phải hiểu prototype programming, module pattern, hay ruby thì hiểu metaprogramming, ruby vm,&#8230; python thì chí ít cũng nắm được cái decorator nó là cái gì, hay là new-style class với old-style class khác nhau thế nào). Học ngôn ngữ mới giúp bạn có cái nhìn rộng hơn, làm đầu óc bạn flexible hơn. Cá nhân mình thì thấy khi đã hiểu kĩ imperative programming thì bạn nên đọc thêm về declarative programming( ví dụ như haskell hay scala(functional programming) hay prolog(logic programming))</p></li>
-<li><p>Automate: automate là kĩ năng không thể thiếu của bất kì programmer nào. Bản chất của programmer là phải lazy and dumb. Lý do tại sao thì bạn tham khảo tại http://www.codinghorror.com/blog/2005/08/how-to-be-lazy-dumb-and-successful.html. Automate là bước đầu hiện thực hóa của lazy. Bạn phải gõ đi gõ lại một thứ, phải click đi click lại một thứ mà bạn vẫn miệt mài ngồi làm thì chắc bạn nên bỏ nghề đi thôi :D. Hãy viết tool automate bất cứ cái gì có thể.</p></li>
-<li><p>Learn more mathematic: Cái này thì không áp dụng với tất cả mọi người. Có 2 type of computer programmer: computer scientist và computer engineer. Computer scientist sẽ làm những công việc có hàm lượng &#8220;science&#8221; cao hơn một chút, như physic engine, compiler optimizer hay data mining, hoặc pattern recognition.. Còn computer engineer sẽ làm thiên về technical, họ sẽ có rất nhiều trick để làm chương trình chạy nhanh hơn, có rất nhiều kĩ năng để làm một hệ thống robust. Đi theo hướng nào là tùy career path của từng người. Cá nhân mình thì mình thích có tí gì đó thiên về khoa học, do đấy những kĩ năng về probabilistic, matrix algebra, linear algebra là phải có. Và toán là một trong những kĩ năng không thể nhồi ngay được, nên bắt buộc bạn phải học mỗi ngày, hay mỗi tuần một chút một. Nếu bạn không có chút interest nào với toán thì bạn có thể thay toán bằng algorithm, thi thoảng lên topcoder hay project euler ngồi làm cũng giúp bạn có kĩ năng tốt hơn để giải quyết công việc hàng ngày :).</p></li>
-<li><p>Focus on security: Rất nhiều app developer thiếu những kĩ năng về security cơ bản, đặc biệt là web app với những xss hay sql injection, cho đến khi bị tấn công thì mới ngớ người ra. Ngay cả developer ở những tập đoàn lớn như facebook hay twitter cũng đã từng mắc những lỗi cơ bản liên quan đến oauth (đặc biệt là twitter).Do đó việc tìm hiểu về những lỗ hổng cơ bản là cần thiết với tất cả các programmer.</p></li>
-<li><p>Complete a personal project: side project là một trong những yếu tố rất quan trọng giúp bạn keep high motivation cho việc phát triển career path để thành một programmer đúng nghĩa. Với side project, bạn có thể làm gì bạn thích, design những gì bạn muốn, up lên github, khoe hàng trên ycombinator, và tự hào nhìn số starred của repo trên github (cá nhân mình thì chưa làm được cái đoạn từ khoe hàng trên ycombinator), nhưng mình vẫn cố gằng nghĩ ra, và hoàn thành các side project, chỉ vì đơn giản là nó giúp mình happy và highly motivated với việc là một programmer đúng nghĩa</p></li>
-<li><p>Get your community: Ở VN hiện tại có một điều mình rất bức xúc là thiếu cộng đồng làm công nghệ. Thiếu cộng đồng thì bạn làm gì đi nữa, có side project khủng bố thế nào đi nữa thì cũng chả khác gì bạn đang masturbate cả :D. Mô hình meetup hay conference giúp bạn có thể giao lưu với những người cùng sở thích, biết bạn đang đứng ở đâu, và làm thể nào để phát triển bản thân. Bạn sẽ có những lời khuyên tốt nhất và chân thành nhất. Chính vì vậy đừng ngần ngại, hãy tìm những người bạn cùng sở thích lập trình, lập thành các group, cùng giải quyết vấn đề, bạn sẽ học được nhiều điều hơn bạn nghĩ :D</p></li>
+<li><p>Ví dụ 1</p>
+<pre><code>char greeting[] = &quot;Hello&quot;;
+       +-----------------+
+       |   +-----------+ |
+       |   | +-------+ | |
+       |   ^ ^       v | | 
+const char * p = greeting;
+   ^   ^   ^         | | |
+   |   |   |         | | |
+   |   |   +---------+ | |
+   |   +---------------+ |   
+   +---------------------+</code></pre></li>
 </ul>
+<p><strong>Ý nghĩa</strong>: p có giá trị giống greeting, và là 1 con trỏ, trỏ đến dữ liệu kiểu char, giá trị này là hằng số (không thay đổi).</p>
+<ul>
+<li><p>Ví dụ 2</p>
+<pre><code>char greeting[] = &quot;Hello&quot;;
+         +------------------------+   
+         | +-------------------+  |
+         | |     +-----------+ |  |
+         | |     | +-------+ | |  |
+         | |     ^ ^       v | |  |
+const char * const p = greeting;  |
+   ^     ^ ^     ^         | | |  |
+   |     | |     |         | | |  |
+   |     | |     +---------+ | |  |
+   |     | +-----------------+ |  |
+   |     +---------------------+  |
+   +------------------------------+</code></pre></li>
+</ul>
+<p><strong>Ý nghĩa</strong>: p có giá trị giống greeting, giá trị của p không đổi, và nó là 1 con trỏ, trỏ đến dữ liệu kiểu chả, và dữ liệu của là hằng số.</p>
+<h3 id="cuối-cùng">Cuối cùng</h3>
+<p>Quy tắc <strong>xoắc ốc</strong> giúp ta hiểu ý nghĩa khai báo C/C++ một cách dễ dàng. Bây giờ với quy tắc này, bạn chắc chắn khai báo dưới đây dễ hiểu như ăn kẹo rồi phải không? void (<em>signal(int, void (</em>fp)(int)))(int);</p>
+		
+		
+	</div>
+
+</article>
 
 
-<h2>The end</h2>
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
 
-<p>Trên đây là những điều mình vẫn đang làm hàng ngày, và những điều đấy giúp mình luôn tin là mình đang đi đúng con đường mình đã chọn. Bạn hãy thử làm xem bạn có trở nên happy hơn với việc là một programmer không, nếu không thì mình nghĩ là bạn nên đổi nghề&#8230; :D. Chúc các bạn thành công.</p>
 
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-05-21T09:37:00+09:00" data-updated="true" itemprop="datePublished">May 21<span>st</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/arduino/'>arduino</a>, <a class='category' href='/blog/categories/embedded/'>embedded</a>, <a class='category' href='/blog/categories/physical-computing/'>physical computing</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/05/21/co-ban-ve-arduino-platform-for-physical-computing/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/05/21/co-ban-ve-arduino-platform-for-physical-computing/" itemprop="url">Cơ Bản về Arduino - Platform for Physical Computing</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1 id="giới-thiệu-về-arduino-và-physical-computing">Giới thiệu về Arduino và Physical Computing</h1>
+<p>Có thể bạn đã quen lập trình trên PC, với những ngôn ngữ như C, C++, C#, Java, Python, Ruby…</p>
+<p>Nhưng bạn có biết là phần mềm trên PC chỉ chiếm khoảng 10% sản lượng phần mềm trên thị trường. 90% còn lại là code điều khiển tivi, máy giặt, điều hòa, tủ lạnh… tóm lại là tất cả các thiết bị điện tử xung quanh bạn. Đây cũng là một mảng theo tôi là khá thú vị. Lập trình theo hướng này được gọi là embedded computing, hay physical computing, tức là lập trình để con người tương tác với các thiết bị thực.</p>
+<p>Để người thiết kế có thể nhanh chóng đưa ra được mẫu thể hiện ý tưởng của mình, rất cần phải có những platform để dễ dàng prototyping. Và một trong những platform đang được sử dụng rất nhiều trong prototyping là Arduino.</p>
+<p>Vậy Arduino là gì và vì sao nó được sử dụng rộng rãi như vậy?</p>
+<p>Arduino là một bo mạch xử lý được dùng để lập trình tương tác với các thiết bị phần cứng như cảm biến, động cơ,… Điểm hấp dẫn ở Arduino với anh em lập trình là ngôn ngữ cực kì dễ học (giống C/C++), các ngoại vi trên bo mạch đều đã được chuẩn hóa, nên không cần biết nhiều về điện tử, chúng ta cũng có thể lập trình được những ứng dụng thú vị. Thêm nữa, vì Arduino là một platform đã được chuẩn hóa, nên đã có rất nhiều các bo mạch mở rộng (gọi là shield) để cắm chồng lên bo mạch Arduino, có thể hình dung nôm na là “library” của các ngôn ngữ lập trình. Ví dụ, muốn kết nối Internet thì có Ethernet shield, muốn điều khiển động cơ thì có Motor shield, muốn kết nối nhận tin nhắn thì có GSM shield,… Rất đơn giản, và ta chỉ phải tập trung vào việc “lắp ghép” các thành phần này và sáng tạo ra các ứng dụng cần thiết :)</p>
+<p>Có thể kể ở đây một số ứng dụng hay ho của Arduino:</p>
+<ul>
+<li><p>Robot: Arduino được dùng để làm bộ xử lý trung tâm của rất nhiều loại robot. Đó là nhờ vào khả năng đọc các thiết bị cảm biến, điều khiển động cơ,… của Arduino.</p></li>
+<li><p>Game tương tác: chúng ta có thể dùng Arduino để tương tác với Joystick, màn hình,… để chơi các trò như Tetrix, phá gach, Mario… Còn nhiều game rất sáng tạo nữa, ví dụ bạn có thể tham khảo ở đây: <a href="http://wn.com/arduino_game">http://wn.com/arduino_game</a></p></li>
+<li><p>Máy bay không người lái</p></li>
+<li><p>Mô phỏng Ipod :D (ví dụ ở đây: <a href="http://www.youtube.com/watch?v=5gy7w6R091M">http://www.youtube.com/watch?v=5gy7w6R091M</a>)</p></li>
+<li><p>và nhiều nhiều ứng dụng khác nữa …</p></li>
+</ul>
+<h1 id="để-lập-trình-arduino-cần-những-gì">Để lập trình Arduino cần những gì?</h1>
+<p>Như vậy, bạn đã biết là tuy là một bo mạch nhỏ như thế, Arduino có thể dùng vào rất nhiều ứng dụng thú vị khác nhau. Vậy để phát triển ứng dụng dựa trên Arduino, ta cần những gì? Rất đơn giản, bạn chỉ cần IDE phát triển (download ở <a href="http://arduino.cc/">đây</a>), một dây kết nối USB loại A-B, và một bo mạch Arduino là bạn có thể bắt đầu được rồi.</p>
+<p>Ngôn ngữ lập trình của Arduino dựa trên ngôn ngữ lập trình Wiring cho phần cứng. Chắc bạn đã quá quen thuộc với ngôn ngữ C/C++, như vậy việc viết code Wiring là rất dễ dàng. Cộng thêm, trên <a href="http://arduino.cc/">website</a>, có khá nhiều các library viết sẵn để điều khiển ngoại vi: LCD, sensor, motor… nên việc bạn cần làm chỉ là kết hợp chúng với nhau để tạo ứng dụng cho riêng bạn.</p>
+<h1 id="cận-cảnh-phần-cứng-của-arduino">Cận cảnh phần cứng của Arduino</h1>
+<p><img src="/images/arduino-intro/arduino-overview.gif" title="" ></p>
+<p>Hình trên là cận cảnh con Arduino Uno. Đối với chúng ta lập trình cho Arduino thì trước tiên quan tâm những thành phần được đánh số ở trên:</p>
+<ol type="1">
+<li><p>Cổng USB (loại B): đây là cổng giao tiếp để ta upload code từ PC lên vi điểu khiển. Đồng thời nó cũng là giao tiếp serial để truyền dữ liệu giữa vi điểu khiển với máy tính.</p></li>
+<li><p>Jack nguồn: để chạy Arduino thì có thể lấy nguồn từ cổng USB ở trên, nhưng không phải lúc nào cũng có thể cắm với máy tính được. Lúc đó, ta cần một nguồn 9V đến 12V.</p></li>
+<li><p>Hàng Header: đánh số từ 0 đến 12 là hàng digital pin, nhận vào hoặc xuất ra các tín hiệu số. Ngoài ra có một pin đất (GND) và pin điện áp tham chiếu (AREF).</p></li>
+<li><p>Hàng header thứ hai: chủ yếu liên quan đến điện áp đất, nguồn.</p></li>
+<li><p>Hàng header thứ ba: các chân để nhận vào hoặc xuất ra các tín hiệu analog. Ví dụ như đọc thông tin của các thiết bị cảm biến.</p></li>
+<li><p>Vi điều khiển AVR: đây là bộ xử lý trung tâm của toàn bo mạch. Với mỗi mẫu Arduino khác nhau thì con chip này khác nhau. Ở con Arduino Uno này thì sử dụng ATMega328.</p></li>
+</ol>
+<h1 id="hello-world-trên-nền-arduino">“Hello World” trên nền Arduino</h1>
+<p>Với việc học bất cứ một ngôn ngữ nào, thường người ta hay bắt đầu bằng ví dụ “Hello World”, tức là bắt máy tính bắn ra màn hình dòng chữ “Hello, World!”. Với các bạn có kinh nghiệm lập trình, việc này có lẽ quá dễ dàng, chỉ vài dòng code là được, ngôn ngữ nào cũng vậy (C, C++, Java, Python, Ruby…).</p>
+<p>Nhưng với lập trình trên Arduino thì sao? Việc bắt cái bo mạch Arduino đưa ra một thông tin báo hiệu nào đó cho ta là nó đang chạy, phải thực hiện thế nào? Nói cách khác, output của Arduino sẽ là như thế nào đây:</p>
+<ol type="1">
+<li><p>Nháy LED</p></li>
+<li><p>Kết nối với PC qua đường UART, bắn lên dòng chữ Hello World cho ta ngắm.</p></li>
+<li><p>Kết nối với một cái màn LCD, cũng bắt nó bắn lên Hello World cho ta nhìn.</p></li>
+</ol>
+<p>… vài cách nữa</p>
+<p>Trong bài mở đầu này, tôi chọn cách dễ nhất là Nháy LED. Nháy LED cũng được coi là Hello World của lập trình nhúng, với mỗi con chip mới, điều đầu tiên nên làm là nháy LED, để kiểm tra xem mình đã kiểm soát được đầu vào đầu ra cho con chip chưa :)</p>
+<p>Đầu tiên là đoạn code nháy LED:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>blink_series.c </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cm">/* </span>
+</span><span class='line'><span class="cm">  Multiple blink </span>
+</span><span class='line'><span class="cm">  Turns on and off a LED series, using Arduino pin 4,5,6,7</span>
+</span><span class='line'><span class="cm">  </span>
+</span><span class='line'><span class="cm">  written by Viet Nguyen</span>
+</span><span class='line'><span class="cm"> */</span>
+</span><span class='line'>
+</span><span class='line'> <span class="kt">int</span> <span class="n">led</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'> <span class="c1">//the setup routine runs once when you reset the Arduino</span>
+</span><span class='line'> <span class="kt">void</span> <span class="nf">setup</span><span class="p">()</span>
+</span><span class='line'> <span class="p">{</span>
+</span><span class='line'>   <span class="c1">//initialize the digital pin as an output</span>
+</span><span class='line'>   <span class="k">for</span><span class="p">(</span><span class="n">led</span> <span class="o">=</span> <span class="mi">4</span><span class="p">;</span> <span class="n">led</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">;</span> <span class="n">led</span> <span class="o">++</span><span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>     <span class="n">pinMode</span><span class="p">(</span><span class="n">led</span><span class="p">,</span> <span class="n">OUTPUT</span><span class="p">);</span> <span class="c1">//init the digital pin as output.</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'> <span class="c1">// the loop routine runs over and over again</span>
+</span><span class='line'> <span class="kt">void</span> <span class="nf">loop</span><span class="p">()</span>
+</span><span class='line'> <span class="p">{</span>
+</span><span class='line'>   <span class="k">for</span><span class="p">(</span><span class="n">led</span> <span class="o">=</span> <span class="mi">4</span><span class="p">;</span> <span class="n">led</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">;</span> <span class="n">led</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>     <span class="n">digitalWrite</span><span class="p">(</span><span class="n">led</span><span class="p">,</span> <span class="n">HIGH</span><span class="p">);</span>  <span class="c1">//turn the LED on (HIGH is the voltage level)</span>
+</span><span class='line'>     <span class="n">delay</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>      <span class="c1">//100 ms</span>
+</span><span class='line'>     <span class="n">digitalWrite</span><span class="p">(</span><span class="n">led</span><span class="p">,</span> <span class="n">LOW</span><span class="p">);</span>  <span class="c1">//turn the LED off by making the volage LOW</span>
+</span><span class='line'>     <span class="n">delay</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>      <span class="c1">//100 ms</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'> <span class="p">}</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Bạn thấy đó, đoạn code trên rất đơn giản và mang phong cách giống C/C++. Một chương trình như trên được gọi là sketch, sẽ được upload lên bo mạch Arduino qua cổng USB.</p>
+<p>Phân tích chương trình: có 2 method quan trọng nhất là setup() và loop().</p>
+<ul>
+<li><p>setup() làm nhiệm vụ khởi tạo mode cho các ngoại vi của Arduino. Hàm này sẽ được chạy một lần khi bo mạch Arduino được reset. Ở chương trình này, setup() chỉ làm nhiệm vụ đặt các chân 4,5,6,7 của Arduino sang mode output.</p></li>
+<li><p>loop() là chương trình chính của Arduino. Đoạn code trong loop() sẽ được Arduino chạy vô hạn. Trong chương trình này, có hàm digitalWrite() để đặt các chân (pin) ở mức điện áp cao (HIGH) hay thấp (LOW). Hàm tiếp theo là delay(), nhận đối số là một số nguyên, thẻ hiện số mili giây ta muốn chương trình tạm ngưng.</p></li>
+</ul>
+<p>Đó là tất cả về phần code chạy, còn nối dây như thế nào? Dưới đây là sơ đồ nối dây:</p>
+<p><img src="/images/arduino-intro/arduino_led.png"></p>
+<p>Giải thích một chút, đoạn code trên sẽ lần lượt xuất điện áp 5V ra các pin 4,5,6,7 rồi tắt. Để kiểm nghiệm, nối LED với một con trở giữa các pin đó với đất, ta sẽ thấy các đèn LED bật tắt nhịp nhàng :)</p>
+<p>Sau đây là video demo :P</p>
+<iframe width="560" height="315" src="http://www.youtube.com/embed/4EOGnKN2RiE" frameborder="0" allowfullscreen></iframe>
+
+<h1 id="kết-luận">Kết luận</h1>
+<p>Bài này đã giới thiệu những kiến thức mở đầu về Arduino, cách lập trình trên platform này và demo bài “Hello World” của Arduino. Với cộng đồng chia sẻ rất lớn, nhiều ứng dụng, Arduino rất đáng để học, cũng là một cách để bạn tiếp cận dễ dàng hơn với electronics :D</p>
+<h1 id="tham-khảo">Tham khảo</h1>
+<ol type="1">
+<li><a href="http://arduino.cc/en/">http://arduino.cc/en/</a></li>
+</ol>
 		
 		
 	</div>
@@ -708,7 +687,7 @@ $ echo $?
     <div class="center"><a href="/blog/archives">Blog Archives</a></div>
 </nav></div>
 			</div>
-			<footer id="footer" class="inner">Copyright &copy; 2013
+			<footer id="footer" class="inner">Copyright &copy; 2014
 
     kỹ thuật máy tính
 

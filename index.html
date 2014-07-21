@@ -7,7 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Sep 17th, 2013 iOS Comments Những Mẹo Lập Trình Với Objective-C Phần 2 Tiếp theo phần trước, trong bài viết này sẽ giới thiệu 1 kỹ thuật khác trong &hellip;">
+	<meta name="description" content="Jul 20th, 2014 linux,, programming,, sysadmin Comments Trở Lại Với Cơ Bản (2): Load Average Giới thiệu
+Load Average – tạm dịch là “giá trị tải trung &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -17,11 +18,17 @@
 
 	<link href="/atom.xml" rel="alternate" title="Blog kỹ thuật máy tính" type="application/atom+xml">
 	
-	<link rel="canonical" href="http://ktmt.github.com/">
+	<link rel="canonical" href="http://git@github.com.github.com/">
 	<link href="/favicon.png" rel="shortcut icon">
 	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
 	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+    });
+  </script>
 	<link href='http://fonts.googleapis.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
 	
 </head>
@@ -44,6 +51,8 @@
 </nav>
 <nav id="sub-nav">
 	<div class="social">
+		
+		<a class="facebook" href="http://www.facebook.com/pages/ktmtgithubio/486208978117754" title="Facebook">Facebook</a>
 		
 		
 		
@@ -84,276 +93,133 @@
   
 
 
-<time datetime="2013-09-17T10:29:00+09:00" data-updated="true" itemprop="datePublished">Sep 17<span>th</span>, 2013</time></div>
+<time datetime="2014-07-20T19:31:00+09:00" data-updated="true" itemprop="datePublished">Jul 20<span>th</span>, 2014</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/ios/'>iOS</a>
+	<a class='category' href='/blog/categories/linux/'>linux,</a>, <a class='category' href='/blog/categories/programming/'>programming,</a>, <a class='category' href='/blog/categories/sysadmin/'>sysadmin</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/09/17/nhung-meo-lap-trinh-voi-objective-c-phan-2/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2014/07/20/load-average/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/09/17/nhung-meo-lap-trinh-voi-objective-c-phan-2/" itemprop="url">Những Mẹo Lập Trình Với Objective-C Phần 2</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2014/07/20/load-average/" itemprop="url">Trở Lại Với Cơ Bản (2): Load Average</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<p>Tiếp theo phần trước, trong bài viết này sẽ giới thiệu 1 kỹ thuật khác trong Objective C: Swizzling method.</p>
+		<h1 id="giới-thiệu">Giới thiệu</h1>
+<p>Load Average – tạm dịch là “giá trị tải trung bình” – là một chỉ số liên quan đến CPU rất cơ bản và quan trọng. Việc nắm rõ ý nghĩa của chỉ số này giúp chúng ta đánh giá được hiệu năng hiện thời của máy tính cũng như sử dụng CPU nói riêng, máy tính nói chung một cách hiệu quả nhất</p>
+<p>Bài viết này bắt đầu bằng việc giải thích ý nghĩa của “giá trị tải trung bình”. Sau đó bài viết sẽ trình bày cách đánh giá chỉ số này trong thực tế. Cuối cùng bài viết đưa ra một trường hợp thực tế về cách đánh giá hiệu năng máy tính theo chỉ số này.</p>
+<h1 id="tải-trung-bình-là-gì">“Tải trung bình” là gì?</h1>
+<h2 id="ví-dụ-trạm-thu-phí">Ví dụ trạm thu phí</h2>
+<p>Để hiểu *tải trung bình&quot; là gì ta sẽ xem xét một ví dụ thực tế như sau.</p>
+<p>Bạn đang tham gia giao thông trên đường cao tốc và trước mặt của bạn là trạm thu phí đường bộ. Bạn giảm tốc để chuẩn bị qua cửa soát vé. Trạm xoát vé có 4 cửa soát vé. Tất cả các cửa đều trống và bạn chọn cửa số 1 như dưới đây.</p>
+<pre><code>    H                               &lt;-- Xe ôtô của bạn
+|   1   |   2   |   3   |   4   |   &lt;-- Trạm thu phí</code></pre>
+<p>Bạn đánh xe đến cửa số 1, trả phí cho nhân viên soát vé. Nhân viên soát vé mở barrier chắn, và bạn đi qua. Có duy nhất xe bạn qua trạm nên từ phía trạm thu phí, <em>trạm đang phục vụ 1 xe</em>.</p>
+<pre><code>|   H   |   2   |   3   |   4   |</code></pre>
+<p>Giờ tưởng tượng có nhiều xe khác cũng lưu thông trên đường cao tốc. Giả sử có trước khi bạn đến trạm thu phí, đang có 2 xe khác làm thủ tục ở cửa số 1 và số 2, bạn chú ý cửa số 3,4 còn trống nên lái xe qua cửa số 3 và làm thủ tục mà không phải chờ đợi. <em>Trạm phục vụ 3 xe</em>.</p>
+<pre><code>|   H&#39;   |   H&#39;   |   H   |   4   |</code></pre>
+<p>Có thể thấy ở 2 trường hợp trên, trạm thu phí đang làm việc khá <em>hiệu quả</em>. Các xe ôtô đi qua với thời gian chờ đợi bằng 0. Các xe ôtô đi qua trạm xoát vé một cách nhanh chóng. Người lái xe là bạn cảm thấy thoải mái vì không phải chờ đợi.</p>
+<p>Giả sử hôm nay là ngày nghỉ lễ, mọi người về quê đông nên xe khách chạy rất đông. Các gia đình tranh thủ ngày lễ nên cũng đánh xe đi chơi xa. Đường cao tốc trở nên đông đúc. Bạn đến trạm thu phí và nhận ra rằng 4 cửa đang có xe làm thủ tục. Chưa kể bạn còn đến sau 2 xe khác và phải đợi xếp hàng sau 2 xe này.</p>
+<pre><code>    H                                   &lt;-- Xe ôtô của bạn
+    H&#39;
+    H&#39;
+|   H&#39;   |   H&#39;   |   H&#39;   |   H&#39;   |   &lt;-- Trạm thu phí</code></pre>
+<p>Trong trường hợp này, bạn chắc chắn sẽ phải chờ, không những chờ các xe đang làm thủ tục tại cửa trạm mà còn chờ cả các xe đến trước bạn. Thời gian có thể bị kéo dài vì nhiều lý do như 1 xe làm thủ tục mất thời gian hơn các xe khác hoặc có sự cố ở cửa soát vé. Đứng từ góc độ của trạm thu phí, trạm đang phải xử lý số lượng xe (7 xe) nhiều hơn khả năng của trạm (4 cửa). Tại thời điểm hiện tại, trạm đang bị <em>quá tải</em>.</p>
+<p>Ta định nghĩa số lượng tải trung bình của trạm là số lượng xe mà trạm phải phục vụ trong một đơn vị thời gian. Như vậy ở ví dụ trên <em>trung bình tải</em> của trạm thu phí tại thời điểm bạn đến là 7.</p>
+<h2 id="load-average-của-cpu">Load Average của CPU</h2>
+<p>Tương tự như ví dụ trạm soát vé, “Load Average” của CPU được định nghĩa là số lượng process cần tài nguyên tính toán của CPU tại thời điểm nhất định. Giả sử tải trung bình của máy tính bạn hiện tại là 3.2, điều đó có nghĩa là tại thời điểm đó đang có trung bình 3.2 processes cần CPU xử lý. Tại thời điểm process cần CPU, nếu CPU đang rảnh process sẽ được OS cho chạy trên CPU rảnh.</p>
+<p>Mổi “cửa soát vé” trong CPU máy tính sẽ là 1 lõi CPU. Với các CPU thế hệ mới trang bị công nghệ Hyperthreading, mỗi lõi vật lý có thể hoạt động được như 2 lõi logic. Vì vậy OS sẽ nhận diện 8 lõi. Ví dụ máy tính của bạn được trang bị chip mới nhất hiện tại Corei7 MQ– 4 cores 8 threads với công nghệ Hyperthreading thì đối với hệ điều hành máy tính của bạn có 8 cores.</p>
+<p>Để kiểm tra máy tính của bạn có bao nhiêu lõi (cores), trên windows bạn có thể kiểm tra qua TaskManager &gt; Performance. Bên cạnh biểu đồ tỉ lệ sử dụng CPU nói chung là tỉ lệ sử dụng CPU của từng lõi. Số lượng cửa sổ bên tay phải là số lượng lõi logic.</p>
+<p>Trên Linux bạn có thể kiểm tra bằng nhiều cách:</p>
+<pre><code>$ top
+# ấn 1
+top - 20:38:48 up 2 days,  4:50,  1 user,  load average: 11.30, 11.54, 10.17
+Tasks: 430 total,   2 running, 428 sleeping,   0 stopped,   0 zombie
+Cpu0  : 20.5%us,  2.4%sy,  0.0%ni, 76.2%id,  0.4%wa,  0.0%hi,  0.5%si,  0.0%st
+Cpu1  : 20.2%us,  1.9%sy,  0.0%ni, 77.4%id,  0.5%wa,  0.0%hi,  0.1%si,  0.0%st
+Cpu2  : 19.9%us,  1.8%sy,  0.0%ni, 77.7%id,  0.5%wa,  0.0%hi,  0.1%si,  0.0%st
+Cpu3  : 19.9%us,  2.3%sy,  0.0%ni, 77.2%id,  0.2%wa,  0.0%hi,  0.4%si,  0.0%st
+Cpu4  : 19.8%us,  2.3%sy,  0.0%ni, 77.1%id,  0.4%wa,  0.0%hi,  0.4%si,  0.0%st
+Cpu5  : 19.7%us,  2.3%sy,  0.0%ni, 77.4%id,  0.2%wa,  0.0%hi,  0.4%si,  0.0%st
+Cpu6  : 20.1%us,  1.6%sy,  0.0%ni, 78.1%id,  0.1%wa,  0.0%hi,  0.0%si,  0.0%st
+Cpu7  : 19.6%us,  2.2%sy,  0.0%ni, 77.7%id,  0.1%wa,  0.0%hi,  0.3%si,  0.0%st
+Cpu8  : 19.4%us,  2.2%sy,  0.0%ni, 78.0%id,  0.1%wa,  0.0%hi,  0.3%si,  0.0%st
+Cpu9  : 19.8%us,  2.2%sy,  0.0%ni, 77.6%id,  0.1%wa,  0.0%hi,  0.3%si,  0.0%st
+Cpu10 : 19.5%us,  1.6%sy,  0.0%ni, 78.8%id,  0.1%wa,  0.0%hi,  0.0%si,  0.0%st
+Cpu11 : 19.9%us,  2.2%sy,  0.0%ni, 77.5%id,  0.1%wa,  0.0%hi,  0.3%si,  0.0%st
+Mem:  32846220k total, 32593588k used,   252632k free,   434464k buffers
+Swap:  4194296k total,        0k used,  4194296k free, 22380012k cached
 
-<h1>Swizzling</h1>
+PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND
+14489 hadoop    20   0 1643m 684m  16m S 104.7  2.1  32:15.93 java
+14496 hadoop    20   0 1635m 705m  16m S 104.7  2.2  32:14.63 java
+16194 hadoop    20   0 1637m 655m  16m S 104.7  2.0  29:45.06 java
+16243 hadoop    20   0 1630m 687m  16m S 104.7  2.1  29:28.34 java</code></pre>
+<p>hoặc</p>
+<pre><code>$ mpstat -P ALL
+Linux 2.6.32-358.11.1.el6.x86_64 (bb2-dn07)     07/20/2014      _x86_64_        (12 CPU)
 
-<p>Thông thường, khi muốn thêm vào 1 class có sẵn 1 vài hàm mới, chúng ta có thể dùng <code>Categories</code>, đặc biệt là các class của thư viện (ko có source code) như NSArray, NSDictionary…
-Tuy nhiên, cách dùng <code>Categories</code> có 1 hạn chế là bạn không thể override các hàm có sẵn. Vậy đây chính là lý do chúng ta cần sử dụng đến Swizzling method.</p>
-
-<p>Trong Objective C, khi bạn viết 1 đoạn code</p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="p">[</span><span class="n">self</span> <span class="nl">presentViewController:</span><span class="n">mailController</span> <span class="nl">animated:</span><span class="n">YES</span> <span class="nl">completion:</span><span class="nb">nil</span><span class="p">];</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>bạn không thực sự gọi đến hàm <code>presentViewController:animated:completion:</code> mà thay vào đó là gửi đi 1 message <code>presentViewController:animated:completion:</code>. Trong quá trình chạy, object sẽ tìm kiếm method tương ứng dựa vào id của message này. Chúng ta có thể dựa vào swizzling để thay đổi cách object tìm kiếm method tương ứng này:</p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="kt">SEL</span> <span class="n">firstMethodSelector</span> <span class="o">=</span> <span class="k">@selector</span><span class="p">(</span><span class="n">firstMethod</span><span class="p">);</span>
-</span><span class='line'><span class="kt">SEL</span> <span class="n">secondMethodSelector</span> <span class="o">=</span> <span class="k">@selector</span><span class="p">(</span><span class="n">secondMethod</span><span class="p">);</span>
-</span><span class='line'><span class="n">Method</span> <span class="n">firstMethod</span> <span class="o">=</span> <span class="n">class_getInstanceMethod</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">firstMethodSelector</span><span class="p">);</span>
-</span><span class='line'><span class="n">Method</span> <span class="n">secondMethod</span> <span class="o">=</span> <span class="n">class_getInstanceMethod</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">secondMethodSelector</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">BOOL</span> <span class="n">methodAdded</span> <span class="o">=</span> <span class="n">class_addMethod</span><span class="p">([</span><span class="n">self</span> <span class="n">class</span><span class="p">],</span>
-</span><span class='line'>                                   <span class="n">firstMethodSelector</span><span class="p">,</span>
-</span><span class='line'>                                   <span class="n">method_getImplementation</span><span class="p">(</span><span class="n">secondMethod</span><span class="p">),</span>
-</span><span class='line'>                                   <span class="n">method_getTypeEncoding</span><span class="p">(</span><span class="n">secondMethod</span><span class="p">));</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">methodAdded</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'><span class="n">class_replaceMethod</span><span class="p">([</span><span class="n">self</span> <span class="n">class</span><span class="p">],</span>
-</span><span class='line'>                      <span class="n">secondMethodSelector</span><span class="p">,</span>
-</span><span class='line'>                      <span class="n">method_getImplementation</span><span class="p">(</span><span class="n">firstMethod</span><span class="p">),</span>
-</span><span class='line'>                      <span class="n">method_getTypeEncoding</span><span class="p">(</span><span class="n">firstMethod</span><span class="p">));</span>
-</span><span class='line'><span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-</span><span class='line'>  <span class="n">method_exchangeImplementations</span><span class="p">(</span><span class="n">firstMethod</span><span class="p">,</span> <span class="n">secondMethod</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Đi từng bước cho đoạn code ở trên:</p>
-
-<ol>
-<li><p>Trước hết chúng ta tạo ra các selectors (SEL): <code>firstMethodSelector</code> và <code>secondMethodSelector</code></p></li>
-<li><p>Lấy ra các hàm tương ứng với selectors gán vào <code>firstMethod</code> và <code>secondMethod</code> Method</p></li>
-<li><p>Thêm vào class định nghĩa của method thứ 2 dưới cách gọi của method thứ nhất. Trường hợp này xảy ra khi method thứ nhất không thực sự tồn tại (trong 1 khả năng nào đó)</p></li>
-<li><p>Nếu điều này xảy ra, chúng ta cần 1 định nghĩa cho selector của method thứ 2, vì vậy thay thế nó bằng implementation của method thứ nhất (rỗng)</p></li>
-<li><p>Nếu không xảy ra, nghĩa là method thứ nhất có tồn tại, chúng ta thay đổi implementation của 2 method.</p></li>
+08:39:53 PM  CPU    %usr   %nice    %sys %iowait    %irq   %soft  %steal  %guest   %idle
+08:39:53 PM  all   19.88    0.00    2.09    0.23    0.00    0.27    0.00    0.00   77.53
+08:39:53 PM    0   20.52    0.00    2.38    0.42    0.00    0.46    0.00    0.00   76.21
+08:39:53 PM    1   20.19    0.00    1.85    0.51    0.00    0.11    0.00    0.00   77.35
+08:39:53 PM    2   19.95    0.00    1.81    0.48    0.00    0.11    0.00    0.00   77.65
+08:39:53 PM    3   19.92    0.00    2.33    0.20    0.00    0.38    0.00    0.00   77.16
+08:39:53 PM    4   19.82    0.00    2.28    0.39    0.00    0.45    0.00    0.00   77.07
+08:39:53 PM    5   19.74    0.00    2.33    0.19    0.00    0.38    0.00    0.00   77.36
+08:39:53 PM    6   20.14    0.00    1.64    0.13    0.00    0.01    0.00    0.00   78.09
+08:39:53 PM    7   19.65    0.00    2.19    0.13    0.00    0.35    0.00    0.00   77.69
+08:39:53 PM    8   19.38    0.00    2.20    0.11    0.00    0.34    0.00    0.00   77.97
+08:39:53 PM    9   19.78    0.00    2.23    0.07    0.00    0.35    0.00    0.00   77.57
+08:39:53 PM   10   19.53    0.00    1.59    0.11    0.00    0.01    0.00    0.00   78.76
+08:39:53 PM   11   19.93    0.00    2.21    0.07    0.00    0.34    0.00    0.00   77.45</code></pre>
+<p>hoặc</p>
+<pre><code>$　cat /proc/cpuinfo
+.....</code></pre>
+<h1 id="hiểu-và-đánh-giá-tải-trung-bình-như-thế-nào">Hiểu và đánh giá “tải trung bình” như thế nào?</h1>
+<p>Bên cạnh chỉ số tận dụng CPU bạn có thêm 1 chỉ số nữa gọi là “tải trung bình”. Bạn nên hiểu 2 giá trị này thế nào?</p>
+<p>Tỉ lệ tận dụng CPU nói rằng một process sử dụng CPU nhiều hay ít. Giả sử bạn có một tính toán khá lớn (ví dụ sắp xếp 10GB dữ liệu), phần lớn thời gian của CPU của bạn chắc chắn sẽ bận rộn so sánh và di chuyển dữ liệu. Phần trăm sử dụng CPU sẽ cao, thời gian rảnh (idle) của CPU chắc sẽ thấp.</p>
+<p>Tải trung bình nói rằng số lượng process đang đợi CPU là lớn hay nhỏ. Nếu số lượng process đợi CPU lớn, thời gian một process đợi sẽ dài, thời gian hoàn thành tác vụ của process đó sẽ dài. Bạn sẽ phải chờ kết quả lâu hơn. Ngược lại nếu số lượng process đợi thấp, bạn sẽ không phải đợi các process khác. Thời gian bạn đợi kết quả sẽ chỉ là thời gian tính toán.</p>
+<p>Làm thế nào để biết được số lượng process đang đợi CPU là lớn hay nhỏ? Giống như trường hợp trạm thu phí, nếu số lượng process lớn hơn số lượng lõi CPU, chắc chắn sẽ phải có process đợi. Ngược lại nếu số lượng process nhỏ hơn số lượng lõi CPU, các process hầu như sẽ không phải xếp hàng chờ đợi mà sẽ được OS gán cho lõi đang rảnh rỗi tính toán.</p>
+<p>Từ đây đặt ra câu hỏi: “đánh giá hiệu năng máy tính dựa vào tỉ lệ sử dụng CPU và tải trung bình như thế nào?”.</p>
+<p>Việc đánh giá hiệu năng CPU tùy thuộc vào từng bài toán cụ thể. Ta sẽ đánh giá về hiệu năng sử dụng CPU qua các trường hợp sau (giả sử máy tính có 6 cores 12 threads - ví dụ Intel Xeon):</p>
+<ul>
+<li>Tỉ lệ sử dụng CPU thấp (1%), tải CPU thấp (3 - 3 processes / 12 cores)</li>
+<li>Tỉ lệ sử dụng CPU cao (80%), tải CPU thấp (3 - 3 processes / 12 cores)</li>
+<li>Tỉ lệ sử dụng CPU thấp (1%), tải CPU cao (18 - 18 processes / 12 cores)</li>
+<li>Tỉ lệ sử dụng CPU cao (80%), tải CPU cao (18 - 18 processes / 12 cores)</li>
+</ul>
+<p>Trong trường hợp đầu, máy tính của bạn hầu như không dùng CPU mấy. CPU dành hầu hết thời gian cho tính toán thấp, số lượng process cũng không cao. Đứng từ góc độ chi phí, bạn đã chi tiền mua 1 CPu quá tốt so với nhu cầu thực tế :-)</p>
+<p>Trường hợp 2, bạn đang sử dụng CPU ở mức khá. Bạn bắt CPU tính toán cật lực. Tuy vậy tải trung bình của CPU chỉ có 3, có nghĩa là năng lực CPU của bạn vẫn còn rất lớn mà bạn hoàn toàn có thể tận dụng. Bạn hoàn toán có thể bật thêm 9 processes với mức tính toán như hiện tại mới có thể tận dụng được hết hiệu năng của CPU.</p>
+<p>Trường hợp 3 khá lý thú. CPU của bạn được dùng cho những tính toán rất nhẹ nhàng có thể xong ngay lập tức nhưng số lượng process cần CPU lại khá cao. Điều này nói lên rằng CPU của bạn đang bị quá tải process. Có nhiều lý do dẫn đến trường hợp này và mỗi trường hợp có nhiều cách giải quyết khác nhau. Một ví dụ cho trường hợp này là máy chủ web. Việc render các trang web là tính toán không hề nặng, tuy vậy với các máy chủ web chịu trafic lớn (số lượng connection lớn), các process phục vụ request sẽ phải xếp hàng dẫn đến tình trạng trang web bị phục vụ thời gian kéo dài hơn. Một ví dụ khác là máy chủ dành thời gian chủ yếu đợi thao tác vào ra (I/O) chẳng hạn nhưng truy vấn cơ sở dữ liệu. Số lượng query lớn, số lượng truy vấn cần sắp xếp lớn nhưng dữ liệu cần sắp xếp lại bé, thời gian đợi dữ liệu từ đĩa cứng lại cao. Vì vậy phần lớn CPU sẽ idle, nhưng tải CPU vẫn cao. Đối với trường hợp này, ta chỉ có cách là mua CPU với tần số thấp hơn và chia tải ra nhiều máy hơn để tối ưu hóa chi phí.</p>
+<p>Trường hợp 4 là trường hợp bạn đang sử dụng CPU một cách hiệu quả nhất. Mỗi cores đều bận rộn tính toán và hầu hết các cores đều được cho sử dụng. Tùy bài toán tính toán mà trường hợp này có thể là tốt hay xấu. Nếu đây là máy chủ web có lẽ đã đến lúc bạn mua thêm máy tính.</p>
+<h1 id="trường-hợp-thực-tế">Trường hợp thực tế</h1>
+<p>Hiểu được ý nghĩa của tải trung bình, chúng ta hiểu rằng sử dụng CPU hiệu quả có nghĩa là phải overload CPU. Một máy tính với CPU được sử dụng hết công suất suất là một máy tính được sử dụng tốt. Nắm được cách sử dụng vũ khí tải trung bình, chúng ta sẽ thử áp dụng cho 2 trường hợp thực tế.</p>
+<h3 id="cấu-hình-máy-chủ-web-1">Cấu hình máy chủ web 1</h3>
+<p>Bạn có máy tính chuyên trả về file static (css, image, js). Bạn sử dụng nginx và cấu hình để nginx trả về dữ liệu trong một thư mục nhất định. Bạn sẽ cấu hình nginx với bao nhiêu workers.</p>
+<p>Trả lời: 12! Nếu bạn cấu hình ít hơn 12 workers, khả năng cao là CPU của máy tính bạn đang không được sử dụng hết công suất. Tại một thời điểm nào đó sẽ có một vì cores rong chơi.</p>
+<h3 id="cấu-hình-máy-chủ-web-2">Cấu hình máy chủ web 2</h3>
+<p>Giả sử bạn có máy chủ web 12 cores (logic :-)) và load average hiện tại là 5. Liệu đã đến lúc bạn mua thêm máy chủ mới chưa?</p>
+<p>Trả lời: Không biết :-). Nếu máy chủ của bạn dành phần lớn thời gian idle đợi dữ liệu từ đĩa cứng hoặc cơ sở dữ liệu, nút thắt cổ chai hệ thống của bạn không phải là CPU mà có thể là cơ sở dữ liệu hoặc là đĩa cứng (thao tác I/O). Nếu cơ sở dữ liệu của bạn chưa hết công suất (I/O chưa hết công suất), bạn hoàn toàn không cần mua thêm máy chủ web. Bạn có thể cầu hình lại nginx / gunicorn…) để load average cao hơn (không quá 12 - số lượng cores) nhằm tận dụng hết năng lực của CPU của máy tính hiện tại).</p>
+<h3 id="cấu-hình-hadoop">Cấu hình hadoop</h3>
+<p>hadoop nổi tiếng trong giới BigData. Một datanode chạy các thủ tục map / reduce viết bằng java để lấy 1 block dữ liệu từ ổ cứng; chạy thao tác map để trích xuất dữ liệu; chạy thao tác reduce để tổng hợp dữ liệu. Một datanode thực hiện rất nhiều truy vấn dữ liệu từ ổ cúng cũng như sử dụng rất nhiều cpu cho thao tác sắp xếp, tổng hợp dữ liệu. Với 1 máy tính 12 cores, bạn sẽ cấu hình bao nhiêu java process cho thao tác map/reduce?</p>
+<p>Trả lời: Không biết :-) nhưng chắc chắn là lớn hơn 12. Bạn sẽ bất ngờ vì thấy câu trả lời hơi khác máy chủ web dù rằng bài toán có vẻ giống nhau! Lý do là: mô hình map/reduce của hadoop cần rất nhiều dữ liệu do vậy truy vấn đĩa cứng sẽ rất cao, thao tác I/O lớn. Dù thao tác sắp xếp dữ liệu cũng khá tốn CPU nhưng để có dữ liệu sắp xếp, 1 map process vẫn cần thời gian để chờ dữ liệu từ ổ cúng. Trong khoảng thời gian này CPU sẽ idle. Nếu bạn chỉ cấu hình số lượng map/reduce là 12 (bằng số lượng cores), sẽ có 1 khoảng thời gian mà các cores không làm việc vì phải chờ đĩa cứng. Vì vậy CPU thực chất sẽ có những lúc rất bận và những lúc rất rảnh. Để hạn chế thời gian rảnh của CPU, “best-practice” sẽ là overload CPU bằng cách cấu hình cho số lượng process lớn hơn số cores. Tỉ lệ được khuyến cáo là 1.5 lần. Nhờ vậy trong khi có những process đợi I/O, CPU sẽ bận rộn với các process trước đó.</p>
+<p><strong>Cấu hình cụ thể là bài toán tùy trường hợp. Bạn nên xem bản chất bài toán và hành vi của máy chủ trước khi cấu hình</strong></p>
+<h1 id="kết-luận">Kết luận</h1>
+<p>Bài viết đã giải thích ý nghĩa của load-average, một chỉ số quan trọng cũng như giới thiệu một số trường hợp cấu hình thực tế liên quan đến load-average. Hy vọng qua bài viết này, bạn hiểu được ý nghĩa của load-average, áp dụng vào thực tiễn công việc sử dụng máy tính hiệu quả nhất với chi phí tốt nhất.</p>
+<h1 id="câu-hỏi-phụ--">Câu hỏi phụ :-)</h1>
+<p>Một câu hỏi phỏng vấn vị trí SRE của Google:</p>
+<blockquote>
+<p>Lệnh uptime trả về 3 kết quả Load Average. 3 con số này là gì?</p>
+</blockquote>
+<h1 id="tài-liệu-tham-khảo">Tài liệu tham khảo</h1>
+<ol type="1">
+<li><a href="http://shop.oreilly.com/product/0636920025085.do">hadoop operations</a></li>
+<li><a href="http://www.amazon.com/Computer-Architecture-Quantitative-Approach-Edition/dp/0123704901">Computer Architecture, A Quantitative Approach</a></li>
+<li><a href="http://nginx.org/en/docs/">http://nginx.org/en/docs/</a></li>
 </ol>
-
-
-<h1>Ví dụ 1</h1>
-
-<p>Khi sử dụng Google Analystics, chúng ta muốn track page view cho tất cả các UIViewController trong project, tuy nhiên, nếu ở class nào cũng gọi hàm <code>trackView:&lt;class_name&gt;</code> thì tương đối nhiều, mà có thể còn bỏ sót. Vậy cách đơn giản nhất là override lại hàm <code>viewDidLoad</code> của <code>UIViewController</code>, trong đó chúng ta thực hiện <code>trackView</code> hoặc gọi 1 hàm khác bất kỳ, tuỳ theo mục đích của mình.</p>
-
-<p>Chúng ta viết phần code trên trong <code>Categories</code> của <code>NSObject</code>, từ đó có thể gọi nó từ bất kỳ class nào:</p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="cp">#import &quot;NSObject+Swizzle.h&quot;</span>
-</span><span class='line'><span class="cp">#import &lt;objc/runtime.h&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">@implementation</span> <span class="nc">NSObject</span> <span class="nl">(Swizzle)</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">+</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="nf">swizzleInstanceSelector:</span><span class="p">(</span><span class="kt">SEL</span><span class="p">)</span><span class="nv">originalSelector</span>
-</span><span class='line'>                 <span class="nf">withNewSelector:</span><span class="p">(</span><span class="kt">SEL</span><span class="p">)</span><span class="nv">newSelector</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="n">Method</span> <span class="n">originalMethod</span> <span class="o">=</span> <span class="n">class_getInstanceMethod</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">originalSelector</span><span class="p">);</span>
-</span><span class='line'>  <span class="n">Method</span> <span class="n">newMethod</span> <span class="o">=</span> <span class="n">class_getInstanceMethod</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">newSelector</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="kt">BOOL</span> <span class="n">methodAdded</span> <span class="o">=</span> <span class="n">class_addMethod</span><span class="p">([</span><span class="n">self</span> <span class="n">class</span><span class="p">],</span>
-</span><span class='line'>                                     <span class="n">originalSelector</span><span class="p">,</span>
-</span><span class='line'>                                     <span class="n">method_getImplementation</span><span class="p">(</span><span class="n">newMethod</span><span class="p">),</span>
-</span><span class='line'>                                     <span class="n">method_getTypeEncoding</span><span class="p">(</span><span class="n">newMethod</span><span class="p">));</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="n">methodAdded</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="n">class_replaceMethod</span><span class="p">([</span><span class="n">self</span> <span class="n">class</span><span class="p">],</span>
-</span><span class='line'>                        <span class="n">newSelector</span><span class="p">,</span>
-</span><span class='line'>                        <span class="n">method_getImplementation</span><span class="p">(</span><span class="n">originalMethod</span><span class="p">),</span>
-</span><span class='line'>                        <span class="n">method_getTypeEncoding</span><span class="p">(</span><span class="n">originalMethod</span><span class="p">));</span>
-</span><span class='line'>  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-</span><span class='line'>    <span class="n">method_exchangeImplementations</span><span class="p">(</span><span class="n">originalMethod</span><span class="p">,</span> <span class="n">newMethod</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">@end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Bây giờ tạo tiếp <code>Categories</code> cho UIViewController:</p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="cp">#import &quot;UIViewController+ Swizzling.h&quot;</span>
-</span><span class='line'><span class="cp">#import &quot;NSObject+Swizzle.h&quot;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">@implementation</span> <span class="nc">UIViewController</span> <span class="nl">(Swizzling)</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">+</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">load</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">static</span> <span class="n">dispatch_once_t</span> <span class="n">onceToken</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">dispatch_once</span><span class="p">(</span><span class="o">&amp;</span><span class="n">onceToken</span><span class="p">,</span> <span class="o">^</span><span class="p">{</span>
-</span><span class='line'>        <span class="p">[</span><span class="n">self</span> <span class="nl">swizzleInstanceSelector:</span><span class="k">@selector</span><span class="p">(</span><span class="n">viewDidLoad</span><span class="p">)</span>
-</span><span class='line'>                      <span class="nl">withNewSelector:</span><span class="k">@selector</span><span class="p">(</span><span class="n">myViewDidLoad</span><span class="p">)];</span>
-</span><span class='line'>    <span class="p">});</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="nf">myViewDidLoad</span> <span class="p">{</span>
-</span><span class='line'>    <span class="n">NSLog</span><span class="p">(</span><span class="s">@&quot;This is my view did load&quot;</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="c1">// Track Google Analystic here</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="p">[</span><span class="n">self</span> <span class="n">myViewDidLoad</span><span class="p">];</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Khi Objective-C run-time load 1 category, nó sẽ gọi đến hàm <code>load</code>. Chúng ta sử dụng dispatch_once để chắc chắn rằng hàm swizzle chỉ được gọi 1 lần. Sau khi import category này, (tốt nhất là trong file prefix - pch) tất cả các hàm <code>viewDidLoad</code> của <code>UIViewController</code> sẽ được thay thế bằng hàm <code>myViewDidLoad</code>.</p>
-
-<h1>Ví dụ 2</h1>
-
-<p>1 ứng dụng khác của swizzling method là khi debug lỗi <code>index out of range</code> của NSArray. Nhiều khi gặp phải lỗi này nhưng chương trình không dừng lại ở đúng đoạn code bị lỗi (nhảy ra hàm main). 1 cách đơn giản để xử lý trường hợp này là override hàm <code>objectAtIndex:</code> của NSArray và bắt exception trong đó. Tuy nhiên, cách sử dụng swizzling method ở đây có hơi khác 1 chút.</p>
-
-<p>Trước hết là tạo <code>Category</code> cho <code>NSArray</code>:</p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">@implementation</span> <span class="nc">NSArray</span> <span class="nl">(OutOfRange)</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">-</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">safeObjectAtIndex:</span><span class="p">(</span><span class="n">NSUInteger</span><span class="p">)</span><span class="nv">index</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="n">self</span><span class="p">.</span><span class="n">count</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="n">NSLog</span><span class="p">(</span><span class="s">@&quot;%s self = %@, pointer = %p, index = %lu&quot;</span><span class="p">,</span> <span class="n">__FUNCTION__</span><span class="p">,</span> <span class="n">self</span><span class="p">,</span> <span class="n">self</span><span class="p">,</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span><span class="n">index</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="p">[</span><span class="n">self</span> <span class="nl">safeObjectAtIndex:</span><span class="n">index</span><span class="p">];</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">@end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Đặt 1 breakpoint vào trong điều kiện <code>if (index &gt;= self.count)</code> để có thể biết được lỗi đến từ đâu.
-Sau đó, trong hàm <code>main</code> của <code>main.m</code>, thực hiện exchange method:</p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="cp">#import &lt;objc/runtime.h&gt;</span>
-</span><span class='line'><span class="cp">#import &quot;NSArray+OutOfRange.h&quot;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">Class</span> <span class="n">arrayClass</span> <span class="o">=</span> <span class="n">NSClassFromString</span><span class="p">(</span><span class="s">@&quot;__NSArrayM&quot;</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">Method</span> <span class="n">originalMethod</span> <span class="o">=</span> <span class="n">class_getInstanceMethod</span><span class="p">(</span><span class="n">arrayClass</span><span class="p">,</span> <span class="k">@selector</span><span class="p">(</span><span class="nl">objectAtIndex:</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">Method</span> <span class="n">categoryMethod</span> <span class="o">=</span> <span class="n">class_getInstanceMethod</span><span class="p">([</span><span class="n">NSArray</span> <span class="n">class</span><span class="p">],</span> <span class="k">@selector</span><span class="p">(</span><span class="nl">safeObjectAtIndex:</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">method_exchangeImplementations</span><span class="p">(</span><span class="n">originalMethod</span><span class="p">,</span> <span class="n">categoryMethod</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">NSAutoreleasePool</span> <span class="o">*</span> <span class="n">pool</span> <span class="o">=</span> <span class="p">[[</span><span class="n">NSAutoreleasePool</span> <span class="n">alloc</span><span class="p">]</span> <span class="n">init</span><span class="p">];</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">retVal</span> <span class="o">=</span> <span class="n">UIApplicationMain</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span> <span class="n">argv</span><span class="p">,</span> <span class="nb">nil</span><span class="p">,</span> <span class="nb">nil</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">[</span><span class="n">pool</span> <span class="n">release</span><span class="p">];</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">retVal</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Lưu ý ở đây chúng ta gọi Class <code>arrayClass = NSClassFromString(@"__NSArrayM");</code> là bởi vì hàm <code>objectAtIndex:</code> không đến từ <code>NSArray</code> class mà đến từ <code>__NSArrayM</code> (xem trên console debug). Chính vì thế chúng ta không thể sử dụng cách swizzle thông thường như trong ví dụ 1.</p>
-
-<p>Để test đoạn code này, trong 1 đoạn chương trình bất kỳ, tạo ra 1 bug:</p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">NSMutableArray</span> <span class="o">*</span><span class="n">list</span> <span class="o">=</span> <span class="p">[</span><span class="n">NSMutableArray</span> <span class="nl">arrayWithObjects:</span><span class="s">@&quot;1&quot;</span><span class="p">,</span> <span class="s">@&quot;2&quot;</span><span class="p">,</span> <span class="nb">nil</span><span class="p">];</span>
-</span><span class='line'><span class="n">NSLog</span><span class="p">(</span><span class="s">@&quot;Test: %@&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">list</span> <span class="nl">objectAtIndex:</span><span class="mi">3</span><span class="p">]);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Bây giờ, chạy chương trình và tận hưởng thành quả :)</p>
-
 		
 		
 	</div>
@@ -375,170 +241,48 @@ Sau đó, trong hàm <code>main</code> của <code>main.m</code>, thực hiện 
   
 
 
-<time datetime="2013-09-16T17:21:00+09:00" data-updated="true" itemprop="datePublished">Sep 16<span>th</span>, 2013</time></div>
+<time datetime="2014-06-24T20:11:00+09:00" data-updated="true" itemprop="datePublished">Jun 24<span>th</span>, 2014</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/data-analytic/'>Data Analytic</a>, <a class='category' href='/blog/categories/map-reduce/'>Map-Reduce</a>, <a class='category' href='/blog/categories/pig-latin/'>Pig Latin</a>
+	<a class='category' href='/blog/categories/thinking/'>thinking</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/09/16/data-analysis-pig-latin-programming/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2014/06/24/doi-dieu-suy-nghi-ve-thiet-ke-phan-mem/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/09/16/data-analysis-pig-latin-programming/" itemprop="url">Data Analysis - Pig Latin Programming</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2014/06/24/doi-dieu-suy-nghi-ve-thiet-ke-phan-mem/" itemprop="url">Đôi điều Suy Nghĩ về Thiết Kế Phần Mềm</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h2>Giới thiệu về Data Analysis bằng Pig Latin</h2>
-
-<p>Nếu bạn đã từng làm việc với DB, chắc hẳn đã nghe đến Hadoop và Map-Reduce.</p>
-
-<p>Map-Reduce, hay NoSQL style là một phương pháp tiếp cận ko thể thiếu cho các database lớn, tuy nhiên lượng knowhow cần phải có và phương pháp tư duy đặc thù là những rào cản lớn đối với những Data Analyser hay ngay cả những DB engineer thông thường.</p>
-
-<p>Một Data Analyser muốn viết được job cho Map-Reduce, trước hết phải có kỹ năng của 1 Java Engineer, phải re-invent 1 số hàm common (JOIN, FILTER &#8230;)</p>
-
-<p>Yahoo đã giới thiệu 1 hướng tiệp cận khác: Pig Latin, là 1 programming language build trên top của Hadoop, cú pháp tương đối giống SQL thuần tuý, tuy nhiên ở tầng dưới có thể &#8220;translate&#8221; program execution thành các job Map-Reduce và trả lại kết quả với tốc độ của Map-Reduce.</p>
-
-<p>Pig Latin (kể từ đây sẽ gọi tắt là &#8220;Pig&#8221; :D ) với bộ engine đằng sau là Java, có thể extend bằng các thư viện viết = Java hay thậm chí Python. Pig có hiệu suất phát triển cao, nghĩa là thay vì bỏ ra 1 tiếng để viết job 100 lines Map-Reduce bằng Java, bạn có thể chỉ cần 10 phút với 10 lines Pig :D</p>
-
-<p>Ở các phần tiếp theo của bài viết này, bạn sẽ được giới thiệu những bước học hỏi đầu tiên của Pig Developer.</p>
-
-<h2>Get Start</h2>
-
-<p>Rất may là chúng ta không phải ngồi tưởng tượng chay cách hoạt động của Pig.
-Cloudera có <a href="http://blog.cloudera.com/blog/2012/08/hadoop-on-your-pc-clouderas-cdh4-virtual-machine/">free VM image</a>, bạn chỉ cần down bản tương ứng về chạy trên Virtual Box hoặc VMWare.</p>
-
-<p>Pig có cấu trúc khá tương đồng với SQL. Trước hết để làm với 1 cục dữ liệu cần phân tích, cần LOAD cả cục lên rồi tiến hành &#8220;mổ xẻ&#8221;, sau đó STORE lại 1 file kết quả.</p>
-
-<figure class='code'><figcaption><span>sample.sql </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="n">city</span> <span class="o">=</span> <span class="k">LOAD</span> <span class="s1">&#39;/input/gotham/people.txt&#39;</span> <span class="k">AS</span> <span class="p">(</span><span class="n">name</span><span class="p">:</span><span class="n">chararray</span><span class="p">,</span> <span class="n">age</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">income</span><span class="p">:</span><span class="nb">int</span><span class="p">);</span>
-</span><span class='line'><span class="n">citizens</span> <span class="o">=</span> <span class="k">ORDER</span> <span class="n">city</span> <span class="k">BY</span> <span class="n">age</span><span class="p">;</span>
-</span><span class='line'><span class="n">max_age</span> <span class="o">=</span> <span class="k">LIMIT</span> <span class="n">citizens</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class='line'><span class="n">STORE</span> <span class="n">max_age</span> <span class="k">INTO</span> <span class="s1">&#39;output/gotham/analysis1.txt&#39;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>people.txt là data đầu vào được tạo ra từ table trong DB.</p>
-
-<h2>Basic functions</h2>
-
-<p>Về cơ bản Pig có những function/commands sau :</p>
-
+		<p>Là một lập trình viên, công việc hàng ngày của bạn là viết code. Viết code cũng như xây dựng vậy, bạn phải đắp từng viên gạch để xây nên một ngôi nhà. Một ngôi nhà có chắc chắn và dễ thay đổi hay không không chỉ dựa vào việc bạn có dùng gạch tốt hay không, mà còn phụ thuộc rất lớn vào nhà thiết kế.</p>
+<p>Gần đây tôi có đọc cuốn sách tựa đề <a href="http://www.poodr.com/">‘Practical Object Oriented Design in Ruby’</a> của Sandi Metz, một diễn giả ưa thích của tôi. Cuốn sách dành phần lớn để nói về các kĩ thuật thiết kế phần mềm với đối tượng là ngôn ngữ là Ruby. Tuy nhiên có rất nhiều ý tưởng của tác giả mà không chỉ giới hạn ở Ruby nói chung mà có thể áp dụng cho bất kì ngôn ngữ nào. Trong bài viết này tôi sẽ liệt kê ra một số ý trong cuốn sách mà tôi thấy rất hay và đáng nhớ.</p>
+<h1 id="why">Why</h1>
+<p>Hãy bắt đầu từ việc <strong>tại sao nên dành thời gian cho việc thiết kế phần mềm</strong>:</p>
 <ul>
-<li>LOAD, STORE: lấy dữ liệu trước khi xử lý và lưu sau khi xử lý. Ngoài ra DUMP có thể dùng để debug kiểu data.</li>
-<li>GROUP, FILTER, ORDER BY, DISTINCT, LIMIT, UNION: những xử lý cơ bản giống hệt SQL.</li>
-<li>FOREACH: loop function, để tạo nest operator (có thể hiểu đơn giản như cách tạo sub-query).</li>
-<li>JOIN: giống JOIN của SQL, cũng có INNER, LEFT OUTER hay RIGHT OUTER&#8230; Những bước JOIN trong Pig thường là những bước quan trọng khi muốn tạo relation từ 2 cục data riêng rẽ trở lên.</li>
-<li>Eval functions (MAX, AVG, COUNT, SUM&#8230;.).</li>
-<li>Math functions (SIN, COS, TAN, SQRT, &#8230;).</li>
-<li>Tuple. Bag, Map functions. Phần này khá là khó và tác giả cũng không có nhiều kinh nghiệm sử dụng.</li>
-<li>UDF (User Define Functions): là functions do developer tự viết bằng Java hoặc Python :D</li>
+<li>Việc nên dành một khoảng thời gian tương đối cho việc thiết kế phần mềm một cách nghiêm chỉnh hay không phụ thuộc vào việc: Logic mà bạn sẽ viết có tầm ảnh hưởng như thế nào đến hiện tại và tương lai. Ảnh hưởng đến hiện tại là nhiều khi một tính năng có ngay lập tức là quan trọng hơn cả. Ảnh hưởng đến tương lai là khi mà tính năng mà bạn code một cách cẩu thả sẽ ảnh hưởng vô cùng lớn đến tốc độ phát triển trong tương lai, gây ra các lỗi nghiêm trọng. Hãy nhìn việc thiết kế nghiêm chỉnh hay không như là một <strong>món nợ kĩ thuật</strong> (technical debt). Bạn thiết kế cẩu thả ở thời điểm hiện tại cũng như là bạn vay mượn thời gian ở tương lai vậy. Nếu khoảng thời gian đó không đến thì sẽ không sao, nhưng nếu đằng nào nó cũng xảy đến thì hãy suy nghĩ thật kĩ, bạn có thể đang làm mất thời gian trong tương lai của mình đó :).</li>
 </ul>
-
-
-<p>Bạn có thể xem cụ thể ở <a href="http://pig.apache.org/docs/r0.10.0/basic.html">Pig Latin Basics</a> hoặc <a href="http://pig.apache.org/docs/r0.10.0/func.html">Pig Latin Built In Functions</a></p>
-
-<h2>Challenge 1: GROUP và FOREACH</h2>
-
-<p>Bài toán đơn giản đầu tiên, với data đầu vào là thông tin của các công dân thành phố gotham như ở trên, ta cần tìm người giàu nhất (income cao nhất) trong các nhóm độ tuổi 20~30, 30~40, 40~50, v.v..</p>
-
-<figure class='code'><figcaption><span>sample.sql </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="n">city</span> <span class="o">=</span> <span class="k">LOAD</span> <span class="s1">&#39;/input/gotham/people.txt&#39;</span> <span class="k">AS</span> <span class="p">(</span><span class="n">name</span><span class="p">:</span><span class="n">chararray</span><span class="p">,</span> <span class="n">age</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">income</span><span class="p">:</span><span class="nb">int</span><span class="p">);</span>
-</span><span class='line'><span class="n">city_divide</span> <span class="o">=</span> <span class="n">FOREACH</span> <span class="n">city</span> <span class="n">GENERATE</span>
-</span><span class='line'>  <span class="n">name</span><span class="p">,</span>
-</span><span class='line'>  <span class="n">age</span><span class="o">/</span><span class="mi">10</span> <span class="k">AS</span> <span class="k">class</span><span class="p">,</span>
-</span><span class='line'>  <span class="n">income</span><span class="p">;</span>
-</span><span class='line'><span class="n">city_classes</span> <span class="o">=</span> <span class="k">GROUP</span> <span class="n">city_divide</span> <span class="k">BY</span> <span class="k">class</span><span class="p">;</span>
-</span><span class='line'><span class="n">citizens</span> <span class="o">=</span> <span class="n">FOREACH</span> <span class="n">city_classes</span> <span class="err">{</span>
-</span><span class='line'>  <span class="n">ord</span> <span class="o">=</span> <span class="k">ORDER</span> <span class="n">city_divide</span> <span class="k">BY</span> <span class="n">income</span><span class="p">;</span>
-</span><span class='line'>  <span class="n">lim</span> <span class="o">=</span> <span class="k">LIMIT</span> <span class="n">ord</span> <span class="k">BY</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class='line'>  <span class="n">GENERATE</span> <span class="k">class</span><span class="o">*</span><span class="mi">10</span> <span class="k">as</span> <span class="k">class</span><span class="p">,</span> <span class="n">lim</span><span class="p">.</span><span class="n">name</span> <span class="k">AS</span> <span class="n">name</span><span class="p">,</span> <span class="n">lim</span><span class="p">.</span><span class="n">income</span> <span class="k">AS</span> <span class="n">income</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">STORE</span> <span class="n">citizens</span> <span class="k">INTO</span> <span class="s1">&#39;output/gotham/analysis2.txt&#39;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Đến đây chắc độc gỉả đã phần nào hình dung được data analyser dùng Pig Latin như thế nào :D</p>
-
-<h2>Challende 2: JOIN</h2>
-
-<p>Giả sử ngoài data về từng công dân của gotham, chúng ra có 1 data khác về các &#8230;&#8221;super heroes&#8221;, bao gồm &#8220;strength&#8221;, &#8220;ability&#8221;. Làm thế nào để biết các &#8220;super heroes&#8221; có thu nhập bao nhiêu trong cuộc sống thường ngày của họ ?</p>
-
-<figure class='code'><figcaption><span>sample.sql </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="n">city</span> <span class="o">=</span> <span class="k">LOAD</span> <span class="s1">&#39;/input/gotham/people.txt&#39;</span> <span class="k">AS</span> <span class="p">(</span><span class="n">name</span><span class="p">:</span><span class="n">chararray</span><span class="p">,</span> <span class="n">age</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">income</span><span class="p">:</span><span class="nb">int</span><span class="p">);</span>
-</span><span class='line'><span class="n">heroes</span> <span class="o">=</span> <span class="k">LOAD</span> <span class="s1">&#39;/input/gotham/heroes.txt&#39;</span> <span class="k">AS</span> <span class="p">(</span><span class="n">name</span><span class="p">:</span><span class="n">chararray</span><span class="p">,</span> <span class="n">strength</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">ability</span><span class="p">:</span><span class="n">chararray</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">op</span> <span class="o">=</span> <span class="k">JOIN</span> <span class="n">city</span> <span class="k">BY</span> <span class="n">name</span><span class="p">,</span> <span class="n">heroes</span> <span class="k">BY</span> <span class="n">name</span><span class="p">;</span>
-</span><span class='line'><span class="n">opt</span> <span class="o">=</span> <span class="n">FOREACH</span> <span class="n">op</span> <span class="n">GENERATE</span>
-</span><span class='line'>  <span class="err">$</span><span class="mi">0</span> <span class="k">AS</span> <span class="n">name</span><span class="p">,</span>
-</span><span class='line'>  <span class="err">$</span><span class="mi">1</span> <span class="k">AS</span> <span class="n">age</span><span class="p">,</span>
-</span><span class='line'>  <span class="err">$</span><span class="mi">2</span> <span class="k">AS</span> <span class="n">income</span><span class="p">,</span>
-</span><span class='line'>  <span class="err">$</span><span class="mi">4</span> <span class="k">AS</span> <span class="n">strength</span><span class="p">,</span>
-</span><span class='line'>  <span class="err">$</span><span class="mi">5</span> <span class="k">AS</span> <span class="n">ability</span><span class="p">;</span>
-</span><span class='line'><span class="n">STORE</span> <span class="n">opt</span> <span class="k">INTO</span> <span class="s1">&#39;output/gotham/analysis3.txt&#39;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Ở đây bạn có thể để ý $0, $1, $2 lần lượt là name, age, income của biến city, $3, $4, $5 là name, strength, ability của biến heroes. Như vậy kết quả sau khi JOIN gồm tất cả các fields của 2 biến JOIN thành phần!</p>
-
-<h2>Pig Tuning</h2>
-
-<p>Qua 2 ví dụ trên đây, bạn có thể thế thấy Pig dễ phát triển như thế nào.
-Tuy nhiên khi engineer hoàn toàn không có kinh nghiệm về Map-Reduce viết Pig thì chắc chắn sẽ không thể biết cách optimize để các job Hadoop bên dưới đạt tốc độ nhanh nhất có thể.</p>
-
-<p>Để giữ có Pig program có hiệu suất xử lý cao, engineer có thể áp dụng các trick dưới đây:</p>
-
+<h1 id="how">How</h1>
+<p>Vậy việc nên dành thời gian nghiêm chỉnh để thiết kế phần mêm là nên, thì chúng ta <strong>nên thiết kế theo phương pháp thế nào</strong>:</p>
 <ul>
-<li><p>Dùng FILTER nhiều nhất và sớm nhất có thể. Nếu bạn JOIN a và b rồi lại FILTER, thì hãy tìm cách FILTER a và b trước rồi hãy JOIN.</p></li>
-<li><p>Loại bỏ các cột (các fields) không cần thiết. Giả sử biến a có 11 fields và bạn chỉ cần 7 fields, hãy &#8220;FOREACH a GENERATE ($0&#8230;$6)&#8221; để lập tức loại bỏ 4 fields.</p></li>
-<li><p>PARALLEL là 1 magic keyword. Dùng PARALLEL để chỉ định số lượng reduceers.</p></li>
+<li>Từ xưa, việc thiết kế phần mêm thường được thực hiện theo mô hình thác nước (water flow). Mô hình này được tiến hành từ trên cao xuống thấp qua các bước như nhận yêu cầu (requirement), thiết kế kiến trúc (architecture design), thiết kế cơ bản (Basic design).. Tuy nhiên mô hình này đòi hỏi bạn phải nắm rõ 90% yêu cẩu của dự án ngày từ đầu, và việc này gần như là không thể. Do đó gần đây xu hướng là <strong>Agile development</strong>, khi mà việc phát triển chia thành nhiều chặng nhỏ, mỗi chặng sẽ có yêu cầu rõ ràng, và qua mỗi chặng sẽ đánh giá lại tính khả thi của dự án và đưa ra yêu cầu cho chặng tiếp theo. Về cơ bản thì Agile development có tính khả thi hơn cả khi mà không ai có thể đoán trước được sản phẩm đầu ra khi nào sẽ hoàn thành và nên có tính năng ra sao.</li>
 </ul>
-
-
-<h2>UDFs</h2>
-
-<p>Điều cuối cùng tác giả muốn chia sẻ, là khi bạn có những tasks xử lý nhỏ sử dụng nhiều lần với các fields, hãy cố gắng viết UDFs để xử lý. Pig được ship cùng với 1 package UDF viết sẵn <a href="https://cwiki.apache.org/confluence/display/PIG/PiggyBank">Piggy Bank</a>.</p>
-
-<p>UDF có thể viết bằng Java hoặc Python. Java UDFs có tốc độ và khả năng ứng dụng trong Pig tốt hơn. Khi đã làm chủ được cấu trúc dữ liệu giữa Python/Java và Pig, bạn sẽ thấy UDFs là một feature mạnh mẽ và không thể sống thiếu :D</p>
-
-<h2>Tóm tắt:</h2>
-
+<h1 id="detail">Detail</h1>
+<p>Khi đã quyết được phương pháp thiết kế, việc quan trọng nhất, khó nhất, đó là bắt tay vào làm, bắt tay vào thiết kế chương trình. Để làm được việc này tốt quả thật là rất khó, bởi vì không có một tiêu chuẩn chung nào có thể áp dụng cho mọi yêu cầu, mọi chương trình. Bản thân tôi cũng là một junior software developer, nên tôi luôn gặp khó khăn mỗi khi viết một chương trình từ đầu (from the scratch). Có rất nhiều cách để giảm khó khăn, và tăng khả năng thiết kế của bạn như: nắm vững về các design pattern, nắm vững về domain logic, đọc về kiến trúc của các phần mêm open source nổi tiếng, và sử dụng các “luật” về thiết kế. Ở dưới đây tôi sẽ nói về một số “luật” mà cuốn sách đề cập đến, mà bản thân tôi thấy khá hữu dụng.</p>
 <ul>
-<li>Pig Latin: Ngôn ngữ được build trên top của Hadoop, với bộ core Java và engine có thể translate logic sang 1 set các Map-Reduce Jobs.</li>
-<li>VM có thể dùng cho mục đích học hỏi từ đầu <a href="http://blog.cloudera.com/blog/2012/08/hadoop-on-your-pc-clouderas-cdh4-virtual-machine/">Cloudera Pig VM image</a>.</li>
-<li>Tất cả các hàm có thể tra cứu tại <a href="http://pig.apache.org/docs/r0.10.0/func.html">Pig Latin Built In Functions</a>.</li>
-<li>UDFs được viết sẵn <a href="https://cwiki.apache.org/confluence/display/PIG/PiggyBank">Piggy Bank</a>.</li>
-<li><a href="http://blog.cloudera.com/wp-content/uploads/2010/01/IntroToPig.pdf">Slide giới thiệu tổng hợp của Cloudera</a>.</li>
+<li><p>Rule 1: Nền tảng cơ bản của việt thiết kế hướng đối tượng, là việc các đối tượng thao tác với nhau qua việc gửi thông điệp (sending message). Do đó mà việc thiết kế một phần mêm sẽ xoay quanh việc bạn thiết kế sao cho các đối tượng <strong>gửi thông điệp cho nhau thông qua một interface dễ hiểu nhất, rõ ràng nhất</strong>. Hãy luôn hình dung bài toán của bạn sẽ được giải quyết thông qua một loạt các đối tượng gửi rất nhiều loại thông điệp cho nhau, bạn sẽ hình dung được kiến trúc tổng thể của chương trình dễ dàng hơn.</p></li>
+<li><p>Rule 2: Single Responsibility: Đây là một luật khá cơ bản trong thiết kế hướng đối tượng. Ai cũng biết về luật này nhưng rất khó để làm theo, nhất là khi khối lượng chương trình tăng lên, và công việc chính của bạn hàng ngày là thêm logic vào một code base đã có. Luật này nói rằng mỗi class chỉ nên đảm trách một vai trò duy nhất. Làm thế nào để đảm bảo tính chất này là một việc khá mơ hồ. Cuốn sách nói rằng với mỗi class, bạn nên có thử <strong>mô tả về nó chỉ trong 1 câu</strong>. Làm được việc này một cách dễ dàng đảm bảo cho việc logic của class đó thống nhất và không bị lai tạp.</p></li>
+<li><p>Rule 3: Giảm sự kết dính của code (<strong>Writing loosely coupled code</strong>). Cá nhân tôi thấy rule này là rule quan trọng bậc nhất trong việc thiết kế phần mềm. Muốn đánh giá một phần mềm được thiết kế tồi hay không, hãy nhìn vào việc các logic có bị kết dính(couple) hay phụ thuộc vào nhau hay không. Vậy các bạn sẽ hỏi “kết dính” cụ thể ở đây có nghĩa là gì? Sự kết dính được hình thành khi logic này “phụ thuộc” vào logic khác. Cụ thể hơn ở khái niệm phụ thuộc, đó là việc mà khi mà một trong <strong>logic của class A lại chứa các logic class B</strong>, hay nói cách khác là khi A “biết” quá nhiều về B thì khi đó A sẽ phụ thuộc vào B. Khái niệm này hay được nhắc đến bằng những cụm từ khác như là logic hiding, tức khi thiết kế một class, bạn phải giấu logic của class đó càng nhiều càng tốt. Đó chính là lý do tại sao các ngôn ngữ như java có những keyword như public, private hay protected. Vậy quay lại từ đầu, để giảm sự kết dính của code thì chúng ta phải làm một việc là thiết kế sao cho các class không phụ thuộc vào nhau, và <strong>“biết”</strong> càng ít về nhau càng tốt. Vì vậy mỗi khi bạn viết một đoạn code nào đó, bạn hãy tự đọc lại và xem đoạn code đó có sử dụng quá nhiều logic của một class hay logic bên ngoài không. Để giải quyết cho việc “writing loosely coupled code” thì có khá nhiều kĩ thuật nổi tiếng như là: Inject Dependencies, Isolate Dependencies, Reversing Dependencies mà nếu có dịp tôi sẽ giới thiệu trong một bài viết khác. Ngoài ra còn có một luật rất hữu dụng để giải quyết vấn đề kết dính của code được gọi là <a href="http://c2.com/cgi/wiki?LawOfDemeter">Law of Demeter</a>, các bạn có thể tham khảo ở đường link tôi vừa gửi.</p></li>
 </ul>
-
-
+<h1 id="auto-testing">Auto Testing</h1>
+<p>Bản thân việc testing không nằm trong khâu “thiết kế” phần mềm. Auto testing (hay là unit test) chỉ là một bước để đảm bảo rằng logic hiện tại đang có là đang chạy “gần như là” tốt (nói gần như là do unit test không thể đảm bảo 100% việc “chạy tốt” của tất cả mọi logic. Tuy nhiên chỉ việc đảm bảo “gần như” tốt thôi đã cho thấy tầm quan trọng của testing. Có một việc mà bất kì một nhà phát triển nào khi mới bắt đầu viết test, và ngay cả những người đã quá quen việc kĩ thuật TDD (Test Driven Development) cũng sẽ băn khoăn, đó là việc <strong>nên test cái gì</strong>. Trong cuốn sách Sandi đã chia khá rõ ràng về 2 phần mà bạn nên test đó là:</p>
+<ul>
+<li>Test Incomming Message</li>
+<li>Test Ougoing Message</li>
+</ul>
+<p>Như tôi đã đề cập ở trên, bản chất của việc thiết kế hướng đối tượng xoay quanh việc các class sẽ gửi message cho nhau. Do đó khi test chúng ta cũng nên xoay quanh khái niệm mesage này. Một cách đơn giản, <strong>Incomming Message</strong> tức là các message được “gửi” đến một object X, và test các message đó tương đương với việc bạn sẽ test các interface của object X đó được công khai (public interface) ra ngoài. <strong>Outgoing Message</strong> hơi phức tạp hơn một chút, giả sử bạn có một object X với method Foo, trong Foo sẽ gọi method Bar để thực hiện một logic nào đó. Việc test Foo sẽ gọi Bar đúng N lần, với kết quả nhất định sẽ được gọi là test <strong>Outgoing Message</strong>. Việc chia ra làm 2 loại message cần test sẽ giúp cho bạn nhìn thấy một cách rõ ràng hơn cái gì nên test, và cái gì không nên test.</p>
+<h1 id="conclusion">Conclusion</h1>
+<p>Ở trên tôi đã trình bày về một số suy nghĩ của cá nhân, và các suy nghĩ của Sandi Metz trong cuốn sách về thiết kế phần mềm. Bản thân việc thiết kế được phần mềm tốt là rất khó, mà mỗi một dạng phần mềm, với mỗi một logic domain lại có một cách giải quyết riêng. Không có một cách giải quyết nào chung cho mọi bài toán cả, nhưng có một số qui tắc chung mà bán có thể áp dụng được cho nhiều bài toán khác nhau. Để nắm được các qui tắc đó đòi hỏi bạn không những phải đọc nhiều, làm nhiều, tích luỹ nhiều kinh nghiệm, mà còn dựa trên việc bạn thất bại nhiều nữa. Tạo ra các phần mềm tồi, khó bảo trì cũng là một bước đệm tốt để bạn rút kinh nghiệm cho các lần sau :).</p>
 		
 		
 	</div>
@@ -560,336 +304,97 @@ Tuy nhiên khi engineer hoàn toàn không có kinh nghiệm về Map-Reduce vi�
   
 
 
-<time datetime="2013-09-10T16:33:00+09:00" data-updated="true" itemprop="datePublished">Sep 10<span>th</span>, 2013</time></div>
+<time datetime="2014-05-19T21:35:00+09:00" data-updated="true" itemprop="datePublished">May 19<span>th</span>, 2014</time></div>
 		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/computing/'>computing</a>, <a class='category' href='/blog/categories/parallel/'>parallel</a>
+
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/09/10/su-dung-metaclass-trong-python/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2014/05/19/dinh-luat-amdahl/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/09/10/su-dung-metaclass-trong-python/" itemprop="url">Sử Dụng Metaclass Trong Python</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2014/05/19/dinh-luat-amdahl/" itemprop="url">Định Luật Amdahl</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<p>Bài viết này trình bày về metaclass và một số cách dùng metaclass trong Python. Để hiểu bài viết này, bạn nên có kiến thức về <code>magic method</code> trong Python. Cụ thể là các hàm <code>__init__</code>, <code>__new__</code>, <code>__call__</code></p>
-
-<h1>1. Metaclass là gì</h1>
-
-<p>Trong Python, tất cả mọi thứ đều là object, là instance của một Class nào đó. Để kiểm tra class của một object, chúng ta có thể sử dụng hàm <code>type</code> hoặc thuộc tính <code>__class__</code></p>
-
-<figure class='code'><figcaption><span>test.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">__class__</span>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">type</span> <span class="s">&#39;int&#39;</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">A</span><span class="p">:</span> <span class="k">pass</span>
-</span><span class='line'>    <span class="o">...</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="n">A</span><span class="p">()</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
-</span><span class='line'><span class="o">&lt;</span><span class="k">class</span> <span class="err">&#39;</span><span class="nc">__main__</span><span class="o">.</span><span class="n">A</span><span class="s">&#39;&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Trong ví dụ trên, a là một instance của class A, class của a chính là A. Vậy còn kiểu của A là gì?</p>
-
-<figure class='code'><figcaption><span>test.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="nb">type</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">type</span> <span class="s">&#39;type&#39;</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Kiểu của A là <code>type</code>. Bởi vì mặc đinh thì class A tạo bởi hàm <a href="http://docs.python.org/2/library/functions.html#type"><code>type</code></a>, với 3 tham số truyền vào</p>
-
-<figure class='code'><figcaption><span>test.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="nb">type</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">name</span> <span class="o">-</span> <span class="n">T</span><span class="err">ê</span><span class="n">n</span> <span class="n">c</span><span class="err">ủ</span><span class="n">a</span> <span class="k">class</span> <span class="nc">s</span><span class="err">ẽ</span> <span class="err">đượ</span><span class="n">c</span> <span class="n">t</span><span class="err">ạ</span><span class="n">o</span> <span class="n">ra</span>
-</span><span class='line'>    <span class="n">bases</span> <span class="o">-</span> <span class="n">Tuple</span> <span class="n">danh</span> <span class="n">s</span><span class="err">á</span><span class="n">ch</span> <span class="n">c</span><span class="err">á</span><span class="n">c</span> <span class="n">parent</span> <span class="k">class</span> <span class="nc">c</span><span class="err">ủ</span><span class="n">a</span> <span class="k">class</span> <span class="nc">s</span><span class="err">ẽ</span> <span class="err">đượ</span><span class="n">c</span> <span class="n">t</span><span class="err">ạ</span><span class="n">o</span> <span class="n">ra</span>
-</span><span class='line'>    <span class="nb">dict</span> <span class="o">-</span> <span class="n">Danh</span> <span class="n">s</span><span class="err">á</span><span class="n">ch</span> <span class="n">c</span><span class="err">á</span><span class="n">c</span> <span class="n">thu</span><span class="err">ộ</span><span class="n">c</span> <span class="n">t</span><span class="err">í</span><span class="n">nh</span> <span class="n">c</span><span class="err">ủ</span><span class="n">a</span> <span class="k">class</span> <span class="nc">s</span><span class="err">ẽ</span> <span class="err">đượ</span><span class="n">c</span> <span class="n">t</span><span class="err">ạ</span><span class="n">o</span> <span class="n">ra</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Sử dụng hàm <code>type</code>, chúng ta có thể tạo ra một class mới</p>
-
-<figure class='code'><figcaption><span>test.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">Person</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="s">&#39;Person&#39;</span><span class="p">,</span> <span class="p">(),</span> <span class="p">{</span><span class="s">&#39;country&#39;</span><span class="p">:</span> <span class="s">&#39;vietnam&#39;</span><span class="p">}</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">Person</span><span class="o">.</span><span class="n">country</span>
-</span><span class='line'><span class="n">vietnam</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Chúng ta có thể thay đổi quá trình tạo ra class A bằng cách set thuộc tính <code>__metaclass__</code> của A. Thuộc tính <code>__metaclass__</code> là một callable object (một function, hoặc một object) nhận 3 tham số truyền vào như hàm <code>type</code> nói trên.</p>
-
-<p>Khi định nghĩa một class bằng từ khoá <code>class</code>, nếu <code>__metaclass__</code> được set, metaclass sẽ được gọi sau khi các thuộc tính khác của class đã được set.</p>
-
-<figure class='code'><figcaption><span>test.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">PersonMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">PersonMeta</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">PersonMeta</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">country</span> <span class="o">=</span> <span class="s">&#39;Vietnam&#39;</span>
-</span><span class='line'>    <span class="n">people</span> <span class="o">=</span> <span class="p">[]</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><code>PersonMeta</code> sẽ được gọi với các tham số (&#8216;Person&#8217;, (object), {&#8216;country&#8217;: &#8216;Vietnam&#8217;, &#8216;people&#8217;: []}). Bằng cách metaclass được gọi cuối cùng, chúng ta có thể sử dụng metaclass để can thiệp vào qúa trình tạo ra class, cụ thể là các thuộc tính ở mức class của class đó. Có thể coi Metaclass là Class của class. Và class là một instance của Metaclass. Những thuộc tính của ở mức class của một class (các class attribute, các @classmethod) chính là các thuộc tính ở mức instance của một Metaclass</p>
-
-<h1>2. Giới thiệu một số trường hợp sử dụng Metaclass</h1>
-
-<p>Metaclass là một trong những <code>black magic</code> và rất ít khi được sử dụng trong Python.</p>
-
-<p>&#8220;Metaclasses are deeper magic than 99% of users should ever worry about. If you wonder whether you need them, you don&#8217;t (the people who actually need them know with certainty that they need them, and don&#8217;t need an explanation about why).&#8221; -Python Guru Tim Peters&#8221;</p>
-
-<p>(Tạm dịch: Metaclass sâu sắc hơn 99% những gì mà người dùng nên lo lắng. Nếu bạn phân vân khi nào bạn cần chúng, bạn sẽ không bao giờ cần (những người thực sự cần Metaclass, sẽ biết chính xác trong trường hợp nào họ cần, và không cần phải giải thích lý do vì sao)</p>
-
-<p>Tuy nhiên để giúp bạn đọc hiểu rõ metaclass, trong bài viết này, tôi trình bày 2 ví dụ về cách sử dụng metaclass</p>
-
-<h2>2.1. Sử dụng metaclass để can thiệp vào việc tạo instance của class</h2>
-
-<p>Giả sử chúng ta có B là metaclass của A. Việc tạo ra một instance của A chính là việc gọi hàm <code>A(*args, **kwargs)</code>. Nhưng vì A là một instance của B, nên gọi A, chính là gọi hàm <code>__call__</code> của một instance của B. Do đó, để can thiệp vào quá trình tạo instance của class, chúng ta có thể override hàm <code>__call__</code> trong class B</p>
-
-<p>Xét ví dụ chúng ta muốn tạo ra một Singleton class bằng Metaclass</p>
-
-<figure class='code'><figcaption><span>singleton.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">SingletonMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span> <span class="o">=</span> <span class="bp">None</span>
-</span><span class='line'>        <span class="nb">super</span><span class="p">(</span><span class="n">SingletonMeta</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="p">:</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">SingletonMeta</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__call__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</span><span class='line'>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">SingletonMeta</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;kiennt&#39;</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="mi">26</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">a</span> <span class="o">=</span> <span class="n">Person</span><span class="p">()</span>
-</span><span class='line'><span class="k">print</span> <span class="n">a</span><span class="o">.</span><span class="n">name</span> <span class="c"># kiennt</span>
-</span><span class='line'><span class="k">print</span> <span class="n">a</span><span class="o">.</span><span class="n">age</span> <span class="c"># 26</span>
-</span><span class='line'><span class="n">b</span> <span class="o">=</span> <span class="n">Person</span><span class="p">()</span>
-</span><span class='line'><span class="k">print</span> <span class="n">b</span> <span class="o">==</span> <span class="n">a</span> <span class="c"># True</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Nếu bỏ thuộc tính <code>__metaclass__</code> trong class Person, thì b sẽ không bằng a nữa</p>
-
-<figure class='code'><figcaption><span>singleton.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="c">#__metaclass__ = SingletonMeta</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;kiennt&#39;</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="mi">26</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">a</span> <span class="o">=</span> <span class="n">Person</span><span class="p">()</span>
-</span><span class='line'><span class="n">b</span> <span class="o">=</span> <span class="n">Person</span><span class="p">()</span>
-</span><span class='line'><span class="k">print</span> <span class="n">b</span> <span class="o">==</span> <span class="n">a</span> <span class="c"># False</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>2.2. Sử dụng metaclass để can thiệp vào các thuộc tính của một class</h2>
-
-<p>Hãy xem xét một ví dụ về cài đặt ORM (Object Relational Mapping)</p>
-
-<figure class='code'><figcaption><span>orm.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Field</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">pass</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">CharField</span><span class="p">(</span><span class="n">Field</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">pass</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">IntegerField</span><span class="p">(</span><span class="n">Field</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">pass</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">name</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">age</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Giờ nếu chúng ta muốn lưu một biến <code>_fields</code> để chứa tất cả các thuộc tính của class là một instance của <code>Field</code>, chúng ta có thể sử dụng metaclass để can thiệp</p>
-
-<figure class='code'><figcaption><span>orm.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">ModelMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
-</span><span class='line'>        <span class="c"># get all Field attributes</span>
-</span><span class='line'>        <span class="n">fields</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span class='line'>        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-</span><span class='line'>            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">Field</span><span class="p">):</span>
-</span><span class='line'>                <span class="n">fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">__class__</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="c">## update attrs</span>
-</span><span class='line'>        <span class="n">attrs</span><span class="p">[</span><span class="s">&#39;_fields&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fields</span>
-</span><span class='line'>        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">ModelMeta</span><span class="p">,</span> <span class="n">cls</span><span class="p">)</span><span class="o">.</span><span class="n">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">ModelMeta</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">name</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">age</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">print</span> <span class="n">Programmer</span><span class="o">.</span><span class="n">_fields</span> <span class="c"># [&lt;class &#39;__main__.IntegerField&#39;&gt;, &lt;class &#39;__main__.CharField&#39;&gt;]</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Chú ý rằng <code>__new__</code> là static class, nên chúng ta cần truyền <code>cls</code> vào trong lời gọi <code>super(ModelMeta, cls).__new__(cls, name, bases, attrs)</code></p>
-
-<p>Nếu không implement ở trong hàm <code>__new__</code>, chúng ta có thể implement ở trong hàm <code>__init__</code> của metaclass như sau</p>
-
-<figure class='code'><figcaption><span>orm.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">ModelMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span class='line'>        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-</span><span class='line'>            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">Field</span><span class="p">):</span>
-</span><span class='line'>                <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">__class__</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">ModelMeta</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">name</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">age</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">print</span> <span class="n">Programmer</span><span class="o">.</span><span class="n">_fields</span> <span class="c"># [&lt;class &#39;__main__.IntegerField&#39;&gt;, &lt;class &#39;__main__.CharField&#39;&gt;]</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Tuy nhiên cách implement này thường it khi được sử dụng bằng cách implement thứ nhất trong hàm <code>__new__</code>, vì trong Python, hàm <code>__new__</code> thường được sử dụng để allocate object, và <code>__init__</code> được sử dụng để khởi tạo object</p>
-
-<h1>3. Kết luận</h1>
-
-<p>Bài viết trình bày về khái niệm metaclass và một số cách sử dụng metaclass trong python. Với metaclass, chúng ta có thể thay đổi các thuộc tính ở mức class của một class thông qua hàm <code>__new__</code> và <code>__init__</code> của Metaclass, can thiệp vào quá trình tạo ra instance của class bằng cách thay đổi hàm <code>__call__</code> của metaclass.</p>
-
-<p>Metaclass là một trong những vấn đề khó và ít khi gặp trong python. Để hiểu và sử dụng metaclass một cách dễ dàng,cách ngăn nhất là code và đọc code python thật nhiều</p>
-
-<h1>4. Tham khảo</h1>
-
-<p><a href="http://www.amazon.com/Python-Cookbook-David-Beazley/dp/1449340377">Python Cookbook</a></p>
-
-<p><a href="https://github.com/kiddouk/redisco">redisco</a></p>
-
+		<h3 id="giới-thiệu">Giới thiệu</h3>
+<p>Có 1 người bạn gần đây bắt đầu lập trình với threads và thiết kế chương trình như sau.</p>
+<p>Chương trình có đầu vào là một mảng gồm một số phần tử (khoảng vài chục). Chương trình làm nhiệm vụ duyệt từng phần tử trong mảng, tính toán và trả về kết quả đối với từng phần tử. Bạn mình thiết kế chương trình bằng cách với mỗi phần tử trong mảng, bạn tạo một thread và cho thread thực hiện tính toán với phần tử đó.</p>
+<p>Khi mình hỏi tại sao bạn lại thiết kế chương trình như thế thì bạn trả lời: các thread sẽ chạy song song nên về lý thuyết càng nhiều thread thì chương trình chạy càng nhanh!</p>
+<p>Mình nhận ra bạn mình có về không biết định luật Amdahl, tuy đơn giản nhưng lại là một định luật rát quan trọng trong tính toán song song. Khi hiểu định luật này chắc chắn bạn sẽ có cái nhìn tổng quan hơn về hệ thống máy tính nói chung, và cụ thể là lập trình multithread nói riêng. Trong bài viết này, mình muốn giới thiệu định luật Amdahl.</p>
+<h3 id="định-luật-amdahl">Định luật Amdahl</h3>
+<p>Giả sử bạn thay CPU mới có tốc độ cao hơn CPU cũ.</p>
+<p><a href="http://en.wikipedia.org/wiki/Amdahl&#39;s_law">Định luật Amdahl</a> nói rằng sự tằng tốc nhờ cải thiện hiệu năng của CPU = thời gian chạy toàn bộ tác vụ khi sử dụng CPU cũ / thời gian chạy toàn bộ tác vụ khi sử dụng CPU mới.</p>
+<p>Độ tăng tốc phụ thuộc vào 2 thừa số:</p>
+<ul>
+<li>Tỉ lệ chương trình có thể cải thiện nhờ CPU mới. Ví dụ chương trình của bạn có 60 tính toán, 20 tính toán có thể được chuyển qua CPU mới (ví dụ CPU mới cung cấp tập lệnh mà CPU không có) như vậy tỉ lệ này là 20/60. Tỉ lệ này luôn nhỏ hơn hoặc bằng 1.</li>
+<li>Độ Tăng tốc thu được thu được từ CPU mới. Ví dụ 20 tính toán ở ví dụ trên ở CPU cũ hết 5s, CPU mới hết 2s, độ tăng tốc sẽ là 5/2</li>
+</ul>
+<p>Thời gian chạy với CPU mới = Thời gian chạy CPU cũ * (1 - tỉ lệ chương trình có thể cải thiện nhờ CPU mới + tỉ lệ chương trình có thể cải thiện nhờ CPU mới / độc tăng tốc thu được từ CPU mới).</p>
+<pre><code> Độ tăng tốc tổng thể = Thời gian chạy trên CPU cũ / Thời gian chạy trên CPU mới     
+                      = 1 / (1 - tỉ lệ chương trình cải thiện nhờ CPU mới + tỉ lệ chương trình cải thiện nhờ CPU mới / độ tăng tốc thu được từ CPU mới)</code></pre>
+<h4 id="ví-dụ-1">Ví dụ 1:</h4>
+<p>Bạn thay CPU cho máy chủ web. CPU mới chạy nhanh hơn CPU cũ 10 lần. Chương trình web của bạn giả sử tốn 60% cho SQL (I/O) và 40% tính toán (nhận kết quả từ cơ sở dữ liệu, render page). Hỏi tốc độ cải thiện từ việc thay CPU là bao nhiêu?</p>
+<p>Giải:</p>
+<ul>
+<li>Tỉ lệ chương trình có thể cải thiện nhờ CPU mới = 0.4</li>
+<li>Độ tăng tốc = 10</li>
+</ul>
+<p>Độ tăng tốc tổng thể = 1 / (0.6 + 0.4/10) = 1 / 0.64 = 1.56</p>
+<p>Vậy dù rằng CPU có tính nhanh 10 lần thì tốc độ của cả hệ thống chỉ được cải thiện 1.56 lần.</p>
+<h4 id="ví-dụ-2">Ví dụ 2:</h4>
+<p>Hàm căn bậc hai của một số thực được sử dụng rất nhiều trong đồ hoạ máy tính. Giả sử tính toán căn bậc 2 chiếm 20% tổng thời chạy của thao tác đồ hoạ. Bạn muốn tăng tốc độ của hệ thống đồ hoạ của bạn. Có 2 lựa chọn sau đây:</p>
+<ul>
+<li>Mua card đồ hoạ mới với chip tính toán nhanh hơn 10 lần.</li>
+<li>Tăng tốc độ của các thao tác số thực khác lên 1.6 lần (ngoài thao tác tính căn bậc 2). Giả sử tổng số thao tác số thực là 50% (50% tính toán của bạn liên quan đến số thực).</li>
+</ul>
+<p>Bạn sẽ đầu tư tiền hay bỏ thời gian và trí não cải thiện các thao tác còn lại.</p>
+<p>Giải:</p>
+<p>Trường hợp 1, độ tăng tốc = 1 / (0.8 + 0.2 / 10) = 1 / 0.82 = 1.22</p>
+<p>Trường hợp 2, độ tăng tốc = 1 / (0.5 + 0.5 / 1.6) = 1.23</p>
+<p>Như vậy lựa chọn 2 cho kết quả tốt hơn 1 chút!</p>
+<h4 id="quan-sát">Quan sát</h4>
+<p>Nếu thử quan sát, bạn sẽ thấy từ công thức Amdahl có thể rút ra là độ tăng tốc phụ thuộc cả vào bản chất bài toán. Nếu tỉ lệ có thể tăng tốc được không cao, việc bạn thêm song song cũng không giải quyết vấn đề gì. Nói cách khác nếu tỉ lệ cải thiện nhờ CPU mới = 0 thì độ tăng tốc tổng thể sẽ là 1 / (1 + 0/10) = 1 tức không thay đổi.</p>
+<h4 id="bạn-mình-sai-lầm-ở-đâu">Bạn mình sai lầm ở đâu?</h4>
+<p>Quay trở lợi vấn đề của bạn mình, tại sao mình lại nghĩ việc tăng số thread lên không giải quyết được tốc độ?</p>
+<p>Giả sử bạn CPU bạn có 4 cores (Ví dụ Corei7 MQ). Chương trình của bạn sẽ được lập lịch bởi kernel. Nếu bạn dùng 2 threads, tại thời điểm CPU được cấp cho process của bạn, 2 cores sẽ được sử dụng để chạy chương trình. Giả sử chương trình bạn dùng CPU để tính toán 50% thời gian, 50% thời gian còn lại được chia đều cho các cores.</p>
+<p>Nếu không dùng thread, chương trình của bạn là 1 chương trình liên tục bình thường, tốc độ sẽ cải thiện sẽ là:</p>
+<pre><code>Độ tăng tốc = 1 / (0.5 + 0.5 / 1) = 1 (không tăng tí nào!)</code></pre>
+<p>Nếu bạn dùng 2 threads:</p>
+<p>Độ tăng tốc = 1 / (0.5 + 0.5 / 2) = 1.33 (Tăng 33%!)</p>
+<p>Nếu bạn dùng 4 threads:</p>
+<pre><code>Độ tăng tốc = 1 / (0.5 + 0.5 / 4) = 1.6 (Tăng 60%!)</code></pre>
+<p>Nếu dùng 8 threads, bạn mong chờ tốc độ tăng tốc là 1.7! Sai lầm! Lý do: giống như quan sát ở trên, bản thân việc chia việc cho CPU không phải là việc làm song song được. Nói cách khác CPU chỉ thực hiện được cùng 1 lúc 4 tác vụ. Nếu có nhiều hơn 4 tác vụ, tỉ lệ thực hiện song song (số task thực hiện đồng thời không đổi, nhưng só task phải thực hiện tăng lên) sẽ giảm khiến hiệu năng toàn hệ thống giảm xuống.</p>
+<p>Ví dụ ta có 4 threads, thì số task có thể tận dụng được CPU là 100%. Khi ta có 5 threads, số threads có thể tận dụng được CPU sẽ giảm xuống 80%. Ta có thể xem sự thay đổi về hiệu năng so sánh tương đối với trường hợp 1 thread như sau:</p>
+<p>4 threads: Độ tăng tốc = 1 / (0 + 1 / 4) = 4</p>
+<p>5 threads: Độ tăng tốc = 1 / (0.2 + 0.8 / 4) = 1 / 0.4 = 2.5</p>
+<p>Như vậy độ tăng tốc tương đối với trường hợp chỉ sử dụng 1 thread đã giảm từ 4 lần xuông còn 2.5 lần.</p>
+<p>Nói cách khác, khi tất cả các cores đã làm việc thì việc tăng threads sẽ chỉ làm tăng thêm phần không thể tính song song, khiến hiệu năng hệ thống giảm. Ngoài ra còn có các chi phí khác mà ta chưa kể đến như: tạo một thread cũng tốn thời gian, bộ nhớ v.v. Nói cách khác việc tăng thread không làm tăng tốc độ chương trình mà nhiều trường hợp còn làm giảm tốc độ chạy. Suy nghĩ lúc đầu của bạn mình là sai lầm!</p>
+<h3 id="design-nhờ-định-luật-amdahl">Design nhờ định luật Amdahl</h3>
+<p>Như ở ví dụ 2 ở trên, bạn thấy rằng việc mua card đồ hoạ mới không làm tăng hiệu năng tổng thể như việc tối ưu chương trình. Như vậy ta hoàn toàn có thể thay đổi thiết kế chương trình để làm tăng hiệu năng. Ta xét bài toán ví dụ sau đây:</p>
+<p>Nhập n. In ra tất cả các số nhỏ hơn n mà là số nguyên tố.</p>
+<p>Dưới góc độ thread, ta có 2 cách design hệ thống (Giả định hệ thống có CPU 4 cores)</p>
+<ul>
+<li>Chia n ra làm 4 phần, mỗi thread thực hiện tìm số nguyên tố trong 1 phần.</li>
+<li>Một biến đếm từ 3 -&gt; n, bước nhảy 2, cho mỗi thread đang rảnh lần lượt kiểm tra xem số hiện tại có phải là số nguyên tố không.</li>
+</ul>
+<p>Bạn sẽ chọn cách nào?</p>
+<p>Thoạt nhìn có vẻ 2 cách không có gì khác nhau, nhưng nếu để ý sẽ nhận ra là mật độ số nguyên tố không giống nhau. Nói cách khác nếu làm theo cách 1, sẽ có thread rất nhanh hoàn thành (thread phải xử lý vùng ít số nguyên tố), và có những thread phải làm việc rất vất vả (thread phải xử lý vùng có nhiều số nguyên tố). Nói cách khác cách design 1 có tỉ lệ tính toán có thể cải thiện không cao.</p>
+<p>Cách 2 thoạt nhìn có vẻ chậm nhưng lại là cách cho tỉ lệ xử lý song song cao hơn, vì việc xử lý từng số một không phụ thuộc và phân bố của số nguyên tố!</p>
+<p>Vậy ta nên thiết kế chương trình theo cách 2!</p>
+<h3 id="tổng-kết">Tổng kết</h3>
+<p>Bài viết giới thiệu định luật Amdahl, làm rõ ý nghĩa định luật cũng qua 2 ví dụ đồng thời áp dụng định luật Amdahl vào việc thiết kế bài toán đơn giản. Hy vọng qua bài viết bạn hiểu phần nào về đột tăng tốc trong tính toán song song, cũng như biết cách tính toán định lượng để đánh giá các thiết kế (Nhiều khi mua máy mới không hắn đã là tốt!).</p>
+<h3 id="quiz">Quiz</h3>
+<ol type="1">
+<li>Lý giải tại sao các hệ thống lại thiết kế dùng worker queue!</li>
+<li>mysql có biến innodb_read_io_threads. Bạn sẽ thiết lập giá trị biến này là bao nhiêu?</li>
+</ol>
+<h3 id="tài-liệu-tham-khảo">Tài liệu tham khảo</h3>
+<ol type="1">
+<li><a href="http://en.wikipedia.org/wiki/Amdahl&#39;s_law">Định luật Amdahl</a></li>
+<li><a href="http://www.amazon.com/Computer-Architecture-Quantitative-Approach-Edition/dp/0123704901">Computer Architecture, A Quantitative Approach</a></li>
+</ol>
 		
 		
 	</div>
@@ -905,7 +410,7 @@ Tuy nhiên khi engineer hoàn toàn không có kinh nghiệm về Map-Reduce vi�
     <div class="center"><a href="/blog/archives">Blog Archives</a></div>
 </nav></div>
 			</div>
-			<footer id="footer" class="inner">Copyright &copy; 2013
+			<footer id="footer" class="inner">Copyright &copy; 2014
 
     kỹ thuật máy tính
 

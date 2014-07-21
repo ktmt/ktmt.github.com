@@ -7,7 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Sử Dụng Mock Với Unittest Trong Python Unittest là gì Unit tes là các test dùng để test kiến trúc nội tại của chương trình, unit test gắn liền với &hellip;">
+	<meta name="description" content="Sử Dụng Mock Với Unittest Trong Python Unittest là gì
+Unit tes là các test dùng để test kiến trúc nội tại của chương trình, unit test gắn liền với &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -17,11 +18,17 @@
 
 	<link href="/atom.xml" rel="alternate" title="Blog kỹ thuật máy tính" type="application/atom+xml">
 	
-	<link rel="canonical" href="http://ktmt.github.com/blog/2013/05/09/mock-with-unittest-in-python/">
+	<link rel="canonical" href="http://git@github.com.github.com/blog/2013/05/09/mock-with-unittest-in-python/">
 	<link href="/favicon.png" rel="shortcut icon">
 	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
 	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+    });
+  </script>
 	<link href='http://fonts.googleapis.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
 	
 </head>
@@ -44,6 +51,8 @@
 </nav>
 <nav id="sub-nav">
 	<div class="social">
+		
+		<a class="facebook" href="http://www.facebook.com/pages/ktmtgithubio/486208978117754" title="Facebook">Facebook</a>
 		
 		
 		
@@ -68,35 +77,21 @@
 			<div class="mid-col-container">
 				<div id="content" class="inner"><article class="post" itemscope itemtype="http://schema.org/BlogPosting">
 	<h1 class="title" itemprop="name">Sử Dụng Mock Với Unittest Trong Python</h1>
-	<div class="entry-content" itemprop="articleBody"><h1>Unittest là gì</h1>
-
-<p>Unit tes là các test dùng để test kiến trúc nội tại của chương trình, unit test gắn liền với
-thiết kế chương trình. Khi viết unit test, tôi thường kiểm tra xem các hàm có
-được gọi và gọi đúng với parameter cần thiết hay không. Mỗi một unit test chỉ
-nên test 1 thứ.</p>
-
-<p>Đặc điểm của unit test là rất ngắn, một test case chỉ nên được
-viết dưới 10 dòng. Nếu bạn cần viết hơn, hãy suy nghĩ lại về thiết kế của mình.
-Các developer nên viết unit test cho các phần code mình viết. Tôi thường setup
-môi trường phát triển, để bất cứ khi nào bạn commit một đoạn code, chương trình
-quản lý mã nguồn sẽ chạy test tự động liên quan đến đoạn code đó. Điều này giúp
-tôi kiểm tra ngay được code mình viết có gây ảnh hưởng tới các phần khác hay không.</p>
-
-<p>Chính vì thế, unit test cần được chạy rất nhanh. Mỗi một đoạn code chỉ nên được
-test một lần. Nếu bạn có 2 method A và B, B gọi đến A, code A đã được viết test,
- thì code test cho B không nên test lại A lần nữa</p>
-
-<p>Unit test không nhất thiết phải cover hết code của bạn. Nếu cover được đầy đủ thì
-rất tốt, nhưng công sức bỏ ra sẽ rất lớn. Hãy viết unit test đủ để bạn thấy tự tin
-khi deploy code của mình.</p>
-
-<h1>Sử dụng mock với unittest</h1>
-
-<p>Tôi có một class sinh ra empty image với kích thước có sẵn, kèm theo barcode image
-ở vị trí đã được định trước</p>
-
-<figure class='code'><figcaption><span>generator/images.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+	<div class="entry-content" itemprop="articleBody"><h1 id="unittest-là-gì">Unittest là gì</h1>
+<p>Unit tes là các test dùng để test kiến trúc nội tại của chương trình, unit test gắn liền với thiết kế chương trình. Khi viết unit test, tôi thường kiểm tra xem các hàm có được gọi và gọi đúng với parameter cần thiết hay không. Mỗi một unit test chỉ nên test 1 thứ.</p>
+<p>Đặc điểm của unit test là rất ngắn, một test case chỉ nên được viết dưới 10 dòng. Nếu bạn cần viết hơn, hãy suy nghĩ lại về thiết kế của mình. Các developer nên viết unit test cho các phần code mình viết. Tôi thường setup môi trường phát triển, để bất cứ khi nào bạn commit một đoạn code, chương trình quản lý mã nguồn sẽ chạy test tự động liên quan đến đoạn code đó. Điều này giúp tôi kiểm tra ngay được code mình viết có gây ảnh hưởng tới các phần khác hay không.</p>
+<p>Chính vì thế, unit test cần được chạy rất nhanh. Mỗi một đoạn code chỉ nên được test một lần. Nếu bạn có 2 method A và B, B gọi đến A, code A đã được viết test, thì code test cho B không nên test lại A lần nữa</p>
+<p>Unit test không nhất thiết phải cover hết code của bạn. Nếu cover được đầy đủ thì rất tốt, nhưng công sức bỏ ra sẽ rất lớn. Hãy viết unit test đủ để bạn thấy tự tin khi deploy code của mình.</p>
+<h1 id="sử-dụng-mock-với-unittest">Sử dụng mock với unittest</h1>
+<p>Tôi có một class sinh ra empty image với kích thước có sẵn, kèm theo barcode image ở vị trí đã được định trước</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>generator/images.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -156,17 +151,22 @@ khi deploy code của mình.</p>
 </span><span class='line'>        <span class="n">image</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">BACK_COVER_IMAGE_PATH</span><span class="p">)</span>
 </span><span class='line'>        <span class="n">image</span><span class="o">.</span><span class="n">paste</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">barcode_image</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">BARCODE_IMAGE_POSITION</span><span class="p">)</span>
 </span><span class='line'>        <span class="k">return</span> <span class="n">image</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
 <p>Để sinh ra barcode, tôi connect tới một webservice và lấy dữ liệu về. Hàm <code>utils.get_image_from_url</code> trả về Image object từ content của một URL.</p>
-
 <p>decorator <code>@lazy</code> biến một method của class thành property của class đó, và cached lại result, do đó nếu bạn gọi tới property lần thứ hai, bạn sẽ sự dụng lại giá trị từ trong cached</p>
-
 <p>Đây là code test cho class trên</p>
-
-<figure class='code'><figcaption><span>test_back_cover_image.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>test_back_cover_image.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -186,15 +186,21 @@ khi deploy code của mình.</p>
 </span><span class='line'>        <span class="n">image</span> <span class="o">=</span> <span class="n">generator</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </span><span class='line'>        <span class="n">checksum</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">tostring</span><span class="p">())</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
 </span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEquals</span><span class="p">(</span><span class="s">&#39;efeae3cb498bbd57325991c2ac5346ad&#39;</span><span class="p">,</span> <span class="n">checksum</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
 <p>Đoạn code trên generate BackCoverImage với một barcode xác định trước, và so sánh check sum của image được sinh ra, với image mà tôi đã sinh ra từ trước</p>
-
 <p>Tuy nhiên, có vấn đề ở đây. Đó là mỗi lần tôi chạy code test, tôi sẽ phải connect tới service của <code>http://www.barcoding.com</code>. Tức là tốc độ của code test sẽ bị ảnh hưởng bởi network, hơn nữa hàm <code>run()</code> của class BackCoverImage gọi tới <code>barcode_image</code>, nếu chúng ta test như trên, thì code test không phải là một unit test, mà là một integration test. Để giải quyết vấn đề này, chúng ta sử dụng thư viện <code>mock</code></p>
-
-<figure class='code'><figcaption><span>test_back_cover_image.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>test_back_cover_image.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -230,17 +236,21 @@ khi deploy code của mình.</p>
 </span><span class='line'>            <span class="n">image</span> <span class="o">=</span> <span class="n">generator</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </span><span class='line'>            <span class="n">checksum</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">tostring</span><span class="p">())</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
 </span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEquals</span><span class="p">(</span><span class="s">&#39;efeae3cb498bbd57325991c2ac5346ad&#39;</span><span class="p">,</span> <span class="n">checksum</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Tôi đã mock thuộc tính barcode_image của class BackCoverImage với <code>PropertyMock</code>.
-Tốc độ của test được cải thiện đáng kể, từ 3-4s khi test không có mock, xuống &lt; 0.3s</p>
-
-<p>Xét tiếp ví dụ tiếp theo, tôi có một class Order, mỗi khi muốn order, tôi cần
-sinh ra một pdf file cho class Order. Pdf file này cần có một page được sinh ra từ class <code>BackCoverImage</code></p>
-
-<figure class='code'><figcaption><span>order.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Tôi đã mock thuộc tính barcode_image của class BackCoverImage với <code>PropertyMock</code>. Tốc độ của test được cải thiện đáng kể, từ 3-4s khi test không có mock, xuống &lt; 0.3s</p>
+<p>Xét tiếp ví dụ tiếp theo, tôi có một class Order, mỗi khi muốn order, tôi cần sinh ra một pdf file cho class Order. Pdf file này cần có một page được sinh ra từ class <code>BackCoverImage</code></p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>order.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -260,14 +270,20 @@ sinh ra một pdf file cho class Order. Pdf file này cần có một page đư�
 </span><span class='line'>    <span class="k">def</span> <span class="nf">create_pdf_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 </span><span class='line'>        <span class="n">back_image</span> <span class="o">=</span> <span class="n">images</span><span class="o">.</span><span class="n">BackCoverImage</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </span><span class='line'>        <span class="o">...</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Để test hàm <code>create_pdf_file</code>, chúng ta sẽ mock <code>BackCoverImage.run</code> với một Image
-và kiểm tra xem hàm đó có được gọi hay không?</p>
-
-<figure class='code'><figcaption><span>test_order.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Để test hàm <code>create_pdf_file</code>, chúng ta sẽ mock <code>BackCoverImage.run</code> với một Image và kiểm tra xem hàm đó có được gọi hay không?</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>test_order.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -293,23 +309,15 @@ và kiểm tra xem hàm đó có được gọi hay không?</p>
 </span><span class='line'>            <span class="n">order</span> <span class="o">=</span> <span class="n">Order</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="mi">212</span><span class="p">)</span>
 </span><span class='line'>            <span class="n">order</span><span class="o">.</span><span class="n">create_pdf_file</span><span class="p">()</span>
 </span><span class='line'>            <span class="n">mock_backcover</span><span class="o">.</span><span class="n">assert_called_once_with</span><span class="p">(</span><span class="mi">212</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h1>Kết luận</h1>
-
-<p>Bằng việc có một bộ test để đảm bảo hệ thống đang hoạt động đúng, bạn giúp các
-lập trình viên khác trong đội của bạn, hay chính bản thân bạn (sau một thời gian)
-tự tin khi viết thêm/thay đổi code, mà không sợ ảnh hướng tới logic của những
-chức năng khác. Điều này đặc biệt hữu ích khi bạn muốn refactor code.</p>
-
-<p>Tuy nhiên để làm điều đó, bộ test của bạn cần chạy trong một thời gian ngắn.
-Nếu bộ test của bọn tốn vài phút mới thực hiện xong, thì thật khó để yêu cầu các
-developer khác chạy nó mỗi lần họ commit code.</p>
-
-<p>Bằng cách sử dụng mock, bạn có thể isolate các unittest, đảm bảo mỗi một đoạn code
-chỉ cần test duy nhất một lần, qua đó tăng tốc độ của unittest lên rất nhiều.</p>
+</span></code></pre></td></tr></table>
 </div>
+</figure>
+</notextile>
+</div>
+<h1 id="kết-luận">Kết luận</h1>
+<p>Bằng việc có một bộ test để đảm bảo hệ thống đang hoạt động đúng, bạn giúp các lập trình viên khác trong đội của bạn, hay chính bản thân bạn (sau một thời gian) tự tin khi viết thêm/thay đổi code, mà không sợ ảnh hướng tới logic của những chức năng khác. Điều này đặc biệt hữu ích khi bạn muốn refactor code.</p>
+<p>Tuy nhiên để làm điều đó, bộ test của bạn cần chạy trong một thời gian ngắn. Nếu bộ test của bọn tốn vài phút mới thực hiện xong, thì thật khó để yêu cầu các developer khác chạy nó mỗi lần họ commit code.</p>
+<p>Bằng cách sử dụng mock, bạn có thể isolate các unittest, đảm bảo mỗi một đoạn code chỉ cần test duy nhất một lần, qua đó tăng tốc độ của unittest lên rất nhiều.</p></div>
 
 </article>
 
@@ -336,7 +344,7 @@ chỉ cần test duy nhất một lần, qua đó tăng tốc độ của unitte
 </section>
 </div>
 			</div>
-			<footer id="footer" class="inner">Copyright &copy; 2013
+			<footer id="footer" class="inner">Copyright &copy; 2014
 
     kỹ thuật máy tính
 
@@ -356,8 +364,8 @@ chỉ cần test duy nhất một lần, qua đó tăng tốc độ của unitte
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://ktmt.github.com/blog/2013/05/09/mock-with-unittest-in-python/';
-        var disqus_url = 'http://ktmt.github.com/blog/2013/05/09/mock-with-unittest-in-python/';
+        var disqus_identifier = 'http://git@github.com.github.com/blog/2013/05/09/mock-with-unittest-in-python/';
+        var disqus_url = 'http://git@github.com.github.com/blog/2013/05/09/mock-with-unittest-in-python/';
         var disqus_script = 'embed.js';
       
     (function () {

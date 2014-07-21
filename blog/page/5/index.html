@@ -7,7 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Aug 2nd, 2013 sercurity,, server Comments Các Lỗi Bảo Mật Khi Xây Dựng Server Login Bằng Facebook Cho Mobile App Mở đầu Facebook là mạng xã hội phổ &hellip;">
+	<meta name="description" content="Oct 27th, 2013 lucene, search-engine, solr Comments Full Text Search, Từ Khái Niệm đến Thực Tiễn (Phần 1) Lời nói đầu
+Là một lập trình viên mà đã &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -17,11 +18,17 @@
 
 	<link href="/atom.xml" rel="alternate" title="Blog kỹ thuật máy tính" type="application/atom+xml">
 	
-	<link rel="canonical" href="http://ktmt.github.com/blog/page/5/">
+	<link rel="canonical" href="http://git@github.com.github.com/blog/page/5/">
 	<link href="/favicon.png" rel="shortcut icon">
 	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
 	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+    });
+  </script>
 	<link href='http://fonts.googleapis.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
 	
 </head>
@@ -44,6 +51,8 @@
 </nav>
 <nav id="sub-nav">
 	<div class="social">
+		
+		<a class="facebook" href="http://www.facebook.com/pages/ktmtgithubio/486208978117754" title="Facebook">Facebook</a>
 		
 		
 		
@@ -84,124 +93,108 @@
   
 
 
-<time datetime="2013-08-02T23:30:00+09:00" data-updated="true" itemprop="datePublished">Aug 2<span>nd</span>, 2013</time></div>
+<time datetime="2013-10-27T22:21:00+09:00" data-updated="true" itemprop="datePublished">Oct 27<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/sercurity/'>sercurity,</a>, <a class='category' href='/blog/categories/server/'>server</a>
+	<a class='category' href='/blog/categories/lucene/'>lucene</a>, <a class='category' href='/blog/categories/search-engine/'>search-engine</a>, <a class='category' href='/blog/categories/solr/'>solr</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/08/02/cac-loi-bao-mat-can-tranh-khi-xay-dung-server-ho-tro-login-bang-facebook-cho-mobile-app/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/10/27/full-text-search-engine/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/08/02/cac-loi-bao-mat-can-tranh-khi-xay-dung-server-ho-tro-login-bang-facebook-cho-mobile-app/" itemprop="url">Các Lỗi Bảo Mật Khi Xây Dựng Server Login Bằng Facebook Cho Mobile App</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/10/27/full-text-search-engine/" itemprop="url">Full Text Search, Từ Khái Niệm đến Thực Tiễn (Phần 1)</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h1>Mở đầu</h1>
-
-<p>Facebook là mạng xã hội phổ biến nhất hiện nay. Nếu bạn đọc blog này mà không có tài khoản
-Facebook, tôi nghi ngờ bạn đến từ Vegeta. Chức năng &#8220;Login bằng tài khoản Facebook&#8221; là môt trong
-những chức năng giúp cho người dùng đăng ký vào hệ thống ứng dụng của bạn một cách nhanh chóng.
-Phần lớn các app mobile đếu support chức năng này.</p>
-
-<p>Việc cài đặt hỗ trợ chức năng login bằng Facebook trên server tuy khá đơn giản, nhưng rất dễ xảy
-ra lỗi bảo mật, nếu bạn không chú ý. Bài viết này trình bày một vài lỗi cơ bản hay gặp khi
-cài đặt trên server cho ứng dụng trên mobile</p>
-
-<h1>Luồng thực hiện để login bằng facebook trên mobile</h1>
-
-<p>Các bước được thực hiện khi người dùng bấm vào nút &#8220;login bằng facebook&#8221; trên một ứng dụng mobile.
-Để phần trình bày bên dưới rõ ràng, tôi sẽ gọi ứng dụng mobile là A, và server của ứng dụng này
-là server A, ứng dụng trên FB cho app A là FBA</p>
-
-<ul>
-<li>Ứng dụng mobile A sẽ chuyển sang gọi ứng dụng Facebook để yêu cầu người dùng các quyền để truy
-cập vào tải khoản của người dùng trên FB</li>
-<li>Sau khi người dùng cho phép ứng dụng mobile A truy cập vào FB, ứng dụng mobile A sẽ gửi request
-lên FB server để lấy access token</li>
-<li>Server FB trả về access token cho ứng dụng mobile A</li>
-</ul>
-
-
-<p>Sau khi có được access token, ứng dụng mobile có thể làm theo 2 cách</p>
-
-<ul>
-<li><p><strong>Cách 1</strong>: ứng dụng mobile A sử dụng access token để truy cập vào FB API, lấy thông tin của user
-từ FB như user id, username, email. Và gửi những thông tin này lên cho server A. Dựa vào trường
-user id hoặc email, server A sẽ tạo mới tài khoản cho user, hoặc merge với một tài khoản có sẵn
-ở trong server, rồi trả về thông tin tài khoản cho user.</p></li>
-<li><p><strong>Cách 2</strong>: ứng dụng mobile A gửi ngay access token nhận được từ FB lên cho server A. Server A
-sử dụng access token truy cập vào FB API và check user trình bày ở cách 1.</p></li>
-</ul>
-
-
-<p>Cách 1 có ưu điểm hơn so với cách 2 ở chỗ, việc request vào FB API được thực hiện ở phía client
-do đó server sẽ giảm được tải đi một phần. Cả server và client đều có khả năng lấy được thông
-tin user trên FB bằng access token, vậy thì sử dụng client để lấy thông tin, server có
-thể sử dụng tài nguyên để làm việc khác. Hơn nữa nếu để server lấy thông tin user, thời gian để
-lấy thông tin sẽ phụ thuộc vào tốc độ mạng giữa server A và FB server.</p>
-
-<p>Mọi lý do đều dẫn đến cách 1 là tốt hơn so với cách 2 về mặt hiệu năng.</p>
-
-<p>Tuy nhiên, nếu xét về khía cạnh bảo mât, cách 1 lại cưc kỳ nguy hiểm. Vì sao vậy</p>
-
-<p>Hãy xét một trường hợp thế này:</p>
-
-<ul>
-<li>User B sử dụng app A và dùng chức năng login bằng FB để đăng nhập. App A cài đặt theo cách 1.
-Sau khi có access token, app A lấy được FB user id của B là id_B, và email là email_B. App A
-gửi những thông tin này lên cho server A. Server A nhận thấy hệ thống chưa có user nào có FB ID
-là id_B, nên tạo mới một account cho B, và trả về thông tin của B.</li>
-<li>Lần tiếp theo user B sử dụng app A để đăng nhập bằng FB, server A sẽ không tạo mới account,
-  mà trả về luôn thông tin của account đã tạo ra ở trên</li>
-<li>Hacker C, bằng cách nào đó biết được URL endpoint của server A phục vụ cho việc đăng nhập bằng FB.
-Hacker C, truyền lên một thông tin giả với trường FB ID là id_B. Lúc này server B, chỉ kiểm tra FB
-ID của request là id_B, nên sẽ vẫn coi đây là request của user B và trả về thông tin của tài khoản user B.</li>
-</ul>
-
-
-<p>Vậy là C có thể chiếm bất cứ tài khoản FB nào mà C biết FB id (có tới 1 tỉ tải khoản FB đó, nên C hẳn sẽ có rất nhiều thứ để chiếm đây)</p>
-
-<p>Với cách implement bằng cách 1, server sẽ không thể phân biệt được request nào là request thật của user.
-Để chắc chắn server khi nhận được access token, phải request tới FB API để kiểm tra xem access token
-truyền lên có phải là của user mà app A truyền lên hay không. Nói cách khác server vẫn cần request tới FB API.
-Như vậy việc client gửi request tới FB API để lấy thông tin là cũng không cần thiết.</p>
-
-<h1>Liệu server sử dụng access token để lấy thông tin của user trên FB đã là đủ?</h1>
-
-<p>Hãy nói tiếp về cách implement thứ 2. Khi server A nhận access token từ app A.
-Server gửi request tới FB API để lấy thông tin của user như FB ID và email. Sau đó tạo mới hoặc merge
-với một tài khoản đã có trong hệ thống (trùng FB ID hoặc là trùng email).</p>
-
-<p>Nhưng như thế đã là đủ?</p>
-
-<p>Ta lại xét tiếp một tình huống như sau:</p>
-
-<ul>
-<li>Hacker C tạo ra một FB app mới là FBA&#8217; và bằng cách nào đó lấy được access token của user B khi B sử dụng FBA&#8217;.</li>
-<li>Hacker C gửi request tới server A sử dụng access token FBA&#8217;.</li>
-<li>Server A dùng FBA&#8217; để lấy thông tin, và nhận thấy thông tin đó là của user B, nên server A trả
-về thông tin của tài khoản B</li>
-</ul>
-
-
-<p>Như vây, hacker C lại chiếm được tài khoản của user B trên hệ thống A bằng cách dùng một access token
-trên một FB app khác của user B</p>
-
-<p>Để bảo mật, cách duy nhất là khi server A nhận được access token, server A cần gửi request tới FB API
-để check xem access token này là từ FB Application nào.</p>
-
-<h1>Tổng kết</h1>
-
-<p>Bài viết trình bày 2 lỗi bảo mật hay gặp khi cài đặt hệ thống login bằng facebook trên server cho
-ứng dụng mobile. Lỗi thứ nhất là sử dụng client để lấy access token, mà không kiểm tra độ chính xác
-của access token. Lỗi thứ hai là chỉ kiểm tra độ chính xác của access token bằng cách thông tin
-user, mà không kiểm tra thông tin của app từ access token.</p>
-
-<p>Nếu bạn đã có một hệ thống login bằng FB, hãy check lại nó. Nếu bạn chưa từng cài đặt hệ thống này
-thì chúc mừng bạn, bạn đã được cảnh báo !!!</p>
-
+		<h1 id="lời-nói-đầu">Lời nói đầu</h1>
+<p>Là một lập trình viên mà đã từng phải thao tác với cơ sở dữ liệu, hay đơn thuần là đã từng là một trang web bán hàng ,chắc hẳn các bạn đã từng nghe qua về khái niệm “Full text search”. Khái niệm này đã được định nghĩa khá cụ thể và đầy đủ trên <a href="http://en.wikipedia.org/wiki/Full_text_search">wikipedia</a>. Nói một cách đơn giản, “Full text search” là kĩ thuật tìm kiếm trên “Full text database”, ở đây “Full text database” là cơ sở dữ liệu chứa “toàn bộ” các kí tự (text) của một hoặc một số các tài liệu, bài báo.. (document), hoặc là của websites. Trong loạt bài viết này, mình sẽ giới thiệu về Full Text Search, từ khái niệm đến ứng dụng thực tiễn của kĩ thuật này. Chuỗi bài viết không nhằm giúp bạn tìm hiểu cụ thể về Full Text Search technique trong MySQL, Lucene hay bất kì search engine nào nói riêng, mà sẽ giúp bạn hiểu thêm vầ bản chất của kĩ thuật này nói chung. Ở bài viết cuối cùng, mình sẽ cùng các bạn implement thử một “Full Text Search engine” sử dụng python, qua đó giúp các bạn nắm rõ hơn cốt lõi của vấn đề.</p>
+<p>Trong phần đầu tiên mình sẽ giới thiệu về định nghĩa của Full text search, và khái niệm cơ bản nhất trong Full Text Search, đó là Inverted Index.</p>
+<h1 id="introduction">Introduction</h1>
+Chắc hẳn các bạn đã từng dùng qua một kĩ thuật tìm kiếm rất cơ bản, đó là thông qua câu lệnh <strong>LIKE</strong> của SQL.
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="k">SELECT</span> <span class="k">column_name</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+</span><span class='line'><span class="k">FROM</span> <span class="k">table_name</span>
+</span><span class='line'><span class="k">WHERE</span> <span class="k">column_name</span> <span class="k">LIKE</span> <span class="n">pattern</span><span class="p">;</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Sử dụng <strong>LIKE</strong>, các bạn sẽ chỉ phải tìm kiếm ở column đã định trước, do đó lượng thông tin phải tìm giới hạn lại chỉ trong các column đó. Câu lệnh LIKE cũng tương đương với việc bạn matching pattern cho “từng” chuỗi của từng dòng (rows) của field tương ứng, do đó về độ phức tạp sẽ là tuyến tính với số dòng, và số kí tự của từng dòng, hay chính là “toàn bộ kí tự chứa trong field cần tìm kiếm”. Do đó sử dụng <strong>LIKE</strong> query sẽ có 2 vấn đề: - 1) Chỉ search được trong row đã định trươc - 2) Performance không tốt.</p>
+<p>Như vậy chúng ta cần một kĩ thuật tìm kiếm khác, tốt hơn <strong>LIKE</strong> query, mềm dẻo hơn, tốt về performance hơn, đó chính là <strong>Full text searchi</strong>.</p>
+<h1 id="cơ-bản-về-kĩ-thuật-full-text-search">Cơ bản về kĩ thuật Full text search</h1>
+<p>Về mặt cơ bản, điều làm nên sự khác biệt giữa Full text search và các kĩ thuật search thông thường khác chính là “Inverted Index”. Vậy đầu tiên chúng ta sẽ tìm hiểu về Inverted Index</p>
+<h2 id="inverted-index-là-gì">Inverted Index là gì</h2>
+<p>Inverted Index là kĩ thuật thay vì index theo đơn vị row(document) giống như <a href="http://dev.mysql.com/doc/refman/5.0/en/mysql-indexes.html">mysql</a> thì chúng ta sẽ tiến hành index theo đơn vị term. Cụ thể hơn, Inverted Index là một cấu trúc dữ liệu, nhằm mục đích map giữa <strong>term</strong>, và <strong>các document chứa term đó</strong></p>
+Hãy xem ví dụ cụ thể dưới đây, chúng ta có 3 documents D1, D2, D3
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="n">D1</span> <span class="o">=</span> <span class="ss">&quot;This is first document&quot;</span>
+</span><span class='line'><span class="n">D2</span> <span class="o">=</span> <span class="ss">&quot;This is second one&quot;</span>
+</span><span class='line'><span class="n">D3</span> <span class="o">=</span> <span class="ss">&quot;one two&quot;</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Inverted Index của 3 documents đó sẽ được lưu dưới dạng như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="ss">&quot;this&quot;</span> <span class="o">=&gt;</span> <span class="err">{</span><span class="n">D1</span><span class="p">,</span> <span class="n">D2</span><span class="err">}</span>
+</span><span class='line'><span class="ss">&quot;is&quot;</span> <span class="o">=&gt;</span> <span class="err">{</span><span class="n">D1</span><span class="p">,</span> <span class="n">D2</span><span class="err">}</span>
+</span><span class='line'><span class="ss">&quot;first&quot;</span> <span class="o">=&gt;</span> <span class="err">{</span><span class="n">D1</span><span class="err">}</span>
+</span><span class='line'><span class="ss">&quot;document&quot;</span> <span class="o">=&gt;</span> <span class="err">{</span><span class="n">D1</span><span class="err">}</span>
+</span><span class='line'><span class="ss">&quot;second&quot;</span> <span class="o">=&gt;</span> <span class="err">{</span><span class="n">D2</span><span class="err">}</span>
+</span><span class='line'><span class="ss">&quot;one&quot;</span> <span class="o">=&gt;</span> <span class="err">{</span><span class="n">D2</span><span class="p">,</span> <span class="n">D3</span><span class="err">}</span>
+</span><span class='line'><span class="ss">&quot;two&quot;</span> <span class="o">=&gt;</span> <span class="err">{</span><span class="n">D3</span><span class="err">}</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Từ ví dụ trên các bạn có thể hình dung được về thế nào là Inverted Index. Vậy việc tạo index theo term như trên có lợi thế nào? Việc đầu tiên là inverted index giúp cho việc tìm kiếm trên full text database trở nên nhanh hơn bao giờ hết. Hãy giả sử bạn muốn query cụm từ “This is first”, thì thay vì việc phải scan từng document một, bài toán tìm kiếm document chứa 3 term trên sẽ trở thành phép toán <strong>union</strong> của 3 tập hợp (document sets) của 3 term đó trong inverted index.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="err">{</span><span class="n">D1</span><span class="p">,</span> <span class="n">D2</span><span class="err">}</span> <span class="k">union</span> <span class="err">{</span><span class="n">D1</span><span class="p">,</span> <span class="n">D2</span><span class="err">}</span> <span class="k">union</span> <span class="err">{</span><span class="n">D1</span><span class="err">}</span> <span class="o">=</span> <span class="err">{</span><span class="n">D1</span><span class="err">}</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Một điểm lợi nữa chính là việc inverted index cực kì flexible trong việc tìm kiếm. Query đầu vào của bạn có thể là “This is first”, “first This is” hay “This first is” thì độ phức tạp tính toán của phép union kia vẫn là không đổi.</p>
+<p>Như vậy chúng ta đã hiểu phần nào về khái niệm “Thế nào là Inverted Index”. Trong phần tiếp theo chúng ta sẽ tìm hiểu về cụ thể về cách implement của inverted index, và ứng dụng của inverted index vào việc tìm kiếm thông tin thông qua các kĩ thuật chính như: <strong>tokenization technique</strong> (thông qua N-Gram hoặc Morphological Analysis), <strong>query technique</strong> và <strong>scoring technique</strong>.</p>
 		
 		
 	</div>
@@ -223,33 +216,50 @@ thì chúc mừng bạn, bạn đã được cảnh báo !!!</p>
   
 
 
-<time datetime="2013-07-28T23:45:00+09:00" data-updated="true" itemprop="datePublished">Jul 28<span>th</span>, 2013</time></div>
+<time datetime="2013-10-07T19:05:00+09:00" data-updated="true" itemprop="datePublished">Oct 7<span>th</span>, 2013</time></div>
 		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/php/'>PHP</a>, <a class='category' href='/blog/categories/reflection/'>Reflection</a>
-
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/07/28/reflection-and-reverse-engineer-in-php/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/10/07/C-vs-assembly/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/28/reflection-and-reverse-engineer-in-php/" itemprop="url">Reflection and Reverse Engineer in PHP</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/10/07/C-vs-assembly/" itemprop="url">Assembly vs C</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h2>Giới thiệu Reflection class trong PHP</h2>
-
-<p>Kể từ PHP 5 trở đi, Programmer PHP đã có bộ API Reflection rất hữu dụng để reverse-engineer các class, interfaces, function hay các extension.
-Bài viết này sẽ giới thiệu tính năng, ý nghĩa và ứng dụng của Reflection trong PHP.</p>
-
-<h2>Thế nào là dynamically-typed language ?</h2>
-
-<p>Cũng giống như Python hay Ruby, PHP là 1 dynamically-typed language.</p>
-
-<p>Chúng ta hãy cùng xem xét 2 class sau:</p>
-
-<figure class='code'><figcaption><span>Author.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+		<h1 id="giới-thiệu">Giới thiệu</h1>
+<blockquote>
+<p>“Không ngôn ngữ lập trình nào có thể sinh mã chạy nhanh hơn mã assembly được viết cẩn thận”</p>
+</blockquote>
+<p>Đây là điều đã được nói đến rất nhiều tại nhiều diễn đàn và blog công nghệ nhưng hầu như không có ví dụ minh hoạ nào cụ thể?? Để kiểm chứng tuyên bố trên, mình đã thử viết 1 chương trình bằng ngôn ngữ C, sau đó thử optimize chương trình bằng mã assembly, và cuối cùng đo thời gian chạy của 2 phiên bản. Điều mình rút ra là thực sự 1 chương trình assembly chạy nhanh hơn hẳn chương trình C tương tự, đúng như tuyên bố.</p>
+<p>Bài viết này viết về quá trình mình kiểm chứng cũng như những điều rút ra từ quá trình này.</p>
+<h1 id="bài-toán">Bài toán</h1>
+<p>Ta sẽ giải quyết bài toán: “biểu diễn tập con bằng số nhị phân”.</p>
+<p>Ta có thể biểu diễn tập hợp con của 1 tập hợp bằng 1 chuỗi bit. Ví dụ xét tập hợp 4 phần tử, thì “0101” là 1 tập con. Ta có thể diễn giải chuỗi trên như sau: tập con có sự <strong>xuất hiện</strong> của phần tử vị trí 0 và 2. Nói 1 cách mình hoạ xét chuỗi ký tự “abcd” thì với chuỗi nhị phân ở trên ta có tập con “bd”.</p>
+<p>Bài toán là làm thế nào để liệt kê tất cả các tập con 2 phần tử của tập hợp trên. Nói cách khác liệt kê các xâu có 2 ký tự từ xâu “abcd”</p>
+<h1 id="thuật-toán">Thuật toán</h1>
+<p>Ta sẽ sử dụng thuật toán được <strong>nghĩ ra</strong> bởi Bill Gosper được lưu lại trong <a href="http://www.inwap.com/pdp10/hbaker/hakmem/hakmem.html">HAKMEM</a> số 175 (Hacker Memo) nổi tiếng của phóng thí nghiệm trí tuệ nhân tạo của trường MIT.</p>
+<p>Thuật toán như sau: Giả sử có chuỗi bit <strong>x = xxx0 1111 0000</strong> (xxx là 1 chuỗi bit 0 bất kỳ). Ta cần tìm cách sinh ra chuỗi bit có số lượng bit 1 không đổi. Nói cách khác kết quả của hàm sinh sẽ từ chuỗi hiện tại phải là <strong>xxx1 0000 0111</strong>. Các bước sinh diễn ra như sau:</p>
+<ol type="1">
+<li>Thuật toán bắt đầu bằng cách tìm bit 1 cuối cùng bên phải bằng công thức s = x &amp; -x cho ra kết quả <strong>xxx0 0001 0000</strong></li>
+<li>Cộng kết quả hiện tại với x cho ra kết quả r = xxx1 0000 0000. Bit 1 ở đây là 1 bit trong kết quả.</li>
+<li>Đối với các bit kết quả còn lại, chúng ta tiến hành <strong>điều chỉnh</strong> n-1 bit 1, trong đấy n là số lượng bit 1 của nhóm bit 1 nằm bên phải nhất. Cụ thể ở đây là nhóm 1111. Ta có thể làm điều này bằng cách đầu tiên exclusive or (xor) r với x cho kết quả <strong>xxx1 1111 0000</strong>. Ta chia kết quả này cho s (là luỹ thừa của 2) và dịch kết quả có được thêm 2 vị trí nữa để loại bỏ bit không cần thiết. Kết quả có được là giá trị điểu chỉnh cuối cùng này or với r.</li>
+</ol>
+<p>Công thức đại số để tính các bước ở trên như sau:</p>
+<pre><code> s &lt;- x &amp; -x
+ y &lt;- s + x
+ y &lt;- r | (((x xor r) &gt;&gt; 2) / s)</code></pre>
+<h1 id="chương-trình.">Chương trình.</h1>
+<p>Ta sẽ benchmark bằng cách đo thời gian chạy của thuật toán viết bằng ngôn ngữ C và assembly rồi so sánh thời gian chạy của 2 chương trình viết bằng 2 ngôn ngữ với nhau.</p>
+<h2 id="chương-trình-viết-bằng-c">Chương trình viết bằng C</h2>
+<p>Để benchmark ta viết chương trình C biểu diễn thuật toán trên. binreprlà hàm giúp in giá trị nhị phân giúp quá trình kiểm tra được dễ dàng hơn. Nội dung thuật toán được viết trong hàm snoob_c:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>snoob.c </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -273,37 +283,65 @@ Bài viết này sẽ giới thiệu tính năng, ý nghĩa và ứng dụng c�
 <span class='line-number'>22</span>
 <span class='line-number'>23</span>
 <span class='line-number'>24</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">Author</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="k">private</span> <span class="nv">$name</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">private</span> <span class="nv">$birth</span><span class="p">;</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
 </span><span class='line'>
-</span><span class='line'>  <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nv">$birth</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">name</span> <span class="o">=</span> <span class="nv">$name</span><span class="p">;</span>
-</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">birth</span> <span class="o">=</span> <span class="nv">$birth</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">public</span> <span class="k">function</span> <span class="nf">getName</span><span class="p">()</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">name</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">public</span> <span class="k">function</span> <span class="nf">getBirth</span><span class="p">()</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">birth</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="nf">binrepr</span><span class="p">(</span><span class="kt">unsigned</span> <span class="n">a</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="n">r</span><span class="p">[</span><span class="mi">32</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">32</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">r</span><span class="p">[</span><span class="mi">31</span> <span class="o">-</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">a</span> <span class="o">&gt;&gt;</span> <span class="n">i</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="sc">&#39;0&#39;</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="n">puts</span><span class="p">(</span><span class="n">r</span><span class="p">);</span>
 </span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Book.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">unsigned</span> <span class="nf">snoob_c</span><span class="p">(</span><span class="kt">unsigned</span> <span class="n">x</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>        <span class="kt">unsigned</span> <span class="n">smallest</span><span class="p">,</span> <span class="n">ripple</span><span class="p">,</span> <span class="n">ones</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">smallest</span> <span class="o">=</span> <span class="n">x</span> <span class="o">&amp;</span> <span class="o">-</span><span class="n">x</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">ripple</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">smallest</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">ones</span> <span class="o">=</span> <span class="n">x</span> <span class="o">^</span> <span class="n">ripple</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">ones</span> <span class="o">=</span> <span class="p">(</span><span class="n">ones</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">smallest</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">ripple</span> <span class="o">|</span> <span class="n">ones</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">scanf</span><span class="p">(</span><span class="s">&quot;%d&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">a</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">binrepr</span><span class="p">(</span><span class="n">a</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">b</span> <span class="o">=</span> <span class="n">snoob_c</span><span class="p">(</span><span class="n">a</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">binrepr</span><span class="p">(</span><span class="n">b</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<div>
+<pre><code class='bash'>$ gcc -o snoob snoob.c
+$ ./snoob
+752
+00000000000000000000001011110000
+00000000000000000000001100000111</code></pre>
+</div>
+<p>Tuyệt thuật toán chạy đúng! Ta sẽ cho thuật toán trên chạy 100 000 000 lần và đo tổng thời gian. Ta sửa lại hàm main như dưới đây:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>snoob.c </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -313,108 +351,105 @@ Bài viết này sẽ giới thiệu tính năng, ý nghĩa và ứng dụng c�
 <span class='line-number'>8</span>
 <span class='line-number'>9</span>
 <span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">Book</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
 </span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="k">private</span> <span class="nv">$author</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">setAuthor</span><span class="p">(</span><span class="nv">$author</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">a</span> <span class="o">=</span> <span class="mi">752</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">100000000</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">b</span> <span class="o">=</span> <span class="n">snoob_c</span><span class="p">(</span><span class="n">a</span><span class="p">);</span>
 </span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">getAuthor</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
 </span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<div>
+<pre><code class='bash'>$ gcc -o snoob snoob.c
+$ time ./snoob
+./snoob  0.83s user 0.00s system 99% cpu 0.832 total</code></pre>
+</div>
+<p>Chương trình chạy 100 triệu lần hết 0.83s! C quả thực rất nhanh.</p>
+<h2 id="chương-trình-viết-bằng-assembly">Chương trình viết bằng assembly</h2>
+<p>Để có thể optimize hàm snoob, ta sẽ thử quan sát mã assembly của hàm snoob_c do gcc sinh ra:</p>
+<div>
+<pre><code class='bash'>$ gdb snoob
+(gdb) disassemble snoob_c
+Dump of assembler code for function snoob_c:
+0x0000000100000e20 &lt;snoob_c+0&gt;: push   rbp
+0x0000000100000e21 &lt;snoob_c+1&gt;: mov    rbp,rsp
+0x0000000100000e24 &lt;snoob_c+4&gt;: mov    DWORD PTR [rbp-0x4],edi
+0x0000000100000e27 &lt;snoob_c+7&gt;: mov    eax,DWORD PTR [rbp-0x4]
+0x0000000100000e2a &lt;snoob_c+10&gt;:        mov    ecx,0x0
+0x0000000100000e2f &lt;snoob_c+15&gt;:        sub    ecx,eax
+0x0000000100000e31 &lt;snoob_c+17&gt;:        mov    eax,DWORD PTR [rbp-0x4]
+0x0000000100000e34 &lt;snoob_c+20&gt;:        and    ecx,eax
+0x0000000100000e36 &lt;snoob_c+22&gt;:        mov    DWORD PTR [rbp-0x10],ecx
+0x0000000100000e39 &lt;snoob_c+25&gt;:        mov    eax,DWORD PTR [rbp-0x4]
+0x0000000100000e3c &lt;snoob_c+28&gt;:        mov    ecx,DWORD PTR [rbp-0x10]
+0x0000000100000e3f &lt;snoob_c+31&gt;:        add    eax,ecx
+0x0000000100000e41 &lt;snoob_c+33&gt;:        mov    DWORD PTR [rbp-0x14],eax
+0x0000000100000e44 &lt;snoob_c+36&gt;:        mov    eax,DWORD PTR [rbp-0x4]
+0x0000000100000e47 &lt;snoob_c+39&gt;:        mov    ecx,DWORD PTR [rbp-0x14]
+0x0000000100000e4a &lt;snoob_c+42&gt;:        xor    eax,ecx
+0x0000000100000e4c &lt;snoob_c+44&gt;:        mov    DWORD PTR [rbp-0x18],eax
+0x0000000100000e4f &lt;snoob_c+47&gt;:        mov    eax,DWORD PTR [rbp-0x18]
+0x0000000100000e52 &lt;snoob_c+50&gt;:        shr    eax,0x2
+0x0000000100000e55 &lt;snoob_c+53&gt;:        mov    ecx,DWORD PTR [rbp-0x10]
+0x0000000100000e58 &lt;snoob_c+56&gt;:        xor    edx,edx
+0x0000000100000e5a &lt;snoob_c+58&gt;:        div    ecx
+0x0000000100000e5c &lt;snoob_c+60&gt;:        mov    DWORD PTR [rbp-0x18],eax
+0x0000000100000e5f &lt;snoob_c+63&gt;:        mov    ecx,DWORD PTR [rbp-0x14]
+0x0000000100000e62 &lt;snoob_c+66&gt;:        or     ecx,eax
+0x0000000100000e64 &lt;snoob_c+68&gt;:        mov    DWORD PTR [rbp-0xc],ecx
+0x0000000100000e67 &lt;snoob_c+71&gt;:        mov    DWORD PTR [rbp-0x8],ecx
+0x0000000100000e6a &lt;snoob_c+74&gt;:        mov    eax,DWORD PTR [rbp-0x8]
+0x0000000100000e6d &lt;snoob_c+77&gt;:        pop    rbp
+0x0000000100000e6e &lt;snoob_c+78&gt;:        ret
+0x0000000100000e6f &lt;snoob_c+79&gt;:        nop
+End of assembler dump.
+(gdb)</code></pre>
+</div>
+<p>Quan sát mã assembly ta có vài nhận xét sau:</p>
+<ul>
+<li>Mã rất dài. Bên cạnh các instruction dùng để tính toán, các instruction dùng để di chuyển dữ liệu cũng chiếm khá nhiều thời gian chạy.</li>
+<li>Các kết quả tính toán trung gian được ghi ra bộ nhớ (do ta dùng các biến smalless, ripples, ones)</li>
+</ul>
+<p>Theo như <a href="https://gist.github.com/talzeus/2851656">“con số về độ trễ mà mọi lập trình viên nên biết”</a>, thì truy cập bộ nhớ / cache dù rất nhanh (tốn 0.5ns) vẫn chậm hơn rất nhiều so với truy cập trực tiếp từ thanh ghi. Ta đặt câu hỏi liệu có thể giảm thiểu lượt truy cập bộ nhớ cache được không?</p>
+<p>Quay trở lại thuật toán, ta thấy công thức đại số dùng 6 phép tính. Số lượng biến sử dụng chỉ có 4 biến. Do đó ta hoàn toàn có thể loại bổ các truy cập bộ nhớ, tính toán trực tiếp bằng các thanh ghi. Ta có hàm snoob viết bằng assembly như sau:</p>
+<div>
+<pre><code class='bash'>section .text
+                global _snoob
 
-
-<p>2 class rất đơn giản phải không :) Book hoàn toàn có thể được setAuthor() là 1 string hay là 1 instance của class Author.</p>
-
-<p>Không khó để hình dung ra kết quả của đoạn code dưới đây.</p>
-
-<figure class='code'><figcaption><span>sample.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="nv">$book1</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
-</span><span class='line'><span class="nv">$book1</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="s2">&quot;Nam Cao&quot;</span><span class="p">);</span>
-</span><span class='line'><span class="nb">var_dump</span><span class="p">(</span><span class="nv">$book1</span><span class="o">-&gt;</span><span class="na">getAuthor</span><span class="p">());</span>
-</span><span class='line'>
-</span><span class='line'><span class="nv">$book2</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
-</span><span class='line'><span class="nv">$book2</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">(</span><span class="s2">&quot;Nam Cao&quot;</span><span class="p">,</span><span class="s2">&quot;29-10-1915&quot;</span><span class="p">));</span>
-</span><span class='line'><span class="nb">var_dump</span><span class="p">(</span><span class="nv">$book1</span><span class="o">-&gt;</span><span class="na">getAuthor</span><span class="p">());</span>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Nếu chỉ dừng ở đây thì tôi với bạn chẳng có gì để nói với nhau :D
-Nhưng bạn hãy thử để ý, 1 instance của 1 class Book khi gọi đến hàm <code>setAuthor</code> hoàn toàn không có 1 khái niệm nào về <code>$author</code> cả.
-Nói cách khác, $author có thể là bất cứ 1 object nào.
-Điều gì sẽ xảy ra khi tôi modify class Book 1 chút như sau:</p>
-
-<figure class='code'><figcaption><span>Book.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">Book</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="k">private</span> <span class="nv">$author</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">setAuthor</span><span class="p">(</span><span class="nv">$author</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="nv">$author</span><span class="p">;</span>
-</span><span class='line'>      <span class="nb">var_dump</span><span class="p">(</span><span class="nv">$author</span><span class="o">-&gt;</span><span class="na">getName</span><span class="p">());</span> <span class="c1">// Attention here! Now we try to call getName() of variable $author</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">getAuthor</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Bạn thử chạy lại đoạn code sample.php bên trên, bạn sẽ thấy $book1 trả về Fatal Error nhưng $book2 sẽ chạy qua bình thường!</p>
-
-<p>Vào thời điểm runtime $book2, PHP sẽ &#8220;inspect&#8221; object $author truyền vào cho <code>setAuthor()</code> và tự hiểu $author là 1 instance của class Author và có 1 method là <code>getName()</code>.</p>
-
-<h2>Reverse engineer example</h2>
-
-<p>Vậy PHP nói riêng và các dynamically-typed language nói chung làm thế nào để nhận biết được type của object truyền vào function hay class ?</p>
-
-<p>Câu trả lời là reflection class! Bạn đã nhận ra PHP dùng reflection như thế nào qua ví dụ bên trên, bạn thậm chí có thể tự sử dụng reflection class.</p>
-
-<figure class='code'><figcaption><span>Book.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+;;; HAK Item 175
+_snoob:
+                push ebp
+                mov ebp, esp
+                mov ecx, [ebp + 8]
+                mov ebx, ecx
+                mov eax, ecx
+                neg ebx
+                and ebx, ecx
+                add eax, ebx
+                mov edi, eax
+                xor eax, ecx
+                shr eax, 2
+                xor edx, edx
+                div ebx
+                or eax, edi
+                pop ebp</code></pre>
+</div>
+<p>Ta thay code hàm main thay vì gọi đến snoob_c ta gọi đến hàm snoob ở trên:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>snoob.c </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -436,65 +471,61 @@ Nói cách khác, $author có thể là bất cứ 1 object nào.
 <span class='line-number'>20</span>
 <span class='line-number'>21</span>
 <span class='line-number'>22</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">Book</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="k">private</span> <span class="nv">$author</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">setAuthor</span><span class="p">(</span><span class="nv">$author</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="nv">$author</span><span class="p">;</span>
-</span><span class='line'>      <span class="nb">var_dump</span><span class="p">(</span><span class="nv">$author</span><span class="o">-&gt;</span><span class="na">getName</span><span class="p">());</span> <span class="c1">// original name</span>
-</span><span class='line'>      <span class="nv">$reflector</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ReflectionClass</span><span class="p">(</span><span class="nv">$author</span><span class="p">);</span> <span class="c1">// Here we start to inspect $author</span>
-</span><span class='line'>      <span class="nv">$authorName</span> <span class="o">=</span> <span class="nv">$reflector</span><span class="o">-&gt;</span><span class="na">getProperty</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">);</span> <span class="c1">// Get local variable &#39;name&#39;</span>
-</span><span class='line'>      <span class="nv">$authorName</span><span class="o">-&gt;</span><span class="na">setAccessible</span><span class="p">(</span><span class="k">true</span><span class="p">);</span> <span class="c1">// since &#39;name&#39; is a private local variable of class Author, we need access here to modify </span>
-</span><span class='line'>      <span class="nv">$authorName</span><span class="o">-&gt;</span><span class="na">setValue</span><span class="p">(</span><span class="nv">$author</span><span class="p">,</span><span class="s1">&#39;Ngo Tat To&#39;</span><span class="p">);</span> <span class="c1">// now hack the &#39;name&#39; of $author :))</span>
-</span><span class='line'>      <span class="nb">var_dump</span><span class="p">(</span><span class="nv">$author</span><span class="o">-&gt;</span><span class="na">getName</span><span class="p">());</span> <span class="c1">// Guess what will be output here :D </span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">extern</span> <span class="kt">unsigned</span> <span class="nf">snoob</span><span class="p">(</span><span class="kt">unsigned</span> <span class="n">a</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="nf">binrepr</span><span class="p">(</span><span class="kt">unsigned</span> <span class="n">a</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="n">r</span><span class="p">[</span><span class="mi">32</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">32</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">r</span><span class="p">[</span><span class="mi">31</span> <span class="o">-</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">a</span> <span class="o">&gt;&gt;</span> <span class="n">i</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="sc">&#39;0&#39;</span><span class="p">;</span>
 </span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">getAuthor</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="n">puts</span><span class="p">(</span><span class="n">r</span><span class="p">);</span>
 </span><span class='line'><span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Bạn thử đoán xem đoạn var_dump sau sẽ ra kết quả gì :D</p>
-
-<figure class='code'><figcaption><span>Book.php </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="nv">$book2</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
-</span><span class='line'><span class="nv">$book2</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">(</span><span class="s2">&quot;Nam Cao&quot;</span><span class="p">,</span><span class="s2">&quot;29-10-1915&quot;</span><span class="p">));</span>
-</span><span class='line'><span class="nb">var_dump</span><span class="p">(</span><span class="nv">$book1</span><span class="o">-&gt;</span><span class="na">getAuthor</span><span class="p">());</span> <span class="c1">// Suprisingly, &#39;Ngo Tat To&#39;, not &#39;Nam Cao&#39; here </span>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>Reflection class dùng để làm gì ?</h2>
-
-<p>Đến đây có lẽ bạn đọc đã hình dung ra phần nào cách thức hoạt động của reflection class, các ngôn ngữ dynamically-typed &#8220;hiểu&#8221; các object như thế nào.
-Reflection thực tế tồn tại trong PHPUnit hay các mocking framework, các code analysis framwworks hay metaprogramming.</p>
-
-<p>Reflection class trong PHP là 1 tool mạnh mẽ cung cấp cho programmer chính những sức mạnh mà ngôn ngữ sở hữu.
-Tuy nhiên reflection class không hề được khuyến khích dùng rộng rãi, vì với bản chất là tool của quá trình reverse engineering, nó hoàn toàn có thể làm design của hệ thống trở nên mess up và khó kiểm soát.</p>
-
-<p>Reflection chỉ nên dùng khi nào thực sự cần thiết, ứng dụng nhìn thấy rõ nhất là khi bạn phải &#8220;đối đầu&#8221; với 1 project mà document ko đầy đủ hay không được upadte thường xuyên. <a href="https://github.com/cakephp/api_generator">Cake Api Generator</a> là ví dụ điển hình nhất.</p>
-
-<h2>Summary</h2>
-
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">scanf</span><span class="p">(</span><span class="s">&quot;%d&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">a</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">binrepr</span><span class="p">(</span><span class="n">a</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">b</span> <span class="o">=</span> <span class="n">snoob</span><span class="p">(</span><span class="n">a</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">binrepr</span><span class="p">(</span><span class="n">b</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<div>
+<pre><code class='bash'>$ yasm -a x86 -f macho binrepr.asm
+$ gcc -m32 -c snoob.c
+$ gcc -m32 -o snoob snoob.o binrepr.o
+$ ./snoob
+752
+00000000000000000000001011110000
+00000000000000000000001100000111</code></pre>
+</div>
+<p>Chương trình chạy đúng! Giờ đến phẩn benchmark. Ta sử dụng lại đoạn code benchmark, lần này thay vì gọi hàm snoob_c ta gọi hàm snoob viết bằng assembly. Ta có kết quả như sau:</p>
+<div>
+<pre><code class='bash'>$ gcc -m32 -c snoob.c
+$ gcc -m32 -o snoob snoob.o binrepr.o
+$ time ./snoob
+./snoob  0.53s user 0.00s system 99% cpu 0.536 total</code></pre>
+</div>
+<p>Ta có thể thấy tốc độ thay đổi 1 cách đáng kể! Thời gian chạy chỉ bằng <strong>63.85%</strong> thời gian chạy lần trước đấy.</p>
+<p>※<em>Các đoạn code được chạy trên máy tính có phần cứng: cpu corei7, 8G Ram</em></p>
+<h1 id="kết-luận">Kết luận</h1>
 <ul>
-<li><strong>Dynamically-typed language</strong>: Là ngôn ngữ có thể tự hiểu được object tại thời điểm runtime, không cần tại compile time. PHP, Ruby, Python là dynamically-typed language. Ngược lại C hay Java là statically typed language.</li>
-<li><strong>Reflection Class</strong> Là 1 bộ API được PHP cung cấp để sử dụng kỹ thuật reverse engineer, hữu dụng khi tạo document tự động.</li>
+<li>Bằng việc trực tiếp kiểm chứng, ta công nhận rằng mã viết bằng assembly nếu được optimize cẩn thận sẽ chạy nhanh hơn hẳn mã sinh bởi các ngôn ngữ bậc cao như C.</li>
+<li>Assembly rất thú vị. Ta có cảm giác kiểm soát toàn bộ máy tính!</li>
 </ul>
-
-
+<h1 id="tham-khảo">Tham khảo</h1>
+<ol type="1">
+<li><a href="http://www.hackersdelight.org/">Hacker Delights</a></li>
+<li><a href="http://www.inwap.com/pdp10/hbaker/hakmem/hakmem.html">HAKMEM</a></li>
+</ol>
 		
 		
 	</div>
@@ -516,124 +547,296 @@ Tuy nhiên reflection class không hề được khuyến khích dùng rộng r�
   
 
 
-<time datetime="2013-07-24T10:05:00+09:00" data-updated="true" itemprop="datePublished">Jul 24<span>th</span>, 2013</time></div>
+<time datetime="2013-09-17T10:29:00+09:00" data-updated="true" itemprop="datePublished">Sep 17<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/sysadmin/'>sysadmin</a>
+	<a class='category' href='/blog/categories/ios/'>iOS</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/07/24/install-memcached-with-sasl/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/09/17/nhung-meo-lap-trinh-voi-objective-c-phan-2/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/24/install-memcached-with-sasl/" itemprop="url">Cài đặt Memcached Với Sasl</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/09/17/nhung-meo-lap-trinh-voi-objective-c-phan-2/" itemprop="url">Những Mẹo Lập Trình Với Objective-C Phần 2</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h1>Giới thiệu</h1>
-
-<p>Memcached là cơ sở dữ liệu được lưu trong memory. Thông thường chúng ta sử dụng memcached trong mạng nội bộ, hoặc sử dụng private IP để kết nối tới memcached, tuy nhiên trong một số trường hợp, IP của memcached server cần public ra ngoài (ví dụ toàn bộ các server đều đặt trên AWS). Trong trường hợp này, chúng ta cần bảo mật kết nối của memcached server.</p>
-
-<p>Từ phiên bản 1.4.3, memcached đã support sử dụng <a href="http://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer">SASL</a></p>
-
-<p>Bài viết này sẽ giới thiệu với các bạn cách cài đặt memcached với SASL cũng như giới thiệu cơ chế, cách làm việc của SASL</p>
-
-<h1>Cách cài đặt SASL với memcached</h1>
-
-<p>Đầu tiên bạn cần cài đặt phiên bản mới nhất của memcached. Bạn sẽ cần một số gói và thư viện khác để support SASL.</p>
-
-<figure class='code'><figcaption><span>install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> sudo apt-get install libsasl2-2 sasl2-bin libsasl2-2 libsasl2-dev libsasl2-modules
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Đừng quên, để cài đặt memcached, bạn cùng sẽ cần cài <code>libevent</code></p>
-
-<p>Cài đặt memcached</p>
-
-<figure class='code'><figcaption><span>install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+		<p>Tiếp theo phần trước, trong bài viết này sẽ giới thiệu 1 kỹ thuật khác trong Objective C: Swizzling method.</p>
+<h1 id="swizzling">Swizzling</h1>
+<p>Thông thường, khi muốn thêm vào 1 class có sẵn 1 vài hàm mới, chúng ta có thể dùng <code>Categories</code>, đặc biệt là các class của thư viện (ko có source code) như NSArray, NSDictionary… Tuy nhiên, cách dùng <code>Categories</code> có 1 hạn chế là bạn không thể override các hàm có sẵn. Vậy đây chính là lý do chúng ta cần sử dụng đến Swizzling method.</p>
+<p>Trong Objective C, khi bạn viết 1 đoạn code</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'> 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="p">[</span><span class="n">self</span> <span class="nl">presentViewController:</span><span class="n">mailController</span> <span class="nl">animated:</span><span class="n">YES</span> <span class="nl">completion:</span><span class="nb">nil</span><span class="p">];</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>bạn không thực sự gọi đến hàm <code>presentViewController:animated:completion:</code> mà thay vào đó là gửi đi 1 message <code>presentViewController:animated:completion:</code>. Trong quá trình chạy, object sẽ tìm kiếm method tương ứng dựa vào id của message này. Chúng ta có thể dựa vào swizzling để thay đổi cách object tìm kiếm method tương ứng này:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'> 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
 <span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> wget http://memcached.googlecode.com/files/memcached-1.4.3.tar.gz
-</span><span class='line'><span class="nv">$&gt;</span> tar xvf memcached-1.4.3.tar.gz
-</span><span class='line'><span class="nv">$&gt;</span> <span class="nb">cd </span>memcached-1.4.3
-</span><span class='line'><span class="nv">$&gt;</span> ./configure --enable-sasl
-</span><span class='line'><span class="nv">$&gt;</span> sed -i <span class="s1">&#39;s/-Werror//g&#39;</span> Makefile
-</span><span class='line'><span class="nv">$&gt;</span> make
-</span><span class='line'><span class="nv">$&gt;</span> sudo make install
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Cài đặt libmemcached</p>
-
-<figure class='code'><figcaption><span>install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="kt">SEL</span> <span class="n">firstMethodSelector</span> <span class="o">=</span> <span class="k">@selector</span><span class="p">(</span><span class="n">firstMethod</span><span class="p">);</span>
+</span><span class='line'><span class="kt">SEL</span> <span class="n">secondMethodSelector</span> <span class="o">=</span> <span class="k">@selector</span><span class="p">(</span><span class="n">secondMethod</span><span class="p">);</span>
+</span><span class='line'><span class="n">Method</span> <span class="n">firstMethod</span> <span class="o">=</span> <span class="n">class_getInstanceMethod</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">firstMethodSelector</span><span class="p">);</span>
+</span><span class='line'><span class="n">Method</span> <span class="n">secondMethod</span> <span class="o">=</span> <span class="n">class_getInstanceMethod</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">secondMethodSelector</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">BOOL</span> <span class="n">methodAdded</span> <span class="o">=</span> <span class="n">class_addMethod</span><span class="p">([</span><span class="n">self</span> <span class="n">class</span><span class="p">],</span>
+</span><span class='line'>                                   <span class="n">firstMethodSelector</span><span class="p">,</span>
+</span><span class='line'>                                   <span class="n">method_getImplementation</span><span class="p">(</span><span class="n">secondMethod</span><span class="p">),</span>
+</span><span class='line'>                                   <span class="n">method_getTypeEncoding</span><span class="p">(</span><span class="n">secondMethod</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">methodAdded</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'><span class="n">class_replaceMethod</span><span class="p">([</span><span class="n">self</span> <span class="n">class</span><span class="p">],</span>
+</span><span class='line'>                      <span class="n">secondMethodSelector</span><span class="p">,</span>
+</span><span class='line'>                      <span class="n">method_getImplementation</span><span class="p">(</span><span class="n">firstMethod</span><span class="p">),</span>
+</span><span class='line'>                      <span class="n">method_getTypeEncoding</span><span class="p">(</span><span class="n">firstMethod</span><span class="p">));</span>
+</span><span class='line'><span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">method_exchangeImplementations</span><span class="p">(</span><span class="n">firstMethod</span><span class="p">,</span> <span class="n">secondMethod</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Đi từng bước cho đoạn code ở trên:</p>
+<ol type="1">
+<li><p>Trước hết chúng ta tạo ra các selectors (SEL): <code>firstMethodSelector</code> và <code>secondMethodSelector</code></p></li>
+<li><p>Lấy ra các hàm tương ứng với selectors gán vào <code>firstMethod</code> và <code>secondMethod</code> Method</p></li>
+<li><p>Thêm vào class định nghĩa của method thứ 2 dưới cách gọi của method thứ nhất. Trường hợp này xảy ra khi method thứ nhất không thực sự tồn tại (trong 1 khả năng nào đó)</p></li>
+<li><p>Nếu điều này xảy ra, chúng ta cần 1 định nghĩa cho selector của method thứ 2, vì vậy thay thế nó bằng implementation của method thứ nhất (rỗng)</p></li>
+<li><p>Nếu không xảy ra, nghĩa là method thứ nhất có tồn tại, chúng ta thay đổi implementation của 2 method.</p></li>
+</ol>
+<h1 id="ví-dụ-1">Ví dụ 1</h1>
+<p>Khi sử dụng Google Analystics, chúng ta muốn track page view cho tất cả các UIViewController trong project, tuy nhiên, nếu ở class nào cũng gọi hàm <code>trackView:&lt;class_name&gt;</code> thì tương đối nhiều, mà có thể còn bỏ sót. Vậy cách đơn giản nhất là override lại hàm <code>viewDidLoad</code> của <code>UIViewController</code>, trong đó chúng ta thực hiện <code>trackView</code> hoặc gọi 1 hàm khác bất kỳ, tuỳ theo mục đích của mình.</p>
+<p>Chúng ta viết phần code trên trong <code>Categories</code> của <code>NSObject</code>, từ đó có thể gọi nó từ bất kỳ class nào:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'> 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> wget https://launchpad.net/libmemcached/1.0/1.0.17/+download/libmemcached-1.0.17.tar.gz
-</span><span class='line'><span class="nv">$&gt;</span> tar xvf libmemcached-1.0.17.tar.gz
-</span><span class='line'><span class="nv">$&gt;</span> <span class="nb">cd </span>libmemcached-1.0.17
-</span><span class='line'><span class="nv">$&gt;</span> ./configure
-</span><span class='line'><span class="nv">$&gt;</span> make
-</span><span class='line'><span class="nv">$&gt;</span> sudo make install
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h1>Set up SASL với memcached</h1>
-
-<p>Điều đầu tiên bạn cần đảm bảo đó là set biến môi trường <code>SASL_CONF_PATH</code> khi bạn chay memcached. Trong ví dụ này <code>SASL_CONF_PATH</code> sẽ được trỏ tới <code>/home/kiennt/sasl</code></p>
-
-<figure class='code'><figcaption><span>install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> <span class="nb">export </span><span class="nv">SASL_CONF_PATH</span><span class="o">=</span>/home/kiennt/sasl
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Sau đó bạn cần set up file memcached.conf trong SASL (tên của file sẽ là tên của ứng dụng SASL - cụ thể ở đây là memcached)</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="cp">#import &quot;NSObject+Swizzle.h&quot;</span>
+</span><span class='line'><span class="cp">#import &lt;objc/runtime.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">@implementation</span> <span class="nc">NSObject</span> <span class="nl">(Swizzle)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">+</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="nf">swizzleInstanceSelector:</span><span class="p">(</span><span class="kt">SEL</span><span class="p">)</span><span class="nv">originalSelector</span>
+</span><span class='line'>                 <span class="nf">withNewSelector:</span><span class="p">(</span><span class="kt">SEL</span><span class="p">)</span><span class="nv">newSelector</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="n">Method</span> <span class="n">originalMethod</span> <span class="o">=</span> <span class="n">class_getInstanceMethod</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">originalSelector</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">Method</span> <span class="n">newMethod</span> <span class="o">=</span> <span class="n">class_getInstanceMethod</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">newSelector</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kt">BOOL</span> <span class="n">methodAdded</span> <span class="o">=</span> <span class="n">class_addMethod</span><span class="p">([</span><span class="n">self</span> <span class="n">class</span><span class="p">],</span>
+</span><span class='line'>                                     <span class="n">originalSelector</span><span class="p">,</span>
+</span><span class='line'>                                     <span class="n">method_getImplementation</span><span class="p">(</span><span class="n">newMethod</span><span class="p">),</span>
+</span><span class='line'>                                     <span class="n">method_getTypeEncoding</span><span class="p">(</span><span class="n">newMethod</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="n">methodAdded</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">class_replaceMethod</span><span class="p">([</span><span class="n">self</span> <span class="n">class</span><span class="p">],</span>
+</span><span class='line'>                        <span class="n">newSelector</span><span class="p">,</span>
+</span><span class='line'>                        <span class="n">method_getImplementation</span><span class="p">(</span><span class="n">originalMethod</span><span class="p">),</span>
+</span><span class='line'>                        <span class="n">method_getTypeEncoding</span><span class="p">(</span><span class="n">originalMethod</span><span class="p">));</span>
+</span><span class='line'>  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">method_exchangeImplementations</span><span class="p">(</span><span class="n">originalMethod</span><span class="p">,</span> <span class="n">newMethod</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">@end</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Bây giờ tạo tiếp <code>Categories</code> cho UIViewController:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'> 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>mech_list: plain
-</span><span class='line'>log_level: 5
-</span><span class='line'>sasldb_path: /home/kiennt/sasl/sasldb2</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Tiếp theo, bạn cần tạo một file database (được trỏ tới từ bước trước) trong file <code>memcached.conf</code></p>
-
-<figure class='code'><figcaption><span>install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> sudo saslpasswd2 -c -a memcached -f /home/kiennt/sasl/sasldb2 &lt;username&gt;
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Chú ý rằng cờ -a xác định tên của ứng dụng <code>memcached</code> - chính là tên của config file bạn đã xác định ở trên <code>memcached.conf</code>. Khi bạn chạy <code>saslpasswd2</code>, bạn sẽ được hỏi password và password verify cation.</p>
-
-<h1>Chạy memcached với SASL</h1>
-
-<p>Để chạy memcached với SASL, bạn cần sử dụng cờ <code>-S</code> để bật cơ chế security của mecached lên</p>
-
-<figure class='code'><figcaption><span>install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="cp">#import &quot;UIViewController+ Swizzling.h&quot;</span>
+</span><span class='line'><span class="cp">#import &quot;NSObject+Swizzle.h&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">@implementation</span> <span class="nc">UIViewController</span> <span class="nl">(Swizzling)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">+</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">load</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">static</span> <span class="n">dispatch_once_t</span> <span class="n">onceToken</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">dispatch_once</span><span class="p">(</span><span class="o">&amp;</span><span class="n">onceToken</span><span class="p">,</span> <span class="o">^</span><span class="p">{</span>
+</span><span class='line'>        <span class="p">[</span><span class="n">self</span> <span class="nl">swizzleInstanceSelector:</span><span class="k">@selector</span><span class="p">(</span><span class="n">viewDidLoad</span><span class="p">)</span>
+</span><span class='line'>                      <span class="nl">withNewSelector:</span><span class="k">@selector</span><span class="p">(</span><span class="n">myViewDidLoad</span><span class="p">)];</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="nf">myViewDidLoad</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">NSLog</span><span class="p">(</span><span class="s">@&quot;This is my view did load&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Track Google Analystic here</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">[</span><span class="n">self</span> <span class="n">myViewDidLoad</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Khi Objective-C run-time load 1 category, nó sẽ gọi đến hàm <code>load</code>. Chúng ta sử dụng dispatch_once để chắc chắn rằng hàm swizzle chỉ được gọi 1 lần. Sau khi import category này, (tốt nhất là trong file prefix - pch) tất cả các hàm <code>viewDidLoad</code> của <code>UIViewController</code> sẽ được thay thế bằng hàm <code>myViewDidLoad</code>.</p>
+<h1 id="ví-dụ-2">Ví dụ 2</h1>
+<p>1 ứng dụng khác của swizzling method là khi debug lỗi <code>index out of range</code> của NSArray. Nhiều khi gặp phải lỗi này nhưng chương trình không dừng lại ở đúng đoạn code bị lỗi (nhảy ra hàm main). 1 cách đơn giản để xử lý trường hợp này là override hàm <code>objectAtIndex:</code> của NSArray và bắt exception trong đó. Tuy nhiên, cách sử dụng swizzling method ở đây có hơi khác 1 chút.</p>
+<p>Trước hết là tạo <code>Category</code> cho <code>NSArray</code>:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'> 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> <span class="nb">export </span><span class="nv">SASL_CONF_PATH</span><span class="o">=</span>/home/kiennt/sasl
-</span><span class='line'><span class="nv">$&gt;</span> /usr/local/bin/memcached -S -vvv
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h1>Tổng kết</h1>
-
-<p>Bài viết này giới thiệu với các cài đặt và chạy memcached với SASL. Giờ bạn có thể tập trung vào việc code ứng dụng của bạn rồi.</p>
-
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">@implementation</span> <span class="nc">NSArray</span> <span class="nl">(OutOfRange)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">-</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">safeObjectAtIndex:</span><span class="p">(</span><span class="n">NSUInteger</span><span class="p">)</span><span class="nv">index</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="n">self</span><span class="p">.</span><span class="n">count</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">NSLog</span><span class="p">(</span><span class="s">@&quot;%s self = %@, pointer = %p, index = %lu&quot;</span><span class="p">,</span> <span class="n">__FUNCTION__</span><span class="p">,</span> <span class="n">self</span><span class="p">,</span> <span class="n">self</span><span class="p">,</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span><span class="n">index</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="p">[</span><span class="n">self</span> <span class="nl">safeObjectAtIndex:</span><span class="n">index</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">@end</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Đặt 1 breakpoint vào trong điều kiện <code>if (index &gt;= self.count)</code> để có thể biết được lỗi đến từ đâu. Sau đó, trong hàm <code>main</code> của <code>main.m</code>, thực hiện exchange method:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'> 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="cp">#import &lt;objc/runtime.h&gt;</span>
+</span><span class='line'><span class="cp">#import &quot;NSArray+OutOfRange.h&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">Class</span> <span class="n">arrayClass</span> <span class="o">=</span> <span class="n">NSClassFromString</span><span class="p">(</span><span class="s">@&quot;__NSArrayM&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">Method</span> <span class="n">originalMethod</span> <span class="o">=</span> <span class="n">class_getInstanceMethod</span><span class="p">(</span><span class="n">arrayClass</span><span class="p">,</span> <span class="k">@selector</span><span class="p">(</span><span class="nl">objectAtIndex:</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">Method</span> <span class="n">categoryMethod</span> <span class="o">=</span> <span class="n">class_getInstanceMethod</span><span class="p">([</span><span class="n">NSArray</span> <span class="n">class</span><span class="p">],</span> <span class="k">@selector</span><span class="p">(</span><span class="nl">safeObjectAtIndex:</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">method_exchangeImplementations</span><span class="p">(</span><span class="n">originalMethod</span><span class="p">,</span> <span class="n">categoryMethod</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">NSAutoreleasePool</span> <span class="o">*</span> <span class="n">pool</span> <span class="o">=</span> <span class="p">[[</span><span class="n">NSAutoreleasePool</span> <span class="n">alloc</span><span class="p">]</span> <span class="n">init</span><span class="p">];</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">retVal</span> <span class="o">=</span> <span class="n">UIApplicationMain</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span> <span class="n">argv</span><span class="p">,</span> <span class="nb">nil</span><span class="p">,</span> <span class="nb">nil</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">[</span><span class="n">pool</span> <span class="n">release</span><span class="p">];</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">retVal</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Lưu ý ở đây chúng ta gọi Class <code>arrayClass = NSClassFromString(@&quot;__NSArrayM&quot;);</code> là bởi vì hàm <code>objectAtIndex:</code> không đến từ <code>NSArray</code> class mà đến từ <code>__NSArrayM</code> (xem trên console debug). Chính vì thế chúng ta không thể sử dụng cách swizzle thông thường như trong ví dụ 1.</p>
+<p>Để test đoạn code này, trong 1 đoạn chương trình bất kỳ, tạo ra 1 bug:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'> 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">NSMutableArray</span> <span class="o">*</span><span class="n">list</span> <span class="o">=</span> <span class="p">[</span><span class="n">NSMutableArray</span> <span class="nl">arrayWithObjects:</span><span class="s">@&quot;1&quot;</span><span class="p">,</span> <span class="s">@&quot;2&quot;</span><span class="p">,</span> <span class="nb">nil</span><span class="p">];</span>
+</span><span class='line'><span class="n">NSLog</span><span class="p">(</span><span class="s">@&quot;Test: %@&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">list</span> <span class="nl">objectAtIndex:</span><span class="mi">3</span><span class="p">]);</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Bây giờ, chạy chương trình và tận hưởng thành quả :)</p>
 		
 		
 	</div>
@@ -651,7 +854,7 @@ Tuy nhiên reflection class không hề được khuyến khích dùng rộng r�
     <div class="center"><a href="/blog/archives">Blog Archives</a></div>
 </nav></div>
 			</div>
-			<footer id="footer" class="inner">Copyright &copy; 2013
+			<footer id="footer" class="inner">Copyright &copy; 2014
 
     kỹ thuật máy tính
 

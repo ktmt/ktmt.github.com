@@ -7,7 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Sep 10th, 2013 attributes, iOS, objective c, property Comments [iOS Property:attributes] Mở đầu Nếu bạn đã từng sử dụng Objective C thì thấy rằng &hellip;">
+	<meta name="description" content="May 9th, 2014 Comments Full Text Search Từ Lý Thuyết đến Thực Tiễn (Phần Cuối) Introduction
+Trong loạt bài viết trước về Full-text search, mình đã &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -17,11 +18,17 @@
 
 	<link href="/atom.xml" rel="alternate" title="Blog kỹ thuật máy tính" type="application/atom+xml">
 	
-	<link rel="canonical" href="http://ktmt.github.com/blog/page/2/">
+	<link rel="canonical" href="http://git@github.com.github.com/blog/page/2/">
 	<link href="/favicon.png" rel="shortcut icon">
 	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
 	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+    });
+  </script>
 	<link href='http://fonts.googleapis.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
 	
 </head>
@@ -44,6 +51,8 @@
 </nav>
 <nav id="sub-nav">
 	<div class="social">
+		
+		<a class="facebook" href="http://www.facebook.com/pages/ktmtgithubio/486208978117754" title="Facebook">Facebook</a>
 		
 		
 		
@@ -84,637 +93,85 @@
   
 
 
-<time datetime="2013-09-10T00:56:00+09:00" data-updated="true" itemprop="datePublished">Sep 10<span>th</span>, 2013</time></div>
+<time datetime="2014-05-09T20:00:00+09:00" data-updated="true" itemprop="datePublished">May 9<span>th</span>, 2014</time></div>
 		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/attributes/'>attributes</a>, <a class='category' href='/blog/categories/ios/'>iOS</a>, <a class='category' href='/blog/categories/objective-c/'>objective c</a>, <a class='category' href='/blog/categories/property/'>property</a>
-
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/09/10/ios-property-attributes/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2014/05/09/full-text-search-tu-ly-thuyet-den-thuc-tien-phan-cuoi/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/09/10/ios-property-attributes/" itemprop="url">[iOS Property:attributes]</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2014/05/09/full-text-search-tu-ly-thuyet-den-thuc-tien-phan-cuoi/" itemprop="url">Full Text Search Từ Lý Thuyết đến Thực Tiễn (Phần Cuối)</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h1>Mở đầu</h1>
-
-<p>Nếu bạn đã từng sử dụng Objective C thì thấy rằng khi khai báo các property cho 1 class nào đấy chúng ta có 2 cách như sau:</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>@interface MyClass : NSObject {
-</span><span class='line'>    NSString *myString;
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<p>hoặc có thể dùng <code>@property (attributes) type name</code> để khai báo như sau:</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>@interface MyClass : NSObject {
-</span><span class='line'>}
-</span><span class='line'>@property (strong, nonatomic) NSString *myString;</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Với cách thứ 2 thì compiler sẽ tự động sinh ra các setter/getter cho property ấy. Thế nhưng việc sinh ra setter/getter như thế nào là phụ thuộc vào tập <code>attributes</code> mà bạn đã set ở trên. Khi mới bắt đầu code iOS mình thấy việc set thuộc tính này hơi bị loạn với khá nhiều thuộc tính (retain, strong, weak, unsafe_unretained, nonatomic&#8230;). Rồi khi phiên bản thay đổi, kiểu project có dùng ARC hay không cũng dẫn đến việc sử dụng các thuộc tính này cũng khác nhau. Ngoài ra trong một số trường hợp nếu bạn không sử dụng đúng thuộc tính có thể làm app của bạn chạy bị lỗi. Trong bài viết này mình sẽ tóm tắt lại các thuộc tính của property, cũng như nói về khi nào sẽ dùng thuộc tính nào, tại sao, và thuộc tính nào là mặc định.</p>
-
-<h1>Các thuộc tính của property</h1>
-
-<p>Nếu chia nhóm thì có lẽ bao gồm 3 nhóm thuộc tính như sau:</p>
-
-<h2>Writability</h2>
-
-<p>Nhóm này có 2 thuộc tính là <code>readwrite</code> và <code>readonly</code>. Nhóm thuộc tính này thì khá là dễ hiểu.
-Với thuộc tính <code>readwrite</code> thì compiler sẽ generate ra cả setter và getter, còn <code>readonly</code> thì compiler chỉ generate ra getter.
-Mặc định là <code>readwrite</code> (không liên quan đến project dùng ARC hay không).</p>
-
-<h2>Setter Semantics</h2>
-
-<p>Nhóm này gồm các thuộc tính để chỉ ra cách thức quản lý bộ nhớ, bao gồm các thuộc tính như sau:
-<code>assign</code>, <code>strong</code>, <code>weak</code>, <code>unsafe_unretained</code>, <code>retain</code>, <code>copy</code>.
-Khi chúng ta set một trong các thuộc tính này cho property thì setter (getter không liên quan) được tạo ra thay đổi tương ứng với thuộc tính đó.
-Trước hết chúng ta sẽ nói qua về cách quản lý bộ nhớ trước iOS5 khi mà ARC chưa xuất hiện.</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>Car *car1 = [[Car alloc] init];
-</span><span class='line'>//...
-</span><span class='line'>[car1 release]</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Trước khi ARC xuất hiện thì các lập trình viên iOS đều phải tự quản lý bộ nhớ.
-Khi chúng ta tạo object với vùng nhớ của nó, đồng nghĩa với việc chúng ta nắm giữ ownership của object đó.
-Khi không cần dùng nữa thì phải huỷ bỏ ownership đấy đi bằng cách gửi message <code>release</code>.
-Một object có thể có nhiều ownership và mỗi object sẽ có 1 property tên là <code>retainCount</code> để lưu số lượng owner của nó.
-Mỗi khi chúng ta tạo object, hay <code>retain</code> thì <code>retainCount</code> lại được tăng lên 1.
-Khi chúng ta gửi message <code>release</code> tới object đấy thì <code>retainCount</code> lại bị giảm đi 1.
-Một khi <code>retainCount</code> bằng 0 thì vùng nhớ của nó sẽ bị giải phóng.
-Chúng ta có thể gửi message <code>retain</code> để tạo thêm ownership như ví dụ dưới đây. Khi đó <code>car1</code> và <code>car2</code> cùng trỏ đến 1 vùng nhớ và <code>retainCount</code> bây giờ bằng 2.</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>// retain
-</span><span class='line'>Car *car2 = [car1 retain];  // retainCount = 2</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Ngoài ra để copy sang vùng nhớ mới chúng ta có thể gửi message <code>copy</code> như ví dụ dưới đây. Khi đó <code>retainCount</code> ở vùng nhớ mới có giá trị khởi tạo là 1.</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>// copy
-</span><span class='line'>Car *car3 = [car1 copy];    // retainCount = 1</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Quay trở lại với thuộc tính của property. Thuộc tính đầu tiên là <code>retain</code>. Như ví dụ dưới đây khi ta set thuộc tính <code>retain</code> cho property <code>name</code> thì compiler sẽ sinh ra setter <code>setName</code> như bên dưới.</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>@interface Car: NSObject
-</span><span class='line'>
-</span><span class='line'>@property (nonatomic, retain) NSString *name;
-</span><span class='line'>
-</span><span class='line'>@end;</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>- (void)setName:(NSString *)newName {
-</span><span class='line'>    [newName retain];
-</span><span class='line'>    [_name release];
-</span><span class='line'>    _name = newName;
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Nhìn vào setter ta thấy đầu tiên là tạo ownership (hay tăng <code>retainCount</code> thêm 1) của <code>newName</code> bằng cách gọi <code>[newNmane retain]</code>.
-Tiếp theo là việc gửi message <code>release</code> tới <code>_name</code> ban đầu để xoá ownership ban đầu đi. Sau đó mới gán contrỏ trỏ đến object mới.
-Vậy nên thuộc tính <code>retain</code> giúp tạo ra setter trong đó tạo ownership mới và trỏ đến vùng nhớ mới.
-Chú ý rằng thuộc tính <code>retain</code> chỉ dùng cho những project không dùng ARC.</p>
-
-<p>Và từ iOS5 trở đi Apple giới thiệu ARC giúp cho việc quản lý bộ nhớ đơn giản hơn. ARC không hoạt động như các <code>Garbage Collection</code> khác mà thực ra chỉ là phần front-end của compiler nhằm mục đich tự động chèn thêm các đoạn code gọi message như <code>retain</code> hay <code>release</code>. Từ đấy lập trình viên không phải gọi các message này nữa. Ví dụ như 1 object được tạo trong 1 method thì sẽ chèn thêm đoạn gửi message <code>release</code> tới object đó ở gần cuối method. Hay trong trường hợp là property của 1 class <code>Car</code> ở trên thì tự động chèn <code>[_name release]</code> trong method <code>dealloc</code> của class <code>Car</code> chẳng hạn.</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+		<h1 id="introduction">Introduction</h1>
+<p>Trong loạt bài viết trước về Full-text search, mình đã giới thiệu về các khái niệm hết sức cơ bản để làm nên một search-engine:</p>
+<ul>
+<li><a href="http://ktmt.github.io/blog/2013/10/27/full-text-search-engine/">Phần 1: Giới thiệu cơ bản: Inverted Index</a></li>
+<li><a href="http://ktmt.github.io/blog/2013/11/03/full-text-search/">Phần 2: Kỹ thuật Tokenize</a></li>
+<li><a href="http://ktmt.github.io/blog/2014/01/04/full-text-search-engine-part-3/">Phần 3: Tìm kiếm sử dụng Boolean Logic</a></li>
+<li><a href="http://ktmt.github.io/blog/2014/03/03/full-text-search-tu-khai-niem-den-thuc-tien-phan-4/">Phần 4: Các mô hình Ranking</a></li>
+</ul>
+<p>Trong bài viết này, để khép lại loạt bài về Full-Text search, mình sẽ hướng dẫn cách làm một search engine hết sức đơn giản sử dụng inverted index. Sample code mình sẽ sử dụng Python để cho dễ hiểu.</p>
+<h1 id="code-design">Code Design</h1>
+<p>Việc đầu tiên trước khi code chúng ta phải design xem chương trình của chúng ta sẽ gồm những module nào, nhiệm vụ mỗi module ra sao. Để design được thì chúng ta phải làm rõ yêu cầu bài toán và cách giải quyết.</p>
+<p>Bài toán trong bài viết này là <strong>xây dụng một search engine</strong>. Để cho đơn giản chúng ta sẽ xây dựng search engine trên command line, dựa trên đầu vào là các documents với format được định nghĩa trước. Trong bài này, mình sẽ sử dụng một sample nhỏ của twitter data như là input documents. Bài toán được tóm tắt lại như dưới đây:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'>
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>- (void)dealloc
-</span><span class='line'>{
-</span><span class='line'>  //...
-</span><span class='line'>  [_name release];
-</span><span class='line'>  //...
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Khi project của bạn dùng ARC thì chúng ta sẽ dùng thuộc tính <code>strong</code> thay cho thuộc tính <code>retain</code>.
-<code>strong</code> cũng tương tự như <code>retain</code> sẽ giúp tạo ra setter, mà trong setter đó tạo ra ownership mới (tăng retainCount thêm 1). Và ngoài ra ARC sẽ thêm các đoạn gửi message <code>release</code> tới các property này trong method <code>dealloc</code> của class.</p>
-
-<p>Thế nhưng xuất hiện vấn đề có tên là <code>Strong Reference Cycles</code>. Mình sẽ lấy 1 ví dụ để thấy rõ hơn về vấn đề này.
-Một object A nào đấy có ownership của 1 object B. Object B lại có ownership của 1 object C. Object C lại có ownership của object B.</p>
-
-<p><img src="/images/ios_property_attributes/strong_reference_cycles.png"></p>
-
-<p>Một khi object A ko cần thiết nữa thì trong method <code>dealloc</code> của A sẽ gửi message <code>release</code> tới object B. retainCount của object B giảm đi 1 nhưng vẫn còn 1 ( do object C retain ) thế nên method <code>dealloc</code> của object B không bao giờ được gọi, kéo theo message <code>release</code> cũng không bao giờ được gửi tới object C. Từ đó dẫn đến vùng nhớ của object B và object C không được giải phóng => xuất hiện hiện tượng Leak Memory.
-Vì vậy để tránh hiện tượng này ta sẽ dùng thuộc tính <code>weak</code> thay vì dùng thuộc tính <code>strong</code> trong class của object C.
-Với thuộc tính <code>weak</code> thì trong setter được sinh ra sẽ không <code>retain</code> (không tăng retainCount thêm 1) mà chỉ đơn thuần gán con trỏ trỏ đến vùng nhớ mới.
-Thuộc tính <code>weak</code> cũng chỉ dùng trong trường hợp bạn đang dùng ARC. Và một cái hay của <code>weak</code> nữa là khi vùng nhớ bị giải phóng thì con trỏ được set bằng <code>nil</code>. Mà trong Objective C thì gửi message đến <code>nil</code> sẽ không vấn đề gì, app của bạn không bị crash. Điển hình nhất của việc dùng thuộc tính <code>weak</code> đó là cho các <code>delegate</code>, <code>datasource</code>.</p>
-
-<p>Tuy nhiên vẫn còn một vài class như NSTextView, NSFont, NSColorSpace chưa hỗ trợ khai báo thuộc tính <code>weak</code> nên với những class này bạn có thể dùng thuộc tính <code>unsafe_unretained</code> thay cho <code>weak</code>. Thế nhưng chú ý 1 điều rằng sau khi vùng nhớ nó trỏ tới bị xoá thì con trỏ không được set la nil.</p>
-
-<p>Tiếp theo là thuộc tính <code>copy</code>. Với việc thiết lập thuộc tính này compiller sẽ tạo ra setter như sau:</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>@interface Car: NSObject
+</pre></td><td class='code'><pre><code class=''><span class='line'>Input document:
+</span><span class='line'>11  superkarafan  superkarafan  http://twitter.com/superkarafan Yes. He is Kendo Kobayashi. One of great JKamilia RT "@nicolexrina:  Is your twitter DP you? I have seen him in ametalk before!"
+</span><span class='line'>12  sao_mama  saomama http://twitter.com/sao_mama @miwauknow  持って行きたいけど、北海道からだから重い(T_T)飲むゼリーとかはダメなのかな。「SMT」のときそうしたんだけど・・・
 </span><span class='line'>
-</span><span class='line'>@property (nonatomic, copy) NSString *name;
-</span><span class='line'>
-</span><span class='line'>@end;</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>- (void)setName:(NSString *)newName {
-</span><span class='line'>    [_name release];
-</span><span class='line'>    _name = [newName copy];     // retainCount = 1
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Như ở trên ta thấy 1 vùng nhớ mới được copy ra và <code>_name</code> giờ chiếm giữ 1 ownership của vùng nhớ đó.
-Tại sao chúng ta không dùng <code>strong</code> ở đây mà lại dùng <code>copy</code>. Giả sử ở trên chúng ta dùng thuộc tính <code>strong</code> và xem qua 2 ví dụ dưới đây.</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>NSString *name1 = @"Toyota";
-</span><span class='line'>car1.name = name1;
-</span><span class='line'>name1 = @"Honda";</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Trong trường hợp này <code>car1.name</code> vẫn có giá trị là &#8220;Toyota&#8221; và <code>name1</code> giờ chuyển thành &#8220;Honda&#8221;. Hoàn toàn không có vấn đề gì.
-Thế nhưng trong ví dụ thứ 2 dưới đây thay vì dùng NSString mà dùng subclass của nó là NSMutableString.</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>NSMutableString *name1 = @"Toyota";
-</span><span class='line'>car1.name = name1;
-</span><span class='line'>[name1 appendString:"2"];</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Trong trường hợp này giá trị của <code>car1.name</code> là &#8220;Toyota2&#8221; mặc dù ban đầu chúng ta set là &#8220;Toyota&#8221;.
-Vì vậy mặc dù property <code>name</code> trong class <code>Car</code> với kiểu NSString nhưng nếu dùng <code>strong</code> giá trị của <code>name</code> vẫn có thể bị append như trên.
-Để tránh những trường hợp như thế ta dùng <code>copy</code> để mỗi lần gán sẽ copy 1 vùng nhớ mới tránh được những trường hợp như trên.
-Đối với những class có subclass là <code>Mutable...</code> thì chúng ta nên chú ý dùng thuộc tính <code>copy</code>. Ngoài ra <code>block</code> cũng phải dùng <code>copy</code>.</p>
-
-<p>Thuộc tính cuối cùng trong nhóm này là <code>assign</code> thì dùng cho các property kiểu không phải là object. Tức là các kiểu dữ liệu như <code>int</code>, <code>NSInteger</code>, <code>float</code>,&#8230;</p>
-
-<p>Với nhóm thuộc tính này thì <code>strong</code> là thuộc tính mặc định trong trường hợp dùng ARC, còn <code>retain</code> là thuộc tính mặc định trong trường hợp không dùng ARC.</p>
-
-<h2>Atomicity</h2>
-
-<p>Nhóm thuộc tính này bao gồm 2 thuộc tính là <code>atomic</code> và <code>nonatomic</code>. Thuộc tính mặc định là <code>atomic</code>.
-Nhóm thuộc tính này liên quan đến vấn đề multithread. Chưa bàn đến atomic hay nonatomic, mà chúng ta cùng xem ví dụ sau:</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>@interface MyView {
-</span><span class='line'>}
-</span><span class='line'>
-</span><span class='line'>@property CGPoint center;
-</span><span class='line'>
-</span><span class='line'>@end</span></code></pre></td></tr></table></div></figure>
-
-
-<p>khi đấy chúng ta có setter/getter như sau:</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>- (CGPoint) center {
-</span><span class='line'>  return _center;
-</span><span class='line'>}
-</span><span class='line'>
-</span><span class='line'>- (void)setCenter:(CGPoint)newCenter {
-</span><span class='line'>  _center = newCenter;
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<p>và bởi vì struct CGPoint có 2 thành phần <code>CGFloat x, CGFloat y</code> nên thực ra setter sẽ thực hiện các bước như sau:</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>- (void)setCenter:(CGPoint)newCenter {
-</span><span class='line'>  _center.x = newCenter.x;
-</span><span class='line'>  _center.y = newCenter.y;
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Trong trường hợp chúng ta chạy multithread thì có thể xảy ra khả năng như sau:</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>// giả sủ ban đầu center của myView là (-5.f, -8.f)
-</span><span class='line'>
-</span><span class='line'>// thread 1 gọi setter
-</span><span class='line'>[myView setCenter:CGPointMake(1.f, 2.f)];
-</span><span class='line'>
-</span><span class='line'>// tiep theo bên trong setCenter sẽ chạy
-</span><span class='line'>_center.x = newCenter.x; // _center.x giờ có giá trị là 1.f và _center.y vẫn giữ giá trị là -8.f
-</span><span class='line'>
-</span><span class='line'>// chưa kịp chạy lệnh tiếp theo để set _center.y thì ở thread 2 gọi getter
-</span><span class='line'>CGPoint point = [myView center];
-</span><span class='line'>// và getter chạy trả về (1.f, -8.f)
-</span><span class='line'>
-</span><span class='line'>// thread 1 tiếp tục giá trị cho y
-</span><span class='line'>_center.y = newCenter.y // _center.y giờ là  2.f</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Như trường hợp ở trên ta thấy giá trị center là (1.f, 2.f) nhưng tại thread 2 giá trị lấy được lại là (1.f, -8.f)
-dẫn đến kết quả không được như mong muốn.
-Vì vậy trong trường hợp multithread để tránh những tình huống như trên ta set thuộc tính <code>atomic</code> cho property. Khi đấy compiler sẽ sinh ra các setter/getter như sau:</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>- (CGPoint) center {
-</span><span class='line'>  CGPoint curCenter;
-</span><span class='line'>  @synchronized(self) {
-</span><span class='line'>    curCenter = _center;
-</span><span class='line'>  }
-</span><span class='line'>  return curCenter;
-</span><span class='line'>}
-</span><span class='line'>
-</span><span class='line'>- (void)setCenter:(CGPoint)newCenter {
-</span><span class='line'>  @synchronized(self) {
-</span><span class='line'>    _center = newCenter;
-</span><span class='line'>  }
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Bên trong setter/getter sử dụng lock để tránh việc nhiều thread truy cập đồng thời. Thế nhưng việc dùng lock sẽ mất chi phí cũng như cản trở tốc độ của chương trình. Vì vậy nên trong trường hợp bạn không dùng multithread hoặc không thể xảy ra những vấn đề như trên thì bạn nên dùng thuộc tính <code>nonatomic</code> để tăng tốc độ cho chương trình.</p>
-
-<h1>Tổng kết</h1>
-
-<p>Bài viết này mình đã trình bày về các thuộc tính cho property, giải thích qua về các thuộc tính cũng như khi nào nên dùng thuộc tính nào.
-Mặc dù mình vẫn thấy còn những lập trình viên không dùng ARC nhưng có lẽ đa số mọi người đã chuyển qua dùng ARC.
-Thế nên thuộc tính <code>retain</code> có thể không cần dùng nữa.
-Để tìm hiểu kĩ hơn các bạn có thể đọc tại <a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ProgrammingWithObjectiveC/ProgrammingWithObjectiveC.pdf">Programming With Objective C</a></p>
-
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-09-08T21:49:00+09:00" data-updated="true" itemprop="datePublished">Sep 8<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/rails/'>rails</a>
-
-
+</span><span class='line'>Command-line Interface:
+</span><span class='line'>./searcher &lt;word&gt;</span></code></pre></td></tr></table>
 </div>
-		
-			<span class="comments"><a href="/blog/2013/09/08/prototype-chuc-nang-moi-cho-webapp-tren-rails-voi-chanko/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/09/08/prototype-chuc-nang-moi-cho-webapp-tren-rails-voi-chanko/" itemprop="url">Prototype Chức Năng Mới Cho Webapp Trên Rails Với Chanko</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<p>Là một web developer nói chung và ruby on rails developer nói riêng, bạn chắc hẳn sẽ gặp nhiều khó khăn khi muốn thêm chức năng mới vào hệ thống hiện tại. Khó khăn đáng nói đến nhất bao gồm: bạn phải add sao cho chức năng mới được add vào sẽ dễ extend, dễ tháo bỏ khi không cần thiết, và việc add chức năng mới vào sẽ có ảnh hưởng tối thiểu nhất đến các chức năng đã có. Trong bài viết này, mình sẽ giới thiệu về <strong><a href="https://github.com/cookpad/chanko">chanko</a></strong>, một <strong>(framework/engine) trên ruby on rails</strong>, mà sẽ giúp cho việc tạo chức năng mới trên một app đã có cực kì clean và dễ dàng.</p>
-
-<h1>1. Cài đặt</h1>
-
-<p>Để cài đặt chanko thì chúng ta chỉ cần add chanko vào Gemfile:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">gem</span> <span class="s2">&quot;chanko&quot;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h1>2. Sử dụng</h1>
-
-<p>Đầu tiên chúng ta sẽ nói về ý tưởng của chanko. Chanko tách chức năng mới với app hiện tại thông qua việc tạo ra một folder trong /app/unit. Trong đó sẽ chứa các chức năng được tạo mới thông qua chanko. Việc này có thể được nhìn thấy dễ dàng khi chúng ta sử dụng chanko generator.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="err">$</span> <span class="n">rails</span> <span class="n">generate</span> <span class="ss">chanko</span><span class="p">:</span><span class="n">unit</span> <span class="n">example_unit</span>
-</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span>
-</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span><span class="o">/</span><span class="n">example_unit</span><span class="o">.</span><span class="n">rb</span>
-</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span><span class="o">/</span><span class="n">views</span><span class="o">/.</span><span class="n">gitkeep</span>
-</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span><span class="o">/</span><span class="n">images</span><span class="o">/.</span><span class="n">gitkeep</span>
-</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span><span class="o">/</span><span class="n">javascripts</span><span class="o">/.</span><span class="n">gitkeep</span>
-</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span><span class="o">/</span><span class="n">stylesheets</span><span class="o">/.</span><span class="n">gitkeep</span>
-</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">assets</span><span class="o">/</span><span class="n">images</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span>
-</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">assets</span><span class="o">/</span><span class="n">javascripts</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span>
-</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">assets</span><span class="o">/</span><span class="n">stylesheets</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Chúng ta có thể thấy chanko generator gần tương tự như scaffold generator của rails. unit ở đây là một đơn vị chức năng.</p>
-
-<p>Ví dụ khi bạn cần add chức năng search button thì bạn sẽ <code>generate chanko:unit add_search_button</code>, khi đó chanko sẽ tự động tạo folder add_search_button ở trong app/units, và tạo sẵn file add_search_button_unit.rb và thư mục view để chứa view của chức năng mới này. File add_search_button.rb này sẽ chứa logic của cả model/controller của chức năng add_search_button mà chúng ta cần thêm vào.</p>
-
-<p>Các bạn có thể thấy rõ ý tưởng của chanko là tách logic và cả asset của chức năng mới cần thêm vào càng tách biệt với các chức năng cũ càng tốt. Việc này có tác dụng là chúng ta có thể thêm, bớt chức năng vào hệ thống cũ bằng một flow rất clean , và độ ảnh hưởng với hệ thống cũ cực kì thấp. Vậy nếu tách unit mới ra dưới dạng gần như một thư viện riêng như vậy, chúng ta sẽ intergrate unit này vào rails ra sao?</p>
-
-<p>Việc intergrate unit được tạo ra bởi chanko vào rails được thể hiện qua các chức năng dưới đây:</p>
-
-<h2>2.1 Invoke</h2>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># app/controllers/users_controller.rb</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">UsersController</span> <span class="o">&lt;</span> <span class="no">ApplicationController</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">index</span>
-</span><span class='line'>    <span class="n">invoke</span><span class="p">(</span><span class="ss">:add_search_button_unit</span><span class="p">,</span> <span class="ss">:index</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>      <span class="vi">@users</span> <span class="o">=</span> <span class="no">User</span><span class="o">.</span><span class="n">all</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">AddSearchButtonUnit</span>
-</span><span class='line'>  <span class="kp">include</span> <span class="ss">Chanko</span><span class="p">:</span><span class="ss">:Unit</span>
-</span><span class='line'>  <span class="n">function</span> <span class="p">(</span><span class="ss">:index</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>    <span class="vi">@users</span> <span class="o">=</span> <span class="no">Users</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">active</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Hàm invoke này sẽ đưa logic của hàm <code>index</code> được định nghĩa trong <code>add_search_button_unit.rb</code> vào trong logic của hàm hiện tại. Block được pass vào hàm invoke sẽ là fallback function, được execute khi có lỗi hày có vấn đề gì xảy ra với hàm invoke. Chúng ta có thể hình dung đơn giản chức năng invoke dùng để extend logic của một hàm của một unit (chức năng mới) và logic của controller (chức năng cũ)</p>
-
-<h2>2.2 Unit module</h2>
-
-<p>Unit module chính là module của chức năng mới được thêm vào, ở đây chính là module AddSearchButton mà chúng ta đã nói đến ở trên. Trong module này sẽ định nghĩa logic cho controller, model và cả view helper cho chức năng mới. Tất cả MVC logic đều được nhét vào 1 file có thể hơi khó nhìn khi chức năng của chúng ta có nhiều logic phức tạp , tuy nhiên khi dừng lại ở mức prototyping thì việc này có thể chấp nhận được.</p>
-
-<p><strong>Logic của controller</strong> được add vào thông qua hàm <code>scope(:controller)</code></p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">scope</span><span class="p">(</span><span class="ss">:controller</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">function</span><span class="p">(</span><span class="ss">:show</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>    <span class="vi">@user</span> <span class="o">=</span> <span class="no">User</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">params</span><span class="o">[</span><span class="ss">:id</span><span class="o">]</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="n">function</span><span class="p">(</span><span class="ss">:index</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>    <span class="vi">@users</span> <span class="o">=</span> <span class="no">User</span><span class="o">.</span><span class="n">active</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Gần tương tự, <strong>Logic của của model</strong> sẽ được thực hiện thông qua hàm <code>model</code>. Một điểm hơi khác là trong block pass vào thì chúng ta phải extend model mà chúng ta muốn thêm chức năng vào. Một điều đặc biệt ở đây là các hàm được extend cho một model X sẽ không được add trực tiếp vào model X thông qua monkey patch, mà sẽ add gián tiếp thông qua một proxy tên là unit. Do đó giả sử chúng ta một thêm hàm <code>method</code> vào model X thì chúng ta sẽ gọi nó thông qua <code>X.unit.method</code>. Như ở ví dụ dưới đây thì hàm active? sẽ được gọi thông qua user.unit.active?</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">models</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">expand</span><span class="p">(</span><span class="ss">:User</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>    <span class="n">scope</span> <span class="ss">:active</span><span class="p">,</span> <span class="nb">lambda</span> <span class="p">{</span> <span class="n">where</span><span class="p">(</span><span class="ss">:deleted_at</span> <span class="o">=&gt;</span> <span class="kp">nil</span><span class="p">)</span> <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">active?</span>
-</span><span class='line'>      <span class="n">deleted_at</span><span class="o">.</span><span class="n">nil?</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Logic của view được thực hiện thêm vào thông qua hàm <code>scope(:view)</code> và qua file view được add vào thư mục /units/unit_name/views (file view này sẽ có extension là slim)</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">scope</span><span class="p">(</span><span class="ss">:view</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">function</span><span class="p">(</span><span class="ss">:active</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>    <span class="n">render</span> <span class="s1">&#39;/active&#39;</span> <span class="k">if</span> <span class="n">user</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">active?</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Hàm view này sẽ render view active.html.slim nằm trong app/units/unit_name/views</p>
-
-<p>Ngoài việc add logic của unit vào controller/model/view thông qua các hàm scope và model như đã giới thiệu ở trên. Chanko::Unit cung cấp cho chúng ta một hàm rất hữu ích là <code>active_if</code>. Hàm này giống như một dạng functionality toggle, giúp chúng ta có thể on/off một chức năng mới cực kì dễ dàng. Block được pass vào active_if sẽ quyêt định chức unit có được enable không, nếu không được enable thì tất cả các logic của unit sẽ không được execute.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">active_if</span> <span class="k">do</span> <span class="o">|</span><span class="n">context</span><span class="p">,</span> <span class="n">options</span><span class="o">|</span>
-</span><span class='line'>  <span class="kp">true</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h1>3. Kết luận</h1>
-
-<p>Qua bài viết này chúng ta đã biết cách sử dụng gem chanko để có thể prototype chức năng mới một cách dễ dàng hơn, và ít ảnh hưởng đến hệ thống cũ nhất. Một cách đơn giản thì chanko đưa logic của cả model/view/controller vào tập trung trong 1 file, và cung cấp các helper function để giúp logic của hệ thống cũ có thể invoke các chức năng của unit mới một cách đơn giản nhất.</p>
-
-<p>Các bạn có thể tham khảo chi tiết thông qua <a href="http://cookpad.github.io/chanko/">homepage của chanko</a></p>
-
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-09-08T11:30:00+09:00" data-updated="true" itemprop="datePublished">Sep 8<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/python/'>python</a>
-
-
+</figure>
+</notextile>
 </div>
-		
-			<span class="comments"><a href="/blog/2013/09/08/gioi-thieu-ve-python-descriptor/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/09/08/gioi-thieu-ve-python-descriptor/" itemprop="url">Giới Thiệu về Python Descriptor</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<p>Trong các bài viết trước, chúng tôi đã giới thiệu về các kiến thức cơ bản trong python, như <a href="/blog/2613/04/29/python-object-model/">object trong python</a>, <a href="/blog/2613/05/06/memoization-and-decorator/">decorators</a>.</p>
-
-<p>Bài viết này sẽ giới thiệu một kỹ nâng cao trong Python, đó là <code>descriptor</code></p>
-
-<h1>1. Ví dụ về descriptor</h1>
-
-<p>Xét ví dụ khi chúng ta muốn xây dựng mô hình cho bài toán về các lập trình viên</p>
-
-<figure class='code'><figcaption><span>programmer.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">salary</span><span class="p">,</span> <span class="n">rating</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="n">age</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">salary</span> <span class="o">=</span> <span class="n">salary</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">rating</span> <span class="o">=</span> <span class="n">rating</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Giờ nếu bạn muốn thêm một điều kiện là tuổi của lập trình viên phải luôn lớn hơn 0, bạn có thể cài đặt như sau</p>
-
-<figure class='code'><figcaption><span>programmer.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">salary</span><span class="p">,</span> <span class="n">rating</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">salary</span> <span class="o">=</span> <span class="n">salary</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">rating</span> <span class="o">=</span> <span class="n">rating</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">if</span> <span class="n">age</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="n">age</span>
-</span><span class='line'>        <span class="k">else</span><span class="p">:</span>
-</span><span class='line'>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Negative value not allowed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">age</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Tuy nhiên với cách làm này, bạn vẫn có thể làm cho <code>age</code> &lt; 0, nếu gán giá trị của <code>age</code> trực tiếp từ instance của Programmer</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>>>> kiennt = Programmer('kiennt', 26, 500, 5)
-</span><span class='line'>>>> kiennt.age = -10</span></code></pre></td></tr></table></div></figure>
-
-
-<p>May mắn thay, ta có thể sử dụng <code>property</code> để giải quyết vấn đề này</p>
-
-<figure class='code'><figcaption><span>programmer.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<p>Như đã giới thiệu ở loạt bài trước, Full Text Search sử dụng inverted index để lưu lại term và các document chứa term đó:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'>
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>"this" =&gt; {D1, D2, D3, D4}</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Vì vậy chúng ta cần một module để lưu Structure này, chúng ta sẽ gọi module đó là DocID. DocID sẽ có nhiệm vụ là lưu term và một array để chứa id của các documents mà chứa term đó.</p>
+<p>Tuy nhiên chỉ lưu đơn thuần dữ liệu inverted index thì sẽ không đủ, chúng ta cần một module để lưu lại các document và ID của chúng để khi có kết quả tìm kiếm chúng ta có thể present kết quả dễ dàng hơn. Module này chúng ta sẽ gọi là Content. Content sẽ lưu lại Id và nội dung của document.</p>
+<p>Chúng ta cũng sẽ cần một module để làm nhiệm vụ phân tích document ra thành các term như đã giới thiệu trong <a href="http://ktmt.github.io/blog/2013/11/03/full-text-search/">Bài 2: Kỹ thuật Tokenize</a>. Chúng ta sẽ gọi module này là Tokenizer.</p>
+<p>Đã có Tokenizer, DocID, Content, chúng ta cần một module sử dụng cả 3 module này để lưu trữ thông tin được tạo ra từ Tokenizer vào DocID và Content, chúng ta sẽ gọi nó là Indexer.</p>
+<p>Cuối cùng, chúng ta cần một module sử dụng boolean logic như đã giới thiệu trong <a href="http://ktmt.github.io/blog/2014/01/04/full-text-search-engine-part-3/">Bài 3</a> để tìm kiếm. Chúng ta sẽ gọi module này là Searcher. Module Searcher sẽ có nhiệm vụ sử dụng tách query ra thành các term, search ra một tập document chứa các term đó, và present ra màn hình.</p>
+<p>Tóm tắt lại chúng ta sẽ có các module sau:</p>
+<ul>
+<li>DocID : Lưu inverted index</li>
+<li>Content : Lưu id và dữ liệu thô từ input data</li>
+<li>Tokenizer : Bóc tách term</li>
+<li>Indexer : Sử dụng tokenizer để lưu thông tin</li>
+<li>Searcher : Tìm kiếm</li>
+</ul>
+<h1 id="implement">Implement</h1>
+<p>Để implement bài toán này chúng ta sẽ sử dụng python. Chúng ta cũng cần một thư viện để lưu lại/sử dụng (dump) dữ liệu (inverted index) ra file. Python có một thư viện rất tốt để dump data structure ra file gọi là Pickle.</p>
+<p>Sử dụng pickle, chúng ta sẽ lưu dữ liệu ra file và khi load chương trình lên sẽ sử load file vào data structure lên sau. Tách ra làm 2 bước như vậy giúp chúng ta tách biệt được 2 quá trình 1) Index và 2) Search, mà qua đó khi có thêm dữ liệu mới, index file sẽ được update thêm mà không ảnh hưởng đên Searcher.</p>
+<p>Dưới đây chúng ta sẽ đi lần lượt vào implementation của từng module. Đầu tiên là DocID.</p>
+<h2 id="docid">DocID</h2>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>DocID - DocID.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -733,53 +190,140 @@ Thế nên thuộc tính <code>retain</code> có thể không cần dùng nữa.
 <span class='line-number'>17</span>
 <span class='line-number'>18</span>
 <span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">salary</span><span class="p">,</span> <span class="n">rating</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">_age</span> <span class="o">=</span> <span class="bp">None</span> <span class="c"># tạo một thuộc tính private cho age</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="kn">import</span> <span class="nn">pickle</span>
 </span><span class='line'>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="n">age</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">salary</span> <span class="o">=</span> <span class="n">salary</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">rating</span> <span class="o">=</span> <span class="n">rating</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">DocID</span><span class="p">:</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">docIDTable</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="nd">@property</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">age</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_age</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">get_doc_num</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">docIDTable</span><span class="p">)</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="nd">@age.setter</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">age</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">if</span> <span class="n">age</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">_age</span> <span class="o">=</span> <span class="n">value</span>
-</span><span class='line'>        <span class="k">else</span><span class="p">:</span>
-</span><span class='line'>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Negative value not allowed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">age</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>python </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">term</span><span class="p">,</span> <span class="n">docID</span><span class="p">,</span> <span class="n">termPos</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">docIDTable</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="p">[])</span>
+</span><span class='line'>    <span class="n">value</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">docID</span><span class="p">,</span> <span class="n">termPos</span><span class="p">))</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">docIDTable</span><span class="p">[</span><span class="n">term</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">term</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">docIDTable</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="p">[])</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">file</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="nb">file</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">docIDTable</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">file</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="nb">file</span><span class="p">)</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">docIDTable</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Ở DocID chúng ta có property docIDTable được lưu dưới dạng dictionary của python, mà trong đó key là term , và value sẽ là array chứa Ids của các document chứa term đó. docIDTable chính là biểu diễn bằng code của inverted index data structure.</p>
+<p>Module DocID có các hàm dump và load để lưu dữ liệu ra file và load dữ liệu lên memory. Tiếp theo chúng ta sẽ đến với implemetation của module Content.</p>
+<h2 id="content">Content</h2>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>Content - Content.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>>>> kiennt = Programmer('kiennt', 26, 500, 5)
-</span><span class='line'>>>> try:
-</span><span class='line'>        kiennt.age = -10
-</span><span class='line'>    except ValueError:
-</span><span class='line'>        print "Cannot set negative value"
-</span><span class='line'>Cannot set negative value</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Cách chúng ta làm ở đây đó là tạo ra một biến private <code>_age</code> để chứa giá trị thật của <code>age</code>. Và sử dụng @getter và @setter để bind thuộc tính <code>age</code> với 2 method. Trong 2 method này, chúng ta sẽ cài đặt logic cho việc gán trị của <code>age</code>. Khi chúng ta gọi <code>kiennt.age = value</code>, python sẽ tự động gọi đến setter của <code>age</code>, còn nếu chỉ gọi <code>kiennt.age</code> (không có gán giá trị), thì getter sẽ được gọi.</p>
-
-<h1>2. Vấn đề của getter và setter</h1>
-
-<p>Nếu giờ, chúng ta cũng muốn kiểm tra giá trị của hai thuộc tính <code>salary</code> và <code>rating</code>. Chúng ta có thể làm tương tự như sau</p>
-
-<figure class='code'><figcaption><span>programmer.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="kn">import</span> <span class="nn">pickle</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">Content</span><span class="p">:</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">contentTable</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">get_content_num</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">contentTable</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">contentTable</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">get_content_num</span><span class="p">()]</span> <span class="o">=</span> <span class="n">content</span>
+</span><span class='line'>    <span class="n">current_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_content_num</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">current_index</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">contentTable</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="o">...</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Module này chỉ nhằm nhiệm vụ lưu lại dữ liệu của document và Id của document đó. Việc này sẽ được thực hiện cũng qua dictionary của python, với key là Id của document, và value là content của document tương ứng.</p>
+<p>Tiếp đến, module Tokenizer sẽ được implement như dưới đây</p>
+<h2 id="tokenizer">Tokenizer</h2>
+<p>Để cho đơn giản, tokenizer của chúng ta sẽ sử dụng ngram.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>Tokenizer - Tokenizer.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Tokenizer</span><span class="p">:</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">engine</span><span class="p">):</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">engine</span> <span class="o">=</span> <span class="n">engine</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">split</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statement</span><span class="p">,</span> <span class="n">ngram</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">statement</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">ngram</span><span class="p">):</span>
+</span><span class='line'>      <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">statement</span><span class="p">)</span> <span class="o">-</span> <span class="n">ngram</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">statement</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="n">ngram</span><span class="p">])</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">result</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<h2 id="indexer">Indexer</h2>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>Indexer - Indexer.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -822,141 +366,110 @@ Thế nên thuộc tính <code>retain</code> có thể không cần dùng nữa.
 <span class='line-number'>41</span>
 <span class='line-number'>42</span>
 <span class='line-number'>43</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">salary</span><span class="p">,</span> <span class="n">rating</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">_age</span> <span class="o">=</span> <span class="bp">None</span> <span class="c"># tạo một thuộc tính private cho age</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">_salary</span> <span class="o">=</span> <span class="bp">None</span> <span class="c"># tạo một thuộc tính private cho salary</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">_rating</span> <span class="o">=</span> <span class="bp">None</span> <span class="c"># tạo một thuộc tính private cho rating</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="n">age</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">salary</span> <span class="o">=</span> <span class="n">salary</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">rating</span> <span class="o">=</span> <span class="n">rating</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nd">@property</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">age</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_age</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nd">@age.setter</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">age</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">if</span> <span class="n">age</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">_age</span> <span class="o">=</span> <span class="n">value</span>
-</span><span class='line'>        <span class="k">else</span><span class="p">:</span>
-</span><span class='line'>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Negative value not allowed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">age</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nd">@property</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">salary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_salary</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nd">@age.setter</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">salary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">if</span> <span class="n">salary</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">_salary</span> <span class="o">=</span> <span class="n">value</span>
-</span><span class='line'>        <span class="k">else</span><span class="p">:</span>
-</span><span class='line'>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Negative value not allowed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">age</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nd">@property</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">rating</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rating</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nd">@age.setter</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">rating</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">if</span> <span class="n">rating</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">_rating</span> <span class="o">=</span> <span class="n">value</span>
-</span><span class='line'>        <span class="k">else</span><span class="p">:</span>
-</span><span class='line'>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Negative value not allowed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">age</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Tuy nhiên cách làm này làm cho code của chúng ta có qúa nhiều đoạn code lặp về logic. Đây chính là lúc <code>descriptor</code> có thể sử dụng.</p>
-
-<h1>3. Descriptor</h1>
-
-<p>Descriptor cho phép chúng ta bind cách xử lý truy cập của một thuộc tính trong class A với một class B khác. Nói cách khác, nó cho phép đưa việc truy cập thuộc tính ra ngoài class. Sau đây là cách cài đặt đối với bài toán của chúng ta</p>
-
-<figure class='code'><figcaption><span>programmer.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">NonNegativeDescriptor</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">label</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">owner</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">instance</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">if</span> <span class="n">value</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">instance</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
-</span><span class='line'>        <span class="k">else</span><span class="p">:</span>
-</span><span class='line'>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Negative value not allowed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">age</span><span class="p">)</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="kn">from</span> <span class="nn">docid</span> <span class="kn">import</span> <span class="n">DocID</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">content</span> <span class="kn">import</span> <span class="n">Content</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">tokenizer</span> <span class="kn">import</span> <span class="n">Tokenizer</span>
 </span><span class='line'>
 </span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">age</span> <span class="o">=</span> <span class="n">NonNegativeDescriptor</span><span class="p">(</span><span class="s">&#39;age&#39;</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">salary</span> <span class="o">=</span> <span class="n">NonNegativeDescriptor</span><span class="p">(</span><span class="s">&#39;salary&#39;</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">rating</span> <span class="o">=</span> <span class="n">NonNegativeDescriptor</span><span class="p">(</span><span class="s">&#39;rating&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Index</span><span class="p">:</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ngram</span><span class="p">):</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">Tokenizer</span><span class="p">(</span><span class="s">&quot;ma&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">docID</span> <span class="o">=</span> <span class="n">DocID</span><span class="p">()</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="n">Content</span><span class="p">()</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">ngram</span> <span class="o">=</span> <span class="n">ngram</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">salary</span><span class="p">,</span> <span class="n">rating</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="n">age</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">salary</span> <span class="o">=</span> <span class="n">salary</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">rating</span> <span class="o">=</span> <span class="n">rating</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>python </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>>>> kiennt = Programmer('kiennt', 26, 500, 5)
-</span><span class='line'>>>> print kiennt.age
-</span><span class='line'>>>> kiennt.age = 20</span></code></pre></td></tr></table></div></figure>
-
-
-<p>NonNegativeDescriptor là một descriptor vì class này cài đặt 2 phương thức <code>__get__</code> và <code>__set__</code>.  Python nhận ra một class là descriptor nếu như class đó implement một trong 3 phương thức.</p>
-
-<ul>
-<li><code>__get__</code>: Nhận 2 tham số <code>instance</code> và <code>owner</code>. <code>instance</code> là instance của class mà Descriptor được bind tới. <code>owner</code> là class của <code>instance</code>. Trong trường hợp, không có <code>instance</code> nào được gọi, <code>owner</code> sẽ là None.</li>
-<li><code>__set__</code>: Nhận 2 tham số <code>instance</code> và <code>value</code>. <code>instance</code> có ý nghĩa như trong <code>__get__</code>, value là giá trị muốn set cho thuộc tính của <code>instance</code></li>
-<li><code>__delete__</code>: Nhận 1 tham số <code>instance</code></li>
-</ul>
-
-
-<p>Trong class <code>Programmer</code>, chúng ta tạo ra 3 Descriptor ở mức class là <code>age</code>, <code>salary</code> và <code>rating</code>.
-Khi gọi <code>print kiennt.age</code>, python sẽ nhận ra age là một descriptor, nên nó sẽ gọi đến hàm <code>__get__</code> của descriptor <code>NonNegativeDescriptor.__get__(kiennt, Programmer)</code>. Tương tự khi gán giá trị cho <code>kiennt.age = 20</code>, hàm <code>__set__</code> của descriptor cũng được gọi <code>NonNegativeDescriptor.__set__(kiennt, 20)</code>.</p>
-
-<p>Nếu chúng ta gọi <code>Programmer.age</code>, thì hàm <code>__get__</code> sẽ được gọi với <code>owner</code> = None.</p>
-
-<h1>4. Descriptor và Metaclass</h1>
-
-<p>Một điểm cần lưu ý đó là trong descriptor, có sử dụng biến label để bind giữa descriptor và thuộc tính của class. Ta có thể sử dụng Metaclass để giải quyết vấn đề này</p>
-
-<figure class='code'><figcaption><span>programmer.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">tokenize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statement</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">statement</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">append_doc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">docID</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">pos</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">set_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statement</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">statement</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statement</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">tokenized_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenize</span><span class="p">(</span><span class="n">statement</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">content_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_content</span><span class="p">(</span><span class="n">statement</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">token_index</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokenized_str</span><span class="p">:</span>
+</span><span class='line'>      <span class="bp">self</span><span class="o">.</span><span class="n">append_doc</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">content_id</span><span class="p">,</span> <span class="n">token_index</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">token_index</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">dir</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">f_content_name</span> <span class="o">=</span> <span class="s">&quot;content.pickle&quot;</span>
+</span><span class='line'>    <span class="n">f_docid_name</span> <span class="o">=</span> <span class="s">&quot;docid.pickle&quot;</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">f_content_name</span><span class="p">)</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">docID</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">f_docid_name</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">dir</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">f_content_name</span> <span class="o">=</span> <span class="s">&quot;content.pickle&quot;</span>
+</span><span class='line'>    <span class="n">f_docid_name</span> <span class="o">=</span> <span class="s">&quot;docid.pickle&quot;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f_content_name</span><span class="p">)</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">docID</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">f_docid_name</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">column</span><span class="p">):</span>
+</span><span class='line'>  <span class="n">indexer</span> <span class="o">=</span> <span class="n">Index</span><span class="p">(</span><span class="n">NGRAM</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">f</span> <span class="o">=</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">,</span> <span class="s">&quot;utf-8&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">lines</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+</span><span class='line'>    <span class="k">print</span> <span class="n">line</span>
+</span><span class='line'>    <span class="n">elems</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\t</span><span class="s">&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">indexer</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">elems</span><span class="p">[</span><span class="n">column</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span><span class='line'>  <span class="n">indexer</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="s">&quot;data/&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+</span><span class='line'>  <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+</span><span class='line'>    <span class="k">print</span> <span class="s">&quot;usage: ./indexer.py INPUT_TSV_FILE_PATH TARGET_COLUMN_NUM&quot;</span>
+</span><span class='line'>    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">filepath</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+</span><span class='line'>  <span class="n">column</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+</span><span class='line'>  <span class="n">main</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">column</span><span class="p">)</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Module này có nhiệm vụ là sử dụng Tokenizer để tách input document thành các term sử dụng ngram, tức là mỗi term sẽ có độ dài bằng độ dài ngram. Sau đó sẽ index term đó vào DocID, nếu term đó đã tồn tại thì id của document hiện tại sẽ được add vào docIDTable của docId thông qua hàm “set”.</p>
+<p>Kết quả index sẽ được lưu vào file docid.pickle (inverted index data) và content.pickle (content data).</p>
+<h2 id="searcher">Searcher</h2>
+<p>Module này có nhiệm vụ load dữ liệu đã qua index từ 2 file docid.pickle và content.pickle vào memory, sau đó với mỗi query, Searcher sẽ phân tích query đó thành các term dựa vào tokenizer, tìm kiếm document chứa các term đó dựa vào dữ liệu từ docid, và present kết quả ra màn hình dựa vào dữ liệu lấy được từ content.pickle:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>Searcher - Searcher.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -983,50 +496,654 @@ Khi gọi <code>print kiennt.age</code>, python sẽ nhận ra age là một des
 <span class='line-number'>25</span>
 <span class='line-number'>26</span>
 <span class='line-number'>27</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">NonNegativeDescriptor</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">label</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="kn">from</span> <span class="nn">docid</span> <span class="kn">import</span> <span class="n">DocID</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">content</span> <span class="kn">import</span> <span class="n">Content</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">tokenizer</span> <span class="kn">import</span> <span class="n">Tokenizer</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">collections</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">owner</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">instance</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Searcher</span><span class="p">:</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ngram</span><span class="p">,</span> <span class="nb">dir</span><span class="p">):</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">docID</span> <span class="o">=</span> <span class="n">DocID</span><span class="p">()</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">Tokenizer</span><span class="p">()</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="n">Content</span><span class="p">()</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">docID</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">dir</span> <span class="o">+</span> <span class="s">&quot;docid.pickle&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">dir</span> <span class="o">+</span> <span class="s">&quot;content.pickle&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-</span><span class='line'>        <span class="n">instance</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statement</span><span class="p">,</span> <span class="n">numOfResult</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">tokenized_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">split_query</span><span class="p">(</span><span class="n">statement</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_search</span><span class="p">(</span><span class="n">tokenized_list</span><span class="p">,</span> <span class="n">numOfResult</span><span class="p">)</span>
 </span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">DescriptorMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-</span><span class='line'>            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">NonNegativeDescriptor</span><span class="p">):</span>
-</span><span class='line'>                <span class="n">v</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">k</span>
-</span><span class='line'>        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">DescriptorMeta</span><span class="p">,</span> <span class="n">cls</span><span class="p">)</span><span class="o">.</span><span class="n">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">_search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tokenList</span><span class="p">,</span> <span class="n">numOfResult</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">token_search_index</span> <span class="o">=</span> <span class="mi">0</span>
 </span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">age</span> <span class="o">=</span> <span class="n">NonNegativeDescriptor</span><span class="p">()</span>
-</span><span class='line'>    <span class="n">salary</span> <span class="o">=</span> <span class="n">NonNegativeDescriptor</span><span class="p">()</span>
-</span><span class='line'>    <span class="n">rating</span> <span class="o">=</span> <span class="n">NonNegativeDescriptor</span><span class="p">()</span>
+</span><span class='line'>    <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokenList</span><span class="p">:</span>
+</span><span class='line'>      <span class="n">content_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">docID</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">salary</span><span class="p">,</span> <span class="n">rating</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="n">age</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">salary</span> <span class="o">=</span> <span class="n">salary</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">rating</span> <span class="o">=</span> <span class="n">rating</span>
-</span></code></pre></td></tr></table></div></figure>
+</span><span class='line'>      <span class="k">for</span> <span class="n">content_id</span> <span class="ow">in</span> <span class="n">content_ids</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="p">[</span><span class="n">content_id</span><span class="p">]:</span>
+</span><span class='line'>          <span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">[</span><span class="n">content_id</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>        <span class="k">else</span><span class="p">:</span>
+</span><span class='line'>          <span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">[</span><span class="n">content_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="n">content_id</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">print_result</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">sorted_result</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">sorted_result</span><span class="p">:</span>
+</span><span class='line'>      <span class="k">print</span> <span class="s">&quot;{}</span><span class="se">\n</span><span class="s">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Chúng ta có thể thấy Searcher là một module rất đơn giản sử dụng tokenizer để bóc tách query. Sau khi bóc tách query thành các term, với mỗi term chúng ta sẽ tìm các document chứa term đó dựa vào docID. Mỗi term chúng ta sẽ thu được một chuỗi Ids chứa id của document chứa chúng.</p>
+<p>Để kết hợp các các chuỗi ids tìm được thành kết quả cuối cùng, chúng ta làm một mô hình ranking rất đơn giản, document nào chứa nhiều term hơn thì hiển thị trước. Logic này được thực hiện dựa vào tạo một dictionary chứa kết quả (self.result) , cứ mỗi khi tìm được document nào thì ta cộng kết quả thêm 1.</p>
+<p>Kết quả cuối cùng sẽ được in ra màn hình thông qua hàm print_result. Như vậy chúng ta đã implement xong một search engine hết sức đơn giản.</p>
+<h1 id="conclusion">Conclusion</h1>
+<p>Thông qua chuỗi bài viết, chúng ta đã hiểu được phần nào việc tạo ra một search engine. Để có một search engine thành công, như google hay yahoo, không những performance phải được hoàn thiện ở mức tối đa với khối lượng dữ liệu rất lớn, thì việc có một mô hình ranking thích hợp cũng vô cùng quan trọng. Hy vọng chuỗi bài viết đã đem đến cho các bạn cái nhìn cơ bản nhất về search engine.</p>
+		
+		
+	</div>
+
+</article>
 
 
-<p>Metaclass hoạt động như thế nào, sẽ được giới thiệu trong bài viết tiếp theo.</p>
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
 
-<h1>Kết luận</h1>
 
-<p>Bài viết này giới thiệu với các bạn về descriptor trong Python. Với descriptor, chúng ta có thể chuyển việc can thiệp vào từng thuộc tính của một instance trong class tới việc can thiệp vào thuộc tính ở mức class. Cùng với metaclass, descriptor được sử dụng như một <code>ma thuật đen</code> (black magic) trong metaprogramming. Descriptor được sử dụng rất nhiều khi xây dựng các bộ thư viện về ORM (django ORM, peewee, redisco)</p>
 
-<h1>Tham khảo</h1>
 
+
+
+
+
+  
+
+
+<time datetime="2014-04-19T06:47:00+09:00" data-updated="true" itemprop="datePublished">Apr 19<span>th</span>, 2014</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/algorithm/'>algorithm</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2014/04/19/mot-so-vi-du-ve-quy-hoach-dong/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2014/04/19/mot-so-vi-du-ve-quy-hoach-dong/" itemprop="url">Một Số ví Dụ về Quy Hoạch động</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1 id="giới-thiệu">Giới thiệu</h1>
+<p>Quy hoạch động là một trong những kĩ thuật lập trình cơ bản được sử dụng khá nhiều trong các cuộc thi lập trình. Ý tưởng về cơ bản rất đơn giản: để giải một bài toán, chúng ta đi giải các bài toán con, sau đó tổng hợp các lời giải đó lại thành lời giải của bài toán ban đầu. Trong một số bài toán, nếu không sử dụng quy hoạch động, rất nhiều bài toán con sẽ bị tính lặp đi lặp lại. Quy hoạch động sẽ tìm cách để giải mỗi bài toán con <strong>đúng 1 lần</strong> để giảm thiểu số lần tính toán. Một khi lời giải cho một bài toán con đã có, chúng ta lưu lại và lần tiếp theo cần lời giải đó, chúng ta chỉ cần tìm lại.</p>
+<p>Quy hoạch động được sử dụng rất nhiều trong các thuật toán khác, ví dụ như: thuật toán Dijkstra tìm đường đi ngắn nhất, Knapsack, Nhân ma trận theo chuỗi (Chain matrix multiplication), thuật toán Floyd-Warshall tìm đường đi ngắn nhất giữa mọi cặp đỉnh trong đồ thị (đã có bài viết giới thiệu về thuật toán này).</p>
+<p>Trong bài viết này, chúng ta sẽ cùng đi qua một số ví dụ sử dụng quy hoạch động trên TopCoder.</p>
+<h1 id="ví-dụ-1-zigzag">Ví dụ 1: ZigZag</h1>
+<blockquote>
+<p>A sequence of numbers is called a zig-zag sequence if the differences between successive numbers strictly alternate between positive and negative. The first difference (if one exists) may be either positive or negative. A sequence with fewer than two elements is trivially a zig-zag sequence.</p>
+<p>For example, 1,7,4,9,2,5 is a zig-zag sequence because the differences (6,-3,5,-7,3) are alternately positive and negative. In contrast, 1,4,7,2,5 and 1,7,4,5,5 are not zig-zag sequences, the first because its first two differences are positive and the second because its last difference is zero.</p>
+<p>Given a sequence of integers, sequence, return the length of the longest subsequence of sequence that is a zig-zag sequence. A subsequence is obtained by deleting some number of elements (possibly zero) from the original sequence, leaving the remaining elements in their original order.</p>
+<ol start="0" type="1">
+<li></li>
+</ol>
+<p>{ 1, 7, 4, 9, 2, 5 }</p>
+<p>Returns: 6</p>
+<p>The entire sequence is a zig-zag sequence.</p>
+<p>1)</p>
+<p>{ 1, 17, 5, 10, 13, 15, 10, 5, 16, 8 }</p>
+<p>Returns: 7</p>
+<p>There are several subsequences that achieve this length. One is 1,17,10,13,10,16,8.</p>
+<ol start="2" type="1">
+<li></li>
+</ol>
+<p>{ 44 }</p>
+<p>Returns: 1</p>
+<ol start="3" type="1">
+<li></li>
+</ol>
+<p>{ 1, 2, 3, 4, 5, 6, 7, 8, 9 }</p>
+<p>Returns: 2</p>
+<ol start="4" type="1">
+<li></li>
+</ol>
+<p>{ 70, 55, 13, 2, 99, 2, 80, 80, 80, 80, 100, 19, 7, 5, 5, 5, 1000, 32, 32 }</p>
+<p>Returns: 8</p>
+<ol start="5" type="1">
+<li></li>
+</ol>
+<p>{ 374, 40, 854, 203, 203, 156, 362, 279, 812, 955, 600, 947, 978, 46, 100, 953, 670, 862, 568, 188, 67, 669, 810, 704, 52, 861, 49, 640, 370, 908, 477, 245, 413, 109, 659, 401, 483, 308, 609, 120, 249, 22, 176, 279, 23, 22, 617, 462, 459, 244 }</p>
+<p>Returns: 36</p>
+</blockquote>
+<p>Bài toán này là một dạng của bài toán tìm xâu dài nhất thoả mãn một điều kiện nào đó, ví dụ như tăng dần, giảm dần… Cách làm quy hoạch động là như sau: duyệt từ trái sang phải, tìm xâu dài nhất kết thúc tại phần tử đang xét. Xâu dài nhất này được tính dựa trên các bài toán con phía trước:</p>
 <ul>
-<li><p><a href="http://nbviewer.ipython.org/urls/gist.github.com/ChrisBeaumont/5758381/raw/descriptor_writeup.ipynb">Python Descriptors Demystified</a></p></li>
-<li><p><a href="http://dabeaz.com/py3meta/Py3Meta.pdf">Python 3 Metaprogramming</a></p></li>
+<li><p>Xem có thể thêm phần tử hiện tại vào các xâu dài nhất két thúc bằng các phần tử phía trước không.</p></li>
+<li><p>Chọn xâu dài nhất có thể trong các xâu thoả mãn.</p></li>
 </ul>
+<p>Sau đây là đoạn code:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>ZigZag.cpp </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+</pre></td><td class='code'><pre><code class='cpp'><span class='line'><span class="cp">#include &lt;iostream&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;cmath&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;vector&gt;</span>
+</span><span class='line'><span class="k">using</span> <span class="k">namespace</span> <span class="n">std</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">ZigZag</span><span class="p">{</span>
+</span><span class='line'><span class="k">public</span><span class="o">:</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">longestZigZag</span><span class="p">(</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">sequence</span><span class="p">);</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="n">ZigZag</span><span class="o">::</span><span class="n">longestZigZag</span><span class="p">(</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">sequence</span><span class="p">){</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="n">sequence</span><span class="p">.</span><span class="n">size</span><span class="p">();</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">f</span><span class="p">[</span><span class="n">n</span><span class="p">];</span>
+</span><span class='line'>  <span class="kt">bool</span> <span class="n">isUp</span><span class="p">[</span><span class="n">n</span><span class="p">];</span> <span class="c1">// check if in the longest sequence up to i-th member, we are going up or down</span>
+</span><span class='line'>  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">n</span> <span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>      <span class="n">f</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>      <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">i</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>          <span class="c1">//special case</span>
+</span><span class='line'>          <span class="k">if</span><span class="p">(</span><span class="n">j</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">){</span>
+</span><span class='line'>              <span class="n">f</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+</span><span class='line'>              <span class="n">isUp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">sequence</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>          <span class="k">if</span><span class="p">(</span><span class="n">isUp</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="kc">true</span> <span class="o">&amp;&amp;</span> <span class="n">sequence</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">sequence</span><span class="p">[</span><span class="n">i</span><span class="p">]){</span>
+</span><span class='line'>              <span class="k">if</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">f</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">){</span>
+</span><span class='line'>                  <span class="n">f</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>                  <span class="n">isUp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>          <span class="k">if</span><span class="p">(</span><span class="n">isUp</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="kc">false</span> <span class="o">&amp;&amp;</span> <span class="n">sequence</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">sequence</span><span class="p">[</span><span class="n">i</span><span class="p">]){</span>
+</span><span class='line'>              <span class="k">if</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">f</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">){</span>
+</span><span class='line'>                  <span class="n">f</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>                  <span class="n">isUp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="n">f</span><span class="p">[</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<h1 id="ví-dụ-2-avoidroads">Ví dụ 2: AvoidRoads</h1>
+<blockquote>
+<p>In the city, roads are arranged in a grid pattern. Each point on the grid represents a corner where two blocks meet. The points are connected by line segments which represent the various street blocks. Using the cartesian coordinate system, we can assign a pair of integers to each corner as shown below.</p>
+</blockquote>
+<p><img src="/images/AvoidPic1.GIF"></p>
+<blockquote>
+<p>You are standing at the corner with coordinates 0,0. Your destination is at corner width,height. You will return the number of distinct paths that lead to your destination. Each path must use exactly width+height blocks. In addition, the city has declared certain street blocks untraversable. These blocks may not be a part of any path. You will be given a String[] bad describing which blocks are bad. If (quotes for clarity) “a b c d” is an element of bad, it means the block from corner a,b to corner c,d is untraversable. For example, let’s say width = 6 length = 6 bad = {“0 0 0 1”,“6 6 5 6”} The picture below shows the grid, with untraversable blocks darkened in black. A sample path has been highlighted in red.</p>
+</blockquote>
+<p><img src="/images/AvoidPic2.GIF"></p>
+<blockquote>
+<p>Examples</p>
+<ol start="0" type="1">
+<li></li>
+</ol>
+<p>6</p>
+<p>6</p>
+<p>{“0 0 0 1”,“6 6 5 6”}</p>
+<p>Returns: 252</p>
+<p>Example from above.</p>
+<ol type="1">
+<li></li>
+</ol>
+<p>1</p>
+<p>1</p>
+<p>{}</p>
+<p>Returns: 2</p>
+<p>Four blocks aranged in a square. Only 2 paths allowed.</p>
+<ol start="2" type="1">
+<li></li>
+</ol>
+<p>35</p>
+<p>31</p>
+<p>{}</p>
+<p>Returns: 6406484391866534976</p>
+<p>Big number.</p>
+<ol start="3" type="1">
+<li></li>
+</ol>
+<p>2</p>
+<p>2</p>
+<p>{“0 0 1 0”, “1 2 2 2”, “1 1 2 1”}</p>
+<p>Returns: 0</p>
+</blockquote>
+<p>Vẫn trên tư tưởng quy hoạch động, dễ thấy ta cần duyệt từ đỉnh (0,0). Số lượng đường đi đến đỉnh (i,j) sẽ dựa trên số lượng đường đi đến đỉnh (i-1,j) và đỉnh (i, j-1). Chú ý nếu đường đi từ (i-1,j) hoặc (i, j-1) đến (i,j) bị chặn thì ta sẽ không tính đoạn đường đó nữa.</p>
+<p>Sau đây là đoạn code (C++):</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>AvoidRoads.cpp </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+</pre></td><td class='code'><pre><code class='cpp'><span class='line'><span class="cp">#include &lt;iostream&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;vector&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;string&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;sstream&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;cmath&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;algorithm&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">using</span> <span class="k">namespace</span> <span class="n">std</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">AvoidRoads</span><span class="p">{</span>
+</span><span class='line'><span class="k">public</span><span class="o">:</span>
+</span><span class='line'>  <span class="kt">long</span> <span class="n">numWays</span><span class="p">(</span><span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="kt">int</span> <span class="n">height</span><span class="p">,</span> <span class="n">vector</span><span class="o">&lt;</span><span class="n">string</span><span class="o">&gt;</span> <span class="n">bad</span><span class="p">);</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">long</span> <span class="n">AvoidRoads</span><span class="o">::</span><span class="n">numWays</span><span class="p">(</span><span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="kt">int</span> <span class="n">height</span><span class="p">,</span> <span class="n">vector</span><span class="o">&lt;</span><span class="n">string</span><span class="o">&gt;</span> <span class="n">bad</span><span class="p">){</span>
+</span><span class='line'>  <span class="kt">bool</span> <span class="n">badVertical</span><span class="p">[</span><span class="n">width</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="n">height</span><span class="o">+</span><span class="mi">1</span><span class="p">];</span>
+</span><span class='line'>  <span class="kt">bool</span> <span class="n">badHorizontal</span><span class="p">[</span><span class="n">width</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="n">height</span><span class="o">+</span><span class="mi">1</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">width</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>      <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">j</span> <span class="o">&lt;=</span> <span class="n">height</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>          <span class="n">badVertical</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+</span><span class='line'>          <span class="n">badHorizontal</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span> <span class="n">bad</span><span class="p">.</span><span class="n">size</span><span class="p">();</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>      <span class="n">stringstream</span> <span class="n">temp</span><span class="p">(</span><span class="n">bad</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+</span><span class='line'>      <span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span>  <span class="n">t</span><span class="p">;</span>
+</span><span class='line'>      <span class="n">temp</span> <span class="o">&gt;&gt;</span> <span class="n">x</span> <span class="o">&gt;&gt;</span> <span class="n">y</span> <span class="o">&gt;&gt;</span> <span class="n">z</span> <span class="o">&gt;&gt;</span> <span class="n">t</span><span class="p">;</span>
+</span><span class='line'>      <span class="k">if</span><span class="p">(</span><span class="n">abs</span><span class="p">(</span><span class="n">z</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">==</span><span class="mi">1</span><span class="p">){</span>
+</span><span class='line'>          <span class="n">badHorizontal</span><span class="p">[</span><span class="n">min</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">z</span><span class="p">)][</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+</span><span class='line'>          <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;bad Horizontal at: &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">min</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">z</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;, &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">y</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>      <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">abs</span><span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="n">y</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">){</span>
+</span><span class='line'>          <span class="n">badVertical</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">min</span><span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="n">t</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+</span><span class='line'>          <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;bad Vertical at: &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;, &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">min</span><span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="n">t</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kt">long</span> <span class="n">res</span> <span class="p">[</span><span class="n">width</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="n">height</span><span class="o">+</span><span class="mi">1</span><span class="p">];</span>
+</span><span class='line'>  <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;=</span> <span class="n">width</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span> <span class="p">){</span>
+</span><span class='line'>      <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;=</span> <span class="n">height</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>          <span class="c1">//don&#39;t override the base case</span>
+</span><span class='line'>          <span class="k">if</span><span class="p">((</span><span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">j</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)){</span>
+</span><span class='line'>              <span class="k">continue</span><span class="p">;</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="kt">long</span> <span class="n">temp</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>          <span class="k">if</span><span class="p">(</span><span class="n">i</span><span class="o">&gt;</span><span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">badHorizontal</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>              <span class="n">temp</span> <span class="o">+=</span> <span class="n">res</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">j</span><span class="p">];</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>          <span class="k">if</span><span class="p">(</span><span class="n">j</span><span class="o">&gt;</span><span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">badVertical</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">]){</span>
+</span><span class='line'>              <span class="n">temp</span> <span class="o">+=</span> <span class="n">res</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">];</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>          <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;temp = &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">temp</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+</span><span class='line'>          <span class="n">res</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp</span><span class="p">;</span>
+</span><span class='line'>          <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;Ways to (&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">i</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">j</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;) is: &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">res</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">res</span><span class="p">[</span><span class="n">width</span><span class="p">][</span><span class="n">height</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<h1 id="kết-luận">Kết luận</h1>
+<p>Hi vọng qua 2 ví dụ trên, bạn đã phần nào có được tư tưởng quy hoạch động. Về cơ bản, chúng ta chỉ cần đi đến được cách tính bài toán hiện tại dựa vào các bài toán con trước đó là 90% công việc đã xong. Hãy luyện tập thêm để chiến đấu tại TopCoder!</p>
+<h1 id="tham-khảo">Tham khảo</h1>
+<ol type="1">
+<li><a href="http://community.topcoder.com/tc?module=Static&amp;d1=tutorials&amp;d2=dynProg">TopCoder Graph Tutorial</a></li>
+<li><a href="http://community.topcoder.com/stat?c=problem_statement&amp;pm=1259&amp;rd=4493">ZigZag</a></li>
+<li><a href="http://community.topcoder.com/stat?c=problem_statement&amp;pm=1889&amp;rd=4709">AvoidRoad</a></li>
+</ol>
+		
+		
+	</div>
+
+</article>
 
 
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-22T21:45:00+09:00" data-updated="true" itemprop="datePublished">Mar 22<span>nd</span>, 2014</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/algorithm/'>algorithm,</a>, <a class='category' href='/blog/categories/graph/'>graph</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2014/03/22/thuat-toan-floyd-warshall-de-duyet-do-thi/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2014/03/22/thuat-toan-floyd-warshall-de-duyet-do-thi/" itemprop="url">Thuật Toán Floyd-Warshall để Duyệt đồ Thị</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1 id="introduction">Introduction</h1>
+<p>Khi nhắc đến các thuật toán duyệt đồ thị, có thể bạn đã biết (và đã từng implement) Depth-First Search, Breadth-First Search, hoặc Dijkstra. Xin nhắc lại về ý nghĩa của từng thuật toán, đứng ở khía cạnh bài toán tìm đường đi ngắn nhất. DFS dùng để giải các bài toán mà chúng ta muốn tìm được lời giải (không nhất thiết phải là quãng đường ngắn nhất), hoặc ta muốn thăm tất cả các đỉnh của đồ thị. BFS cũng để duyệt các đỉnh của đồ thị, nhưng có một tính chất quan trọng là: nếu tất cả các cạnh <em>không có trọng số</em>, lần đầu tiên một đỉnh được thăm, ta có ngay đường đi ngắn nhất đến đỉnh đó. Bây giờ đến thuật toán Disjkstra, đây là thuật toán nổi tiếng dùng để tìm đường đi ngắn nhất từ một đỉnh cho trước đến các đỉnh còn lại, trong một đồ thị có các cạnh <em>có trọng số không âm</em>. Như vậy, Dijkstra đã tiến hơn một bước so với BFS.</p>
+<p>Đó là sơ qua về ba thuật toán mà có thể mọi người đều đã biết. Trong bài viết này, tôi xin giới thiệu một thuật toán ít biết đến hơn để duyệt đồ thị, đó là Floyd-Warshall.</p>
+<h1 id="thuật-toán-floyd-warshall-là-gì">Thuật toán Floyd-Warshall là gì?</h1>
+<p>Nếu như Dijkstra giải quyết bài toán tìm đường đi ngắn nhất từ <em>một đỉnh cho trước</em> đến mọi đỉnh khác trong đồ thị, thì Floyd-Warshall sẽ tìm đường đi ngắn nhất <em>giữa mọi đỉnh</em> sau một lần chạy thuật toán. Một tính chất nữa là Floyd-Warshall có thể chạy trên đồ thị có các cạnh có trọng số <em>có thể âm</em>, tức là không bị giới hạn như Dijkstra. Tuy nhiên, lưu ý là trong đồ thị không được có vòng (cycle) nào có tổng các cạnh là âm, nếu có vòng như vậy ta không thể tìm được đường đi ngắn nhất (mỗi lần đi qua vòng này độ dài quãng đường lại giảm, nên ta có thể đi vô hạn lần)</p>
+<p>Thuật toán Floyd-Warshall so sánh tất cả các đường đi có thể giữa từng cặp đỉnh. Nó là một dạng của quy hoạch động (Dynamic Programming). Đặt hàm adj(i,j,k) là đường đi ngắn nhất từ i đến j, chỉ dùng các đỉnh trong tập {1,2,…,k}. Giả sử ta muốn tính adj{i,j,k+1}. Với mỗi cặp đỉnh i và j, đường đi ngắn nhất có thể là: (1) đường đi chỉ sử dụng các đỉnh trong tập {1,…k} hoặc (2) đường đi từ i đến k+1 rồi từ k+1 đến j, cũng chỉ sử dụng các đỉnh trong tập {1,…k}. Do vậy:</p>
+<p>Trường hợp cơ bản: adj(i,j,0) = w(i,j)</p>
+<p>Đệ quy: adj(i,j,k+1) = min{adj(i,j,k), adj(i,k+1, k) + adj(k+1, j, k)}</p>
+<p>Đây là đoạn pseudocode của Floyd-Warshall (có một chút thay đổi, nhưng ý tưởng là như nhau)</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>pseudo.c </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">for</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="mi">1</span> <span class="n">to</span> <span class="n">n</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="n">i</span><span class="o">=</span><span class="mi">1</span> <span class="n">to</span> <span class="n">n</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">for</span><span class="p">(</span><span class="n">j</span><span class="o">=</span><span class="mi">1</span> <span class="n">to</span> <span class="n">n</span><span class="p">)</span>
+</span><span class='line'>          <span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">min</span><span class="p">(</span><span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">],</span> <span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">+</span> <span class="n">adj</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">j</span><span class="p">]);</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Dễ thấy độ phức tạp thuật toán là O(n^3) với n là số đỉnh của đồ thị.</p>
+<h1 id="thuật-toán-floyd-warshall-dùng-cho-tìm-tính-chất-kết-nối">Thuật toán Floyd-Warshall dùng cho tìm tính chất kết nối</h1>
+<p>Tư tưởng của thuật toán Floyd-Warshall trong việc tìm đường đi ngắn nhất có thể áp dụng vào các bài toán dạng tìm tính chất kết nối giữa các đỉnh. Tôi xin lấy một ví dụ, đó là bài <a href="http://community.topcoder.com/stat?c=problem_statement&amp;pm=2356&amp;rd=4740">TopCoder SRM 184, Div 2, 1000-point problem</a></p>
+<p>Đề bài như sau (xin chịu khó đọc hiểu đề bài)</p>
+<blockquote>
+<p>You are arranging a weird game for a team building exercise. In this game there are certain locations that people can stand at, and from each location there are paths that lead to other locations, but there are not necessarily paths that lead directly back. You have everything set up, but you need to know two important numbers. There might be some locations from which every other location can be reached. There might also be locations that can be reached from every other location. You need to know how many of each of these there are.</p>
+<p>Create a class TeamBuilder with a method specialLocations that takes a String[] paths that describes the way the locations have been connected, and returns a int[] with exactly two elements, the first one is the number of locations that can reach all other locations, and the second one is the number of locations that are reachable by all other locations. Each element of paths will be a String containing as many characters as there are elements in paths. The i-th element of paths (beginning with the 0-th element) will contain a ‘1’ (all quotes are for clarity only) in position j if there is a path that leads directly from i to j, and a ‘0’ if there is not a path that leads directly from i to j.</p>
+<p><strong>Examples</strong></p>
+<ul>
+<li><p>{“010”,“000”,“110”} Returns: { 1, 1 } Locations 0 and 2 can both reach location 1, and location 2 can reach both of the other locations, so we return {1,1}.</p></li>
+<li><p>{“0010”,“1000”,“1100”,“1000”} Returns: { 1, 3 } Only location 3 is able to reach all of the other locations, but it must take more than one path to reach locations 1 and 2. Locations 0, 1, and 2 are reachable by all other locations. The method returns {1,3}.</p></li>
+<li><p>{“01000”,“00100”,“00010”,“00001”,“10000”} Returns: { 5, 5 } Each location can reach one other, and the last one can reach the first, so all of them can reach all of the others.</p></li>
+<li><p>{“0110000”,“1000100”,“0000001”,“0010000”,“0110000”,“1000010”,“0001000”} Returns: { 1, 3 }</p></li>
+</ul>
+</blockquote>
+<p><em>Solution</em> Về cơ bản, bài này cần tìm số lượng các đỉnh mà từ đó có thể đi đến tất cả các đỉnh khác, và số lượng các đỉnh mà các đỉnh khác đều có thể đi tới. Một ví dụ rất tốt để áp dụng thuật toán Floyd-Warshall tìm tính chất kết nối giữa 2 đỉnh bất kì.</p>
+<p>Trong bài này, chúng ta chỉ cần phải kiểm tra xem có đường đi từ đỉnh i đến đỉnh j trong đồ thị hay không. Chúng ta sẽ áp dụng thuật toán Floyd-Warshall trên, nhưng có thay đổi một chút trong dòng xử lý bên trong vòng lặp. Về cơ bản, chúng ta vẫn sử dụng ý tưởng là update thông tin giữa 2 đỉnh i và j, mỗi khi ta có thêm thông tin giữa đỉnh i và đỉnh k, đỉnh k và đỉnh j, với k là một đỉnh khác i và j. Nhưng ta không cập nhật thông tin về * đường đi ngắn nhất* nữa, mà ta cập nhật thông tin về <em>có hay không đường đi từ i đến j</em>. Với mỗi cặp đỉnh i và j chưa có kết nối, ta sẽ kiểm tra xem nếu có đường đi từ i đến k và từ k đến j, thì ta cập nhật là có đường đi từ i đến j.</p>
+<p>Sau đây là đoạn code C++ minh hoạ:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>TeamBuilder.cpp </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+</pre></td><td class='code'><pre><code class='cpp'><span class='line'><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">TeamBuilder</span><span class="o">::</span><span class="n">specialLocations</span><span class="p">(</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">string</span><span class="o">&gt;</span> <span class="n">paths</span><span class="p">){</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">N</span> <span class="o">=</span> <span class="n">paths</span><span class="p">.</span><span class="n">size</span><span class="p">();</span>
+</span><span class='line'>  <span class="n">vector</span><span class="o">&lt;</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="o">&gt;</span> <span class="n">adj</span><span class="p">;</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">i</span> <span class="o">++</span><span class="p">){</span>
+</span><span class='line'>      <span class="n">string</span> <span class="n">s</span> <span class="o">=</span> <span class="n">paths</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+</span><span class='line'>      <span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">row</span><span class="p">;</span>
+</span><span class='line'>      <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>          <span class="n">row</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span><span class="sc">&#39;0&#39;</span><span class="p">);</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>      <span class="n">adj</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">row</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//Floyd-Warshall</span>
+</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">k</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>      <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>          <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>              <span class="c1">//i,j,k must be different</span>
+</span><span class='line'>              <span class="k">if</span><span class="p">(</span><span class="n">i</span><span class="o">==</span><span class="n">j</span> <span class="o">||</span> <span class="n">j</span> <span class="o">==</span> <span class="n">k</span> <span class="o">||</span> <span class="n">k</span><span class="o">==</span><span class="n">i</span><span class="p">)</span>
+</span><span class='line'>                  <span class="k">continue</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>              <span class="c1">//only update those no-paths</span>
+</span><span class='line'>              <span class="k">if</span><span class="p">(</span><span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>                  <span class="k">if</span><span class="p">(</span><span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">!=</span><span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">adj</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>                      <span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>                  <span class="p">}</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//find number of locations that can reach all other locations</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">firstNum</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>      <span class="kt">bool</span> <span class="n">canReachAll</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+</span><span class='line'>      <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span><span class="o">&lt;</span><span class="n">N</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>          <span class="k">if</span><span class="p">(</span><span class="n">j</span><span class="o">==</span><span class="n">i</span><span class="p">)</span> <span class="k">continue</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="k">if</span><span class="p">(</span><span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>              <span class="n">canReachAll</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+</span><span class='line'>              <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>      <span class="k">if</span><span class="p">(</span><span class="n">canReachAll</span><span class="p">)</span>
+</span><span class='line'>          <span class="n">firstNum</span> <span class="o">++</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//find number of locations that are reachable from other locations</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">secondNum</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>      <span class="kt">bool</span> <span class="n">canBeReachedFromAll</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+</span><span class='line'>      <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">N</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>          <span class="k">if</span><span class="p">(</span><span class="n">j</span><span class="o">!=</span><span class="n">i</span> <span class="o">&amp;&amp;</span> <span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>              <span class="n">canBeReachedFromAll</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+</span><span class='line'>              <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>      <span class="k">if</span><span class="p">(</span><span class="n">canBeReachedFromAll</span><span class="p">)</span>
+</span><span class='line'>          <span class="n">secondNum</span> <span class="o">++</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">res</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">res</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">firstNum</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">res</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">secondNum</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">res</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<h1 id="tham-khảo">Tham khảo:</h1>
+<ol type="1">
+<li><a href="http://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm">Floyd-Warshall Algorithm</a></li>
+<li><a href="http://community.topcoder.com/tc?module=Static&amp;d1=tutorials&amp;d2=graphsDataStrucs3">TopCoder Graph Tutorial</a></li>
+</ol>
 		
 		
 	</div>
@@ -1044,7 +1161,7 @@ Khi gọi <code>print kiennt.age</code>, python sẽ nhận ra age là một des
     <div class="center"><a href="/blog/archives">Blog Archives</a></div>
 </nav></div>
 			</div>
-			<footer id="footer" class="inner">Copyright &copy; 2013
+			<footer id="footer" class="inner">Copyright &copy; 2014
 
     kỹ thuật máy tính
 

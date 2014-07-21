@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: mysql | Blog kỹ thuật máy tính]]></title>
-  <link href="http://ktmt.github.com/blog/categories/mysql/atom.xml" rel="self"/>
-  <link href="http://ktmt.github.com/"/>
-  <updated>2013-09-18T01:15:24+09:00</updated>
-  <id>http://ktmt.github.com/</id>
+  <link href="http://git@github.com.github.com/blog/categories/mysql/atom.xml" rel="self"/>
+  <link href="http://git@github.com.github.com/"/>
+  <updated>2014-07-21T22:37:14+09:00</updated>
+  <id>http://git@github.com.github.com/</id>
   <author>
     <name><![CDATA[kỹ thuật máy tính]]></name>
     
@@ -15,354 +15,130 @@
   
   <entry>
     <title type="html"><![CDATA[Nâng phiên bản mysql 5.6]]></title>
-    <link href="http://ktmt.github.com/blog/2013/08/26/nang-phien-ban-mysql/"/>
+    <link href="http://git@github.com.github.com/blog/2013/08/26/nang-phien-ban-mysql/"/>
     <updated>2013-08-26T22:06:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/08/26/nang-phien-ban-mysql</id>
-    <content type="html"><![CDATA[<h2>1. Giới thiệu</h2>
-
+    <id>http://git@github.com.github.com/blog/2013/08/26/nang-phien-ban-mysql</id>
+    <content type="html"><![CDATA[<h2 id="giới-thiệu">1. Giới thiệu</h2>
 <p>Trong quá trình vận hành 1 website chúng ta thường có các task như nâng phiên bản máy chủ web, nâng phiên bản cơ sở dữ liệu (vì mục đích nâng cao hiệu năng hoặc đảm bảo bảo mật). Với những hệ thống sẵn có, quản lý lượng dữ liệu lớn, tác vụ này thường không hề đơn giản, đòi hỏi 1 trình tự hơp lý. Bài viết này tổng kết là trình tự nâng cấp mysql từ phiên bản 5.0.x lên phiên bản 5.6.x và những vấn đề mình gặp phải trong quá trình nâng cấp này.</p>
-
-<h2>2. Bài toán</h2>
-
+<h2 id="bài-toán">2. Bài toán</h2>
 <p>Website sử dụng hệ thống cơ sơ dữ liệu mysql, dưới mô hình master/slave. Cả master/slave đều đang chạy mysql 5.0. Ta cần nâng cấp mysql lên phiên bản 5.6.</p>
-
-<h4>Điều kiện</h4>
-
+<h4 id="điều-kiện">Điều kiện</h4>
 <p>Mọi bài toán đều không có gì khó nếu như không có giới hạn gì. Ở đây ta bắt gặp 1 vài giới hạn cần chú ý như sau:</p>
-
 <ul>
 <li>Các query được dùng trong website có thể không tương thích với mysql phiên bản mới.</li>
 <li>Nâng cấp master đồng thời với slave sẽ có rủi ro khi mà cả 2 gặp lỗi.</li>
 <li>Dung lượng ổ cứng: khi dung lượng ổ cứng sao lưu không cho phép, ta sẽ phải thực hiện các thao tác công phu hơn 1 chút.</li>
 </ul>
-
-
-<p>Do vậy, cách tốt nhất là nâng cấp lần lượt slave -> master. Tức là slave sẽ chạy mysql5.6 và master sẽ chạy mysql5.0</p>
-
-<h4>Phương pháp</h4>
-
+<p>Do vậy, cách tốt nhất là nâng cấp lần lượt slave -&gt; master. Tức là slave sẽ chạy mysql5.6 và master sẽ chạy mysql5.0</p>
+<h4 id="phương-pháp">Phương pháp</h4>
 <p>Có 2 cách nâng cấp mysql.</p>
-
 <ul>
 <li><a href="http://dev.mysql.com/doc/refman/5.6/en/upgrading.html">Cách truyền thống</a> như được viết trong tài liệu hướng dẫn nâng cấp. Cụ thể ta nâng cấp dần dần qua các phiên bản trung gian bằng script mysql_upgrade.</li>
 <li>Cách ngắn gọn: dump toàn bộ dữ liệu ở phiên bản cũ và import lại vào phiên bản mới.</li>
 </ul>
-
-
-<p>Mỗi cách có ưu nhược điểm riêng; cụ thể cách 1 đảm bảo khả năng thành công cao, tuy vậy lại có nhược điểm là chuẩn bị môi trường cho các phiên bản rườm rà, tốn thời gian. Với khoảng cách 2 phiên bản lớn (5.0 -> 5.6: qua 5.1, 5.5) thì việc upgrade khá tốn thời gian.</p>
-
+<p>Mỗi cách có ưu nhược điểm riêng; cụ thể cách 1 đảm bảo khả năng thành công cao, tuy vậy lại có nhược điểm là chuẩn bị môi trường cho các phiên bản rườm rà, tốn thời gian. Với khoảng cách 2 phiên bản lớn (5.0 -&gt; 5.6: qua 5.1, 5.5) thì việc upgrade khá tốn thời gian.</p>
 <p>Cách 2 có ưu điểm nhanh, tuy vậy lại có nhược điểm là tính tương thích giũa 2 phiên bản không tốt, dẫn đến khả năng lỗi sau khi upgrade cao.</p>
-
 <p>Bài viết sẽ trình bày quy trình upgrade theo cách 2.</p>
-
-<h2>3. Quy trình:</h2>
-
-<h4>Bước 1: dump toàn bộ dữ liệu</h4>
-
+<h2 id="quy-trình">3. Quy trình:</h2>
+<h4 id="bước-1-dump-toàn-bộ-dữ-liệu">Bước 1: dump toàn bộ dữ liệu</h4>
 <p>Ta có thể dump toàn bộ dữ liệu từ slave hoặc master hiện tại.</p>
-
-<p>a. Dump dữ liệu từ slave
-<div>
-  <pre><code class='bash'>mysql&gt; stop slave
-mysql&gt; show slave status;</code></pre>
+<ol type="a">
+<li>Dump dữ liệu từ slave <div>
+  <pre><code class='bash'>mysql&amp;gt; stop slave mysql&amp;gt; show slave status;</code></pre>
 </div>
-</p>
-
+</li>
+</ol>
 <p>Ghi nhớ các thông tin: master_host, master_port, replication_user, relay_master_log_file,</p>
-
 <p><div>
-  <pre><code class='bash'>$ mysqldump -u username -p --all-database --single-transaction | gzip -f &gt; dumpfile.gz</code></pre>
+  <pre><code class='bash'>$ mysqldump -u username -p –all-database –single-transaction | gzip -f &amp;gt; dumpfile.gz</code></pre>
 </div>
 </p>
-
 <p><div>
-  <pre><code class='bash'>mysql&gt; start slave;</code></pre>
+  <pre><code class='bash'>mysql&amp;gt; start slave;</code></pre>
 </div>
 </p>
-
-<p>b. Dump dữ liệu từ master</p>
-
+<ol start="2" type="a">
+<li>Dump dữ liệu từ master</li>
+</ol>
 <p><div>
-  <pre><code class='bash'>mysql&gt; flush tables with read lock;
-mysql&gt; show master status;</code></pre>
+  <pre><code class='bash'>mysql&amp;gt; flush tables with read lock; mysql&amp;gt; show master status;</code></pre>
 </div>
 </p>
-
 <p><div>
-  <pre><code class='bash'>mysqldump -u username -p --all-database --single-transaction | gzip -f &gt; dumpfile.gz</code></pre>
+  <pre><code class='bash'>mysqldump -u username -p –all-database –single-transaction | gzip -f &amp;gt; dumpfile.gz</code></pre>
 </div>
 </p>
-
 <p><div>
-  <pre><code class='bash'>mysql&gt; unlock tables;</code></pre>
+  <pre><code class='bash'>mysql&amp;gt; unlock tables;</code></pre>
 </div>
 </p>
-
-<h4>Bước 2: Cài đặt mysql phiên bản 5.6</h4>
-
+<h4 id="bước-2-cài-đặt-mysql-phiên-bản-5.6">Bước 2: Cài đặt mysql phiên bản 5.6</h4>
 <p><div>
-  <pre><code class='bash'>$ /etc/init.d/mysql stop                 # stop mysql-5.0
-$ cd /usr/local
-$ wget http://dev.mysql.com/get/Downloads/MySQL-5.6/mysql-5.6.13-linux-glibc2.5-x86_64.tar.gz/from/http://cdn.mysql.com/&lt;/p&gt;
-
-&lt;p&gt;$ tar xfz mysql-5.6.13-linux-glibc2.5-x86_64.tar.gz
-$ mv mysql-5.6.13-linux-glibc2.5-x86_64 mysql-5.6.13&lt;/p&gt;
-
-&lt;h1&gt;symbolic link張替える&lt;/h1&gt;
-
-&lt;p&gt;$ rm mysql
-$ ln -sf mysql-5.6.13 mysql
-$ cd mysql
-$ chown -R mysql:mysql .</code></pre>
+  <pre><code class='bash'>$ /etc/init.d/mysql stop # stop mysql-5.0 $ cd /usr/local $ wget http://dev.mysql.com/get/Downloads/MySQL-5.6/mysql-5.6.13-linux-glibc2.5-x86_64.tar.gz/from/http://cdn.mysql.com/&lt;/p&gt;
+&lt;p&gt;$ tar xfz mysql-5.6.13-linux-glibc2.5-x86_64.tar.gz $ mv mysql-5.6.13-linux-glibc2.5-x86_64 mysql-5.6.13&lt;/p&gt;
+&lt;h1 id=&quot;symbolic-link張替える&quot;&gt;symbolic link張替える&lt;/h1&gt;
+&lt;p&gt;$ rm mysql $ ln -sf mysql-5.6.13 mysql $ cd mysql $ chown -R mysql:mysql .</code></pre>
 </div>
 </p>
-
-<h4>Bước 3: Khởi động mysql và import dữ liệu</h4>
-
+<h4 id="bước-3-khởi-động-mysql-và-import-dữ-liệu">Bước 3: Khởi động mysql và import dữ liệu</h4>
 <p><div>
   <pre><code class='bash'>$ cp /tmp/my.cnf /usr/local/mysql&lt;/p&gt;
-
-&lt;h1&gt;データ容量そろえる&lt;/h1&gt;
-
-&lt;p&gt;$ cd /dbdata/data
-$ rm -rf *&lt;/p&gt;
-
-&lt;h1&gt;起動するため、テンポラリデータフォルダを作る&lt;/h1&gt;
-
-&lt;p&gt;$ cd /usr/local/mysql
-$ cd data                             # 空きフォルダか確認
-$ ll
-$ cd ..
-$ ./scripts/mysql_install_db --user=mysql
-$ cp support-files/mysql.server /etc/init.d/mysql
-$ /etc/init.d/mysql start
-$ mysqladmin -u root password 'pass'&lt;/p&gt;
-
-&lt;h1&gt;data フォルダは /dbdata/dataにする&lt;/h1&gt;
-
-&lt;p&gt;$ mv data data.bk
-$ ln -sf /dbdata/data data&lt;/p&gt;
-
-&lt;h1&gt;import data file&lt;/h1&gt;
-
+&lt;h1 id=&quot;データ容量そろえる&quot;&gt;データ容量そろえる&lt;/h1&gt;
+&lt;p&gt;$ cd /dbdata/data $ rm -rf *&lt;/p&gt;
+&lt;h1 id=&quot;起動するためテンポラリデータフォルダを作る&quot;&gt;起動するため、テンポラリデータフォルダを作る&lt;/h1&gt;
+&lt;p&gt;$ cd /usr/local/mysql $ cd data # 空きフォルダか確認 $ ll $ cd .. $ ./scripts/mysql_install_db –user=mysql $ cp support-files/mysql.server /etc/init.d/mysql $ /etc/init.d/mysql start $ mysqladmin -u root password ‘pass’&lt;/p&gt;
+&lt;h1 id=&quot;data-フォルダは-dbdatadataにする&quot;&gt;data フォルダは /dbdata/dataにする&lt;/h1&gt;
+&lt;p&gt;$ mv data data.bk $ ln -sf /dbdata/data data&lt;/p&gt;
+&lt;h1 id=&quot;import-data-file&quot;&gt;import data file&lt;/h1&gt;
 &lt;p&gt;$ mysql -u root -p &amp;lt; バックアップファイル</code></pre>
 </div>
 </p>
-
-<h4>Bước 4: Khởi động lại mysql.</h4>
-
+<h4 id="bước-4-khởi-động-lại-mysql.">Bước 4: Khởi động lại mysql.</h4>
 <p><div>
-  <pre><code class='bash'>$ /etc/init.d/mysql stop
-$ /etc/init.d/mysql start</code></pre>
+  <pre><code class='bash'>$ /etc/init.d/mysql stop $ /etc/init.d/mysql start</code></pre>
 </div>
 </p>
-
-<h4>Bước 5: Cài đặt sao chép (replication)</h4>
-
+<h4 id="bước-5-cài-đặt-sao-chép-replication">Bước 5: Cài đặt sao chép (replication)</h4>
 <p><div>
   <pre><code class='bash'>&lt;/p&gt;
-
-&lt;p&gt;$ mysql -u root -p
-mysql&gt; show slave status¥G;   # replication されてない確認&lt;/p&gt;
-
-&lt;p&gt;....&lt;/p&gt;
-
-&lt;p&gt;mysql&gt; change master to master_host='master ip',&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;     master_user='レプリケーションユーザ名',
-     master_password='パスワード',
-     master_log_file='mysql-bin.000003',
-     master_log_pos=73;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;  Query OK, 0 rows affected (0.03 sec)
-mysql&gt;
-mysql&gt; show slave status¥G
-&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;em&gt; 1. row &lt;/em&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;         Slave_IO_State:
-            Master_Host: master ip
-            Master_User: レプリケーションユーザ名
-            Master_Port: 3306
-          Connect_Retry: 60
-        Master_Log_File: mysql-bin.001378
-    Read_Master_Log_Pos: 348578503
-         Relay_Log_File: mysqld-relay-bin.000001
-          Relay_Log_Pos: 4
-  Relay_Master_Log_File: mysql-bin.001378
-       Slave_IO_Running: No
-      Slave_SQL_Running: No
-        Replicate_Do_DB:
-    Replicate_Ignore_DB:
-     Replicate_Do_Table:
- Replicate_Ignore_Table:
-Replicate_Wild_Do_Table:
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Replicate_Wild_Ignore_Table:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;             Last_Errno: 0
-             Last_Error:
-           Skip_Counter: 0
-    Exec_Master_Log_Pos: 348578503
-        Relay_Log_Space: 98
-        Until_Condition: None
-         Until_Log_File:
-          Until_Log_Pos: 0
-     Master_SSL_Allowed: No
-     Master_SSL_CA_File:
-     Master_SSL_CA_Path:
-        Master_SSL_Cert:
-      Master_SSL_Cipher:
-         Master_SSL_Key:
-  Seconds_Behind_Master: NULL
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;1 row in set (0.00 sec)&lt;/p&gt;
-
-&lt;p&gt;mysql&gt; start slave;</code></pre>
+&lt;p&gt;$ mysql -u root -p mysql&amp;gt; show slave status¥G; # replication されてない確認&lt;/p&gt;
+&lt;p&gt;….&lt;/p&gt;
+&lt;p&gt;mysql&amp;gt; change master to master_host=‘master ip’, master_user=‘レプリケーションユーザ名’, master_password=‘パスワード’, master_log_file=‘mysql-bin.000003’, master_log_pos=73; Query OK, 0 rows affected (0.03 sec) mysql&amp;gt; mysql&amp;gt; show slave status¥G *************************** 1. row *************************** Slave_IO_State: Master_Host: master ip Master_User: レプリケーションユーザ名 Master_Port: 3306 Connect_Retry: 60 Master_Log_File: mysql-bin.001378 Read_Master_Log_Pos: 348578503 Relay_Log_File: mysqld-relay-bin.000001 Relay_Log_Pos: 4 Relay_Master_Log_File: mysql-bin.001378 Slave_IO_Running: No Slave_SQL_Running: No Replicate_Do_DB: Replicate_Ignore_DB: Replicate_Do_Table: Replicate_Ignore_Table: Replicate_Wild_Do_Table: Replicate_Wild_Ignore_Table: Last_Errno: 0 Last_Error: Skip_Counter: 0 Exec_Master_Log_Pos: 348578503 Relay_Log_Space: 98 Until_Condition: None Until_Log_File: Until_Log_Pos: 0 Master_SSL_Allowed: No Master_SSL_CA_File: Master_SSL_CA_Path: Master_SSL_Cert: Master_SSL_Cipher: Master_SSL_Key: Seconds_Behind_Master: NULL 1 row in set (0.00 sec)&lt;/p&gt;
+&lt;p&gt;mysql&amp;gt; start slave;</code></pre>
 </div>
 </p>
-
-<h4>Bước 6: Kiểm tra cài đặt replication.</h4>
-
+<h4 id="bước-6-kiểm-tra-cài-đặt-replication.">Bước 6: Kiểm tra cài đặt replication.</h4>
 <p><div>
-  <pre><code class='bash'>mysql&gt; show slave status¥G
-&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;em&gt; 1. row &lt;/em&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;         Slave_IO_State:
-            Master_Host: master ip
-            Master_User: レプリケーションユーザ名
-            Master_Port: 3306
-          Connect_Retry: 60
-        Master_Log_File: mysql-bin.001378
-    Read_Master_Log_Pos: 348578503
-         Relay_Log_File: mysqld-relay-bin.000001
-          Relay_Log_Pos: 4
-  Relay_Master_Log_File: mysql-bin.001378
-       Slave_IO_Running: No
-      Slave_SQL_Running: No
-        Replicate_Do_DB:
-    Replicate_Ignore_DB:
-     Replicate_Do_Table:
- Replicate_Ignore_Table:
-Replicate_Wild_Do_Table:
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Replicate_Wild_Ignore_Table:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;             Last_Errno: 0
-             Last_Error:
-           Skip_Counter: 0
-    Exec_Master_Log_Pos: 348578503
-        Relay_Log_Space: 98
-        Until_Condition: None
-         Until_Log_File:
-          Until_Log_Pos: 0
-     Master_SSL_Allowed: No
-     Master_SSL_CA_File:
-     Master_SSL_CA_Path:
-        Master_SSL_Cert:
-      Master_SSL_Cipher:
-         Master_SSL_Key:
-  Seconds_Behind_Master: NULL
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;1 row in set (0.00 sec)&lt;/p&gt;
-
-&lt;p&gt;mysql&gt; start slave;</code></pre>
+  <pre><code class='bash'>mysql&amp;gt; show slave status¥G *************************** 1. row *************************** Slave_IO_State: Master_Host: master ip Master_User: レプリケーションユーザ名 Master_Port: 3306 Connect_Retry: 60 Master_Log_File: mysql-bin.001378 Read_Master_Log_Pos: 348578503 Relay_Log_File: mysqld-relay-bin.000001 Relay_Log_Pos: 4 Relay_Master_Log_File: mysql-bin.001378 Slave_IO_Running: No Slave_SQL_Running: No Replicate_Do_DB: Replicate_Ignore_DB: Replicate_Do_Table: Replicate_Ignore_Table: Replicate_Wild_Do_Table: Replicate_Wild_Ignore_Table: Last_Errno: 0 Last_Error: Skip_Counter: 0 Exec_Master_Log_Pos: 348578503 Relay_Log_Space: 98 Until_Condition: None Until_Log_File: Until_Log_Pos: 0 Master_SSL_Allowed: No Master_SSL_CA_File: Master_SSL_CA_Path: Master_SSL_Cert: Master_SSL_Cipher: Master_SSL_Key: Seconds_Behind_Master: NULL 1 row in set (0.00 sec)&lt;/p&gt;
+&lt;p&gt;mysql&amp;gt; start slave;</code></pre>
 </div>
 </p>
-
-<h2>4. Các lỗi có thể có</h2>
-
+<h2 id="các-lỗi-có-thể-có">4. Các lỗi có thể có</h2>
 <p>Nếu làm mọi việc suôn sẻ, ta có thể hoàn thành thao tác nâng cấp ở bước 4. Tuy vậy tuỳ vào đặc tính dữ liệu, mà mọi việc có thể không suôn sẻ như vậy. Trong lần nâng cấp này, mình gặp 1 lỗi sau sau khi khởi động mysql.</p>
-
 <p><div>
-  <pre><code class='bash'>2013-08-25 11:07:00 19807 [Note] Server socket created on IP: '0.0.0.0'.
-02:07:00 UTC - mysqld got signal 11 ;
-This could be because you hit a bug. It is also possible that this binary
-or one of the libraries it was linked against is corrupt, improperly built,
-or misconfigured. This error can also be caused by malfunctioning hardware.
-We will try our best to scrape up some info that will hopefully help
-diagnose the problem, but since we have already crashed,
-something is definitely wrong and this may fail.&lt;/p&gt;
-
-&lt;p&gt;key_buffer_size=134217728
-read_buffer_size=2097152
-max_used_connections=0
-max_threads=100
-thread_count=0
-connection_count=0
-It is possible that mysqld could use up to
-key_buffer_size + (read_buffer_size + sort_buffer_size)*max_threads = 542029 K  bytes of memory
-Hope that's ok; if not, decrease some variables in the equation.&lt;/p&gt;
-
-&lt;p&gt;Thread pointer: 0xe57de70
-Attempting backtrace. You can use the following information to find out
-where mysqld died. If you see no messages after this, something went
-terribly wrong...
-stack_bottom = 7fffd70eced8 thread_stack 0x40000
-/usr/local/mysql/bin/mysqld(my_print_stacktrace+0x35)[0x8fa385]
-/usr/local/mysql/bin/mysqld(handle_fatal_signal+0x3e8)[0x66cfd8]
-/lib64/libpthread.so.0[0x3a9300eb10]
-/usr/local/mysql/bin/mysqld(&lt;em&gt;Z9get_fieldP11st_mem_rootP5Field+0x3c)[0x77b16c]
-/usr/local/mysql/bin/mysqld[0x68c5bc]
-/usr/local/mysql/bin/mysqld(&lt;/em&gt;Z10acl_reloadP3THD+0x459)[0x68f059]
-/usr/local/mysql/bin/mysqld(&lt;em&gt;Z8acl_initb+0x117)[0x6901c7]
-/usr/local/mysql/bin/mysqld(&lt;/em&gt;Z11mysqld_mainiPPc+0x543)[0x582e13]
-/lib64/libc.so.6(&lt;strong&gt;libc_start_main+0xf4)[0x3a9241d994]
-/usr/local/mysql/bin/mysqld(&lt;/strong&gt;gxx_personality_v0+0x2e1)[0x5779e9]&lt;/p&gt;
-
-&lt;p&gt;Trying to get some variables.
-Some pointers may be invalid and cause the dump to abort.
-Query (0): is an invalid pointer
-Connection ID (thread ID): 0
-Status: NOT_KILLED&lt;/p&gt;
-
-&lt;p&gt;The manual page at http://dev.mysql.com/doc/mysql/en/crashing.html contains
-information that should help you find out what is causing the crash.
-130825 11:07:00 mysqld_safe Number of processes running now: 0
-130825 11:07:00 mysqld_safe mysqld restarted
-2013-08-25 11:07:01 0 [Warning] TIMESTAMP with implicit DEFAULT value is deprecated. Please use --explicit_defaults_for_timestamp server option (see documentation for more details).
-2013-08-25 11:07:01 19847 [Note] Plugin 'FEDERATED' is disabled.
-2013-08-25 11:07:01 19847 [Note] InnoDB: The InnoDB memory heap is disabled
-2013-08-25 11:07:01 19847 [Note] InnoDB: Mutexes and rw_locks use GCC atomic builtins
-2013-08-25 11:07:01 19847 [Note] InnoDB: Compressed tables use zlib 1.2.3
-2013-08-25 11:07:01 19847 [Note] InnoDB: Using Linux native AIO
-2013-08-25 11:07:01 19847 [Note] InnoDB: Not using CPU crc32 instructions
-2013-08-25 11:07:01 19847 [Note] InnoDB: Initializing buffer pool, size = 512.0M
-2013-08-25 11:07:01 19847 [Note] InnoDB: Completed initialization of buffer pool
-2013-08-25 11:07:01 19847 [Note] InnoDB: Highest supported file format is Barracuda.
-130825 11:07:09 mysqld_safe mysqld from pid file /usr/local/mysql/data/nl-dbdev-slave.pid ended</code></pre>
+  <pre><code class='bash'>2013-08-25 11:07:00 19807 [Note] Server socket created on IP: ‘0.0.0.0’. 02:07:00 UTC - mysqld got signal 11 ; This could be because you hit a bug. It is also possible that this binary or one of the libraries it was linked against is corrupt, improperly built, or misconfigured. This error can also be caused by malfunctioning hardware. We will try our best to scrape up some info that will hopefully help diagnose the problem, but since we have already crashed, something is definitely wrong and this may fail.&lt;/p&gt;
+&lt;p&gt;key_buffer_size=134217728 read_buffer_size=2097152 max_used_connections=0 max_threads=100 thread_count=0 connection_count=0 It is possible that mysqld could use up to key_buffer_size + (read_buffer_size + sort_buffer_size)*max_threads = 542029 K bytes of memory Hope that’s ok; if not, decrease some variables in the equation.&lt;/p&gt;
+&lt;p&gt;Thread pointer: 0xe57de70 Attempting backtrace. You can use the following information to find out where mysqld died. If you see no messages after this, something went terribly wrong… stack_bottom = 7fffd70eced8 thread_stack 0x40000 /usr/local/mysql/bin/mysqld(my_print_stacktrace+0x35)[0x8fa385] /usr/local/mysql/bin/mysqld(handle_fatal_signal+0x3e8)[0x66cfd8] /lib64/libpthread.so.0[0x3a9300eb10] /usr/local/mysql/bin/mysqld(&lt;em&gt;Z9get&lt;/em&gt;fieldP11st_mem_rootP5Field+0x3c)[0x77b16c] /usr/local/mysql/bin/mysqld[0x68c5bc] /usr/local/mysql/bin/mysqld(&lt;em&gt;Z10acl&lt;/em&gt;reloadP3THD+0x459)[0x68f059] /usr/local/mysql/bin/mysqld(&lt;em&gt;Z8acl&lt;/em&gt;initb+0x117)[0x6901c7] /usr/local/mysql/bin/mysqld(&lt;em&gt;Z11mysqld&lt;/em&gt;mainiPPc+0x543)[0x582e13] /lib64/libc.so.6(&lt;strong&gt;libc_start_main+0xf4)[0x3a9241d994] /usr/local/mysql/bin/mysqld(&lt;/strong&gt;gxx_personality_v0+0x2e1)[0x5779e9]&lt;/p&gt;
+&lt;p&gt;Trying to get some variables. Some pointers may be invalid and cause the dump to abort. Query (0): is an invalid pointer Connection ID (thread ID): 0 Status: NOT_KILLED&lt;/p&gt;
+&lt;p&gt;The manual page at http://dev.mysql.com/doc/mysql/en/crashing.html contains information that should help you find out what is causing the crash. 130825 11:07:00 mysqld_safe Number of processes running now: 0 130825 11:07:00 mysqld_safe mysqld restarted 2013-08-25 11:07:01 0 [Warning] TIMESTAMP with implicit DEFAULT value is deprecated. Please use –explicit_defaults_for_timestamp server option (see documentation for more details). 2013-08-25 11:07:01 19847 [Note] Plugin ‘FEDERATED’ is disabled. 2013-08-25 11:07:01 19847 [Note] InnoDB: The InnoDB memory heap is disabled 2013-08-25 11:07:01 19847 [Note] InnoDB: Mutexes and rw_locks use GCC atomic builtins 2013-08-25 11:07:01 19847 [Note] InnoDB: Compressed tables use zlib 1.2.3 2013-08-25 11:07:01 19847 [Note] InnoDB: Using Linux native AIO 2013-08-25 11:07:01 19847 [Note] InnoDB: Not using CPU crc32 instructions 2013-08-25 11:07:01 19847 [Note] InnoDB: Initializing buffer pool, size = 512.0M 2013-08-25 11:07:01 19847 [Note] InnoDB: Completed initialization of buffer pool 2013-08-25 11:07:01 19847 [Note] InnoDB: Highest supported file format is Barracuda. 130825 11:07:09 mysqld_safe mysqld from pid file /usr/local/mysql/data/nl-dbdev-slave.pid ended</code></pre>
 </div>
 </p>
-
 <p>mysql khởi động gặp bug về bộ nhớ (segmentation fault) và bị kill bởi signal 11. Mysql liên tục khởi động và bị kill.</p>
-
 <p>Để tránh trường hợp này, sau khi import dữ liệu ta nên chạy mysql_upgrade 1 lần để script này sửa các bảng trong trạng thái lỗi trước khi khởi động lại để tránh lỗi ở trên.</p>
-
-<h2>5. Tổng kết</h2>
-
-<p>Bài viết tóm tắt quy trình nâng cấp phiên bản mysql cũng như cách dump toàn bộ dữ liệu trong mysql cũng như lỗi có thể gặp phải + cách giải quyết. Hy vọng với tóm tắt này, bạn sẽ không bở ngỡ khi phải backup hay nâng cấp phiên bản cho mysql.</p>
-]]></content>
+<h2 id="tổng-kết">5. Tổng kết</h2>
+<p>Bài viết tóm tắt quy trình nâng cấp phiên bản mysql cũng như cách dump toàn bộ dữ liệu trong mysql cũng như lỗi có thể gặp phải + cách giải quyết. Hy vọng với tóm tắt này, bạn sẽ không bở ngỡ khi phải backup hay nâng cấp phiên bản cho mysql.</p>]]></content>
   </entry>
   
   <entry>
     <title type="html"><![CDATA[Giới thiệu một số storage engine của Mysql]]></title>
-    <link href="http://ktmt.github.com/blog/2013/05/07/storageenginemysql/"/>
+    <link href="http://git@github.com.github.com/blog/2013/05/07/storageenginemysql/"/>
     <updated>2013-05-07T16:53:00+09:00</updated>
-    <id>http://ktmt.github.com/blog/2013/05/07/storageenginemysql</id>
-    <content type="html"><![CDATA[<h1>Giới thiệu</h1>
-
+    <id>http://git@github.com.github.com/blog/2013/05/07/storageenginemysql</id>
+    <content type="html"><![CDATA[<h1 id="giới-thiệu">Giới thiệu</h1>
 <p>MySQL là một trong những hệ thống cơ sở dữ liệu quan hệ phổ biến số một thế giới, được sử dụng bởi hầu hết các website lớn. Do vậy, việc nắm vững MySQL là yêu cầu không thể thiếu đối với một webmaster.</p>
-
 <p>Kiến trúc logic của MySQL nhìn tổng quan có thể được mô tả như hình dưới đây</p>
-
 <p><img src="/images/logical_mysql_architecture.jpeg"></p>
-
 <p>Ta có thể thấy MySQL có các component cơ bản như ở dưới đây</p>
-
 <ul>
 <li>Connection/thread handling</li>
 <li>Query cache</li>
@@ -370,94 +146,28 @@ information that should help you find out what is causing the crash.
 <li>Optimizer</li>
 <li>Storage engine</li>
 </ul>
-
-
 <p>Việc nắm rõ từng chức năng và nhiệm vụ của từng thành phần là điều không thể thiếu trong việc sử dụng MySQL một cách hiệu quả. Bài viết sẽ tập trung giới thiệu về thành phần dưới cùng trong mô hình trên: Storage engine (Máy lưu trữ)</p>
-
-<h1>Storage Engine (Máy lưu trữ)</h1>
-
+<h1 id="storage-engine-máy-lưu-trữ">Storage Engine (Máy lưu trữ)</h1>
 <p>Storage Engine thực chất là cách MySQL lưu trữ dữ liệu trên đĩa cứng. MySQL lưu mỗi database như là một thư mục con nằm dưới thư mục data. Khi một table được tạo ra, MySQL sẽ lưu định nghĩa bảng ở file đuôi .frm và tên trùng với tên của bảng được tạo. Việc quản lý định nghĩa bảng là nhiệm vụ của MySQL server, dù rằng mỗi storage engine sẽ lưu trữ và đánh chỉ mục (index) dữ liệu khác nhau.</p>
-
-<p>Ví dụ: mình chỉ định --datadir là /usr/local/mysql/data và định nghĩa bảng users trong database tên là test như sau</p>
-
+<p>Ví dụ: mình chỉ định –datadir là /usr/local/mysql/data và định nghĩa bảng users trong database tên là test như sau</p>
 <p><div>
-  <pre><code class='bash'>create table users (&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;id int not null auto_increment, 
-name varchar(30), 
-password varchar(20), 
-primary key(id)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;);</code></pre>
+  <pre><code class='bash'>create table users ( id int not null auto_increment, name varchar(30), password varchar(20), primary key(id) );</code></pre>
 </div>
 </p>
-
 <p>thì trong thư mục /usr/local/mysql/data sẽ có thư mục con là test, và dưới test sẽ có các file</p>
-
 <p><div>
-  <pre><code class='bash'>-rw-rw----  1 &lt;em&gt;mysql  wheel   8624  5  7 17:35 users.frm
--rw-rw----  1 &lt;/em&gt;mysql  wheel  98304  5  7 17:35 users.ibd</code></pre>
+  <pre><code class='bash'>-rw-rw—- 1 &lt;em&gt;mysql wheel 8624 5 7 17:35 users.frm -rw-rw—- 1 &lt;/em&gt;mysql wheel 98304 5 7 17:35 users.ibd</code></pre>
 </div>
 </p>
-
 <p>Để xem loại storage engine của bảng hiện tại, bạn có thể dùng câu lệnh <em>SHOW DATABASE STATUS</em></p>
-
 <p><div>
-  <pre><code class='bash'>mysql&gt; show table status like 'users' \G
-&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;strong&gt;&lt;em&gt; 1. row &lt;/em&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/strong&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;       Name: users
-     Engine: InnoDB
-    Version: 10
- Row_format: Compact
-       Rows: 2
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt; Avg_row_length: 8192&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;Data_length: 16384
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Max_data_length: 0
-   Index_length: 0&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;  Data_free: 0
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt; Auto_increment: 3&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;Create_time: 2013-05-07 17:35:09
-Update_time: NULL
- Check_time: NULL
-  Collation: latin1_swedish_ci
-   Checksum: NULL
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt; Create_options:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;    Comment:
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;1 row in set (0.01 sec)</code></pre>
+  <pre><code class='bash'>mysql&amp;gt; show table status like ‘users’ ************************** 1. row *************************** Name: users Engine: InnoDB Version: 10 Row_format: Compact Rows: 2 Avg_row_length: 8192 Data_length: 16384 Max_data_length: 0 Index_length: 0 Data_free: 0 Auto_increment: 3 Create_time: 2013-05-07 17:35:09 Update_time: NULL Check_time: NULL Collation: latin1_swedish_ci Checksum: NULL Create_options: Comment: 1 row in set (0.01 sec)</code></pre>
 </div>
 </p>
-
-<p>Cụ thể trong trường hợp này:</p>
-
-<pre><code>storage engine          : innodb
-loại row                : compact
-Số lượng row dữ liệu    : 2
-giá trị auto increment tiếp theo: 3
-...
-</code></pre>
-
-<h2>Tổng quan các engine</h2>
-
-<h3>1. MyISAM engine</h3>
-
-<h5>Đặc điểm</h5>
-
+<p>Cụ thể trong trường hợp này: storage engine : innodb loại row : compact Số lượng row dữ liệu : 2 giá trị auto increment tiếp theo: 3 …</p>
+<h2 id="tổng-quan-các-engine">Tổng quan các engine</h2>
+<h3 id="myisam-engine">1. MyISAM engine</h3>
+<h5 id="đặc-điểm">Đặc điểm</h5>
 <ul>
 <li>full-text indexing</li>
 <li>compression.</li>
@@ -465,14 +175,9 @@ giá trị auto increment tiếp theo: 3
 <li>Không hỗ trợ transactions</li>
 <li>Không hỗ trợ row-level lock.</li>
 </ul>
-
-
-<h5>Lưu trữ</h5>
-
+<h5 id="lưu-trữ">Lưu trữ</h5>
 <p>MyISAM lưu mỗi bảng dữ liệu trên 2 file: .MYD cho dữ liệu và .MYI cho chỉ mục. Row có 2 loại: dynamic và static (tuỳ thuộc bạn có dữ liệu thay đổi độ dài hay không). Số lượng row tối đa có thể lưu trữ bị giới hạn bởi hệ điều hành, dung lượng đĩa cứng. MyISAM mặc định sử dụng con trỏ độ dài 6 bytes để trỏ tới bản ghi dữ liệu, do vậy giới hạn kích thước dữ liệu xuống 256TB.</p>
-
-<h5>Tính năng:</h5>
-
+<h5 id="tính-năng">Tính năng:</h5>
 <ul>
 <li>MyISAM lock toàn bộ table. User (MySQL server) chiếm shared-lock khi đọc và chiếm exclusive-lock khi ghi. Tuy vậy, việc đọc ghi có thể diễn ra đồng thời!</li>
 <li>MyISAM có khả năng tự sửa chữa và phục hồi dữ liệu sau khi hệ thống crashed.</li>
@@ -481,102 +186,62 @@ giá trị auto increment tiếp theo: 3
 <li>MyISAM không ghi dữ liệu ngay vào ổ đĩa cứng, mà ghi vào 1 buffer trên memory (và chỉ ghi vào đĩa cứng sau 1 khoảng thời gian), do đó tăng tốc độ ghi. Tuy vậy, sau khi server crash, ta cần phải phục hồi dữ liệu bị hư hỏng bằng myisamchk.</li>
 <li>MyISAM hỗ trợ nén dữ liệu, hỗ trợ tăng tốc độ đọc dữ liệu. Mặc dù vậy dữ liệu sau khi nén không thể cập nhật được.</li>
 </ul>
-
-
-<h3>2. InnoDB engine</h3>
-
-<h5>Đặc điểm</h5>
-
+<h3 id="innodb-engine">2. InnoDB engine</h3>
+<h5 id="đặc-điểm-1">Đặc điểm</h5>
 <ul>
 <li>Là engine phức tạp nhất trong các engine của MySQL</li>
 <li>Hỗ trợ transactions</li>
 <li>Hỗ trợ phục hồi, sửa chữa tốt</li>
 </ul>
-
-
-<h5>Lưu trữ</h5>
-
+<h5 id="lưu-trữ-1">Lưu trữ</h5>
 <p>InnoDB lưu dữ liệu trên 1 file (thuật ngữ gọi là tablespace).</p>
-
-<h5>Tính năng:</h5>
-
+<h5 id="tính-năng-1">Tính năng:</h5>
 <ul>
 <li>InnoDB hỗ trợ MVCC (Multiversion Concurrency Control) để cải thiện việc truy cập đồng thời và hỗ trợ chiến thuật next-key locking.</li>
 <li>InnoDB được xây dựng dựa trên clustered index, do đó việc tìm kiếm theo primary key có hiệu năng rất cao. InnoDB không hỗ trợ sắp xếp index do vậy việc thay đổi cấu trúc bảng sẽ dẫn tới toàn bộ dữ liệu phải được đánh chỉ mục từ đầu (CHẬM với những bảng lớn).</li>
 </ul>
-
-
-<h3>3. Memory engine</h3>
-
-<h5>Đặc điểm</h5>
-
+<h3 id="memory-engine">3. Memory engine</h3>
+<h5 id="đặc-điểm-2">Đặc điểm</h5>
 <ul>
 <li>Còn được gọi là HEAP tables.</li>
 </ul>
-
-
-<h5>Lưu trữ</h5>
-
+<h5 id="lưu-trữ-2">Lưu trữ</h5>
 <p>Tất cả dữ liệu đều nằm trên memory.</p>
-
-<h5>Tính năng:</h5>
-
+<h5 id="tính-năng-2">Tính năng:</h5>
 <ul>
 <li>Sau khi server restart, cấu trúc bảng được bảo toàn, dữ liệu bị mất hết.</li>
 <li>Memory engine sử dụng HASH index nên rất nhanh cho query lookup.</li>
 <li>Memory engine dùng table-level locking do vậy tính concurrency không cao.</li>
 </ul>
-
-
-<h3>4. Archive engine</h3>
-
-<h5>Đặc điểm</h5>
-
+<h3 id="archive-engine">4. Archive engine</h3>
+<h5 id="đặc-điểm-3">Đặc điểm</h5>
 <ul>
 <li>Chỉ hỗ trợ Insert và Select.</li>
 <li>Không đánh chỉ mục</li>
 <li>Dữ liệu được buffer và nén bằng zlib nên tốn ít I/O, tốc độ ghi do đó cao.</li>
 </ul>
-
-
-<h5>Tính năng:</h5>
-
+<h5 id="tính-năng-3">Tính năng:</h5>
 <ul>
 <li>Tốc độ ghi cao, phù hợp cho ứng dụng log.</li>
 </ul>
-
-
-<h3>5. CSV engine</h3>
-
-<h5>Đặc điểm</h5>
-
+<h3 id="csv-engine">5. CSV engine</h3>
+<h5 id="đặc-điểm-4">Đặc điểm</h5>
 <ul>
 <li>Coi file CSV như là 1 table.</li>
 <li>Không hỗ trợ đánh chỉ mục</li>
 </ul>
-
-
-<h5>Tính năng:</h5>
-
+<h5 id="tính-năng-4">Tính năng:</h5>
 <ul>
 <li>Nếu bài toán là trích xuất thông tin từ file CSV và ghi vào cơ sở dữ liệu, đồng thời cần kết quả CSV ngay từ DB, engine này có vẻ thích hợp.</li>
 </ul>
-
-
-<h3>6. Falcon engine</h3>
-
-<h5>Đặc điểm</h5>
-
+<h3 id="falcon-engine">6. Falcon engine</h3>
+<h5 id="đặc-điểm-5">Đặc điểm</h5>
 <ul>
-<li>Được thiết kế cho phần cứng hiện đại: server 64 bit, bộ nhớ "thênh thang"</li>
+<li>Được thiết kế cho phần cứng hiện đại: server 64 bit, bộ nhớ “thênh thang”</li>
 <li>Vẫn còn khá mới, chưa có nhiều usercase</li>
 </ul>
-
-
-<h3>7. Maria engine (Cơ sở dữ liệu liên quan: <a href="https://mariadb.org/">MariaDB</a>)</h3>
-
-<h5>Đặc điểm</h5>
-
+<h3 id="maria-engine-cơ-sở-dữ-liệu-liên-quan-mariadb">7. Maria engine (Cơ sở dữ liệu liên quan: <a href="https://mariadb.org/">MariaDB</a>)</h3>
+<h5 id="đặc-điểm-6">Đặc điểm</h5>
 <ul>
 <li>Được thiết kế bởi những chiến tướng dày dạn kinh nghiêm của MySQL, với mục đích thay thế MyISAM</li>
 <li>Hỗ trợ transactions theo lựa chọn</li>
@@ -584,10 +249,7 @@ giá trị auto increment tiếp theo: 3
 <li>Row-level locking và MVCC</li>
 <li>Hỗ trợ BLOB tốt hơn.</li>
 </ul>
-
-
-<h2>Tiêu chí lựa chọn engine</h2>
-
+<h2 id="tiêu-chí-lựa-chọn-engine">Tiêu chí lựa chọn engine</h2>
 <ul>
 <li>Transactions: Nếu ứng dụng yêu cầu transactions, InnoDB là lựa chọn duy nhất. Nếu không yêu cầu transactions, MyISAM là lựa chọn tốt.</li>
 <li>Concurrency: Nếu yêu cầu chịu tải cao và không cần thiết transactions, MyISAM là lựa chọn số 1.</li>
@@ -595,23 +257,15 @@ giá trị auto increment tiếp theo: 3
 <li>Phục hồi sau crash: MyISAM có khả năng phục hồi sau crash kém hơn InnoDB.</li>
 <li>Tính năng theo yêu cầu hệ thống: Nếu yêu cầu là logging, MyISAM hoặc Archive là lựa chọn hợp lý. Nếu cần lưu trực tiếp CSV, CSV engine là lựa chọn đáng cân nhắc. Nếu ứng dụng không thay đổi dữ liệu mấy (ví dụ cơ sở dữ liệu sách), MyISAM và tính năng nén là lựa chọn phù hợp.</li>
 </ul>
-
-
-<h1>Kết luận</h1>
-
+<h1 id="kết-luận">Kết luận</h1>
 <p>Bài viết này đã giới thiệu tổng quan về storage engine, một thành phần quan trọng của hệ thống cơ sở dữ liệu. Một số engine tiêu biểu và tính năng đặc điểm cũng được đưa ra. Tiêu chí chọn lựa mỗi loại engine cũng được giới thiệu.</p>
-
 <p>Hy vọng qua bài viết, bạn có cái nhìn tổng quan về database storate engine nói chung, và MySQL storage engine nói riêng, đồng thời hiểu được tầm quan trọng của việc chọn lựa storage engine.</p>
-
-<h1>Tham khảo</h1>
-
-<ol>
+<h1 id="tham-khảo">Tham khảo</h1>
+<ol type="1">
 <li><a href="http://shop.oreilly.com/product/9780596101718.do">High performance MySQL, 2ed</a></li>
 <li><a href="http://dev.mysql.com/doc/refman/5.7/en/storage-engines.html">Storage Engines</a></li>
 <li><a href="http://www.linux.org/article/view/an-introduction-to-mysql-storage-engines">Storage Engine Introduction</a></li>
-</ol>
-
-]]></content>
+</ol>]]></content>
   </entry>
   
 </feed>
