@@ -7,8 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jul 15th, 2013 DI, Design pattern, IoC, PHP Comments Inversion of Control and Dependency Injection Preface
-Trước khi đọc bài này, tôi có 1 vài &hellip;">
+	<meta name="description" content="Jul 16th, 2013 linux, system Comments Tìm Hiểu Redis (Phần 2): Framework Lập Trình Sự Kiện 1. Giới thiệu
+Trong bài viết tìm hiểu redis phần 1, chúng &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,550 @@ Trước khi đọc bài này, tôi có 1 vài &hellip;">
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-16T00:00:00+09:00" data-updated="true" itemprop="datePublished">Jul 16<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/linux/'>linux</a>, <a class='category' href='/blog/categories/system/'>system</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/07/16/tim-hieu-redis-2/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/07/16/tim-hieu-redis-2/" itemprop="url">Tìm Hiểu Redis (Phần 2): Framework Lập Trình Sự Kiện</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h2 id="giới-thiệu">1. Giới thiệu</h2>
+<p>Trong bài viết <a href="http://ktmt.github.io/blog/2013/07/02/tim-hieu-redis/">tìm hiểu redis phần 1</a>, chúng ta đã tìm hiểu cách redis quản lý dữ liệu (AOF và RDB) cũng như cách redis tận dụng các tính năng của OS (fsync) để sao lưu dữ liệu. Bài viết này tập trung trình bày cụ thể hơn về framework lập trình hướng sự kiện của redis.</p>
+<h2 id="lập-trình-hướng-sự-kiện">2. Lập trình hướng sự kiện</h2>
+<p><a href="http://en.wikipedia.org/wiki/Event-driven_programming">Lập trình hướng sự kiện</a> không phải là khái niệm mới, mà là một paradigm dược sử dụng từ rất lâu. Trong lập trình GUI (Giao diện đồ họa), khi người dùng click hay di chuyển chuột, các framework đồ họa thường hỗ trợ các phương pháp như onClick, onMouseMove … cho phép người dùng định nghĩa hành vi của hệ thống cho những sự kiện đấy.</p>
+<p>Các hệ thống Unix(BSD, MacOS)/Linux/Solaris từ lâu đã hỗ trợ lập trình hướng sự kiện. Mỗi hệ điều hành cung cấp API cho phép lập trình viên chỉ định 1 tập các file descriptor hoặc mốc thời gian (time-event) cần theo dõi và sẽ trigger mỗi sự kiện khi các file descriptor thay đổi trạng thái (có đọc hoặc ghi) hoặc khi một mốc thời gian quan trọng đã đến. Lập trình viên hệ thống chỉ cần cung cấp 1 hàm callback và các API này sẽ thực hiện chạy các callback này. Cụ thể:</p>
+<ul>
+<li><a href="http://en.wikipedia.org/wiki/Select_%28Unix%29">select</a> Chuẩn POSIX đình nghĩa hàm này.</li>
+<li>Unix (BSD, MacOS): <a href="people.freebsd.org/~jlemon/papers/kqueue.pdf">kqueue</a></li>
+<li>Linux: poll, <a href="http://man7.org/linux/man-pages/man7/epoll.7.html">epoll</a> (edge-trigger)</li>
+<li>Solaris: <a href="http://docs.oracle.com/cd/E19082-01/819-2243/port-associate-3c/index.html">event ports</a> (port_associate)</li>
+</ul>
+<p>Việc các hệ thống đều hỗ trơ cơ chế event multiplexing là điều tốt (hệ thống của bạn sẽ không phải thay đổi design nếu muốn hỗ trợ 1 hệ thống đặc biệt) tuy vậy có một khó khăn đó là: các API này có interface khác nhau. Do vậy đoạn code dùng epoll sẽ không thể nào chạy trên các Unix based và ngược lại một đoạn code dùng kqueue sẽ không chạy được trên linux. Để giải quyết vấn đề này, redis cung cấp 1 layer hướng sự kiện và thay đổi backend API (kqueue, event ports, epoll) theo hệ thống mà redis được biên dịch trên đó.</p>
+<h2 id="framework">3. Framework</h2>
+<h3 id="a.-kiến-trúc">a. Kiến trúc</h3>
+<pre><code>                    ╒========================╕
+                    |  Redis layer cao hơn   | (aof, rdb, cron...)
+                    ╘========================╛
+
+                    ╒========================╕
+                    |     API layer hướng    | frontend: aeCreateEventLoop, aeStop, aeCreateFileEvent... 
+                    |       sự kiện          | backend: aeAddEvent, aeDelEvent, aeApiPoll...
+                    ╘========================╛
+
+    ╒=============╕     ╒=============╕     ╒=============╕     ╒=============╕
+    |   select    |     |   kqueue    |     |   epoll     |     | event ports |
+    ╘=============╛     ╘=============╛     ╘=============╛     ╘=============╛
+    ae_select.c     ae_kqueue.c             ae_epoll.c               ae_evport.c</code></pre>
+<p>Để hỗ trợ các event multiplexing api khác nhau của các hệ điều hành, redis xây dựng 1 api layer đứng giữa các layer cao hơn và các api của OS (như trong hình vẽ). Layer này có 2 loại api khác nhau: frontend và backend.</p>
+<ul>
+<li>frontend api: là các api cho phép các layer ở trên thao tác với các sự kiện và <strong>vòng lặp sự kiện</strong> (event loop). Các api này gồm có: aeCreateEventLLoop, aeStop, aeMain, aeCreateFileEvent, aeCreateTimeEvent…</li>
+<li>backend api: thực chất là interface api. Các api hệ thống khác nhau sẽ được viết để phù hợp với interface này. Interface này gồm các api như: aeAddEvent, aeDelEvent, aeApiPoll, aeApiName.</li>
+</ul>
+<p>frontend api sẽ gọi backend api để taoji các sự kiện, poll các file descriptor… Các backend api sẽ đối chiếu sử dụng tương ứng với api của hệ thống. Việc sử dụng api nào sẽ được quyết định lúc biên dịch.</p>
+<p>Để thống nhất các polling api khác nhau về cùng 1 interface, redis định nghĩa các cấu trúc dữ liệu giống nhau với mỗi api, cụ thể là các sự kiện và <strong>vòng lặp sự kiện</strong>. Các cấu trúc này được viết trong file ae.h</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>ae.c </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#ifndef __AE_H__</span>
+</span><span class='line'><span class="cp">#define __AE_H__</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#define AE_OK 0</span>
+</span><span class='line'><span class="cp">#define AE_ERR -1</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#define AE_NONE 0</span>
+</span><span class='line'><span class="cp">#define AE_READABLE 1</span>
+</span><span class='line'><span class="cp">#define AE_WRITABLE 2</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#define AE_FILE_EVENTS 1</span>
+</span><span class='line'><span class="cp">#define AE_TIME_EVENTS 2</span>
+</span><span class='line'><span class="cp">#define AE_ALL_EVENTS (AE_FILE_EVENTS|AE_TIME_EVENTS)</span>
+</span><span class='line'><span class="cp">#define AE_DONT_WAIT 4</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#define AE_NOMORE -1</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/* Macros */</span>
+</span><span class='line'><span class="cp">#define AE_NOTUSED(V) ((void) V)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">struct</span> <span class="n">aeEventLoop</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/* Types and data structures */</span>
+</span><span class='line'><span class="k">typedef</span> <span class="kt">void</span> <span class="nf">aeFileProc</span><span class="p">(</span><span class="k">struct</span> <span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">clientData</span><span class="p">,</span> <span class="kt">int</span> <span class="n">mask</span><span class="p">);</span>
+</span><span class='line'><span class="k">typedef</span> <span class="kt">int</span> <span class="nf">aeTimeProc</span><span class="p">(</span><span class="k">struct</span> <span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">long</span> <span class="kt">long</span> <span class="n">id</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">clientData</span><span class="p">);</span>
+</span><span class='line'><span class="k">typedef</span> <span class="kt">void</span> <span class="nf">aeEventFinalizerProc</span><span class="p">(</span><span class="k">struct</span> <span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">clientData</span><span class="p">);</span>
+</span><span class='line'><span class="k">typedef</span> <span class="kt">void</span> <span class="nf">aeBeforeSleepProc</span><span class="p">(</span><span class="k">struct</span> <span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/* File event structure */</span>
+</span><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">aeFileEvent</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">mask</span><span class="p">;</span> <span class="cm">/* one of AE_(READABLE|WRITABLE) */</span>
+</span><span class='line'>    <span class="n">aeFileProc</span> <span class="o">*</span><span class="n">rfileProc</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">aeFileProc</span> <span class="o">*</span><span class="n">wfileProc</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">void</span> <span class="o">*</span><span class="n">clientData</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span> <span class="n">aeFileEvent</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/* Time event structure */</span>
+</span><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">aeTimeEvent</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kt">long</span> <span class="kt">long</span> <span class="n">id</span><span class="p">;</span> <span class="cm">/* time event identifier. */</span>
+</span><span class='line'>    <span class="kt">long</span> <span class="n">when_sec</span><span class="p">;</span> <span class="cm">/* seconds */</span>
+</span><span class='line'>    <span class="kt">long</span> <span class="n">when_ms</span><span class="p">;</span> <span class="cm">/* milliseconds */</span>
+</span><span class='line'>    <span class="n">aeTimeProc</span> <span class="o">*</span><span class="n">timeProc</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">aeEventFinalizerProc</span> <span class="o">*</span><span class="n">finalizerProc</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">void</span> <span class="o">*</span><span class="n">clientData</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">struct</span> <span class="n">aeTimeEvent</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span> <span class="n">aeTimeEvent</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/* A fired event */</span>
+</span><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">aeFiredEvent</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">fd</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">mask</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span> <span class="n">aeFiredEvent</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/* State of an event based program */</span>
+</span><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">aeEventLoop</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">maxfd</span><span class="p">;</span>   <span class="cm">/* highest file descriptor currently registered */</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">setsize</span><span class="p">;</span> <span class="cm">/* max number of file descriptors tracked */</span>
+</span><span class='line'>    <span class="kt">long</span> <span class="kt">long</span> <span class="n">timeEventNextId</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">time_t</span> <span class="n">lastTime</span><span class="p">;</span>     <span class="cm">/* Used to detect system clock skew */</span>
+</span><span class='line'>    <span class="n">aeFileEvent</span> <span class="o">*</span><span class="n">events</span><span class="p">;</span> <span class="cm">/* Registered events */</span>
+</span><span class='line'>    <span class="n">aeFiredEvent</span> <span class="o">*</span><span class="n">fired</span><span class="p">;</span> <span class="cm">/* Fired events */</span>
+</span><span class='line'>    <span class="n">aeTimeEvent</span> <span class="o">*</span><span class="n">timeEventHead</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">stop</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">void</span> <span class="o">*</span><span class="n">apidata</span><span class="p">;</span> <span class="cm">/* This is used for polling API specific data */</span>
+</span><span class='line'>    <span class="n">aeBeforeSleepProc</span> <span class="o">*</span><span class="n">beforesleep</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span> <span class="n">aeEventLoop</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/* Prototypes */</span>
+</span><span class='line'><span class="n">aeEventLoop</span> <span class="o">*</span><span class="nf">aeCreateEventLoop</span><span class="p">(</span><span class="kt">int</span> <span class="n">setsize</span><span class="p">);</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">aeDeleteEventLoop</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">);</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">aeStop</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">aeCreateFileEvent</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">int</span> <span class="n">mask</span><span class="p">,</span>
+</span><span class='line'>        <span class="n">aeFileProc</span> <span class="o">*</span><span class="n">proc</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">clientData</span><span class="p">);</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">aeDeleteFileEvent</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">int</span> <span class="n">mask</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">aeGetFileEvents</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">int</span> <span class="n">fd</span><span class="p">);</span>
+</span><span class='line'><span class="kt">long</span> <span class="kt">long</span> <span class="nf">aeCreateTimeEvent</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">long</span> <span class="kt">long</span> <span class="n">milliseconds</span><span class="p">,</span>
+</span><span class='line'>        <span class="n">aeTimeProc</span> <span class="o">*</span><span class="n">proc</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">clientData</span><span class="p">,</span>
+</span><span class='line'>        <span class="n">aeEventFinalizerProc</span> <span class="o">*</span><span class="n">finalizerProc</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">aeDeleteTimeEvent</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">long</span> <span class="kt">long</span> <span class="n">id</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">aeProcessEvents</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">aeWait</span><span class="p">(</span><span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">int</span> <span class="n">mask</span><span class="p">,</span> <span class="kt">long</span> <span class="kt">long</span> <span class="n">milliseconds</span><span class="p">);</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">aeMain</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">);</span>
+</span><span class='line'><span class="kt">char</span> <span class="o">*</span><span class="nf">aeGetApiName</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">aeSetBeforeSleepProc</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="n">aeBeforeSleepProc</span> <span class="o">*</span><span class="n">beforesleep</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#endif</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Theo như ae.h, redis có 3 kiểu sự kiện khác nhau:</p>
+<ul>
+<li>Sự kiện trên File (đọc, ghi) (aeFileEvent)</li>
+<li>Sự kiện thời gian (aeTimeEvent)</li>
+<li>Sự kiện đã được triggered (aeFiredEvent)</li>
+</ul>
+<p>Các callback prototype đều nhận đối số đầu tiên là 1 con trỏ chỉ đến cấu trúc aeEventLoop. Cấu trúc này quản lý rất nhiều thông tin khác nhau như: số sự kiện được đăng ký, sự kiện được gọi, file descriptor lớn nhất đang quản lý, danh sách các <strong>sự kiện thời gian</strong> v.v</p>
+<h3 id="b.-chi-tiết-thực-hiện">b. Chi tiết thực hiện</h3>
+<p>Toàn bộ quá trình xử lý sự kiện được bắt đầu bằng cách gọi aeMain. Xử lý trong aeMain thực chất là một vòng lặp gọi hàm xử lý sự kiện: aeProcessEvents. Tất cả các sự kiện sẽ được thực thi ở hàm aeProcessEvents này. Ta hãy cùng tìm hiểu công việc mà aeProcessEvent phải làm.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>ae.c </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">aeMain</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">stop</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">while</span> <span class="p">(</span><span class="o">!</span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">stop</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">beforesleep</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">beforesleep</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">aeProcessEvents</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">,</span> <span class="n">AE_ALL_EVENTS</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/* Process every pending time event, then every pending file event</span>
+</span><span class='line'><span class="cm"> * (that may be registered by time event callbacks just processed).</span>
+</span><span class='line'><span class="cm"> * Without special flags the function sleeps until some file event</span>
+</span><span class='line'><span class="cm"> * fires, or when the next time event occurs (if any).</span>
+</span><span class='line'><span class="cm"> *</span>
+</span><span class='line'><span class="cm"> * If flags is 0, the function does nothing and returns.</span>
+</span><span class='line'><span class="cm"> * if flags has AE_ALL_EVENTS set, all the kind of events are processed.</span>
+</span><span class='line'><span class="cm"> * if flags has AE_FILE_EVENTS set, file events are processed.</span>
+</span><span class='line'><span class="cm"> * if flags has AE_TIME_EVENTS set, time events are processed.</span>
+</span><span class='line'><span class="cm"> * if flags has AE_DONT_WAIT set the function returns ASAP until all</span>
+</span><span class='line'><span class="cm"> * the events that&#39;s possible to process without to wait are processed.</span>
+</span><span class='line'><span class="cm"> *</span>
+</span><span class='line'><span class="cm"> * The function returns the number of events processed. */</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">aeProcessEvents</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">processed</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">numevents</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cm">/* Nothing to do? return ASAP */</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AE_TIME_EVENTS</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AE_FILE_EVENTS</span><span class="p">))</span> <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cm">/* Note that we want call select() even if there are no</span>
+</span><span class='line'><span class="cm">     * file events to process as long as we want to process time</span>
+</span><span class='line'><span class="cm">     * events, in order to sleep until the next time event is ready</span>
+</span><span class='line'><span class="cm">     * to fire. */</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">maxfd</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">||</span>
+</span><span class='line'>        <span class="p">((</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AE_TIME_EVENTS</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AE_DONT_WAIT</span><span class="p">)))</span> <span class="p">{</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">j</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">aeTimeEvent</span> <span class="o">*</span><span class="n">shortest</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">struct</span> <span class="n">timeval</span> <span class="n">tv</span><span class="p">,</span> <span class="o">*</span><span class="n">tvp</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AE_TIME_EVENTS</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AE_DONT_WAIT</span><span class="p">))</span>
+</span><span class='line'>            <span class="n">shortest</span> <span class="o">=</span> <span class="n">aeSearchNearestTimer</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">shortest</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="kt">long</span> <span class="n">now_sec</span><span class="p">,</span> <span class="n">now_ms</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="cm">/* Calculate the time missing for the nearest</span>
+</span><span class='line'><span class="cm">             * timer to fire. */</span>
+</span><span class='line'>            <span class="n">aeGetTime</span><span class="p">(</span><span class="o">&amp;</span><span class="n">now_sec</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">now_ms</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">tvp</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">tv</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">tvp</span><span class="o">-&gt;</span><span class="n">tv_sec</span> <span class="o">=</span> <span class="n">shortest</span><span class="o">-&gt;</span><span class="n">when_sec</span> <span class="o">-</span> <span class="n">now_sec</span><span class="p">;</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">shortest</span><span class="o">-&gt;</span><span class="n">when_ms</span> <span class="o">&lt;</span> <span class="n">now_ms</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                <span class="n">tvp</span><span class="o">-&gt;</span><span class="n">tv_usec</span> <span class="o">=</span> <span class="p">((</span><span class="n">shortest</span><span class="o">-&gt;</span><span class="n">when_ms</span><span class="o">+</span><span class="mi">1000</span><span class="p">)</span> <span class="o">-</span> <span class="n">now_ms</span><span class="p">)</span><span class="o">*</span><span class="mi">1000</span><span class="p">;</span>
+</span><span class='line'>                <span class="n">tvp</span><span class="o">-&gt;</span><span class="n">tv_sec</span> <span class="o">--</span><span class="p">;</span>
+</span><span class='line'>            <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>                <span class="n">tvp</span><span class="o">-&gt;</span><span class="n">tv_usec</span> <span class="o">=</span> <span class="p">(</span><span class="n">shortest</span><span class="o">-&gt;</span><span class="n">when_ms</span> <span class="o">-</span> <span class="n">now_ms</span><span class="p">)</span><span class="o">*</span><span class="mi">1000</span><span class="p">;</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">tvp</span><span class="o">-&gt;</span><span class="n">tv_sec</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="n">tvp</span><span class="o">-&gt;</span><span class="n">tv_sec</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">tvp</span><span class="o">-&gt;</span><span class="n">tv_usec</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="n">tvp</span><span class="o">-&gt;</span><span class="n">tv_usec</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>            <span class="cm">/* If we have to check for events but need to return</span>
+</span><span class='line'><span class="cm">             * ASAP because of AE_DONT_WAIT we need to set the timeout</span>
+</span><span class='line'><span class="cm">             * to zero */</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AE_DONT_WAIT</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                <span class="n">tv</span><span class="p">.</span><span class="n">tv_sec</span> <span class="o">=</span> <span class="n">tv</span><span class="p">.</span><span class="n">tv_usec</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>                <span class="n">tvp</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">tv</span><span class="p">;</span>
+</span><span class='line'>            <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>                <span class="cm">/* Otherwise we can block */</span>
+</span><span class='line'>                <span class="n">tvp</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span> <span class="cm">/* wait forever */</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">numevents</span> <span class="o">=</span> <span class="n">aeApiPoll</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">,</span> <span class="n">tvp</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">for</span> <span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">numevents</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">aeFileEvent</span> <span class="o">*</span><span class="n">fe</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">events</span><span class="p">[</span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">fired</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">fd</span><span class="p">];</span>
+</span><span class='line'>            <span class="kt">int</span> <span class="n">mask</span> <span class="o">=</span> <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">fired</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">mask</span><span class="p">;</span>
+</span><span class='line'>            <span class="kt">int</span> <span class="n">fd</span> <span class="o">=</span> <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">fired</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">fd</span><span class="p">;</span>
+</span><span class='line'>            <span class="kt">int</span> <span class="n">rfired</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="cm">/* note the fe-&gt;mask &amp; mask &amp; ... code: maybe an already processed</span>
+</span><span class='line'><span class="cm">             * event removed an element that fired and we still didn&#39;t</span>
+</span><span class='line'><span class="cm">             * processed, so we check if the event is still valid. */</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">mask</span> <span class="o">&amp;</span> <span class="n">mask</span> <span class="o">&amp;</span> <span class="n">AE_READABLE</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                <span class="n">rfired</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>                <span class="n">fe</span><span class="o">-&gt;</span><span class="n">rfileProc</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">,</span><span class="n">fd</span><span class="p">,</span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">clientData</span><span class="p">,</span><span class="n">mask</span><span class="p">);</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">mask</span> <span class="o">&amp;</span> <span class="n">mask</span> <span class="o">&amp;</span> <span class="n">AE_WRITABLE</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">rfired</span> <span class="o">||</span> <span class="n">fe</span><span class="o">-&gt;</span><span class="n">wfileProc</span> <span class="o">!=</span> <span class="n">fe</span><span class="o">-&gt;</span><span class="n">rfileProc</span><span class="p">)</span>
+</span><span class='line'>                    <span class="n">fe</span><span class="o">-&gt;</span><span class="n">wfileProc</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">,</span><span class="n">fd</span><span class="p">,</span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">clientData</span><span class="p">,</span><span class="n">mask</span><span class="p">);</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>            <span class="n">processed</span><span class="o">++</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="cm">/* Check time events */</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AE_TIME_EVENTS</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">processed</span> <span class="o">+=</span> <span class="n">processTimeEvents</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">processed</span><span class="p">;</span> <span class="cm">/* return the number of processed file/time events */</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Hàm aeProcessEvents làm 3 nhiệm vụ chính:</p>
+<ul>
+<li>Tìm sự kiện có thời gian timeout gần nhất</li>
+<li>Lắng nghe sự kiện File, với thời gian poll không quá thời gian sự kiện gần nhất ở trên.</li>
+<li>Với các sự kiện được triggered (file có thể đọc, ghi; thời gian timeout đã đến), chạy các callback được đăng ký với các sự kiện.</li>
+</ul>
+<p>Việc tìm thời gian timeout gần nhất ở đầu vòng lặp nhằm hạn chế thấp nhất khả năng delay của các sự kiện thời gian (Nên nhớ serverCron chạy với thời gian timeout 1ms trên 1 lần).</p>
+<p>Sau khi xử lý lần lượt các xử lý các sự kiện file, redis sẽ xử lý các sự kiện thời gian. Xử lý sự kiện thời gian cũng khá đơn giản. Redis lần lượt xét từng sự kiện thời gian trong danh sách các sự kiện thời gian và gọi callback với các sự kiện đã quá thời hạn. Tuy nhiên, ta sẽ thấy 1 đoạn code khá <strong>mập mờ</strong> ở đầu xử lý sự kiện thời gian, với comment như dưới đây:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>ae.c </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'>    <span class="cm">/* If the system clock is moved to the future, and then set back to the</span>
+</span><span class='line'><span class="cm">     * right value, time events may be delayed in a random way. Often this</span>
+</span><span class='line'><span class="cm">     * means that scheduled operations will not be performed soon enough.</span>
+</span><span class='line'><span class="cm">     *</span>
+</span><span class='line'><span class="cm">     * Here we try to detect system clock skews, and force all the time</span>
+</span><span class='line'><span class="cm">     * events to be processed ASAP when this happens: the idea is that</span>
+</span><span class='line'><span class="cm">     * processing events earlier is less dangerous than delaying them</span>
+</span><span class='line'><span class="cm">     * indefinitely, and practice suggests it is. */</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">now</span> <span class="o">&lt;</span> <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">lastTime</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">te</span> <span class="o">=</span> <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">timeEventHead</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">while</span><span class="p">(</span><span class="n">te</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">te</span><span class="o">-&gt;</span><span class="n">when_sec</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">te</span> <span class="o">=</span> <span class="n">te</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">lastTime</span> <span class="o">=</span> <span class="n">now</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">...</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Làm sao thời gian hệ thống trả về bởi time(NULL) có thể nhỏ hơn thời gian xử lý được ghi nhận lần trước đấy được? Thực chất ở đây, antirez đã cân nhắc rất kỹ 1 tính huống có thể xảy ra với hệ thống thời gian của Linux. Trong điều kiện hoạt động bình thường, thời gian hệ thống sẽ luôn tăng. Tuy vậy, với 1 số trường hợp rủi ro:</p>
+<ul>
+<li>Nguồn cung cấp điện không đủ.</li>
+<li>Pin CMOS có vấn đề.</li>
+</ul>
+<p>1s trong máy tính có thể bằng 2, 3s trong thời gian thực, nói cách khác đồng hồ máy tính sẽ bị chạy chậm đi. Với tình huống này các sự kiện thời gian sẽ bị sai lệch và redis sẽ hoạt động không bình thường. Đấy chính là lý do antirez thêm đoạn code trên.</p>
+<h2 id="redis-dùng-framework-này-như-thế-nào">4. Redis dùng framework này như thế nào?</h2>
+<ul>
+<li>Sự kiện file được sử dụng ở redis client và cluster. Thực chất các redis instance cần phải liên lạc với nhau để trao đổi dữ liệu. Việc trao đổi này tiến hành qua mạng và vì vậy hệ thống không thể nào biết khi nào dữ liệu mới sẽ đến. Thay vì phải chờ dữ liệu, bằng cách dùng framework sự kiện, hệ thống có thể tiến hành các xử lý có ưu tiên cao hơn môt cách <strong>bất đồng bộ</strong>, nâng cao hiệu năng của hệ thống.</li>
+<li>Sự kiện thời gian được sử dụng để định kỳ gọi cronServer (Nhiệm vụ của cronServer: <a href="http://ktmt.github.io/blog/2013/07/02/tim-hieu-redis/">tìm hiểu redis phần 1</a>).</li>
+</ul>
+<h2 id="kết-luận">5. Kết luận</h2>
+<p>Redis sử dụng phương pháp lập trình hướng sự kiện để định kỳ gọi các thủ tục backup dữ liệu cũng như quản lý các kết nối từ client. Redis hỗ trợ kqueue, epoll và event port nên hiệu năng đạt được khá cao.</p>
+<h2 id="tham-khảo">6. Tham khảo</h2>
+<ol type="1">
+<li><a href="http://www.kegel.com/c10k.html">C10K</a></li>
+<li><a href="people.freebsd.org/~jlemon/papers/kqueue.pdf">kqueue</a></li>
+<li><a href="http://man7.org/linux/man-pages/man7/epoll.7.html">epoll</a></li>
+<li><a href="http://docs.oracle.com/cd/E19082-01/819-2243/port-associate-3c/index.html">event ports</a></li>
+<li><a href="https://groups.google.com/forum/#!forum/redis-db">redis mailing list</a></li>
+<li>IOCP <a href="http://en.wikipedia.org/wiki/Input/output_completion_port">Input/output completion port</a></li>
+</ol>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -967,190 +1511,6 @@ Trước khi đọc bài này, tôi có 1 vài &hellip;">
 <p>Như vậy chúng ta đã có một flow hoàn chỉnh rồi, thêm tí css và sử dụng <a href="https://github.com/zeroclipboard/ZeroClipboard">ZeroClipboard</a> để có nút yank để copy url vào clipboard, chúng ta đã có một dịch vụ rút gọn url cho riêng mình!</p>
 <p><img src="/images/urlshorten/background.png"></p>
 <p>Toàn bộ source code cho tutorial này mình đang để ở đây, mọi người có thể sử dụng tùy ý :). <a href="https://github.com/ktmt/link_shorttener">https://github.com/ktmt/link_shorttener</a></p>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-07-07T22:54:00+09:00" data-updated="true" itemprop="datePublished">Jul 7<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/git/'>git</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/07/07/git-server-hook-dot-markdown/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/07/git-server-hook-dot-markdown/" itemprop="url">Githook và Server Hook (Tiếp)</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<p>Ở bài viết <a href="/blog/2013/06/25/using-githook-to-automatically-test-your-app/">trước</a>, tôi đã giới thiệu về githook, client hook và các user case hay sử dụng với client hook. Bài viết này, tôi sẽ giới thiệu thêm về server hook và các ứng dụng của chúng trong thực tế</p>
-<h1 id="server-side-hooks">Server-side hooks</h1>
-<p>Bên cạnh việc sử dụng các client-side hooks, bạn có thể sử dụng một vài server-side hook như là một hệ thống admin để áp đặt một cơ chế quán lý cho project của bạn. Những script này sẽ được chạy trước và sau khi commit được đẩy lên server. Những pre-hooks có thể trả về giá trị khác 0 ở bất cứ thời điểm nào để loại bỏ một push từ client, cũng như để in ra một error message cho client</p>
-<h2 id="pre-receive-và-post-receive">pre-receive và post-receive</h2>
-<p>Script đầu tiên được chạy khi server nhận được một push từ client đó là <code>pre-receive</code>. Script này nhận một list các tham chiếu sẽ được push từ stdin. Nếu nó trả về giá trị khác 0, không có tham chiếu nào được chấp nhận. Bạn có thể sử dụng hook này để làm những việc như đảm bảo không có bất cứ tham chiếu nào là <code>non-fast-forwards</code>.</p>
-<p><code>post-receive</code> hook chạy sau khi toàn bộ quá trình được hoàn tất và có thể sử dụng để update các service khác hoặc để notify uer. Nó nhận cùng dữ liệu từ stdin như <code>pre-receive</code> hook. Ví dụ bao gồm gửi email chó một list các developer liên quan, notify CI server, hoặc update ticket tracking system. Bạn thậm chí có thể parse commit message để kiểm tra xem có bất cứ ticket nào cần open, modified hoặc update hay không. <code>post-receive</code> không thể làm ngừng lại quá trình push, nhưng client sẽ không đóng kết nối tới server cho đên khi <code>post-receive</code> kết thúc. Ví thế hãy cẩn thận khi bạn muốn làm những việc tốn thời gian. Cách tốt nhất là hãy sử dụng các background process để xử lý các tác vụ tốn thời gian.</p>
-<h2 id="update">update</h2>
-<p>Update script là tương tự với <code>pre-receive</code> script, ngoại trừ việc nó chỉ chạy một làn cho mỗi branch mà pusher muốn update. Nếu pusher muốn update nhiều branch, <code>pre-receive</code> chỉ chạy duy nhất một lần, nhưng update sẽ chạy một lần cho mỗi branch mà chúng được push. Thay vì đọc dữ liệu từ stdin, script này sẽ nhận 3 tham số đầu vào: tên của branch, SHA-1 trỏ đến commit trước khi được push, và SHA-1 user đang muốn push. Nếu update script trả về kết quả khác 0, chỉ branch ứng với script này bị reject, các branch khác vẫn được update bình thường</p>
-<h1 id="ví-dụ">Ví dụ</h1>
-<p>Trong ví dụ này, chúng ta sẽ bắt buộc mỗi commit message phải có phần mở đầu của message tuân theo một định dạng. Cụ thể mỗi mesage phải có dạng “ref:1234” bởi vì mỗi một commit sẽ ứng với một ticket trong hệ thống.</p>
-<p>Để làm việc này, sẻver sẽ phải kiểm tra tất cả các commit được push để xem string trong commit message có đúng format hay không. Nếu commit message là không đúng format, trả về giá trị khác 0 và reject push.</p>
-<p>Chúng ta sẽ viết một update hook để làm việc này. Chú ý rắng, update hook nhận 3 giá trị đầu vào: tên của branch được update, SHA-1 của commit trước khi được push, và SHA-1 của commit sau khi được push. Các đoạn code dưới đây được minh hoạ bằng ruby, bạn có thể sử dụng ngôn ngữ lập trình khác nếu muốn</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>update </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1">#!/usr/bin/env ruby</span>
-</span><span class='line'>
-</span><span class='line'><span class="vg">$refname</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span>
-</span><span class='line'><span class="vg">$oldrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span>
-</span><span class='line'><span class="vg">$newrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Để lấy các commit từ <code>$oldrev</code> tới <code>$newrev</code>, chúng ta sử dụng lệnh <code>git rev-lít</code>. Lệnh này sẽ trả về danh sách các SHA-1 cho các commit nằm giữa 2 commit mà chúng ta truyền vào</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'> 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>git rev-list 538c33..d14fc7
-</span><span class='line'>d14fc7c847ab946ec39590d87783c69b031bdfb7
-</span><span class='line'>9f585da4401b0a3999e84113824d15245c13f0be
-</span><span class='line'>234071a1be950e2a8d078e6141f5cd20c1e61ad3
-</span><span class='line'>dfa04c9ef3d5197182f13fb5b9b1fb7717d2222a
-</span><span class='line'>17716ec0f1ff5c77eff40b7fe912f9f6cfd0e475
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Sau đó, chúng ta sử dụng lệnh <code>git cat-file</code> đẻ duyệt qua từng commit và lấy nội dụng của commit message.</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'> 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>git cat-file commit ca82a6
-</span><span class='line'>tree cfda3bf379e4f8dba8717dee55aab78aef7f4daf
-</span><span class='line'>parent 085bb3bcb608e1e8451d4b2432f8ecbe6306e7e7
-</span><span class='line'>author kiennt &lt;kiennt@gmail.com&gt; 1205815931 -0700
-</span><span class='line'>committer kiennt &lt;schacon@gmail.com&gt; 1240030591 -0700
-</span><span class='line'>
-</span><span class='line'>Add new post about githook
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Cách đơn giản để lấy commit message từ một commit là khi có SHA-1 , chúng ta xác định dòng blank đầu tiên và lấy tất cả phần đằng sau nó. Chúng ta có thể sử dụng <code>sed</code> để làm điều này</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'> 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>git cat-file commit ca82a6 | sed <span class="s1">&#39;1,/^$/d&#39;</span>
-</span><span class='line'>Add new post about githook
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Sau đây là toàn bộ đoạn code ruby để hoàn thành tác vụ trên</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>update </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1">#!/usr/bin/env ruby</span>
-</span><span class='line'>
-</span><span class='line'><span class="vg">$refname</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span>
-</span><span class='line'><span class="vg">$oldrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span>
-</span><span class='line'><span class="vg">$newrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span>
-</span><span class='line'><span class="vg">$regex</span> <span class="o">=</span> <span class="sr">/\[ref: (\d+)\]/</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1"># enforced custom commit message format</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">check_message_format</span>
-</span><span class='line'>  <span class="n">missed_revs</span> <span class="o">=</span> <span class="sb">`git rev-list </span><span class="si">#{</span><span class="vg">$oldrev</span><span class="si">}</span><span class="sb">..</span><span class="si">#{</span><span class="vg">$newrev</span><span class="si">}</span><span class="sb">`</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">missed_revs</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">rev</span><span class="o">|</span>
-</span><span class='line'>    <span class="n">message</span> <span class="o">=</span> <span class="sb">`git cat-file commit </span><span class="si">#{</span><span class="n">rev</span><span class="si">}</span><span class="sb"> | sed &#39;1,/^$/d&#39;`</span>
-</span><span class='line'>    <span class="k">if</span> <span class="o">!</span><span class="vg">$regex</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
-</span><span class='line'>      <span class="nb">puts</span> <span class="s2">&quot;[POLICY] Your message is not formatted correctly&quot;</span>
-</span><span class='line'>      <span class="nb">exit</span> <span class="mi">1</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'><span class="n">check_message_format</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<h1 id="kết-luận">Kết luận</h1>
-<p>Qua 2 bài viết về githook, bạn đã nắm được phần nào các hooks trong git, và các ứng dụng liên quan đến chúng. Giờ bạn có thể sử dụng githook để tạo nên workflow phù hợp nhất với git cho project của mình</p>
-<h1 id="tham-khảo">Tham khảo</h1>
-<p><a href="http://git-scm.com/book/en/Customizing-Git-Git-Hooks">Githook documentation</a> <a href="http://git-scm.com/book/en/Customizing-Git-An-Example-Git-Enforced-Policy">Customizing Git</a></p>
 		
 		
 	</div>

@@ -7,7 +7,7 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Aug 5th, 2013 iOS Comments Những Lưu ý Khi Dùng UITableView - Phần 2 Như đã giới thiệu ở phần trước, chúng ta có thể làm giảm load của chương trình &hellip;">
+	<meta name="description" content="Aug 6th, 2013 Comments Survey About News Ranking Mở đầu: Problem: Bạn là web programmer, bạn sở hữu một trang web đăng tin tức với rất nhiều users. &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -76,6 +76,290 @@
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-08-06T17:37:00+09:00" data-updated="true" itemprop="datePublished">Aug 6<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/08/06/a-little-bit-about-news-ranking/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/08/06/a-little-bit-about-news-ranking/" itemprop="url">Survey About News Ranking</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1 id="mở-đầu">Mở đầu:</h1>
+<ul>
+<li><p><strong>Problem</strong>: Bạn là web programmer, bạn sở hữu một trang web đăng tin tức với rất nhiều users. Users của bạn sẽ vote up hoặc down cho một tin tức nào đó, Vấn đề là không gian hiển thị tin luôn là hữu hạn và nhỏ hơn rất nhiều so với số lượng tin được đăng. Do vậy việc sắp xếp tin nào hot lên trên , ít hot hơn xuông dưới là một bài toán cần giải quyết. Việc sắp xếp ở đây được thông qua độ hot hay là hot-score. Một thuật toán quyết định <strong>hot-score</strong> tốt sẽ giúp cho user luôn theo dõi được các trend hiện tại, và tìm ra được tin mình muốn theo dõi.</p></li>
+<li><p><strong>Giải quyết</strong>: Định nghĩa về việc định nghĩa hot-score thế nào là tốt là một việc khá khó vì không có cách nào đánh giá cụ thể được, vì vậy ở bài viết này chúng ta sẽ tìm hiểu các thuật toán đã và đang được áp dụng trên reddit, hacker-news và trên <a href="https://github.com/antirez/lamernews">lamernews</a> ( một open source clone hackernews )</p></li>
+</ul>
+<h1 id="idea-để-giải-quyết-bài-toán-hot-score">Idea để giải quyết bài toán <strong>hot-score</strong></h1>
+<ul>
+<li>Đầu tiên hãy nói về mặt ý tưởng. Thường với những hệ thống có chức năng vote, chúng ta sẽ nghĩ ngay đến công thức :</li>
+</ul>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>score.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="n">score</span> <span class="o">=</span> <span class="n">up_vote</span> <span class="o">-</span> <span class="n">down_vote</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Tuy nhiên công thức trên có gì không tốt? Giả sử một item có 1000 up votes và 500 down votes, như vậy score của item đó sẽ là 500, tỉ lệ là 66.6% positive (1000/1500). Một item khác có 2000 up votes và 1300 down votes, có score là 700, nhưng tỉ lệ lại chỉ có 60.6% (2000/3300). So sánh 2 item trên thì về mặt logic thông thường chúng ta sẽ muốn item thứ nhất, với tỉ lệ positive cao hơn hẳn và số lượng sample (mẫu) votes không quá tầm thường (1500 votes).</p>
+<ul>
+<li>Từ ví dụ trên, chúng ta lại nảy ra ý nghĩ sử dụng tỉ lệ (portion) thay vì khoảng cách (distance) ở công thức trên</li>
+</ul>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>score.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="n">score</span> <span class="o">=</span> <span class="n">up_vote</span> <span class="o">/</span> <span class="n">down_vote</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Tuy nhiên công thức trên không tốt ở đâu? Vấn đề thứ 1 của công thức trên chính là việc dùng phép chia. Vấn đề dùng phép chia sẽ gặp phải bài toán chia cho 0 (divide by zero), do đó là 1 item với 2 up votes và 0 down votes sẽ có giá trị là Inf, có độ lớn vô tận. Vấn đề này có thể giải quyết một cách đơn giản bằng cách cộng thêm 1 vào cả up votes và down votes.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>score.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="n">score</span> <span class="o">=</span> <span class="p">(</span><span class="n">up_vote</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">down_vote</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Tuy nhiên mặc dù có cộng thêm một, vẫn còn một vấn đề nữa, là vấn đề thời gian. Công thức trên hoàn toàn không có parameter liên quan đến thời gian. Việc đó sẽ gây ra điều gì? Chúng ta dễ dàng nhận thấy là những item được post sớm sẽ có chiều hướng được rank cao hơn. Lý do là vì những item được post sớm sẽ được nhìn thấy nhiều hơn, được vote nhiều hơn, do đó nó dễ dàng ngự trị ở vị trí top-score một cách ổn định. Do đó việc có một parameter để quyết định độ “cũ” (stale) của một item là cần thiết.</p>
+<p>Như vậy chúng ta cần một thuật toán tính toán hot-score dựa trên up votes, down votes, và thời gian (thời gian ở đây chính là khoảng thời gian từ lúc post bài cho đến thời điểm hiện tại).</p>
+<h1 id="một-số-cách-giải-quyết-của-các-website-nổi-tiếng">Một số cách giải quyết của các website nổi tiếng</h1>
+<h2 id="reddit">Reddit</h2>
+<ul>
+<li>Đầu tiên đến với <a href="http://reddit.com">reddit</a>. Reddit là một web-site chuyên đăng tin tức với comment vào dạng lớn nhất trên thế giới. Source code của reddit được open tại <a href="https://github.com/reddit/reddit">https://github.com/reddit/reddit</a>. Thuật toán tính toán hot-score của reddit nằm tại đoạn code ./r2/r2/lib/db/_sorts.pyx :</li>
+</ul>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>reddit_implement.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="n">epoch</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">1970</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">tzinfo</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">tz</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">cpdef</span> <span class="n">double</span> <span class="n">epoch_seconds</span><span class="p">(</span><span class="n">date</span><span class="p">):</span>
+</span><span class='line'>    <span class="sd">&quot;&quot;&quot;Returns the number of seconds from the epoch to date. Should</span>
+</span><span class='line'><span class="sd">       match the number returned by the equivalent function in</span>
+</span><span class='line'><span class="sd">       postgres.&quot;&quot;&quot;</span>
+</span><span class='line'>    <span class="n">td</span> <span class="o">=</span> <span class="n">date</span> <span class="o">-</span> <span class="n">epoch</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">td</span><span class="o">.</span><span class="n">days</span> <span class="o">*</span> <span class="mi">86400</span> <span class="o">+</span> <span class="n">td</span><span class="o">.</span><span class="n">seconds</span> <span class="o">+</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">td</span><span class="o">.</span><span class="n">microseconds</span><span class="p">)</span> <span class="o">/</span> <span class="mi">1000000</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">cpdef</span> <span class="nb">long</span> <span class="n">score</span><span class="p">(</span><span class="nb">long</span> <span class="n">ups</span><span class="p">,</span> <span class="nb">long</span> <span class="n">downs</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">ups</span> <span class="o">-</span> <span class="n">downs</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">cpdef</span> <span class="n">double</span> <span class="n">_hot</span><span class="p">(</span><span class="nb">long</span> <span class="n">ups</span><span class="p">,</span> <span class="nb">long</span> <span class="n">downs</span><span class="p">,</span> <span class="n">double</span> <span class="n">date</span><span class="p">):</span>
+</span><span class='line'>    <span class="sd">&quot;&quot;&quot;The hot formula. Should match the equivalent function in postgres.&quot;&quot;&quot;</span>
+</span><span class='line'>    <span class="n">s</span> <span class="o">=</span> <span class="n">score</span><span class="p">(</span><span class="n">ups</span><span class="p">,</span> <span class="n">downs</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">order</span> <span class="o">=</span> <span class="n">log10</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">s</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">s</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">sign</span> <span class="o">=</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="k">elif</span> <span class="n">s</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">sign</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+</span><span class='line'>    <span class="k">else</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">sign</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="n">seconds</span> <span class="o">=</span> <span class="n">date</span> <span class="o">-</span> <span class="mi">1134028003</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nb">round</span><span class="p">(</span><span class="n">order</span> <span class="o">+</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">seconds</span> <span class="o">/</span> <span class="mi">45000</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Đoạn code trên được implement bằng cython. Đoạn code hơi dài, nhưng chúng ta chỉ cần chú ý đến dòng cuối cùng</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>reddit_rank.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'>  <span class="nb">round</span><span class="p">(</span><span class="n">order</span> <span class="o">+</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">seconds</span> <span class="o">/</span> <span class="mi">45000</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Ở đây seconds chính là thời gian tính từ 1970/1/1 đến giờ theo seconds. sign là giá trị mà (-1) khi có số vote âm, (+1) khi có số vote dương và (0) khi có số vote 0. order chính là log10(số vote). Từ công thức trên chúng ta có thể thấy độ hot của một item, khi có số vote âm mà càng cũ (seconds lớn) thì sẽ tụt rất nhanh về phía dưới. Việc sử dụng log scale, và chia time-lapse cho một con số khá lớn (45000) giúp cho giá trị vote không ảnh hưởng quá nhiều đến ranking. Do đó chúng ta có thể thấy rằng ở công thức của reddit thì:</p>
+<ul>
+<li>Thời gian post bài có giá trị quan trọng nhất, thường thì bài mới hơn sẽ rank cao hơn bài cũ.</li>
+<li>Giá trị votes không quá ảnh hưởng đến bài, một bài viết với 10 up votes và một bài viết với 100 up votes không quá chênh lệch nhau về rank.</li>
+</ul>
+<h2 id="hackernews">Hackernews</h2>
+<ul>
+<li>Tiếp theo chúng ta sẽ đến với thuật toán của hacker-news. Source code của hacker-news (ycombinator) được viết bằng Arc, một ngôn ngữ gần giống Lisp và được open source ở <a href="http://arclanguage.org/">http://arclanguage.org/</a></li>
+</ul>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>hnrank.sh </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="o">(=</span> gravity* 1.8 timebase* 120 front-threshold* 1
+</span><span class='line'>       nourl-factor* .4 lightweight-factor* .17 gag-factor* .1<span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="o">(</span>def frontpage-rank <span class="o">(</span>s <span class="o">(</span>o scorefn realscore<span class="o">)</span> <span class="o">(</span>o gravity gravity*<span class="o">))</span>
+</span><span class='line'>      <span class="o">(</span>* <span class="o">(</span>/ <span class="o">(</span><span class="nb">let </span>base <span class="o">(</span>- <span class="o">(</span>scorefn s<span class="o">)</span> 1<span class="o">)</span>
+</span><span class='line'>              <span class="o">(</span><span class="k">if</span> <span class="o">(</span>&gt; base 0<span class="o">)</span> <span class="o">(</span>expt base .8<span class="o">)</span> base<span class="o">))</span>
+</span><span class='line'>            <span class="o">(</span>expt <span class="o">(</span>/ <span class="o">(</span>+ <span class="o">(</span>item-age s<span class="o">)</span> timebase*<span class="o">)</span> 60<span class="o">)</span> gravity<span class="o">))</span>
+</span><span class='line'>         <span class="o">(</span><span class="k">if</span> <span class="o">(</span>no <span class="o">(</span>in s!type <span class="s1">&#39;story &#39;</span>poll<span class="o">))</span>  .8
+</span><span class='line'>             <span class="o">(</span>blank s!url<span class="o">)</span>                  nourl-factor*
+</span><span class='line'>             <span class="o">(</span>mem <span class="s1">&#39;bury s!keys)             .001</span>
+</span><span class='line'><span class="s1">                                            (* (contro-factor s)</span>
+</span><span class='line'><span class="s1">                                               (if (mem &#39;</span>gag s!keys<span class="o">)</span>
+</span><span class='line'>                                                    gag-factor*
+</span><span class='line'>                                                   <span class="o">(</span>lightweight s<span class="o">)</span>
+</span><span class='line'>                                                    lightweight-factor*
+</span><span class='line'>                                                   1<span class="o">)))))</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Đoạn code trên viết theo poland notation nên hơi khó nhìn một chút, về mặt bản chất thì đoạn code trên tương đương với</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>hnrank.py </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="n">votes</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">gravity</span><span class="o">=</span><span class="mf">1.8</span><span class="p">):</span>
+</span><span class='line'>  <span class="p">(</span><span class="n">votes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="nb">pow</span><span class="p">((</span><span class="n">age</span><span class="o">+</span><span class="mi">2</span><span class="p">),</span> <span class="n">gravity</span><span class="p">);</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Chúng ta có thể rút ra được 2 điều:</p>
+<ul>
+<li>Thời gian càng tăng (age &gt;&gt;) thì score càng giảm với tốc độ rất nhanh theo hàm power</li>
+<li>Bài viết càng cũ thì dù up votes có tăng nhanh nhưng cũng không thể kéo được rank.</li>
+</ul>
+<p>Công thức của ycombinator đã phản ánh rất đúng power law về pupularity ranking, là popularity của một data source bao giờ cũng có dạng long-tail. Định lý này nói lên rằng tỉ lện những item dominate (có rank cao) chỉ chiếm tầm 20% so với tổng số item, nên rule này còn được gọi là 80/20 rule.</p>
+<p><img src="/images/long_tail.png"></p>
+<h2 id="lamernews">Lamernews</h2>
+<ul>
+<li>Lamernews được viết bởi creator của redis, và được open source tại <a href="https://github.com/antirez/lamernews">https://github.com/antirez/lamernews</a>. Lamernews được viết bằng ruby (sinatra) và thuật toàn của lamernews được viết khá đơn giản như sau:</li>
+</ul>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>lamerrank.rb </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='rb'><span class='line'><span class="k">def</span> <span class="nf">compute_news_rank</span><span class="p">(</span><span class="n">news</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">age</span> <span class="o">=</span> <span class="p">(</span><span class="no">Time</span><span class="o">.</span><span class="n">now</span><span class="o">.</span><span class="n">to_i</span> <span class="o">-</span> <span class="n">news</span><span class="o">[</span><span class="s2">&quot;ctime&quot;</span><span class="o">].</span><span class="n">to_i</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">rank</span> <span class="o">=</span> <span class="p">((</span><span class="n">news</span><span class="o">[</span><span class="s2">&quot;score&quot;</span><span class="o">].</span><span class="n">to_f</span><span class="p">)</span><span class="o">*</span><span class="mi">1000000</span><span class="p">)</span><span class="o">/</span><span class="p">((</span><span class="n">age</span><span class="o">+</span><span class="no">NewsAgePadding</span><span class="p">)</span><span class="o">**</span><span class="no">RankAgingFactor</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">rank</span> <span class="o">=</span> <span class="o">-</span><span class="n">age</span> <span class="k">if</span> <span class="p">(</span><span class="n">age</span> <span class="o">&gt;</span> <span class="no">TopNewsAgeLimit</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">rank</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Chúng ta có thể thấy thuật toán này khá giống với ycombinator nên sẽ không bàn thêm về hiệu quả của nó ở đây</p>
+<h1 id="kết-luận">Kết luận</h1>
+<p>Như vậy chúng ta đã lướt qua một số thuật toán ranking được implement bởi các web service nổi tiếng. Việc quyết định thuật toán nào tùy thuộc vào chúng ta muốn chú trọng đến cái gì. Với một service có tốc độ post bài và comment rất nhanh như reddit thì nên dùng một thuật toán base chủ yếu vào aging. Còn nếu muốn chú trọng hơn vào số lương votes và giữ một tốc độ giảm rank đều với các bài viết cũ, thì chúng ta có thể sử dụng thuật toán của ycombinator</p>
+<p>Chi tiết các bạn có thể tham khảo:</p>
+<ul>
+<li><a href="http://amix.dk/blog/post/19588">http://amix.dk/blog/post/19588</a></li>
+<li><a href="http://possiblywrong.wordpress.com/2011/06/05/reddits-comment-ranking-algorithm/">http://possiblywrong.wordpress.com/2011/06/05/reddits-comment-ranking-algorithm/</a></li>
+<li><a href="http://amix.dk/blog/post/19574">http://amix.dk/blog/post/19574</a></li>
+<li><a href="http://www.evanmiller.org/how-not-to-sort-by-average-rating.html">http://www.evanmiller.org/how-not-to-sort-by-average-rating.html</a></li>
+</ul>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -371,81 +655,6 @@
 </div>
 <h2 id="kết-luận">5. Kết luận:</h2>
 <p>Bài viết trình bày về cách redis tổ chức các kiểu dữ liệu người dùng cũng như cách tổ chức phần “<strong>frontend</strong>” của redis db. Bài viết cũng trình bày chi tiết về robj, về ý nghĩa và vai trò của các trường trong robj cũng như vai trò của robj với backend db. Trong bài viết sau, mình sẽ cố gắng trình bày chi tiết về phần backend server.</p>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-08-02T23:30:00+09:00" data-updated="true" itemprop="datePublished">Aug 2<span>nd</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/sercurity/'>sercurity,</a>, <a class='category' href='/blog/categories/server/'>server</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/08/02/cac-loi-bao-mat-can-tranh-khi-xay-dung-server-ho-tro-login-bang-facebook-cho-mobile-app/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/08/02/cac-loi-bao-mat-can-tranh-khi-xay-dung-server-ho-tro-login-bang-facebook-cho-mobile-app/" itemprop="url">Các Lỗi Bảo Mật Khi Xây Dựng Server Login Bằng Facebook Cho Mobile App</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h1 id="mở-đầu">Mở đầu</h1>
-<p>Facebook là mạng xã hội phổ biến nhất hiện nay. Nếu bạn đọc blog này mà không có tài khoản Facebook, tôi nghi ngờ bạn đến từ Vegeta. Chức năng “Login bằng tài khoản Facebook” là môt trong những chức năng giúp cho người dùng đăng ký vào hệ thống ứng dụng của bạn một cách nhanh chóng. Phần lớn các app mobile đếu support chức năng này.</p>
-<p>Việc cài đặt hỗ trợ chức năng login bằng Facebook trên server tuy khá đơn giản, nhưng rất dễ xảy ra lỗi bảo mật, nếu bạn không chú ý. Bài viết này trình bày một vài lỗi cơ bản hay gặp khi cài đặt trên server cho ứng dụng trên mobile</p>
-<h1 id="luồng-thực-hiện-để-login-bằng-facebook-trên-mobile">Luồng thực hiện để login bằng facebook trên mobile</h1>
-<p>Các bước được thực hiện khi người dùng bấm vào nút “login bằng facebook” trên một ứng dụng mobile. Để phần trình bày bên dưới rõ ràng, tôi sẽ gọi ứng dụng mobile là A, và server của ứng dụng này là server A, ứng dụng trên FB cho app A là FBA</p>
-<ul>
-<li>Ứng dụng mobile A sẽ chuyển sang gọi ứng dụng Facebook để yêu cầu người dùng các quyền để truy cập vào tải khoản của người dùng trên FB</li>
-<li>Sau khi người dùng cho phép ứng dụng mobile A truy cập vào FB, ứng dụng mobile A sẽ gửi request lên FB server để lấy access token</li>
-<li>Server FB trả về access token cho ứng dụng mobile A</li>
-</ul>
-<p>Sau khi có được access token, ứng dụng mobile có thể làm theo 2 cách</p>
-<ul>
-<li><p><strong>Cách 1</strong>: ứng dụng mobile A sử dụng access token để truy cập vào FB API, lấy thông tin của user từ FB như user id, username, email. Và gửi những thông tin này lên cho server A. Dựa vào trường user id hoặc email, server A sẽ tạo mới tài khoản cho user, hoặc merge với một tài khoản có sẵn ở trong server, rồi trả về thông tin tài khoản cho user.</p></li>
-<li><p><strong>Cách 2</strong>: ứng dụng mobile A gửi ngay access token nhận được từ FB lên cho server A. Server A sử dụng access token truy cập vào FB API và check user trình bày ở cách 1.</p></li>
-</ul>
-<p>Cách 1 có ưu điểm hơn so với cách 2 ở chỗ, việc request vào FB API được thực hiện ở phía client do đó server sẽ giảm được tải đi một phần. Cả server và client đều có khả năng lấy được thông tin user trên FB bằng access token, vậy thì sử dụng client để lấy thông tin, server có thể sử dụng tài nguyên để làm việc khác. Hơn nữa nếu để server lấy thông tin user, thời gian để lấy thông tin sẽ phụ thuộc vào tốc độ mạng giữa server A và FB server.</p>
-<p>Mọi lý do đều dẫn đến cách 1 là tốt hơn so với cách 2 về mặt hiệu năng.</p>
-<p>Tuy nhiên, nếu xét về khía cạnh bảo mât, cách 1 lại cưc kỳ nguy hiểm. Vì sao vậy</p>
-<p>Hãy xét một trường hợp thế này:</p>
-<ul>
-<li>User B sử dụng app A và dùng chức năng login bằng FB để đăng nhập. App A cài đặt theo cách 1. Sau khi có access token, app A lấy được FB user id của B là id_B, và email là email_B. App A gửi những thông tin này lên cho server A. Server A nhận thấy hệ thống chưa có user nào có FB ID là id_B, nên tạo mới một account cho B, và trả về thông tin của B.</li>
-<li>Lần tiếp theo user B sử dụng app A để đăng nhập bằng FB, server A sẽ không tạo mới account, mà trả về luôn thông tin của account đã tạo ra ở trên</li>
-<li>Hacker C, bằng cách nào đó biết được URL endpoint của server A phục vụ cho việc đăng nhập bằng FB. Hacker C, truyền lên một thông tin giả với trường FB ID là id_B. Lúc này server B, chỉ kiểm tra FB ID của request là id_B, nên sẽ vẫn coi đây là request của user B và trả về thông tin của tài khoản user B.</li>
-</ul>
-<p>Vậy là C có thể chiếm bất cứ tài khoản FB nào mà C biết FB id (có tới 1 tỉ tải khoản FB đó, nên C hẳn sẽ có rất nhiều thứ để chiếm đây)</p>
-<p>Với cách implement bằng cách 1, server sẽ không thể phân biệt được request nào là request thật của user. Để chắc chắn server khi nhận được access token, phải request tới FB API để kiểm tra xem access token truyền lên có phải là của user mà app A truyền lên hay không. Nói cách khác server vẫn cần request tới FB API. Như vậy việc client gửi request tới FB API để lấy thông tin là cũng không cần thiết.</p>
-<h1 id="liệu-server-sử-dụng-access-token-để-lấy-thông-tin-của-user-trên-fb-đã-là-đủ">Liệu server sử dụng access token để lấy thông tin của user trên FB đã là đủ?</h1>
-<p>Hãy nói tiếp về cách implement thứ 2. Khi server A nhận access token từ app A. Server gửi request tới FB API để lấy thông tin của user như FB ID và email. Sau đó tạo mới hoặc merge với một tài khoản đã có trong hệ thống (trùng FB ID hoặc là trùng email).</p>
-<p>Nhưng như thế đã là đủ?</p>
-<p>Ta lại xét tiếp một tình huống như sau:</p>
-<ul>
-<li>Hacker C tạo ra một FB app mới là FBA’ và bằng cách nào đó lấy được access token của user B khi B sử dụng FBA’.</li>
-<li>Hacker C gửi request tới server A sử dụng access token FBA’.</li>
-<li>Server A dùng FBA’ để lấy thông tin, và nhận thấy thông tin đó là của user B, nên server A trả về thông tin của tài khoản B</li>
-</ul>
-<p>Như vây, hacker C lại chiếm được tài khoản của user B trên hệ thống A bằng cách dùng một access token trên một FB app khác của user B</p>
-<p>Để bảo mật, cách duy nhất là khi server A nhận được access token, server A cần gửi request tới FB API để check xem access token này là từ FB Application nào.</p>
-<h1 id="tổng-kết">Tổng kết</h1>
-<p>Bài viết trình bày 2 lỗi bảo mật hay gặp khi cài đặt hệ thống login bằng facebook trên server cho ứng dụng mobile. Lỗi thứ nhất là sử dụng client để lấy access token, mà không kiểm tra độ chính xác của access token. Lỗi thứ hai là chỉ kiểm tra độ chính xác của access token bằng cách thông tin user, mà không kiểm tra thông tin của app từ access token.</p>
-<p>Nếu bạn đã có một hệ thống login bằng FB, hãy check lại nó. Nếu bạn chưa từng cài đặt hệ thống này thì chúc mừng bạn, bạn đã được cảnh báo !!!</p>
 		
 		
 	</div>

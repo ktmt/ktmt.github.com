@@ -7,7 +7,7 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jul 6th, 2013 iOS, iPhone Comments Tự tạo UITableViewCell UITableView là 1 trong những control được sử dụng nhiều nhất trong các ứng dụng iOS. Tuy &hellip;">
+	<meta name="description" content="Jul 7th, 2013 git Comments Githook và Server Hook (Tiếp) Ở bài viết trước, tôi đã giới thiệu về githook, client hook và các user case hay sử dụng &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -76,6 +76,190 @@
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-07T22:54:00+09:00" data-updated="true" itemprop="datePublished">Jul 7<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/git/'>git</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/07/07/git-server-hook-dot-markdown/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/07/07/git-server-hook-dot-markdown/" itemprop="url">Githook và Server Hook (Tiếp)</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<p>Ở bài viết <a href="/blog/2013/06/25/using-githook-to-automatically-test-your-app/">trước</a>, tôi đã giới thiệu về githook, client hook và các user case hay sử dụng với client hook. Bài viết này, tôi sẽ giới thiệu thêm về server hook và các ứng dụng của chúng trong thực tế</p>
+<h1 id="server-side-hooks">Server-side hooks</h1>
+<p>Bên cạnh việc sử dụng các client-side hooks, bạn có thể sử dụng một vài server-side hook như là một hệ thống admin để áp đặt một cơ chế quán lý cho project của bạn. Những script này sẽ được chạy trước và sau khi commit được đẩy lên server. Những pre-hooks có thể trả về giá trị khác 0 ở bất cứ thời điểm nào để loại bỏ một push từ client, cũng như để in ra một error message cho client</p>
+<h2 id="pre-receive-và-post-receive">pre-receive và post-receive</h2>
+<p>Script đầu tiên được chạy khi server nhận được một push từ client đó là <code>pre-receive</code>. Script này nhận một list các tham chiếu sẽ được push từ stdin. Nếu nó trả về giá trị khác 0, không có tham chiếu nào được chấp nhận. Bạn có thể sử dụng hook này để làm những việc như đảm bảo không có bất cứ tham chiếu nào là <code>non-fast-forwards</code>.</p>
+<p><code>post-receive</code> hook chạy sau khi toàn bộ quá trình được hoàn tất và có thể sử dụng để update các service khác hoặc để notify uer. Nó nhận cùng dữ liệu từ stdin như <code>pre-receive</code> hook. Ví dụ bao gồm gửi email chó một list các developer liên quan, notify CI server, hoặc update ticket tracking system. Bạn thậm chí có thể parse commit message để kiểm tra xem có bất cứ ticket nào cần open, modified hoặc update hay không. <code>post-receive</code> không thể làm ngừng lại quá trình push, nhưng client sẽ không đóng kết nối tới server cho đên khi <code>post-receive</code> kết thúc. Ví thế hãy cẩn thận khi bạn muốn làm những việc tốn thời gian. Cách tốt nhất là hãy sử dụng các background process để xử lý các tác vụ tốn thời gian.</p>
+<h2 id="update">update</h2>
+<p>Update script là tương tự với <code>pre-receive</code> script, ngoại trừ việc nó chỉ chạy một làn cho mỗi branch mà pusher muốn update. Nếu pusher muốn update nhiều branch, <code>pre-receive</code> chỉ chạy duy nhất một lần, nhưng update sẽ chạy một lần cho mỗi branch mà chúng được push. Thay vì đọc dữ liệu từ stdin, script này sẽ nhận 3 tham số đầu vào: tên của branch, SHA-1 trỏ đến commit trước khi được push, và SHA-1 user đang muốn push. Nếu update script trả về kết quả khác 0, chỉ branch ứng với script này bị reject, các branch khác vẫn được update bình thường</p>
+<h1 id="ví-dụ">Ví dụ</h1>
+<p>Trong ví dụ này, chúng ta sẽ bắt buộc mỗi commit message phải có phần mở đầu của message tuân theo một định dạng. Cụ thể mỗi mesage phải có dạng “ref:1234” bởi vì mỗi một commit sẽ ứng với một ticket trong hệ thống.</p>
+<p>Để làm việc này, sẻver sẽ phải kiểm tra tất cả các commit được push để xem string trong commit message có đúng format hay không. Nếu commit message là không đúng format, trả về giá trị khác 0 và reject push.</p>
+<p>Chúng ta sẽ viết một update hook để làm việc này. Chú ý rắng, update hook nhận 3 giá trị đầu vào: tên của branch được update, SHA-1 của commit trước khi được push, và SHA-1 của commit sau khi được push. Các đoạn code dưới đây được minh hoạ bằng ruby, bạn có thể sử dụng ngôn ngữ lập trình khác nếu muốn</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>update </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1">#!/usr/bin/env ruby</span>
+</span><span class='line'>
+</span><span class='line'><span class="vg">$refname</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span>
+</span><span class='line'><span class="vg">$oldrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span>
+</span><span class='line'><span class="vg">$newrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Để lấy các commit từ <code>$oldrev</code> tới <code>$newrev</code>, chúng ta sử dụng lệnh <code>git rev-lít</code>. Lệnh này sẽ trả về danh sách các SHA-1 cho các commit nằm giữa 2 commit mà chúng ta truyền vào</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'> 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>git rev-list 538c33..d14fc7
+</span><span class='line'>d14fc7c847ab946ec39590d87783c69b031bdfb7
+</span><span class='line'>9f585da4401b0a3999e84113824d15245c13f0be
+</span><span class='line'>234071a1be950e2a8d078e6141f5cd20c1e61ad3
+</span><span class='line'>dfa04c9ef3d5197182f13fb5b9b1fb7717d2222a
+</span><span class='line'>17716ec0f1ff5c77eff40b7fe912f9f6cfd0e475
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Sau đó, chúng ta sử dụng lệnh <code>git cat-file</code> đẻ duyệt qua từng commit và lấy nội dụng của commit message.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'> 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>git cat-file commit ca82a6
+</span><span class='line'>tree cfda3bf379e4f8dba8717dee55aab78aef7f4daf
+</span><span class='line'>parent 085bb3bcb608e1e8451d4b2432f8ecbe6306e7e7
+</span><span class='line'>author kiennt &lt;kiennt@gmail.com&gt; 1205815931 -0700
+</span><span class='line'>committer kiennt &lt;schacon@gmail.com&gt; 1240030591 -0700
+</span><span class='line'>
+</span><span class='line'>Add new post about githook
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Cách đơn giản để lấy commit message từ một commit là khi có SHA-1 , chúng ta xác định dòng blank đầu tiên và lấy tất cả phần đằng sau nó. Chúng ta có thể sử dụng <code>sed</code> để làm điều này</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'> 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>git cat-file commit ca82a6 | sed <span class="s1">&#39;1,/^$/d&#39;</span>
+</span><span class='line'>Add new post about githook
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Sau đây là toàn bộ đoạn code ruby để hoàn thành tác vụ trên</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>update </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1">#!/usr/bin/env ruby</span>
+</span><span class='line'>
+</span><span class='line'><span class="vg">$refname</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span>
+</span><span class='line'><span class="vg">$oldrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span>
+</span><span class='line'><span class="vg">$newrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span>
+</span><span class='line'><span class="vg">$regex</span> <span class="o">=</span> <span class="sr">/\[ref: (\d+)\]/</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># enforced custom commit message format</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">check_message_format</span>
+</span><span class='line'>  <span class="n">missed_revs</span> <span class="o">=</span> <span class="sb">`git rev-list </span><span class="si">#{</span><span class="vg">$oldrev</span><span class="si">}</span><span class="sb">..</span><span class="si">#{</span><span class="vg">$newrev</span><span class="si">}</span><span class="sb">`</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">missed_revs</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">rev</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">message</span> <span class="o">=</span> <span class="sb">`git cat-file commit </span><span class="si">#{</span><span class="n">rev</span><span class="si">}</span><span class="sb"> | sed &#39;1,/^$/d&#39;`</span>
+</span><span class='line'>    <span class="k">if</span> <span class="o">!</span><span class="vg">$regex</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+</span><span class='line'>      <span class="nb">puts</span> <span class="s2">&quot;[POLICY] Your message is not formatted correctly&quot;</span>
+</span><span class='line'>      <span class="nb">exit</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="n">check_message_format</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<h1 id="kết-luận">Kết luận</h1>
+<p>Qua 2 bài viết về githook, bạn đã nắm được phần nào các hooks trong git, và các ứng dụng liên quan đến chúng. Giờ bạn có thể sử dụng githook để tạo nên workflow phù hợp nhất với git cho project của mình</p>
+<h1 id="tham-khảo">Tham khảo</h1>
+<p><a href="http://git-scm.com/book/en/Customizing-Git-Git-Hooks">Githook documentation</a> <a href="http://git-scm.com/book/en/Customizing-Git-An-Example-Git-Enforced-Policy">Customizing Git</a></p>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -345,179 +529,6 @@
 <li>TRIGGER: Là object định nghĩa sẽ fire event nào khi các action nào được thực hiện trong database.</li>
 <li>PL/SQL: Là extend của SQL, produceral programming language của Oracle, cho phép thao tác trực tiếp với các object của Database trên Database server với đầy đủ năng lực xử lý như 1 ngôn ngữ hoàn chỉnh</li>
 </ul>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-07-02T23:38:00+09:00" data-updated="true" itemprop="datePublished">Jul 2<span>nd</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/linux/'>linux</a>, <a class='category' href='/blog/categories/system/'>system,</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/07/02/tim-hieu-redis/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/02/tim-hieu-redis/" itemprop="url">Tìm Hiểu Redis - Phần 1</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h2 id="giới-thiệu">1. Giới thiệu</h2>
-<p><a href="www.redis.io">Redis</a> là hệ thống lưu trữ key-value với rất nhiều tính năng và được <a href="http://redis.io/topics/whos-using-redis">sử dụng rộng rãi</a>. Redis nổi bật bởi việc hỗ trợ nhiều cấu trúc dữ liệu cơ bản (hash, list, set, sorted set, string), đồng thời cho phép scripting bằng ngôn ngữ lua. Bên cạnh lưu trữ key-value trên RAM với hiệu năng cao, redis còn hỗ trợ lưu trữ dữ liệu trên đĩa cứng (persistent redis) cho phép phục hồi dữ liệu khi gặp sự cố. Ngoài tính năng replicatation (sao chép giữa master-client), tính năng cluster (sao lưu master-master) cũng đang được phát triển . Để sử dụng một cách hiệu quả những tính năng redis hỗ trợ cũng như vận hành redis với hiệu suất cao nhất thì việc am hiểu hệ thống lưu trữ này là điều không thể thiếu. Chính vì lý do này, mình quyết định tìm hiểu mã nguồn redis. Loạt bài viết về redis này tóm tắt những điều mình tìm hiểu được từ việc đọc mã nguồn của redis.</p>
-<h2 id="khái-quát">2. Khái quát</h2>
-<p>Bạn có thể clone mã nguồn redis về máy tính mình bằng câu lệnh dưới đây:</p>
-<div>
-<pre><code class='bash'>git clone https://github.com/antirez/redis.git</code></pre>
-</div>
-Trước hết là một số thống kê nho nhỏ về redis (tại thời điểm bài viết): * Số lượng file mã nguồn: 55
-<div>
-<pre><code class='bash'>ls *.c | wc -l
-55</code></pre>
-</div>
-<ul>
-<li>Số lượng file header: 30
-<div>
-<pre><code class='bash'>ls *.h | wc -l
-30</code></pre></li>
-</ul>
-</div>
-
-
-<ul>
-<li>Tổng số dòng code: 43829
-<div>
-<pre><code class='bash'>wc -l *.[ch]
-341    adlist.c     197   pqsort.c            228   sha1.c          810   dict.c
-93     adlist.h     40    pqsort.h            17    sha1.h          173   dict.h
-435    ae.c         359   pubsub.c            169   slowlog.c       124   endianconv.c
-130    ae_epoll.c   93    rand.c              47    slowlog.h       64    endianconv.h
-315    ae_evport.c  38    rand.h              50    solarisfixes.h  52    fmacros.h
-118    ae.h         1230  rdb.c               530   sort.c          759   help.h
-132    ae_kqueue.c  114   rdb.h               144   syncio.c        483   intset.c
-99     ae_select.c  683   redis-benchmark.c   57    testhelp.h      50    intset.h
-441    anet.c       3008  redis.c             761   t_hash.c        295   lzf_c.c
-60     anet.h       218   redis-check-aof.c   1149  t_list.c        150   lzf_d.c
-1178   aof.c        768   redis-check-dump.c  913   t_set.c         100   lzf.h
-47     asciilogo.h  1556  redis-cli.c         459   t_string.c      159   lzfP.h
-220    bio.c        1517  redis.h             2205  t_zset.c        279   memtest.c
-41     bio.h        52    release.c           520   util.c          323   multi.c
-412    bitops.c     3     release.h           41    util.h          1444  networking.c
-2866   cluster.c    1658  replication.c       1     version.h       128   notify.c
-1726   config.c     198   rio.c               1534  ziplist.c       580   object.c
-195    config.h     104   rio.h               46    ziplist.h
-88     crc16.c      1065  scripting.c         467   zipmap.c
-191    crc64.c      732   sds.c               49    zipmap.h
-8      crc64.h      99    sds.h               351   zmalloc.c
-815    db.c         3160  sentinel.c          85    zmalloc.h
-929    debug.c      261   setproctitle.c
-43829  total</code></pre></li>
-</ul>
-</div>
-
-
-
-<p>Một số thư viện được sử dụng: <a href="http://www.canonware.com/jemalloc/">jemalloc</a>, <a href="https://github.com/antirez/linenoise">linenoise</a>, <a href="http://www.lua.org/">lua</a></p>
-<h2 id="các-modules">3. Các modules</h2>
-<p>Redis bao gồm các module sau:</p>
-<ul>
-<li>Framework hỗ trợ xử lý bất đồng bộ, networking: ae, anet</li>
-<li>Mô tả dữ liệu: sds.c, t_hash.c, t_list.c, t_string.c, t_zset.c, object.c, notify.c (pub-sub)</li>
-<li>Lưu trữ dữ liệu, cơ sở dữ liệu: db.c, dict.c, ziplist.c, zipmap.c, adlist.c</li>
-<li>Module hỗ trợ IO/persistent redis: rdb.c, aof.c, bio.c, rio.c</li>
-<li>Utilities: crc16.c, crc64.c, pqsort.c, lzf_c.c, lzf_d.c</li>
-</ul>
-<p>Mình sẽ lần lượt giới thiệu các modules trong các bài viết sau. Ở bài viết này, mình sẽ tập trung vào module IO/persistent redis.</p>
-<h2 id="persistent-redis">4. Persistent redis</h2>
-<p>Bên cạnh việc lưu key-value trên bộ nhớ RAM, Redis có 2 background threads chuyên làm nhiệm vụ định kỳ ghi dữ liệu lên đĩa cứng.</p>
-<p>Có 2 loại file được ghi xuống đĩa cứng:</p>
-<ul>
-<li>RDB</li>
-<li>AOF</li>
-</ul>
-<p>RDB lưu dữ liệu dưới dạng đã mã hóa. AOF lưu lại toàn bộ dưới liệu dưới dạng command, giống như command mà redis client gửi đến server để thao tác bằng cách ghi đè xuống cuối file.</p>
-<p>File rdb có thể coi là một snapshot của cơ sở dữ liệu tại một thời điểm nhất định. File dữ liệu này được dùng với 2 mục đích</p>
-<ul>
-<li>Cho phép redis có thể phục hồi lại dữ liệu trên memory bằng việc đọc file</li>
-<li>Bản thân dữ liệu được ghi ra file rdb sẽ được gửi đến các redis slave server, phục vụ mục đích sao lưu server.</li>
-</ul>
-<p>Dữ liệu ghi ra file rdb được chỉnh sửa và mã hóa để giảm kích thước ghi trên đĩa, đồng thời tằng tốc độ replication. Cụ thể định dạng của file rdb như sau.</p>
-<p>Với những key ngắn, việc dùng 32 bit để mô tả key là thừa thãi, do vậy redis quy định những key ngắn được mã hóa sử dụng 2 bit đầu tiên của 1 byte. Cụ thể: 00|000000 =&gt; 00, độ dài dữ liệu mô tả bởi 6 bit 01|000000 00000000 =&gt; 01, độ dài dữ liệu là 14 bit 10|000000 [số 32 bit] =&gt; 1 chuỗi độ dài 32 bit sẽ theo sau 11|000000 =&gt; obj được encode đặc biệt sẽ theo sau byte này. 6 bit sau sẽ xác định kiểu object.</p>
-<p>Kiểu object ở đây cụ thể như sau:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>rdb.c </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cm">/* When a length of a string object stored on disk has the first two bits</span>
-</span><span class='line'><span class="cm"> * set, the remaining two bits specify a special encoding for the object</span>
-</span><span class='line'><span class="cm"> * accordingly to the following defines: */</span>
-</span><span class='line'><span class="cp">#define REDIS_RDB_ENC_INT8 0        </span><span class="cm">/* 8 bit signed integer */</span><span class="cp"></span>
-</span><span class='line'><span class="cp">#define REDIS_RDB_ENC_INT16 1       </span><span class="cm">/* 16 bit signed integer */</span><span class="cp"></span>
-</span><span class='line'><span class="cp">#define REDIS_RDB_ENC_INT32 2       </span><span class="cm">/* 32 bit signed integer */</span><span class="cp"></span>
-</span><span class='line'><span class="cp">#define REDIS_RDB_ENC_LZF 3         </span><span class="cm">/* string compressed with FASTLZ */</span><span class="cp"></span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Với AOF file, các command sẽ được nhóm thành các block. Các block được tổ chức dưới dạng danh sách liên kết. Mỗi block có độ lớn 10MB là vì trong trường hợp redis server chịu tải cao, số lượng key được cập nhật lớn, nếu kích thước buffer lớn, việc realloc buffer dùng cho các command với tốc độ lớn không đảm bảo.</p>
-<p>Trong trường hợp file rdb, redis fork 1 process con và thực hiện ghi dữ liệu xuống đĩa cứng sử dụng rio (stream IO).</p>
-<p>Trong trường hợp file aof, việc thực hiện ghi dữ liệu là của background threads. Toàn bộ chức năng này được code trong file bio.c (background IO?). Thiết kế background IO này khá đơn giản. Môt loạt thread sẽ chia sẻ 1 job queue và thay nhau đợi việc từ job queue. Mỗi khi có job mới, thread sẽ chạy và thực thi job được mô tả. Có 2 loại job đơn giản:</p>
-<ul>
-<li>REDIS_BIO_CLOSE_FILE: đóng file</li>
-<li><p>REDIS_BIO_AOF_FSYNC: thực hiện việc flush dữ liệu từ buffer của kernel xuống buffer của đĩa cứng.</p>
-<p>process -&gt; job 1 -&gt; job2 -&gt; … background threads</p></li>
-</ul>
-<p>Tạo ra các job là công việc của child process. Để thực hiện ghi dữ liệu ra đĩa cứng, redis sẽ fork ra 1 process con. Process con này sẽ tạo ra việc cho các background threads. Một đặc điểm cùa aof file đấy là dữ liệu trong các block mới sẽ không được ghi trực tiếp vào file aof hiện tại, mà sẽ được ghi vào file tạm thời. Khi việc ghi dữ liệu hoàn thành, redis mới tiến hành ghi đè file tạm lên file thật. Việc này đảm bảo trong trường hợp hệ thống có sự cố, file aof cũ vẫn được duy trì, giúp phục hồi phần nào dữ liệu.</p>
-<p>Trong cả 2 trường hợp, redis sử dụng tính năng <a href="http://en.wikipedia.org/wiki/Copy-on-write">Copy-on-Write</a> của linux khi fork process con, do vậy hiệu năng không vì fork process con mà suy giảm.</p>
-<p>Đến đây, sau khi tìm hiểu về định dạng của 2 files dữ liệu cũng như phương thức ghi dữ liệu của từng loại file, ta vẫn còn những câu hỏi mở về persistent redis như sau:</p>
-<ul>
-<li>Tần suất ghi dữ liệu là bao nhiêu?</li>
-<li>Ai chịu trách nhiệm fork process con.</li>
-</ul>
-<p>Thực chất redis định nghĩa 1 giá trị gọi là tần số ghi: REDIS_DEFAULT_HZ với giá trị mặc định là 10 (redis.h). Như vậy trong 1s, redis sẽ thực hiện 10 lần việc gọi hàm fork. Toàn bộ thao tác ghi dữ liệu redis và thao tác với các key hết hạn được thực hiện bởi 1 hệ thống các “cron”. Hàm cron thực hiện việc validate các key là: databaseCron. Hàm cron thực hiện ghi dữ liệu là serverCron. Hàm serverCron sẽ được gọi theo cơ chế bất đồng bộ (dùng thư viện bất đồng bộ của chính redis) với tần số 1/1000s. Với REDIS_DEFAULT_HZ là 10, cứ 100 lần gọi, serverCron sẽ thực hiện fork child process 1 lần để ghi dữ liệu xuống bộ đĩa cứng.</p>
-<h2 id="tại-sao-phải-fsync">5. Tại sao phải fsync</h2>
-<p>Đến đây chắc bạn đã hiểu phần nào về cơ chế persistent của redis. Tuy nhiên ta vẫn còn 1 câu hỏi nhỏ khá thú vị: tại sao phải flush liên tục như vậy (100ms / lần)? Tại sao không chỉ dùng hàm write/read của kernel và mặc định việc ghi dữ liệu xuống đĩa cứng cho kernel. Để trả lời câu hỏi nhỏ này, ta cần hiểu mối liên quan giữa OS - đĩa cứng - buffer của tầng ứng dụng.</p>
-<p>Về mặt trực quan tra có mô hình như sau:</p>
-<pre><code>buffer ---(Write) --| (kernel buffer) ---&gt; hard disk buffer ---&gt; đĩa từ.</code></pre>
-<p>Một thao tác ghi dùng write/read api của kernel sẽ copy dữ liệu từ buffer tần ứng dụng xuống buffer của kernel. Đây là thao tác cơ bản của write api. Tại buffer của kernel, kernel có toàn quyền quyết định với buffer này như: khi nào ghi, ghi bao nhiêu bytes… Khi kernel ghi dữ liệu (sử dụng các hàm IO của đĩa), dữ liệu sẽ được ghi xuống hard disk buffer và được schedule ghi xuống đĩa từ. Do vậy nếu tại tầng kernel hệ thống gặp sự cố, dữ liệu vẫn có thể bị mất dù rằng write <strong>thành công</strong> (và tầng ứng dụng không có cách nào biết write không thành công). Bằng việc định kỳ gọi fsync, ứng dụng có thể <strong>thoát khỏi sử quản lý của kernel</strong>, ghi thằng dữ liệu đang có ở buffer xuống hard disk buffer. Bằng việc gọi fsync, ta tránh khỏi được rủi ro mất dữ liệu do đổ vớ ở tầng ứng dụng. Tất nhiên dữ liệu hard disk vẫn chưa hoàn toàn an toàn (ví dụ trường hợp đĩa cứng bị hỏng).</p>
-<p>Đây là cách làm chung của các hệ thống cơ sở dữ liệu RDMS hiện hành.</p>
-<h2 id="kết-luận">6. Kết luận</h2>
-<p>Bài viết giới thiệu khái quát các module redis, đồng thời trình bày cụ thể cơ chế ghi dữ liệu của redis. Bài viết cũng làm rõ hơn ý nghĩa của fsync cũng như quy trình ghi dữ liệu của hệ điều hành. Hy vọng qua bài viết, người đọc hiểu phần nào cơ chế, hành vi của redis, qua đó sử dụng công cụ này hiệu quả hơn.</p>
-<h2 id="tham-khảo">7. Tham khảo</h2>
-<ol type="1">
-<li><a href="http://redis.io/topics/persistence">persistent redis</a></li>
-<li><a href="http://redis.io/topics/virtual-memory">vm</a></li>
-<li><a href="http://www.redhat.com/magazine/001nov04/features/vm/">Understanding Virtual Memory</a></li>
-<li><a href="http://openmymind.net/redis.pdf">redis book</a></li>
-</ol>
 		
 		
 	</div>

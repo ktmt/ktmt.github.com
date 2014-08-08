@@ -7,8 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Dec 22nd, 2013 dependability, failure,, system, Comments Trở Lại Cơ Bản - Độ Tin Cậy Giới thiệu
-Các bạn là fan của tính toán phân tán chắc hẳn đều &hellip;">
+	<meta name="description" content="Jan 4th, 2014 Comments Full Text Search, Từ Khái Niệm đến Thực Tiễn (Phần 3) Introduction
+Trong phần 2, chúng ta đã nắm được một kĩ thuật cơ bản và &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,123 @@ Các bạn là fan của tính toán phân tán chắc hẳn đều &hellip;">
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-01-04T21:23:00+09:00" data-updated="true" itemprop="datePublished">Jan 4<span>th</span>, 2014</time></div>
+		<div class="tags">
+
+</div>
+		
+			<span class="comments"><a href="/blog/2014/01/04/full-text-search-engine-part-3/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2014/01/04/full-text-search-engine-part-3/" itemprop="url">Full Text Search, Từ Khái Niệm đến Thực Tiễn (Phần 3)</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1 id="introduction">Introduction</h1>
+<p>Trong <a href="http://ktmt.github.io/blog/2013/11/03/full-text-search/">phần 2</a>, chúng ta đã nắm được một kĩ thuật cơ bản và quan trọng để tạo ra search-engine, đó chính là kĩ thuật tách chữ (Tokenize), thông qua 2 phương pháp chính là N-gram và Morphological Analysis. Nhờ có kĩ thuật này mà văn bản gốc sẽ được bóc tách thành các kí tự, sau đó sẽ được lưu trữ dưới dạng Inverted Index như đã giới thiệu ở <a href="http://ktmt.github.io/blog/2013/10/27/full-text-search-engine/">phần 1</a>.</p>
+<p>Trong bài viết này, chúng ta sẽ tìm hiểu là làm thế nào, mà khi được cung cấp đầu vào là một chuỗi truy vấn (query string), search engine sẽ cung cấp được cho chúng ta kết quả phù hợp nhất. Về cơ bản, để tìm kiếm bên trong một khối dữ liệu khổng lồ đã được index dưới dạng “Inverted Index”, search-engine sẽ sử dụng “Boolean Logic”.</p>
+<h1 id="boolean-logic-và-tại-sao-search-engine-lại-sử-dụng-boolean-logic">Boolean Logic và tại sao Search Engine lại sử dụng Boolean Logic</h1>
+<p>Khi nhắc đến Boolean Logic, các bạn sẽ hình dung ra trong đầu những hình ảnh như thao tác AND/OR/XOR với bit, mạch logic trong điện tử số, hay biểu đồ ven. Đối tượng thao tác của Boolean Logic có thể là bit, cổng logic, hay là tập hợp (set). Trong bài này, Boolean Logic sẽ được nhắc đến với đối tượng là tập hợp (set), và hình ảnh dễ hình dung nhất khi thao tác với đối tượng này chính là biểu đồ Ven.</p>
+<p>Để tìm hiểu mối liên quan giữa Boolean Logic và Search Engine, chúng ta hãy thử hình dung cơ chế của Search Engine. Khi được cung cấp một chuỗi truy vấn (query string), việc đầu tiên Search Engine sẽ phải sử dụng Parser module để bóc tách chuỗi truy vấn này theo một <strong>ngữ pháp</strong> đã được qui định trước, để tạo thành các token sử dụng cho logic tìm kiếm. Việc sử dụng Parser này cũng giống như compiler hay intepreter sẽ sử dụng các cú pháp đã được định nghĩa trước của một ngôn ngữ bất kỳ để dịch một đoạn code ra mã máy hoặc là bytecode. Ngữ pháp qui định trước càng phức tạp, không chỉ dẫn đến việc parse chuỗi truy vấn trở nên phức tạp hơn, việc viết ra một câu truy vấn phức tạp hơn (ảnh hưởng đến người dùng), mà còn khiến logic tìm kiếm cũng trở nên phức tạp, qua đó làm giảm hiệu suất của việc tìm kiếm. Chính vì thế mà việc tận dụng một ngữ pháp gần giống với Boolean Logic không những sẽ giúp giữ cho độ phức tạp khi parse query string ở mức thấp, mà nó còn giúp cho người dùng tạo ra những câu truy vấn dễ hiểu hơn.</p>
+<h1 id="sử-dụng-boolean-logic-trong-search-engine">Sử dụng Boolean Logic trong Search Engine</h1>
+<p>Boolean logic sử dụng trong Search Engine thường sẽ gồm 3 phép toán chính là <strong>AND</strong>, <strong>NOT</strong> <strong>và OR</strong> Hãy trở lại ví dụ gần giống trong <a href="http://ktmt.github.io/blog/2013/10/27/full-text-search-engine/">phần 1</a>, chúng ta có 5 documents {D1, D2, D3, D4, D5} đã được index như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'>
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>D1 = "This is first document"
+</span><span class='line'>D2 = "This is second one"
+</span><span class='line'>D3 = "one two"
+</span><span class='line'>D4 = "This one is great"
+</span><span class='line'>D5 = "This two is great!"</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'>
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>"this" =&gt; {D1, D2, D4, D5}
+</span><span class='line'>"is" =&gt; {D1, D2, D4, D5}
+</span><span class='line'>"first" =&gt; {D1}
+</span><span class='line'>"document" =&gt; {D1}
+</span><span class='line'>"second" =&gt; {D2}
+</span><span class='line'>"one" =&gt; {D2, D3, D4}
+</span><span class='line'>"two" =&gt; {D3, D5}</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Giả sử chúng ta muốn query một câu truy vấn như sau : “This one”. Sử dụng Morphological Analysis đã giới thiệu trong <a href="http://ktmt.github.io/blog/2013/11/03/full-text-search/">phần 2</a>, chúng ta sẽ tách câu truy vấn đó thành 2 token là “This” và “one”. Bỏ qua yếu tố chữ hoa và chữ thường, thì “This” đã được index {D1, D2, D4, D5}, và “one” đã được index {D2, D3, D4}.</p>
+<p>Thông thường để cho dễ hiểu và phù hợp với logic của người dùng, thì space sẽ tương đương với logic AND, hay là việc tìm kiếu “This one” sẽ tương đương với kết tìm kiếm “This” AND với kết quả tìm kiếm “one”. Hay như trong ví dụ này thì kết quả tìm kiếm sẽ là kết quả AND của 2 set {D1, D2, D4, D5} và {D2, D3, D4}. Kết quả này có thể thấy dễ dàng là {D2, D4}</p>
+Vậy nếu người dùng input là “This OR one” thì sao? Lúc này kết quả tìm kiếm sẽ là
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'>
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{D1, D2, D4, D5} OR {D2, D3, D4} = {D1, D3, D5}</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+Từ ví dụ trên chúng ta thấy rằng độ phức tạp của việc tìm kiếm lúc này sẽ chuyển thành
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'>
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>Độ phức tạp của parse query string(1) 
+</span><span class='line'>+ Độ phức tạp của Index lookup(2) 
+</span><span class='line'>+ Độ phức tạp của thao tác boolean Logic dựa trên kết quả của Index lookup(3)</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>(1) thường sẽ không lớn do query string do user input khá ngắn, và trong trường hợp query string được generate phức tạp khi sử dụng lucene hoặc solr, thì việc sử dụng boolean logic rất đơn giản cũng làm độ phức tạp khi parse query string là không cao.</p>
+<p>(2) Độ phức tạp của Index lookup tương đương với việc tìm kiếm giá trị của một key trong Hash table, chỉ khác là trên HDD, tuy nhiên so sánh với việc tìm kiếm trên BTree của MySQL thì performance của xử lý này là hoàn toàn vuợt trội.</p>
+<p>(3) Thao tác này có thể được optimize rất nhiều dựa vào các lý thuyết tập hợp, hay các thư viện toán học cho big number.</p>
+<p>Như vậy chúng ta có thể thấy bài toán tìm kiếm ban đầu đã được đưa về 3 bài toán nhỏ hơn, dễ optimize hơn.</p>
+<h1 id="kết-luận">Kết luận</h1>
+<p>Bài viết đã giới thiệu về việc sử dụng Boolean Logic trong Full Text Search Engine. Qua đó các bạn chắc đã hình dung ra phần nào khi các bạn gõ một câu lệnh tìm kiếm vào ô tìm kiếm của Google, những gì sẽ xảy ra đằng sau (mặc dù trên thực tế những gì google làm sẽ phức tạp hơn rất nhiều).</p>
+<p>Tham khảo:</p>
+<ul>
+<li><a href="http://gihyo.jp/dev/serial/01/make-findspot">Make Findspot</a></li>
+</ul>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -250,68 +367,6 @@ Các bạn là fan của tính toán phân tán chắc hẳn đều &hellip;">
 <h1 id="kết-luận">Kết luận</h1>
 <p>Qua bài viết lần này, các bạn đã hiểu thêm về 2 kĩ thuật tách từ (tokenize) cơ bản là N-gram và MA.</p>
 <p>Sử dụng 2 kĩ thuật này như thế nào để index dữ liệu đầu vào, sẽ được giới thiệu trong các bài viết sắp tới.</p>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-11-03T19:35:00+09:00" data-updated="true" itemprop="datePublished">Nov 3<span>rd</span>, 2013</time></div>
-		<div class="tags">
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/11/03/aloha-protocol/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/11/03/aloha-protocol/" itemprop="url">Về Sự Bất ổn định Của Giao Thức ALOHA</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h1 id="mở-đầu">1. Mở đầu</h1>
-<p>Lý thuyết xác suất là một phân nhánh của toán học liên quan đến việc phân tích, đánh giá các sự kiện ngẫu nhiên. Một trong những ngành mà lý thuyết xác suất được sử dụng rất nhiều là truyền thông (communication). Bài viết này sẽ trình bày một ứng dụng của lý thuyết xác suất trong việc đánh giá độ tin cậy của giao thức ALOHA.</p>
-<p>Một chút về lịch sử: ALOHA là hệ thống mạng máy tính đầu tiên, được phát triển ở đại học Hawaii. ALOHA được đưa vào sử dụng năm 1971, trở thành hình mẫu đầu tiên của mạng không dây truyền gói dữ liệu (wireless packet data network).</p>
-<h1 id="tại-sao-giao-thức-aloha-được-coi-là-thiếu-ổn-định">2. Tại sao giao thức ALOHA được coi là thiếu ổn định?</h1>
-<p>Trong phần này, dựa trên lý thuyết xác suất, chúng ta sẽ chứng minh sự thiếu ổn định của giao thức ALOHA.</p>
-<p>Xét một communications facility ở đó: chia thời gian thành các slot có cùng period, số lượng bản tin đến tại thời điểm đầu mỗi slot n = 1, 2, … là các biến ngẫu nhiên độc lập với nhau và phân bố đồng dạng (indepedent and identically distributed). Đặt <strong>ai</strong> = P{có i bản tin đến} và giả sử rằng <strong>a0 + a1 &lt; 1</strong>, tức là vẫn có khả năng nhiều hơn 2 bản tin sẽ đến. Mỗi bản tin đến sẽ được truyền đi tại cuối slot mà nó đến. Nếu có đúng một bản tin được truyền đi, việc truyền tin thành công và bản tin sẽ rời khỏi hệ thống. Trong trường hợp ngược lại, nếu cuối một slot nào đó, ít nhất 2 bản tin đồng thời được truyền, sẽ xảy ra xung đột và những bản tin này vẫn ở lại trong hệ thống. Khi một bản tin gặp xung đột, nó sẽ độc lập với các bản tin khác truyền đi tại cuối slot tiếp theo với xác suất p. Ta sẽ chứng minh hệ thống như vậy sẽ không ổn định theo nghĩa: số lượng các lần truyền tin thành công là hữu hạn, với xác suất là 1.</p>
-<p>Đặt <strong>Xn</strong> là số lượng bản tin trong hệ thống tại bắt đầu slot thứ n. Để ý rằng <strong>{Xn, n &gt; = 0}</strong> là một chuỗi Markov. Đưa vào một biến <strong>Ik</strong> như sau:</p>
-<p><code>**Ik = 1**, nếu lần đầu tiên chuỗi rời trạng thái k, nó sẽ đi trực tiếp sang trạng thái k-1. **Ik = 0** trong các trường hợp còn lại, bao gồm cả trường hợp hệ thống không bao giờ ở trạng thái k.</code> Lấy ví dụ, nếu chuỗi Markov là 0, 1, 3, 4… thì <strong>I3 = 0</strong> do khi chuỗi rời khỏi trạng thái 3 thì nó sẽ đi sang trạng thái 4, không phải trạng thái 2. Ngược lại, nếu chuỗi là 0, 3, 3, 2, … thì <strong>I3 = 1</strong> vì ở lần đầu tiên nó đi ra khỏi trạng thái 3 thì nó sẽ sang trạng thái 2. Hiểu một cách đơn giản, biến Ik là một biến xác định tại trạng thái k, hệ thống có gửi được bản tin nào đi không, nếu gửi được thì hệ thống nhảy sang trạng thái k-1 và biến Ik nhận giá trị 1 (true).</p>
-<p>Bây giờ ta tính giá trị trung bình (mean) sau:</p>
-<p><img src="/images/aloha/eq1.gif"></p>
-<p>Bây giờ, <strong>P{Ik = 1 | k is ever visited}</strong> là xác suất khi rời khỏi trạng thái k, trạng thái tiếp theo sẽ là k-1. Đây là xác suất có điều kiện của sự kiện: chuyển trạng thái từ k sang k-1, biết rằng hệ thống sẽ không quay trở lại trạng thái k. Do đó:</p>
-<p><img src="/images/aloha/eq2.gif"></p>
-<p>Ở đây, <strong>P{i,j}</strong> là xác suất của chuỗi Markov chuyển từ trạng thái i sang trạng thái j. Ta tính <strong>P{k,k-1}</strong> như sau: nhận thấy nếu có k bản tin ở đầu một slot thì sẽ có k-1 bản tin ở đầu slot tiếp theo nếu không có bản tin nào đến ở slot đó và chỉ có đúng một trong số k bản tin được truyền đi. Như vậy:</p>
-<p><img src="/images/aloha/eq3.gif"></p>
-<p>Đối với <strong>P{k,k}</strong>: nếu có k bản tin ở đầu một slot thì sẽ có k bản tin ở đầu slot tiếp theo nếu:</p>
-<ul>
-<li><p>không có bản tin nào đến và không xảy ra trường hợp: chỉ có đúng một trong số k bản tin được truyền đi. Tức là có thể không có bản tin nào truyền đi, như vậy vẫn chỉ có k bản tin. Hoặc là có 2 bản tin trở lên được truyền đi, nhưng như thế lại có xung đột và các bản tin này không được truyền và vẫn nằm nguyên trong hệ thống.</p></li>
-<li><p>có đúng một bản tin đến (và nó sẽ tự động được truyền đi) và không có bất cứ bản tin nào trong số k bản tin được truyền.</p></li>
-</ul>
-<p>Đưa vào công thức, ta có:</p>
-<p><img src="/images/aloha/eq4.gif"></p>
-<p>Tổng kết lại, ta có:</p>
-<p><img src="/images/aloha/eq5.gif"></p>
-<p>Trong công thức trên, để ý khi k đủ lớn, mẫu số của biểu thức sẽ hội tụ về <strong>1-a0</strong>, còn trên tử số ta có:</p>
-<p><img src="/images/aloha/eq6.gif"></p>
-<p>Do đó, giá trị trung bình (mean) của tổng tất cả <strong>Ik</strong> sẽ nhỏ hơn vô cùng. Điều đó chứng tỏ, tổng tất cả các <strong>Ik</strong> sẽ nhỏ hơn vô cùng với xác suất là 1 (vì ngược lại, nếu có xác suất dương là tổng này có thể bằng vô cùng, thì giá trị trung bình của nó sẽ phải là vô cùng). Như vậy, với xác suất là 1, sẽ chỉ có hữu hạn trạng thái mà chuỗi Markov có thể rời khỏi nhờ truyền bản tin thành công. Cũng có nghĩa là, sẽ có một số nguyên hữu hạn N nào đó, mà khi có ít nhất N bản tin trong hệ thống, sẽ không thể có truyền tin thành công nào nữa. Xác suất có ít nhất 2 bản tin đến là dương, trong trường hợp đó, hệ thống sẽ không có bản tin nào truyền đi cả, và số lượng bản tin sẽ tăng lên ít nhất 2 bản tin. Vậy nên, hệ thống cuối cùng sẽ đạt đến trạng thái có ít nhất N bản tin ở trên, và không thể có truyền tin thành công nữa.</p>
-<p>Vậy là ta đã thấy, giao thức ALOHA, trên phương diện lý thuyết xác suất, không ổn định về đảm bảo truyền tin thành công.</p>
-<h1 id="tài-liệu-tham-khảo">Tài liệu tham khảo</h1>
-<ol type="1">
-<li>Introduction to Probability Models - Sheldon Ross</li>
-</ol>
 		
 		
 	</div>

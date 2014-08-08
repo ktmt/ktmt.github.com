@@ -7,8 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jun 9th, 2013 programming, python, Comments Giới Thiệu Một Số Phương Pháp Sinh 64 Bit Unique ID Bài toán sinh unique ID
-Unique ID được sử dụng để &hellip;">
+	<meta name="description" content="Jun 14th, 2013 design, java,, pattern, programming, Comments Design Pattern: Áp Dụng Builder Pattern Trong Test (Java) Giới thiệu
+Builder Pattern là &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,300 @@ Unique ID được sử dụng để &hellip;">
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-06-14T22:31:00+09:00" data-updated="true" itemprop="datePublished">Jun 14<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/design/'>design</a>, <a class='category' href='/blog/categories/java/'>java,</a>, <a class='category' href='/blog/categories/pattern/'>pattern</a>, <a class='category' href='/blog/categories/programming/'>programming,</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/06/14/design-pattern-ap-dung-builder-pattern-trong-test-java/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/06/14/design-pattern-ap-dung-builder-pattern-trong-test-java/" itemprop="url">Design Pattern: Áp Dụng Builder Pattern Trong Test (Java)</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1 id="giới-thiệu">Giới thiệu</h1>
+<p>Builder Pattern là một pattern trong cuốn Design Pattern của “Gang of Four”. Mục đích của Builder Pattern như sau: Separate the construction of a complex object from its representation so that the same construction process can create different representations (tạm dịch: tách rời quá trình tạo object với nội dung và cấu trúc bên trong của nó, nhờ vậy tương ứng với một quá trình tạo object có thể có nhiều cách tạo nhiều thể hiện khác nhau.)</p>
+<p>Bên cạnh đó, Builder pattern còn được dùng để giải quyết một vấn đề thường gặp trong quá trình test: cách nào tốt nhất để tạo những object có quá nhiều optional parameters, trong khi tạm thời một số parameter ta muốn để giá trị default, giá trị của parameter này không ảnh hưởng gì lắm đến algorithm hay flow của chương trình. Bài viết này sẽ trình bày phương pháp sử dụng Builder pattern này.</p>
+<h1 id="ví-dụ">Ví dụ</h1>
+<p>Ta lấy ví dụ ta có một class quản lý sách, với các trường như sau: tiêu đề, tên tác giả, thể loại, năm xuất bản, ISBN. Để phục vụ việc tạo một object thuộc class này, ta nghĩ đến việc tạo một constructor như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>constructor.java </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'> <span class="kd">public</span> <span class="nf">Book</span><span class="o">(</span><span class="n">String</span> <span class="n">title</span><span class="o">,</span> <span class="n">String</span> <span class="n">author</span><span class="o">,</span> <span class="n">Genre</span> <span class="n">genre</span><span class="o">,</span> <span class="n">GregorianCalendar</span> <span class="n">publishDate</span><span class="o">,</span> <span class="n">String</span> <span class="n">ISBN</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">{</span>
+</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">title</span> <span class="o">=</span> <span class="n">title</span><span class="o">;</span>
+</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">author</span> <span class="o">=</span> <span class="n">author</span><span class="o">;</span>
+</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">genre</span> <span class="o">=</span> <span class="n">genre</span><span class="o">;</span>
+</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">publishDate</span> <span class="o">=</span> <span class="n">publishDate</span><span class="o">;</span>
+</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">ISBN</span> <span class="o">=</span> <span class="n">ISBN</span><span class="o">;</span>
+</span><span class='line'>  <span class="o">}</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Và trong chương trình, để tạo một object Book, ta gọi:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>constructor.java </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">Book</span> <span class="n">book2</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Book</span><span class="o">(</span><span class="s">&quot;Core Java&quot;</span><span class="o">,</span> <span class="s">&quot;Cay Horstman&quot;</span><span class="o">,</span> <span class="n">Genre</span><span class="o">.</span><span class="na">TECHNOLOGY</span><span class="o">,</span> <span class="k">new</span> <span class="n">GregorianCalendar</span><span class="o">(</span><span class="mi">2012</span><span class="o">,</span><span class="mi">12</span><span class="o">,</span><span class="mi">7</span><span class="o">),</span> <span class="s">&quot;0137081898&quot;</span><span class="o">);</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Ta thấy, với cách tạo object như trên, có một số nhược điểm như sau:</p>
+<ul>
+<li><p>Ta bắt buộc phải khai báo tất cả các parameters, không có giá trị default. Ta sẽ bị buộc phải set cả những parameters mà ta không quan tâm khi thực hiện test object.</p></li>
+<li><p>Đoạn code khá khó hiểu khi ta chỉ khai báo giá trị của parameter và truyền vào constructor. Người đọc sẽ phải đếm vị trí của parameters, soi vào trong khai báo constructor của Book.java để biết giá trị này là gán cho parameter nào. Với ví dụ trên, chỉ có 5 parameter, nhưng với những class phức tạp có nhiều parameters hơn nữa, việc khai báo như trên rõ ràng không tốt về mặt code visibility.</p></li>
+<li><p>Xuất hiện nhu cầu tạo object với các constructor với bộ tham số đầu vào khác nhau. Như ví dụ ở trên, ta muốn tạo object nhưng không muốn nhập thể loại, hoặc không muốn nhập năm xuất bản, … dẫn đến rất nhiều phiên bản constructor khác nhau.</p></li>
+</ul>
+<p>Hoặc bạn có thể khai báo theo một cách thứ hai, theo kiểu JavaBean như sau: tạo một constructor default, không đối số, ví dụ như Book(), sau đó thì tạo một loạt các setter để nhập các tham số cho parameter. Lúc đó thì code cho từng đối tượng sẽ như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>bean.java </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">Book</span> <span class="n">book</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Book</span><span class="o">();</span>
+</span><span class='line'><span class="n">book</span><span class="o">.</span><span class="na">setTitle</span><span class="o">(</span><span class="s">&quot;Core Java&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">book</span><span class="o">.</span><span class="na">setAuthor</span><span class="o">(</span><span class="s">&quot;Cay Horstman&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">book</span><span class="o">.</span><span class="na">setGenre</span><span class="o">(</span><span class="n">Genre</span><span class="o">.</span><span class="na">Technology</span><span class="o">);</span>
+</span><span class='line'><span class="n">book</span><span class="o">.</span><span class="na">setPublishDate</span><span class="o">(</span><span class="k">new</span> <span class="n">GregorianCalendar</span><span class="o">(</span><span class="mi">2012</span><span class="o">,</span><span class="mi">7</span><span class="o">,</span><span class="mi">1</span><span class="o">));</span>
+</span><span class='line'><span class="n">book</span><span class="o">.</span><span class="na">setISBN</span><span class="o">(</span><span class="s">&quot;0137081898&quot;</span><span class="o">);</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Nhưng cách này lại có nhược điểm là: vì việc tạo object bị kéo dài qua nhiều câu lệnh, có thể object sẽ bị rơi vào trạng thái unstable (ví dụ như ta quên mất set publishDate, như thế book sẽ không có giá trị cho publishDate !).</p>
+<p>Để khắc phục những nhược điểm trên, có một phương pháp sử dụng Builder pattern như sau: Thay vì tạo object mong muốn trực tiếp, ta gọi một static factory với các tham số bắt buộc, nhận về một <em>builder object</em>. Sau đó gọi các setter method dể đặt các tham số tùy chọn. Cuối cùng gọi build method, tạo ra object. Để dễ hiểu hơn, ta quan sát ví dụ sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>builder.java </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Book</span> <span class="o">{</span>
+</span><span class='line'>  <span class="kd">public</span> <span class="kd">enum</span> <span class="n">Genre</span> <span class="o">{</span><span class="n">FICTION</span><span class="o">,</span> <span class="n">NONFICTION</span><span class="o">,</span> <span class="n">TECHNOLOGY</span><span class="o">,</span> <span class="n">SELFHELP</span><span class="o">,</span> <span class="n">BUSINESS</span><span class="o">,</span> <span class="n">SPORT</span><span class="o">};</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="kd">private</span> <span class="n">String</span> <span class="n">title</span><span class="o">;</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">String</span> <span class="n">author</span><span class="o">;</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">Genre</span> <span class="n">genre</span><span class="o">;</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">GregorianCalendar</span> <span class="n">publishDate</span><span class="o">;</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">String</span> <span class="n">ISBN</span><span class="o">;</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">Builder</span>
+</span><span class='line'>  <span class="o">{</span>
+</span><span class='line'>      <span class="c1">//required params</span>
+</span><span class='line'>      <span class="kd">private</span> <span class="n">String</span> <span class="n">title</span><span class="o">;</span>
+</span><span class='line'>      <span class="kd">private</span> <span class="n">String</span> <span class="n">author</span><span class="o">;</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="c1">//optional params</span>
+</span><span class='line'>      <span class="kd">private</span> <span class="n">Genre</span> <span class="n">genre</span> <span class="o">=</span> <span class="n">Genre</span><span class="o">.</span><span class="na">FICTION</span><span class="o">;</span>
+</span><span class='line'>      <span class="kd">private</span> <span class="n">GregorianCalendar</span> <span class="n">publishDate</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GregorianCalendar</span><span class="o">(</span><span class="mi">1900</span><span class="o">,</span><span class="mi">1</span><span class="o">,</span><span class="mi">1</span><span class="o">);</span>
+</span><span class='line'>      <span class="kd">private</span> <span class="n">String</span> <span class="n">ISBN</span> <span class="o">=</span> <span class="s">&quot;000000000&quot;</span><span class="o">;</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="kd">public</span> <span class="nf">Builder</span><span class="o">(</span><span class="n">String</span> <span class="n">title</span><span class="o">,</span> <span class="n">String</span> <span class="n">author</span><span class="o">)</span>
+</span><span class='line'>      <span class="o">{</span>
+</span><span class='line'>          <span class="k">this</span><span class="o">.</span><span class="na">title</span> <span class="o">=</span> <span class="n">title</span><span class="o">;</span>
+</span><span class='line'>          <span class="k">this</span><span class="o">.</span><span class="na">author</span> <span class="o">=</span> <span class="n">author</span><span class="o">;</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="kd">public</span> <span class="n">Builder</span> <span class="nf">genre</span> <span class="o">(</span><span class="n">Genre</span> <span class="n">val</span><span class="o">)</span>
+</span><span class='line'>      <span class="o">{</span>
+</span><span class='line'>          <span class="k">this</span><span class="o">.</span><span class="na">genre</span> <span class="o">=</span> <span class="n">val</span><span class="o">;</span>
+</span><span class='line'>          <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="kd">public</span> <span class="n">Builder</span> <span class="nf">publishDate</span><span class="o">(</span><span class="n">GregorianCalendar</span> <span class="n">val</span><span class="o">)</span>
+</span><span class='line'>      <span class="o">{</span>
+</span><span class='line'>          <span class="k">this</span><span class="o">.</span><span class="na">publishDate</span> <span class="o">=</span> <span class="n">val</span><span class="o">;</span>
+</span><span class='line'>          <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="kd">public</span> <span class="n">Builder</span> <span class="nf">ISBN</span><span class="o">(</span><span class="n">String</span> <span class="n">val</span><span class="o">)</span>
+</span><span class='line'>      <span class="o">{</span>
+</span><span class='line'>          <span class="k">this</span><span class="o">.</span><span class="na">ISBN</span> <span class="o">=</span> <span class="n">val</span><span class="o">;</span>
+</span><span class='line'>          <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="kd">public</span> <span class="n">Book</span> <span class="nf">build</span><span class="o">()</span>
+</span><span class='line'>      <span class="o">{</span>
+</span><span class='line'>          <span class="k">return</span> <span class="k">new</span> <span class="nf">Book</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="kd">public</span> <span class="nf">Book</span><span class="o">(</span><span class="n">Builder</span> <span class="n">builder</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">{</span>
+</span><span class='line'>      <span class="n">title</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="na">title</span><span class="o">;</span>
+</span><span class='line'>      <span class="n">author</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="na">author</span><span class="o">;</span>
+</span><span class='line'>      <span class="n">genre</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="na">genre</span><span class="o">;</span>
+</span><span class='line'>      <span class="n">publishDate</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="na">publishDate</span><span class="o">;</span>
+</span><span class='line'>      <span class="n">ISBN</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="na">ISBN</span><span class="o">;</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="nd">@Override</span>
+</span><span class='line'>  <span class="kd">public</span> <span class="n">String</span> <span class="nf">toString</span><span class="o">()</span>
+</span><span class='line'>  <span class="o">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="s">&quot;Title: &quot;</span> <span class="o">+</span> <span class="n">title</span> <span class="o">+</span> <span class="s">&quot;, author: &quot;</span> <span class="o">+</span> <span class="n">author</span> <span class="o">+</span> <span class="s">&quot;, genre: &quot;</span> <span class="o">+</span> <span class="n">genre</span><span class="o">.</span><span class="na">toString</span><span class="o">()</span> <span class="o">+</span> <span class="s">&quot;, publish year: &quot;</span>
+</span><span class='line'>                  <span class="o">+</span> <span class="n">publishDate</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">Calendar</span><span class="o">.</span><span class="na">YEAR</span><span class="o">)</span> <span class="o">+</span> <span class="s">&quot;, ISBN: &quot;</span> <span class="o">+</span> <span class="n">ISBN</span><span class="o">;</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>  
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Lúc đó ta có thể tạo Book object bằng cách sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class='code'><figcaption>
+<span>builder.java </span>
+</figcaption>
+ 
+<div class="highlight">
+<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'>     <span class="n">Book</span> <span class="n">book</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Book</span><span class="o">.</span><span class="na">Builder</span><span class="o">(</span><span class="s">&quot;Effective Java&quot;</span><span class="o">,</span> <span class="s">&quot;Joshua Bloch&quot;</span><span class="o">)</span>
+</span><span class='line'>                      <span class="o">.</span><span class="na">publishDate</span><span class="o">(</span><span class="k">new</span> <span class="n">GregorianCalendar</span><span class="o">(</span><span class="mi">2008</span><span class="o">,</span><span class="mi">05</span><span class="o">,</span> <span class="mi">28</span><span class="o">))</span>
+</span><span class='line'>                      <span class="o">.</span><span class="na">build</span><span class="o">();</span>
+</span></code></pre></td></tr></table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Ta thấy, cách tạo object này có ưu điểm hơn so với cách dùng constructor thông thường:</p>
+<ul>
+<li><p>Không cần phải khai báo những parameter nào mà ta tạm thời chưa quan tâm. Những parameters đó sẽ nhận giá trị default. Trong ví dụ trên, ta đã bỏ qua khai báo cho genre và ISBN. Chúng sẽ nhận giá trị default: genre = FICTION, ISBN = “0000000000”.</p></li>
+<li>Ta thấy rõ là giá trị nào là gán cho parameter nào. Ví dụ: publishDate(new GregorianCalendar(2008,05, 28)) là gán giá trị cho parameter ngày xuất bản.</li>
+<li><p>Thứ tự của các method là không quan trọng. Ta có thể gọi các method để update thêm các giá trị cho các parameter theo thứ tự tùy ý. Object sẽ chưa được tạo cho đến khi gọi build(). Do vậy, builder rất dễ sử dụng và giúp ta tránh khỏi những sai lầm không mong muốn đối với thứ tự parameter.</p></li>
+</ul>
+<h1 id="kết-luận">Kết luận</h1>
+<p>Bài viết đã giới thiệu cách sử dụng Builder Pattern để việc tạo object trong quá trinh test được dễ dàng hơn, đồng thời khiến đoạn code được sáng sủa hơn về mặt trình bày.</p>
+<h1 id="tham-khảo">Tham khảo</h1>
+<ul>
+<li><p>Effective Java - Joshua Bloch</p></li>
+<li><p>Design Patterns - Elements of Reusable</p></li>
+</ul>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -420,124 +714,6 @@ Unique ID được sử dụng để &hellip;">
 <p>Ở bài viết tiếp theo mình sẽ nói về các node xử lý cơ bản như AnalyzerNode, ConvolverNode, OscillatorNode và các ứng dụng của chúng.</p>
 <p>Các bạn có thể xem bài trình bày của mình tại osaka htmlday (bài viết bằng tiếng Nhật :D):</p>
 <script async class="speakerdeck-embed" data-id="8575d620b2e30130eaf25236bfdba4c0" data-ratio="1.33333333333333" src="//speakerdeck.com/assets/embed.js"></script>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-06-03T22:15:00+09:00" data-updated="true" itemprop="datePublished">Jun 3<span>rd</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/unix/'>unix</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/06/03/unix-tools-2/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/03/unix-tools-2/" itemprop="url">Unix Tools Phần 2</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h3 id="giới-thiệu">Giới thiệu</h3>
-<p>Hàng ngày chúng ta gặp phải rất nhiều bài toán thống kê khác nhau. Bài toán thống kê số liệu cũng có thể xuất hiện dưới nhiều dạng khác nhau như: bằng việc kiểm apache acccess log thống kê xem có tổng số truy cập vào 1 API trong 1 phút, hay 1 API cụ thể được truy cập từ những địa điểm nào và cụ thể là bao nhiều lần. Xử lý số liệu là một bài toán khó, và việc bóc tách dữ liệu nhiều khi cũng không hể đơn giản. Tuy vậy, bằng việc sử dụng thành thạo các công cụ command line của linux, nhiều khi ta có thể giải quyết những bài toán trên một cách nhanh chóng chỉ bằng 1, 2 dòng lệnh. Bài viết này sẽ đưa ra 1 bài toán cụ thể và cách sử dụng các unix command line tool để giải quyết các bài toán đó.</p>
-<h3 id="khái-lược-các-tool-dùng-trong-bài">Khái lược các tool dùng trong bài</h3>
-<ul>
-<li>Grep: Cho phép tìm một chuỗi bất kỳ trong một file. Chuỗi có thể được mô tả bằng regular expression.</li>
-<li>uniq: công cụ giúp loại bỏ</li>
-<li>sort: sắp xếp các record trong 1 file</li>
-<li>wc: đếm từ và dòng trong 1 file</li>
-<li>awk: công cụ để in các cột dữ liệu, cũng như xử lý dữ liệu trên từng cột</li>
-</ul>
-<h3 id="bài-toán">Bài toán</h3>
-<p>Để dễ hình dung cũng như dễ kiểm tra tính đúng đắn, ta giả sử 1 bài toán tưởng tượng như sau:</p>
-<p>Có log file:</p>
-<pre><code>    IP1 2 20:00:01 Get /A 
-    IP2 2 20:00:02 Get /B
-    IP2 3 20:00:03 Get /C
-    IP4 2 20:02:01 Get /A 
-    IP5 2 20:03:01 Get /B
-    IP2 3 20:03:02 Get /A
-    IP3 2 20:03:04 Get /B 
-    IP2 2 20:04:01 Get /B
-    IP1 3 20:05:12 Get /C
-    IP6 2 20:05:31 Get /C 
-    IP5 2 20:06:02 Get /B
-    IP4 3 20:07:03 Get /A</code></pre>
-<p>Bài toán: Hãy đếm xem trong 1 phút có bao nhiêu requests và thử đếm xem có bao nhiêu request đến A, B.</p>
-<h3 id="phương-pháp-giải-quyết">Phương pháp giải quyết</h3>
-<p>Theo đề bài, ta có 2 bài toán * Thống kê requests theo từng phút. * Thống kê requests đến A, B.</p>
-<p>Ta sẽ lần lượt giải từng bài toán 1.</p>
-<h4 id="thống-kê-requests-đến-a-b">Thống kê requests đến A, B</h4>
-<p>Bài toán này thực chất khá dễ và ta có thể giải quyết bằng grep và wc. Để ý rằng mỗi dòng là 1 requests đến A, B hoặc C vì vậy bài toán có thể chuyển về là: đếm số dòng có ký tự A và ký tự B. Để lọc ký tự ta có thể dùng grep, để đếm số dòng ta có thể dùng wc. Như vậy bài toán có thể được giải quyết bằng cách pipe kết quả grep sang wc.</p>
-<p>Lời giải:</p>
-<div>
-<pre><code class='bash'>grep A data.dat | wc -l
-4
-grep B data.dat | wc -l
-5</code></pre>
-</div>
-<p>Như vậy có 4 requests đến A và 5 requests đến B trong log file. Bằng 1 câu lệnh, ta có thể đưa ngay ra được kết quả. Dễ như ăn kẹo!</p>
-<h4 id="đếm-số-request-trong-1-phút.">Đếm số request trong 1 phút.</h4>
-<p>Bài toán này khó hơn 1 chút do ta chỉ có trong log các request theo từng giây, trong khi ta cần thống kê theo phút. Liệu có cách nào biến bài toán về bài toán đếm số dòng như ở trên không? Nếu như ta có thể nhóm các dòng dữ liệu theo phút, bài toán có thể được giải quyết tương tự như bài toán trên.</p>
-<p>Trước tiên, làm thế nào để nhóm dòng theo phút? Muốn nhóm dòng theo phút ta phải tách được phần phút ra. Để ý giờ:phút là trường thứ 3 trong file. Do vậy nếu tách được cột thứ 3 và lấy 5 ký tự đầu tiên, ta có thể lấy phút của từng request. Tách cột là việc của awk!</p>
-<div>
-<pre><code class='bash'>awk '{print substr($3, 1, 5)}' data.dat
-20:00
-20:00
-20:00
-20:02
-20:03
-20:03
-20:03
-20:04
-20:05
-20:05
-20:06
-20:07</code></pre>
-</div>
-<p>Ồ, ta đã tiến được 1 bước! Bước tiếp theo, nếu như ta có thể nhóm các phần tử giống nhau và đếm các phần tử đó, ta sẽ có kết quả mong muốn. Nhóm các giá trị giống nhau là nhiệm vụ của uniq!</p>
-<div>
-<pre><code class='bash'>awk '{print substr($3, 1, 5)}' data.dat | uniq -c
-3 20:00
-2 20:02
-3 20:03
-1 20:04
-2 20:05
-1 20:06
-1 20:07</code></pre>
-</div>
-<p>Tuyệt! Như vậy bằng 1 dòng lệnh, ta đã nhóm được các API trong cùng 1 phút, cũng như số lượng API trong thời điểm đấy. Nếu số lượng request nhiều, số dòng kết quả lớn và ta chỉ muốn biết thời điểm có truy cập lớn nhất, ta có thể sắp xếp theo số lượng truy cập. Sắp xếp các dòng theo giá trị cột là công việc của sort! Bằng câu lệnh sort ta có kết quả như dưới đây:</p>
-<div>
-<pre><code class='bash'>awk '{print substr($3, 1, 5)}' data.dat | uniq -c | sort -nk1 -r
-3 20:03
-3 20:00
-2 20:05
-1 20:07
-1 20:06
-1 20:04
-1 20:02</code></pre>
-</div>
-<p>Bài toán đầu tiên cũng đã được giải quyết chỉ với 1 dòng lệnh!</p>
-<h3 id="kết-luận">Kết luận</h3>
-<p>Bài viết đã giới thiệu qua các công cụ commandline của unix cũng như cách áp dụng công cụ đó vào bài toán cụ thể. Hy vọng qua bài viết bạn đã thấy được phần nào tầm quan trọng cũng như sức mạng của các chương trình tiện ích như awk, wc, grep, uniq, sort. Và để hiểu rõ công cụ thì không cách nào khác là áp dụng thật sáng tạo chúng vào công việc hàng ngày, do vậy bạn hãy thử áp dụng các công cụ trên vào bài toán sau nhé:</p>
-<p><strong>Với log file trên, đếm xem có bao nhiêu nguồn truy cập, và nguồn truy cập nào có số lượng truy cập lớn nhất</strong> ;)</p>
 		
 		
 	</div>
