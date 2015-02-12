@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Clang | Blog kỹ thuật máy tính]]></title>
   <link href="http://git@github.com.github.com/blog/categories/clang/atom.xml" rel="self"/>
   <link href="http://git@github.com.github.com/"/>
-  <updated>2015-02-13T00:23:54+09:00</updated>
+  <updated>2015-02-13T00:35:54+09:00</updated>
   <id>http://git@github.com.github.com/</id>
   <author>
     <name><![CDATA[kỹ thuật máy tính]]></name>
@@ -24,54 +24,94 @@
 <h2 id="include">#include</h2>
 <p>Khi chúng ta include 1 file header thì tại giai đoạn preprocessing của quá trình compile, compiler sẽ copy nội dung của file header này và paste vào dòng #include. Và tất nhiên quá trình copy/paste này là đệ quy cho đến khi copy xong tất cả file header mà nó include và các file header khác được include tại các file nó include. (hơi xoắn)</p>
 <p>Ví dụ với chương trình helloworld quen thuộc như dưới đây:</p>
-<p>{% codeblock lang:objc helloworld.m %} #include <Foundation/Foundation.h></p>
-<p>int main(int argc, const char *argv[]) { NSLog(@“Hello world”);</p>
-<pre><code> return 0;</code></pre>
-<p>} {% endcodeblock %}</p>
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>helloworld.m </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'> <span class="err">#</span><span class="n">include</span> <span class="o">&lt;</span><span class="n">Foundation</span><span class="o">/</span><span class="n">Foundation</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span> <span class="p">{</span> <span class="n">NSLog</span><span class="p">(</span><span class="err">@“</span><span class="n">Hello</span> <span class="n">world</span><span class="err">”</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span> <span class="k">return</span> <span class="mi">0</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
 <p>Chúng ta có thể chạy preprocessor để xem file sinh ra sau giai đoạn này bằng lệnh <code>clang -E helloworld.m | less</code>.</p>
 <p>Nhìn vào kết quả output chúng ta có thể thấy tới hơn 92000 dòng là của Foundation.h (và của các file header mà Foundation.h include), chỉ 8 dòng cuối là code của chúng ta.</p>
 <p>Với việc sử dụng <code>#include</code> tồn tại vấn đề gọi là recursive include. Ví dụ :</p>
-<p>{% codeblock lang:objc FirstFile.h %} #include “SecondFile.h”</p>
-<p>/* Some code */ {% endcodeblock %}</p>
-<p>{% codeblock lang:objc SecondFile.h %} #include “FirstFile.h”</p>
-<p>/* Some other code */ {% endcodeblock %}</p>
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>FirstFile.h </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'> <span class="err">#</span><span class="n">include</span> <span class="err">“</span><span class="n">SecondFile</span><span class="p">.</span><span class="n">h</span><span class="err">”</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="cm">/* Some code */</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>SecondFile.h </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'> <span class="err">#</span><span class="n">include</span> <span class="err">“</span><span class="n">FirstFile</span><span class="p">.</span><span class="n">h</span><span class="err">”</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="cm">/* Some other code */</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
 <p>Khi đấy preprocessor sẽ duyệt file FirstFile.h và copy nội dung của SecondFile.h vào FirstFile.h. Khi duyệt file SecondFile.h lại copy/paste nội dung của file FirstFile.h. Vấn đề này được gọi là recursive include.</p>
 <h2 id="import">#import</h2>
 <p>Trong Objective-C để tránh vấn đề recursive include như trên thì chúng ta thường dùng <code>#import</code>. Khi dùng <code>#import</code> thì trước khi include 1 file header, preprocessor sẽ kiểm tra xem file đấy đã được include chưa, nếu đã include rồi thì sẽ không include nữa. Tương tự trong C chúng ta cũng tránh recursive include bằng việc kiểm tra file header đã được include chưa như sau:</p>
-<p>{% codeblock %} #ifndef MYFILE_H #define MYFILE_H</p>
-<p>// Some code</p>
-<h1 id="endif">endif</h1>
-<p>{% endcodeblock %}</p>
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#ifndef MYFILE_H #define MYFILE_H&lt;/p>
+</span><span class='line'>&lt;p>// Some code&lt;/p>
+</span><span class='line'>&lt;h1 id="endif">endif&lt;/h1>
+</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></notextile></div></p>
 <h2 id="import-1"><span class="citation" data-cites="import">@import</span></h2>
 <p>Tuy nhiên việc sử dụng <code>#import</code> cũng như <code>#include</code> khiến cho preprocessor đối mặt với 1 số vấn đề khác như Fragility và Performance. Để hiểu về vấn đề Header Fragility chúng ta xem qua một ví dụ đơn giản sau:</p>
-<p>{% codeblock lang:objc MyFile.h %} #define NSURL @“my url”</p>
-<h1 id="import-2">import <Foundation/Foundation.h></h1>
-<p><span class="citation" data-cites="interface">@interface</span> MyClass :NSObject</p>
-<p><span class="citation" data-cites="end">@end</span> {% endcodeblock %}</p>
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>MyFile.h </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'> <span class="err">#</span><span class="n">define</span> <span class="n">NSURL</span> <span class="err">@“</span><span class="n">my</span> <span class="n">url</span><span class="err">”</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="kt">id</span><span class="o">=</span><span class="s">&quot;import-2&quot;</span><span class="o">&gt;</span><span class="n">import</span> <span class="o">&lt;</span><span class="n">Foundation</span><span class="o">/</span><span class="n">Foundation</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="s">&quot;citation&quot;</span> <span class="n">data</span><span class="o">-</span><span class="n">cites</span><span class="o">=</span><span class="s">&quot;interface&quot;</span><span class="o">&gt;</span><span class="err">@</span><span class="n">interface</span><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;</span> <span class="n">MyClass</span> <span class="o">:</span><span class="n">NSObject</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="s">&quot;citation&quot;</span> <span class="n">data</span><span class="o">-</span><span class="n">cites</span><span class="o">=</span><span class="s">&quot;end&quot;</span><span class="o">&gt;</span><span class="k">@end</span><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
 <p>Khi đó sau quá trình preprocessing thì file header của chúng ta sẽ như sau:</p>
-<p>{% codeblock lang:objc %} #define NSURL @“my url”</p>
-<p>// đoạn code được copy từ Foundation.h // và tất cả những đoạn có chứa NSURL của Foundation.h đều bị thay bằng “my url”</p>
-<p><span class="citation" data-cites="interface">@interface</span> MyClass :NSObject</p>
-<p><span class="citation" data-cites="end">@end</span> {% endcodeblock %}</p>
+<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'> <span class="err">#</span><span class="n">define</span> <span class="n">NSURL</span> <span class="err">@“</span><span class="n">my</span> <span class="n">url</span><span class="err">”</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">// đoạn code được copy từ Foundation.h // và tất cả những đoạn có chứa NSURL của Foundation.h đều bị thay bằng “my url”&lt;/p&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="s">&quot;citation&quot;</span> <span class="n">data</span><span class="o">-</span><span class="n">cites</span><span class="o">=</span><span class="s">&quot;interface&quot;</span><span class="o">&gt;</span><span class="err">@</span><span class="n">interface</span><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;</span> <span class="n">MyClass</span> <span class="o">:</span><span class="n">NSObject</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="s">&quot;citation&quot;</span> <span class="n">data</span><span class="o">-</span><span class="n">cites</span><span class="o">=</span><span class="s">&quot;end&quot;</span><span class="o">&gt;</span><span class="k">@end</span><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
 <p>Tất cả những đoạn NSURL của Foundation.h đều bị preprocessor thay thế bằng “my url” do có <code>#define NSURL @“my url”</code> bên trên. Từ đó ta thấy với việc dùng <code>#include</code> hay <code>#import</code> thông thường thì các header của các file khác, hay của thư viện mà chúng ta dùng đều có thể bị ảnh hưởng như việc dùng <code>#define</code> ở trên.</p>
 <p>Về vấn đề performance thì như ở trên ta đã thấy <code>#include</code> và <code>#import</code> sẽ copy/paste toàn bộ file header mà nó include (đệ quy). Như ở ví dụ đầu tiên chúng ta chỉ include mình Foundation.h nhưng sau khi preprocessing thì có tới hơn 92000 dòng là của Foundation.h (và các file header mà Foundation.h include), chỉ 8 dòng cuối là code của chúng ta. Thế nên thời gian compile sẽ trở nên nhiều hơn rất nhiều.</p>
 <h2 id="pre-compiled-headers">Pre-compiled headers</h2>
 <p>Để giải quyết 1 phần vấn đề performance chúng ta có thể dùng precompiled headers (.pch). Nếu các bạn chú ý thì tất cả iOS project khi được XCode tạo ra đều có file PROJECTNAME-Prefix.pch như sau:</p>
-<p>{% codeblock lang:objc PROJECTNAME-Prefix.pch %} #import <Availability.h></p>
-<h1 id="ifndef-__iphone_3_0-warning-this-project-uses-features-only-available-in-ios-sdk-3.0-and-later.-endif">ifndef __IPHONE_3_0 #warning “This project uses features only available in iOS SDK 3.0 and later.” #endif</h1>
-<h1 id="ifdef-objc">ifdef <strong>OBJC</strong></h1>
-<pre><code>#import &lt;UIKit/UIKit.h&gt;
-#import &lt;Foundation/Foundation.h&gt;Foundation;</code></pre>
-<h1 id="endif-1">endif</h1>
-<p>{% endcodeblock %}</p>
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>PROJECTNAME-Prefix.pch </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'> <span class="err">#</span><span class="n">import</span> <span class="o">&lt;</span><span class="n">Availability</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="kt">id</span><span class="o">=</span><span class="s">&quot;ifndef-__iphone_3_0-warning-this-project-uses-features-only-available-in-ios-sdk-3.0-and-later.-endif&quot;</span><span class="o">&gt;</span><span class="n">ifndef</span> <span class="n">__IPHONE_3_0</span> <span class="err">#</span><span class="n">warning</span> <span class="err">“</span><span class="n">This</span> <span class="n">project</span> <span class="n">uses</span> <span class="n">features</span> <span class="n">only</span> <span class="n">available</span> <span class="k">in</span> <span class="n">iOS</span> <span class="n">SDK</span> <span class="mf">3.0</span> <span class="n">and</span> <span class="n">later</span><span class="p">.</span><span class="err">”</span> <span class="err">#</span><span class="n">endif</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="kt">id</span><span class="o">=</span><span class="s">&quot;ifdef-objc&quot;</span><span class="o">&gt;</span><span class="n">ifdef</span> <span class="o">&lt;</span><span class="n">strong</span><span class="o">&gt;</span><span class="n">OBJC</span><span class="o">&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="err">#</span><span class="n">import</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">UIKit</span><span class="o">/</span><span class="n">UIKit</span><span class="p">.</span><span class="n">h</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'><span class="cp">#import &amp;lt;Foundation/Foundation.h&amp;gt;Foundation;&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="kt">id</span><span class="o">=</span><span class="s">&quot;endif-1&quot;</span><span class="o">&gt;</span><span class="n">endif</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
 <p>Trong file .pch này chúng ta sẽ include những header mà có khả năng được include tại nhiều nơi trong source code của ứng dụng như Foundation.h, UIKit.h… Khi source code của ứng dụng được compile thì file .pch này sẽ được compile đầu tiên, đồng nghĩa với việc tất cả file header được include trong file .pch này sẽ được compile trước và được include vào tất cả source code.</p>
 <p>Bằng viêc caching những file header đã được biên dịch này thì những file này chỉ cần compile 1 lần, những lần sau chỉ cần sử dụng lại nên thời gian compile sẽ được rút gọn.</p>
 <p>Thế nhưng các developer thường không hay quản lý file .pch này, và không phải file header nào cũng được dùng tại nhiều nơi trong source code nên hiệu quả của .pch chưa được cao.</p>
 <h2 id="modules">Modules</h2>
 <p>Vào tháng 11 năm 2012, Doug Gregor (một kỹ sư của Apple) đã giới thiệu tính năng modules nhằm giải quyết vấn đề trên của proprocessor thay cho .pch. Vậy module là gì? Module chính là một package mô tả một library, framework.</p>
 <p>Ví dụ chạy 2 lệnh dưới đây ta sẽ có thể xem được các module trong SDK của iOS7.</p>
-<p>{% codeblock %} % cd <code>xcrun --sdk iphoneos --show-sdk-path</code> % find . -name module.map</p>
-<p>./Developer/Library/Frameworks/XCTest.framework/module.map<br /> ./System/Library/Frameworks/AudioToolbox.framework/module.map<br /> ./System/Library/Frameworks/AudioUnit.framework/module.map<br /> ./System/Library/Frameworks/CoreAudio.framework/module.map<br /> :<br /> :<br /> ./usr/include/dispatch/module.map<br /> ./usr/include/mach-o/module.map<br /> ./usr/include/module.map<br /> ./usr/include/objc/module.map {% endcodeblock %}</p>
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>% cd &lt;code>xcrun --sdk iphoneos --show-sdk-path&lt;/code> % find . -name module.map&lt;/p>
+</span><span class='line'>&lt;p>./Developer/Library/Frameworks/XCTest.framework/module.map&lt;br /> ./System/Library/Frameworks/AudioToolbox.framework/module.map&lt;br /> ./System/Library/Frameworks/AudioUnit.framework/module.map&lt;br /> ./System/Library/Frameworks/CoreAudio.framework/module.map&lt;br /> :&lt;br /> :&lt;br /> ./usr/include/dispatch/module.map&lt;br /> ./usr/include/mach-o/module.map&lt;br /> ./usr/include/module.map&lt;br /> ./usr/include/objc/module.map</span></code></pre></td></tr></table></div></figure></notextile></div></p>
 <p>Với mỗi framework ta thấy có 1 file module.map để mô tả framework đấy.</p>
 <p>Và để sử dụng framework chúng ta có thể thay <code>#import &lt;Frameworkname.h&gt;</code> bằng <code>@import Frameworkname;</code> Ví dụ khi sử dụng framework Foundation ta sẽ dùng <code>@import Foundation;</code> Vậy khi trong một file header gặp đoạn import module thì compiler đã xử lý gì và tại sao lại giải quyết được vấn đề Fragility và Performance của preprocessor?</p>
 <p>Ví dụ khi trong một file header, preprocessor gặp <code>@import Foundation</code> thì sẽ xử lý các bước như sau:</p>
@@ -87,9 +127,9 @@
 <p>Thế nhưng khi sử dụng <code>@import</code> thì chúng ta không cần phải tự link tới framework nữa mà chỉ cần:</p>
 <p><code>clang tmp.m -o tmp -fmodules</code></p>
 <p>Với XCode chúng ta sẽ không phải add thêm các framework mà mình muốn dùng trong <code>Link Binary With Libraries</code> như hình dưới đây.</p>
-<p>{% img /images/clang_modules/link_framework.png %}</p>
+<p><img src="/images/clang_modules/link_framework.png"></p>
 <p>Đối với những project được tạo từ XCode5 thì tính năng module tự động được enable. Nhưng những project được tạo trước đây các bạn phải tự enable trong phần <code>Build Settings</code> (tức là set flag -fmodules).</p>
-<p>{% img /images/clang_modules/enable_module.png %}</p>
+<p><img src="/images/clang_modules/enable_module.png"></p>
 <h1 id="kết-luận">Kết luận</h1>
 <p>Bài viết này mình đã giới thiệu qua tính năng module của Clang trong được giới thiệu từ XCode5. Và đồng thời cũng giải thích qua về <code>#include</code>, <code>#import</code>, pch. Mặc dù tính năng module vẫn đang trong quá trình hoàn thiện nhưng hiện tại chúng ta đã có thể sử dụng với XCode5.</p>
 <p>Các bạn có thể tìm hiểu thêm tại:</p>
