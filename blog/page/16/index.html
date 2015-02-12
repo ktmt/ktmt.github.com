@@ -7,8 +7,7 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jun 14th, 2013 design, java,, pattern, programming, Comments Design Pattern: Áp Dụng Builder Pattern Trong Test (Java) Giới thiệu
-Builder Pattern là &hellip;">
+	<meta name="description" content="Jul 7th, 2013 git Comments Githook và Server Hook (Tiếp) Ở bài viết trước, tôi đã giới thiệu về githook, client hook và các user case hay sử dụng &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -38,7 +37,7 @@ Builder Pattern là &hellip;">
 	<div class="container">
 		<div class="left-col">
 			<div class="intrude-less">
-			<header id="header" class="inner"><div class="profilepic">	
+			<header id="header" class="inner"><div class="profilepic">
 	<script src="/javascripts/md5.js"></script>
 	<img src='/images/logo.jpg' alt='Profile Picture' style='width: 160px;' />
 </div>
@@ -67,9 +66,9 @@ Builder Pattern là &hellip;">
 	</div>
 </nav>
 
-</header>				
+</header>
 			</div>
-		</div>	
+		</div>
 		<div class="mid-col">
 			
 				
@@ -93,109 +92,162 @@ Builder Pattern là &hellip;">
   
 
 
-<time datetime="2013-06-14T22:31:00+09:00" data-updated="true" itemprop="datePublished">Jun 14<span>th</span>, 2013</time></div>
+<time datetime="2013-07-07T22:54:00+09:00" data-updated="true" itemprop="datePublished">Jul 7<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/design/'>design</a>, <a class='category' href='/blog/categories/java/'>java,</a>, <a class='category' href='/blog/categories/pattern/'>pattern</a>, <a class='category' href='/blog/categories/programming/'>programming,</a>
+	<a class='category' href='/blog/categories/git/'>git</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/06/14/design-pattern-ap-dung-builder-pattern-trong-test-java/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/07/07/git-server-hook-dot-markdown/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/14/design-pattern-ap-dung-builder-pattern-trong-test-java/" itemprop="url">Design Pattern: Áp Dụng Builder Pattern Trong Test (Java)</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/07/07/git-server-hook-dot-markdown/" itemprop="url">Githook và Server Hook (Tiếp)</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h1 id="giới-thiệu">Giới thiệu</h1>
-<p>Builder Pattern là một pattern trong cuốn Design Pattern của “Gang of Four”. Mục đích của Builder Pattern như sau: Separate the construction of a complex object from its representation so that the same construction process can create different representations (tạm dịch: tách rời quá trình tạo object với nội dung và cấu trúc bên trong của nó, nhờ vậy tương ứng với một quá trình tạo object có thể có nhiều cách tạo nhiều thể hiện khác nhau.)</p>
-<p>Bên cạnh đó, Builder pattern còn được dùng để giải quyết một vấn đề thường gặp trong quá trình test: cách nào tốt nhất để tạo những object có quá nhiều optional parameters, trong khi tạm thời một số parameter ta muốn để giá trị default, giá trị của parameter này không ảnh hưởng gì lắm đến algorithm hay flow của chương trình. Bài viết này sẽ trình bày phương pháp sử dụng Builder pattern này.</p>
+		<p>Ở bài viết <a href="/blog/2013/06/25/using-githook-to-automatically-test-your-app/">trước</a>, tôi đã giới thiệu về githook, client hook và các user case hay sử dụng với client hook. Bài viết này, tôi sẽ giới thiệu thêm về server hook và các ứng dụng của chúng trong thực tế</p>
+<h1 id="server-side-hooks">Server-side hooks</h1>
+<p>Bên cạnh việc sử dụng các client-side hooks, bạn có thể sử dụng một vài server-side hook như là một hệ thống admin để áp đặt một cơ chế quán lý cho project của bạn. Những script này sẽ được chạy trước và sau khi commit được đẩy lên server. Những pre-hooks có thể trả về giá trị khác 0 ở bất cứ thời điểm nào để loại bỏ một push từ client, cũng như để in ra một error message cho client</p>
+<h2 id="pre-receive-và-post-receive">pre-receive và post-receive</h2>
+<p>Script đầu tiên được chạy khi server nhận được một push từ client đó là <code>pre-receive</code>. Script này nhận một list các tham chiếu sẽ được push từ stdin. Nếu nó trả về giá trị khác 0, không có tham chiếu nào được chấp nhận. Bạn có thể sử dụng hook này để làm những việc như đảm bảo không có bất cứ tham chiếu nào là <code>non-fast-forwards</code>.</p>
+<p><code>post-receive</code> hook chạy sau khi toàn bộ quá trình được hoàn tất và có thể sử dụng để update các service khác hoặc để notify uer. Nó nhận cùng dữ liệu từ stdin như <code>pre-receive</code> hook. Ví dụ bao gồm gửi email chó một list các developer liên quan, notify CI server, hoặc update ticket tracking system. Bạn thậm chí có thể parse commit message để kiểm tra xem có bất cứ ticket nào cần open, modified hoặc update hay không. <code>post-receive</code> không thể làm ngừng lại quá trình push, nhưng client sẽ không đóng kết nối tới server cho đên khi <code>post-receive</code> kết thúc. Ví thế hãy cẩn thận khi bạn muốn làm những việc tốn thời gian. Cách tốt nhất là hãy sử dụng các background process để xử lý các tác vụ tốn thời gian.</p>
+<h2 id="update">update</h2>
+<p>Update script là tương tự với <code>pre-receive</code> script, ngoại trừ việc nó chỉ chạy một làn cho mỗi branch mà pusher muốn update. Nếu pusher muốn update nhiều branch, <code>pre-receive</code> chỉ chạy duy nhất một lần, nhưng update sẽ chạy một lần cho mỗi branch mà chúng được push. Thay vì đọc dữ liệu từ stdin, script này sẽ nhận 3 tham số đầu vào: tên của branch, SHA-1 trỏ đến commit trước khi được push, và SHA-1 user đang muốn push. Nếu update script trả về kết quả khác 0, chỉ branch ứng với script này bị reject, các branch khác vẫn được update bình thường</p>
 <h1 id="ví-dụ">Ví dụ</h1>
-<p>Ta lấy ví dụ ta có một class quản lý sách, với các trường như sau: tiêu đề, tên tác giả, thể loại, năm xuất bản, ISBN. Để phục vụ việc tạo một object thuộc class này, ta nghĩ đến việc tạo một constructor như sau:</p>
+<p>Trong ví dụ này, chúng ta sẽ bắt buộc mỗi commit message phải có phần mở đầu của message tuân theo một định dạng. Cụ thể mỗi mesage phải có dạng “ref:1234” bởi vì mỗi một commit sẽ ứng với một ticket trong hệ thống.</p>
+<p>Để làm việc này, sẻver sẽ phải kiểm tra tất cả các commit được push để xem string trong commit message có đúng format hay không. Nếu commit message là không đúng format, trả về giá trị khác 0 và reject push.</p>
+<p>Chúng ta sẽ viết một update hook để làm việc này. Chú ý rắng, update hook nhận 3 giá trị đầu vào: tên của branch được update, SHA-1 của commit trước khi được push, và SHA-1 của commit sau khi được push. Các đoạn code dưới đây được minh hoạ bằng ruby, bạn có thể sử dụng ngôn ngữ lập trình khác nếu muốn</p>
 <div class="bogus-wrapper">
 <notextile>
-<figure class='code'><figcaption>
-<span>constructor.java </span>
+<figure class="code">
+<figcaption>
+<span>update </span>
 </figcaption>
- 
 <div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='ruby'><span class='line'><span class="c1">#!/usr/bin/env ruby</span>
+</span><span class='line'>
+</span><span class='line'><span class="vg">$refname</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span>
+</span><span class='line'><span class="vg">$oldrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span>
+</span><span class='line'><span class="vg">$newrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Để lấy các commit từ <code>$oldrev</code> tới <code>$newrev</code>, chúng ta sử dụng lệnh <code>git rev-lít</code>. Lệnh này sẽ trả về danh sách các SHA-1 cho các commit nằm giữa 2 commit mà chúng ta truyền vào</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='bash'><span class='line'><span class="nv">$ </span>git rev-list 538c33..d14fc7
+</span><span class='line'>d14fc7c847ab946ec39590d87783c69b031bdfb7
+</span><span class='line'>9f585da4401b0a3999e84113824d15245c13f0be
+</span><span class='line'>234071a1be950e2a8d078e6141f5cd20c1e61ad3
+</span><span class='line'>dfa04c9ef3d5197182f13fb5b9b1fb7717d2222a
+</span><span class='line'>17716ec0f1ff5c77eff40b7fe912f9f6cfd0e475
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Sau đó, chúng ta sử dụng lệnh <code>git cat-file</code> đẻ duyệt qua từng commit và lấy nội dụng của commit message.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
 <span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'> <span class="kd">public</span> <span class="nf">Book</span><span class="o">(</span><span class="n">String</span> <span class="n">title</span><span class="o">,</span> <span class="n">String</span> <span class="n">author</span><span class="o">,</span> <span class="n">Genre</span> <span class="n">genre</span><span class="o">,</span> <span class="n">GregorianCalendar</span> <span class="n">publishDate</span><span class="o">,</span> <span class="n">String</span> <span class="n">ISBN</span><span class="o">)</span>
-</span><span class='line'>  <span class="o">{</span>
-</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">title</span> <span class="o">=</span> <span class="n">title</span><span class="o">;</span>
-</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">author</span> <span class="o">=</span> <span class="n">author</span><span class="o">;</span>
-</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">genre</span> <span class="o">=</span> <span class="n">genre</span><span class="o">;</span>
-</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">publishDate</span> <span class="o">=</span> <span class="n">publishDate</span><span class="o">;</span>
-</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">ISBN</span> <span class="o">=</span> <span class="n">ISBN</span><span class="o">;</span>
-</span><span class='line'>  <span class="o">}</span>
-</span></code></pre></td></tr></table>
+</pre>
+</td>
+<td class="code">
+<pre><code class='bash'><span class='line'><span class="nv">$ </span>git cat-file commit ca82a6
+</span><span class='line'>tree cfda3bf379e4f8dba8717dee55aab78aef7f4daf
+</span><span class='line'>parent 085bb3bcb608e1e8451d4b2432f8ecbe6306e7e7
+</span><span class='line'>author kiennt &lt;kiennt@gmail.com&gt; 1205815931 -0700
+</span><span class='line'>committer kiennt &lt;schacon@gmail.com&gt; 1240030591 -0700
+</span><span class='line'>
+</span><span class='line'>Add new post about githook
+</span></code></pre>
+</td>
+</tr>
+</table>
 </div>
 </figure>
 </notextile>
 </div>
-<p>Và trong chương trình, để tạo một object Book, ta gọi:</p>
+<p>Cách đơn giản để lấy commit message từ một commit là khi có SHA-1 , chúng ta xác định dòng blank đầu tiên và lấy tất cả phần đằng sau nó. Chúng ta có thể sử dụng <code>sed</code> để làm điều này</p>
 <div class="bogus-wrapper">
 <notextile>
-<figure class='code'><figcaption>
-<span>constructor.java </span>
-</figcaption>
- 
+<figure class="code">
 <div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">Book</span> <span class="n">book2</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Book</span><span class="o">(</span><span class="s">&quot;Core Java&quot;</span><span class="o">,</span> <span class="s">&quot;Cay Horstman&quot;</span><span class="o">,</span> <span class="n">Genre</span><span class="o">.</span><span class="na">TECHNOLOGY</span><span class="o">,</span> <span class="k">new</span> <span class="n">GregorianCalendar</span><span class="o">(</span><span class="mi">2012</span><span class="o">,</span><span class="mi">12</span><span class="o">,</span><span class="mi">7</span><span class="o">),</span> <span class="s">&quot;0137081898&quot;</span><span class="o">);</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Ta thấy, với cách tạo object như trên, có một số nhược điểm như sau:</p>
-<ul>
-<li><p>Ta bắt buộc phải khai báo tất cả các parameters, không có giá trị default. Ta sẽ bị buộc phải set cả những parameters mà ta không quan tâm khi thực hiện test object.</p></li>
-<li><p>Đoạn code khá khó hiểu khi ta chỉ khai báo giá trị của parameter và truyền vào constructor. Người đọc sẽ phải đếm vị trí của parameters, soi vào trong khai báo constructor của Book.java để biết giá trị này là gán cho parameter nào. Với ví dụ trên, chỉ có 5 parameter, nhưng với những class phức tạp có nhiều parameters hơn nữa, việc khai báo như trên rõ ràng không tốt về mặt code visibility.</p></li>
-<li><p>Xuất hiện nhu cầu tạo object với các constructor với bộ tham số đầu vào khác nhau. Như ví dụ ở trên, ta muốn tạo object nhưng không muốn nhập thể loại, hoặc không muốn nhập năm xuất bản, … dẫn đến rất nhiều phiên bản constructor khác nhau.</p></li>
-</ul>
-<p>Hoặc bạn có thể khai báo theo một cách thứ hai, theo kiểu JavaBean như sau: tạo một constructor default, không đối số, ví dụ như Book(), sau đó thì tạo một loạt các setter để nhập các tham số cho parameter. Lúc đó thì code cho từng đối tượng sẽ như sau:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>bean.java </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">Book</span> <span class="n">book</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Book</span><span class="o">();</span>
-</span><span class='line'><span class="n">book</span><span class="o">.</span><span class="na">setTitle</span><span class="o">(</span><span class="s">&quot;Core Java&quot;</span><span class="o">);</span>
-</span><span class='line'><span class="n">book</span><span class="o">.</span><span class="na">setAuthor</span><span class="o">(</span><span class="s">&quot;Cay Horstman&quot;</span><span class="o">);</span>
-</span><span class='line'><span class="n">book</span><span class="o">.</span><span class="na">setGenre</span><span class="o">(</span><span class="n">Genre</span><span class="o">.</span><span class="na">Technology</span><span class="o">);</span>
-</span><span class='line'><span class="n">book</span><span class="o">.</span><span class="na">setPublishDate</span><span class="o">(</span><span class="k">new</span> <span class="n">GregorianCalendar</span><span class="o">(</span><span class="mi">2012</span><span class="o">,</span><span class="mi">7</span><span class="o">,</span><span class="mi">1</span><span class="o">));</span>
-</span><span class='line'><span class="n">book</span><span class="o">.</span><span class="na">setISBN</span><span class="o">(</span><span class="s">&quot;0137081898&quot;</span><span class="o">);</span>
-</span></code></pre></td></tr></table>
+</pre>
+</td>
+<td class="code">
+<pre><code class='bash'><span class='line'><span class="nv">$ </span>git cat-file commit ca82a6 | sed <span class="s1">&#39;1,/^$/d&#39;</span>
+</span><span class='line'>Add new post about githook
+</span></code></pre>
+</td>
+</tr>
+</table>
 </div>
 </figure>
 </notextile>
 </div>
-<p>Nhưng cách này lại có nhược điểm là: vì việc tạo object bị kéo dài qua nhiều câu lệnh, có thể object sẽ bị rơi vào trạng thái unstable (ví dụ như ta quên mất set publishDate, như thế book sẽ không có giá trị cho publishDate !).</p>
-<p>Để khắc phục những nhược điểm trên, có một phương pháp sử dụng Builder pattern như sau: Thay vì tạo object mong muốn trực tiếp, ta gọi một static factory với các tham số bắt buộc, nhận về một <em>builder object</em>. Sau đó gọi các setter method dể đặt các tham số tùy chọn. Cuối cùng gọi build method, tạo ra object. Để dễ hiểu hơn, ta quan sát ví dụ sau:</p>
+<p>Sau đây là toàn bộ đoạn code ruby để hoàn thành tác vụ trên</p>
 <div class="bogus-wrapper">
 <notextile>
-<figure class='code'><figcaption>
-<span>builder.java </span>
+<figure class="code">
+<figcaption>
+<span>update </span>
 </figcaption>
- 
 <div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -214,158 +266,40 @@ Builder Pattern là &hellip;">
 <span class='line-number'>17</span>
 <span class='line-number'>18</span>
 <span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-<span class='line-number'>64</span>
-<span class='line-number'>65</span>
-<span class='line-number'>66</span>
-<span class='line-number'>67</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Book</span> <span class="o">{</span>
-</span><span class='line'>  <span class="kd">public</span> <span class="kd">enum</span> <span class="n">Genre</span> <span class="o">{</span><span class="n">FICTION</span><span class="o">,</span> <span class="n">NONFICTION</span><span class="o">,</span> <span class="n">TECHNOLOGY</span><span class="o">,</span> <span class="n">SELFHELP</span><span class="o">,</span> <span class="n">BUSINESS</span><span class="o">,</span> <span class="n">SPORT</span><span class="o">};</span>
-</span><span class='line'>  
-</span><span class='line'>  <span class="kd">private</span> <span class="n">String</span> <span class="n">title</span><span class="o">;</span>
-</span><span class='line'>  <span class="kd">private</span> <span class="n">String</span> <span class="n">author</span><span class="o">;</span>
-</span><span class='line'>  <span class="kd">private</span> <span class="n">Genre</span> <span class="n">genre</span><span class="o">;</span>
-</span><span class='line'>  <span class="kd">private</span> <span class="n">GregorianCalendar</span> <span class="n">publishDate</span><span class="o">;</span>
-</span><span class='line'>  <span class="kd">private</span> <span class="n">String</span> <span class="n">ISBN</span><span class="o">;</span>
-</span><span class='line'>  
-</span><span class='line'>  <span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">Builder</span>
-</span><span class='line'>  <span class="o">{</span>
-</span><span class='line'>      <span class="c1">//required params</span>
-</span><span class='line'>      <span class="kd">private</span> <span class="n">String</span> <span class="n">title</span><span class="o">;</span>
-</span><span class='line'>      <span class="kd">private</span> <span class="n">String</span> <span class="n">author</span><span class="o">;</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="c1">//optional params</span>
-</span><span class='line'>      <span class="kd">private</span> <span class="n">Genre</span> <span class="n">genre</span> <span class="o">=</span> <span class="n">Genre</span><span class="o">.</span><span class="na">FICTION</span><span class="o">;</span>
-</span><span class='line'>      <span class="kd">private</span> <span class="n">GregorianCalendar</span> <span class="n">publishDate</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GregorianCalendar</span><span class="o">(</span><span class="mi">1900</span><span class="o">,</span><span class="mi">1</span><span class="o">,</span><span class="mi">1</span><span class="o">);</span>
-</span><span class='line'>      <span class="kd">private</span> <span class="n">String</span> <span class="n">ISBN</span> <span class="o">=</span> <span class="s">&quot;000000000&quot;</span><span class="o">;</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="kd">public</span> <span class="nf">Builder</span><span class="o">(</span><span class="n">String</span> <span class="n">title</span><span class="o">,</span> <span class="n">String</span> <span class="n">author</span><span class="o">)</span>
-</span><span class='line'>      <span class="o">{</span>
-</span><span class='line'>          <span class="k">this</span><span class="o">.</span><span class="na">title</span> <span class="o">=</span> <span class="n">title</span><span class="o">;</span>
-</span><span class='line'>          <span class="k">this</span><span class="o">.</span><span class="na">author</span> <span class="o">=</span> <span class="n">author</span><span class="o">;</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="kd">public</span> <span class="n">Builder</span> <span class="nf">genre</span> <span class="o">(</span><span class="n">Genre</span> <span class="n">val</span><span class="o">)</span>
-</span><span class='line'>      <span class="o">{</span>
-</span><span class='line'>          <span class="k">this</span><span class="o">.</span><span class="na">genre</span> <span class="o">=</span> <span class="n">val</span><span class="o">;</span>
-</span><span class='line'>          <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="kd">public</span> <span class="n">Builder</span> <span class="nf">publishDate</span><span class="o">(</span><span class="n">GregorianCalendar</span> <span class="n">val</span><span class="o">)</span>
-</span><span class='line'>      <span class="o">{</span>
-</span><span class='line'>          <span class="k">this</span><span class="o">.</span><span class="na">publishDate</span> <span class="o">=</span> <span class="n">val</span><span class="o">;</span>
-</span><span class='line'>          <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="kd">public</span> <span class="n">Builder</span> <span class="nf">ISBN</span><span class="o">(</span><span class="n">String</span> <span class="n">val</span><span class="o">)</span>
-</span><span class='line'>      <span class="o">{</span>
-</span><span class='line'>          <span class="k">this</span><span class="o">.</span><span class="na">ISBN</span> <span class="o">=</span> <span class="n">val</span><span class="o">;</span>
-</span><span class='line'>          <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="kd">public</span> <span class="n">Book</span> <span class="nf">build</span><span class="o">()</span>
-</span><span class='line'>      <span class="o">{</span>
-</span><span class='line'>          <span class="k">return</span> <span class="k">new</span> <span class="nf">Book</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'>  
-</span><span class='line'>  <span class="kd">public</span> <span class="nf">Book</span><span class="o">(</span><span class="n">Builder</span> <span class="n">builder</span><span class="o">)</span>
-</span><span class='line'>  <span class="o">{</span>
-</span><span class='line'>      <span class="n">title</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="na">title</span><span class="o">;</span>
-</span><span class='line'>      <span class="n">author</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="na">author</span><span class="o">;</span>
-</span><span class='line'>      <span class="n">genre</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="na">genre</span><span class="o">;</span>
-</span><span class='line'>      <span class="n">publishDate</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="na">publishDate</span><span class="o">;</span>
-</span><span class='line'>      <span class="n">ISBN</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="na">ISBN</span><span class="o">;</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'>  
-</span><span class='line'>  <span class="nd">@Override</span>
-</span><span class='line'>  <span class="kd">public</span> <span class="n">String</span> <span class="nf">toString</span><span class="o">()</span>
-</span><span class='line'>  <span class="o">{</span>
-</span><span class='line'>      <span class="k">return</span> <span class="s">&quot;Title: &quot;</span> <span class="o">+</span> <span class="n">title</span> <span class="o">+</span> <span class="s">&quot;, author: &quot;</span> <span class="o">+</span> <span class="n">author</span> <span class="o">+</span> <span class="s">&quot;, genre: &quot;</span> <span class="o">+</span> <span class="n">genre</span><span class="o">.</span><span class="na">toString</span><span class="o">()</span> <span class="o">+</span> <span class="s">&quot;, publish year: &quot;</span>
-</span><span class='line'>                  <span class="o">+</span> <span class="n">publishDate</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">Calendar</span><span class="o">.</span><span class="na">YEAR</span><span class="o">)</span> <span class="o">+</span> <span class="s">&quot;, ISBN: &quot;</span> <span class="o">+</span> <span class="n">ISBN</span><span class="o">;</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'>  
-</span><span class='line'><span class="o">}</span>
-</span></code></pre></td></tr></table>
+</pre>
+</td>
+<td class="code">
+<pre><code class='ruby'><span class='line'><span class="c1">#!/usr/bin/env ruby</span>
+</span><span class='line'>
+</span><span class='line'><span class="vg">$refname</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span>
+</span><span class='line'><span class="vg">$oldrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span>
+</span><span class='line'><span class="vg">$newrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span>
+</span><span class='line'><span class="vg">$regex</span> <span class="o">=</span> <span class="sr">/\[ref: (\d+)\]/</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># enforced custom commit message format</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">check_message_format</span>
+</span><span class='line'>  <span class="n">missed_revs</span> <span class="o">=</span> <span class="sb">`git rev-list </span><span class="si">#{</span><span class="vg">$oldrev</span><span class="si">}</span><span class="sb">..</span><span class="si">#{</span><span class="vg">$newrev</span><span class="si">}</span><span class="sb">`</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">missed_revs</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">rev</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">message</span> <span class="o">=</span> <span class="sb">`git cat-file commit </span><span class="si">#{</span><span class="n">rev</span><span class="si">}</span><span class="sb"> | sed &#39;1,/^$/d&#39;`</span>
+</span><span class='line'>    <span class="k">if</span> <span class="o">!</span><span class="vg">$regex</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+</span><span class='line'>      <span class="nb">puts</span> <span class="s2">&quot;[POLICY] Your message is not formatted correctly&quot;</span>
+</span><span class='line'>      <span class="nb">exit</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="n">check_message_format</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
 </div>
 </figure>
 </notextile>
 </div>
-<p>Lúc đó ta có thể tạo Book object bằng cách sau:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>builder.java </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'>     <span class="n">Book</span> <span class="n">book</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Book</span><span class="o">.</span><span class="na">Builder</span><span class="o">(</span><span class="s">&quot;Effective Java&quot;</span><span class="o">,</span> <span class="s">&quot;Joshua Bloch&quot;</span><span class="o">)</span>
-</span><span class='line'>                      <span class="o">.</span><span class="na">publishDate</span><span class="o">(</span><span class="k">new</span> <span class="n">GregorianCalendar</span><span class="o">(</span><span class="mi">2008</span><span class="o">,</span><span class="mi">05</span><span class="o">,</span> <span class="mi">28</span><span class="o">))</span>
-</span><span class='line'>                      <span class="o">.</span><span class="na">build</span><span class="o">();</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Ta thấy, cách tạo object này có ưu điểm hơn so với cách dùng constructor thông thường:</p>
-<ul>
-<li><p>Không cần phải khai báo những parameter nào mà ta tạm thời chưa quan tâm. Những parameters đó sẽ nhận giá trị default. Trong ví dụ trên, ta đã bỏ qua khai báo cho genre và ISBN. Chúng sẽ nhận giá trị default: genre = FICTION, ISBN = “0000000000”.</p></li>
-<li>Ta thấy rõ là giá trị nào là gán cho parameter nào. Ví dụ: publishDate(new GregorianCalendar(2008,05, 28)) là gán giá trị cho parameter ngày xuất bản.</li>
-<li><p>Thứ tự của các method là không quan trọng. Ta có thể gọi các method để update thêm các giá trị cho các parameter theo thứ tự tùy ý. Object sẽ chưa được tạo cho đến khi gọi build(). Do vậy, builder rất dễ sử dụng và giúp ta tránh khỏi những sai lầm không mong muốn đối với thứ tự parameter.</p></li>
-</ul>
 <h1 id="kết-luận">Kết luận</h1>
-<p>Bài viết đã giới thiệu cách sử dụng Builder Pattern để việc tạo object trong quá trinh test được dễ dàng hơn, đồng thời khiến đoạn code được sáng sủa hơn về mặt trình bày.</p>
+<p>Qua 2 bài viết về githook, bạn đã nắm được phần nào các hooks trong git, và các ứng dụng liên quan đến chúng. Giờ bạn có thể sử dụng githook để tạo nên workflow phù hợp nhất với git cho project của mình</p>
 <h1 id="tham-khảo">Tham khảo</h1>
-<ul>
-<li><p>Effective Java - Joshua Bloch</p></li>
-<li><p>Design Patterns - Elements of Reusable</p></li>
-</ul>
+<p><a href="http://git-scm.com/book/en/Customizing-Git-Git-Hooks">Githook documentation</a> <a href="http://git-scm.com/book/en/Customizing-Git-An-Example-Git-Enforced-Policy">Customizing Git</a></p>
 		
 		
 	</div>
@@ -387,64 +321,219 @@ Builder Pattern là &hellip;">
   
 
 
-<time datetime="2013-06-09T21:15:00+09:00" data-updated="true" itemprop="datePublished">Jun 9<span>th</span>, 2013</time></div>
+<time datetime="2013-07-06T16:44:00+09:00" data-updated="true" itemprop="datePublished">Jul 6<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/programming/'>programming</a>, <a class='category' href='/blog/categories/python/'>python,</a>
+	<a class='category' href='/blog/categories/ios/'>iOS</a>, <a class='category' href='/blog/categories/iphone/'>iPhone</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/06/09/xay-dung-he-thong-sinh-64bit-unique-id/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/07/06/tu-tao-uitableviewcell/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/09/xay-dung-he-thong-sinh-64bit-unique-id/" itemprop="url">Giới Thiệu Một Số Phương Pháp Sinh 64 Bit Unique ID</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/07/06/tu-tao-uitableviewcell/" itemprop="url">Tự tạo UITableViewCell</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h1 id="bài-toán-sinh-unique-id">Bài toán sinh unique ID</h1>
-<p>Unique ID được sử dụng để phân biệt các đối tượng khác nhau. Ví dụ primary key là một unique key đặc biệt dùng để phân biệt các row trong table.</p>
-<p>Bài viết giới thiệu một số phương pháp sinh 64 bit unique ID.</p>
-<h1 id="một-số-giải-pháp-sinh-unique-id">Một số giải pháp sinh unique ID</h1>
-<ul>
-<li>Nếu số lượng dữ liệu nhỏ, ta có thể sử dụng ID kiểu Integer và set cho nó thuộc tính auto increment.</li>
-</ul>
-<p>Ưu điểm: đơn giản, dễ làm.</p>
-<p>Nhược điểm: số lượng ID bị giới hạn (2 ^ 32 = 4294967296) và đặc biệt cách làm này không scale. Để đảm bảo tính duy nhất, tại một thời điểm, chỉ có thể sinh ra đúng một ID mà thôi.</p>
-<ul>
-<li>Sử dụng <a href="http://en.wikipedia.org/wiki/Uuid">UUID</a> - UUID là một giá trị 128bit, tuỳ vào thuật toán xây dựng UUID, có thể dựa trên Mac Address của máy.</li>
-</ul>
-<p>Ưu điểm: scalable, distributed. Tại một thời điểm có thể sinh ra nhiều ID khác nhau, thậm chí client cũng có thể sinh ID mà vẫn đảm bảo không bị trùng lặp với server</p>
-<p>Nhược điểm: sử dụng 128 bit, một số hệ thống phải lưu trữ dưới dạng char, tốn tài nguyên và index</p>
-<p>64 bit unique ID trùng hoà giữa 2 cách trên, đảm bảo số lượng ID sinh ra là đủ lớn, đồng thời có thể lưu trữ dưới dạng dạng Big Int</p>
-<h1 id="một-số-phương-pháp-sinh-64-bit-unique-id">Một số phương pháp sinh 64 bit unique ID</h1>
-<ol type="1">
-<li>Twitter <a href="https://github.com/twitter/snowflake/">snowflake</a> Snowflake là thrift service sử dụng Apache ZooKeeper để liên kết các node và sinh ra 64bit unique ID. Mỗi node là một worker, các worker được đánh số khác nhau</li>
-</ol>
-<p>ID được sinh ra theo công thức</p>
-<ul>
-<li>time - 42bit (được tính bằng epoch)</li>
-<li>worker id - 10 bit (số worker có thể lên đến 1024)</li>
-<li>sequence number - 12 bit (number được tăng liên tiếp, đảm bảo tại một thời điểm, mỗi worker có thể sinh được 4096 ID)</li>
-</ul>
-<p>Ở phần tiếp theo, chúng ta sẽ implement thuật một service sử dụng thuật toán trên để sinh ID</p>
-<ol start="2" type="1">
-<li><a href="http://instagram-engineering.tumblr.com/post/10853187575/sharding-ids-at-instagram">Instagram 64bt ID</a></li>
-</ol>
-<p>Instagram sinh ID dựa vào posgresql schema. Thuật toán sinh ID tương tự như snowflake, mỗi ID 64 bit bao gồm</p>
-<ul>
-<li>time - 41 bit (time epoch)</li>
-<li>shard_id - 13 bit (so shard id lên tới 8192)</li>
-<li>sequence number - 10 bit</li>
-</ul>
-<h1 id="implement-thuật-toán-sinh-64-bit-uniqueid-của-snowflake-bằng-python">Implement thuật toán sinh 64 bit uniqueID của snowflake bằng python</h1>
+		<p>UITableView là 1 trong những control được sử dụng nhiều nhất trong các ứng dụng iOS. Tuy nhiên, các kiểu cơ bản của UITableViewCell có rất nhiều hạn chế cho người sử dụng bởi vì sự đơn giản của nó. Trong bài viết này, tôi sẽ hướng dẫn các bạn tạo ra tuỳ chỉnh 1 UITableViewCell của riêng mình.</p>
+<p>Trong bài viết này, chúng ta sẽ tạo ra 1 Table View Cell đơn giản chứa 1 tiêu đề, 1 button và 1 switcher. Bạn hoàn toàn có thể thay thế các thành phần này theo mục đích riêng của mình.</p>
+<p>Trước hết, hãy tạo 1 class mới kế thừa từ UITableViewCell, tạm gọi là CustomTableCell. Tiếp theo, tạo 1 file xib mới đặt tên trùng với 2 file class đã tạo: New -&gt; File -&gt; User Interface -&gt; View</p>
+<p><img src="/images/CustomCell/new_xib.png"></p>
+<p>Trên file xib, hãy xoá đi View hiện tại và kéo vào 1 UITableViewCell từ panel bên phải vào:</p>
+<p><img src="/images/CustomCell/pull_xib.png"></p>
+<p>Sau đó, hãy kéo các thành phần bạn muốn vào trong view này, trong ví dụ này là 1 UILabel, 1 UIButton, 1 Switch.</p>
+<p>Tiếp theo chúng ta phải khai báo class cho file xib này. Bấm vào View và chuyển sang tab Identity inspector của panel bên phải, mục Custom Class đặt tên là CustomTableCell (tên của class chúng ta vừa kế thừa từ UITableViewCell):</p>
+<p><img src="/images/CustomCell/class_name.png"></p>
+<p>Mỗi UITableViewCell đều có 1 định danh để có thể sử dụng lại trong 1 TableView. Chúng ta có thể set trường này trong tab Attributes inspector của panel bên phải trong mục Identifier. Đặt 1 id bất kỳ cho trường này, trong ví dụ là “CustomIdentifier”:</p>
+<p><img src="/images/CustomCell/name_iden.png"></p>
+<p>Vẫn ở tab Identity Inspector này, bấm vào File’s Owner ở panel bên trái, mục custom class đặt tên là UIViewController. Điều này có thể hiểu nôm na là chúng ta sẽ khởi tạo CustomTableCell từ 1 UIViewController:</p>
+<p><img src="/images/CustomCell/owner_name.png"></p>
+<p>Bước tiếp theo là kéo Outlet cho các thành phần của View. Bấm vào File’s Owner rồi chuyển sang tab Connections inspector của pannel bên phải, kéo Outlet View vào Custom Table Cell ở panel bên trái. Điều này giúp kết nối file xib của bạn với class định nghĩa trong file h, m</p>
+<p><img src="/images/CustomCell/outlet_view.png"> Để sử dụng được label, button và switch trên table cell, chúng ta phải khai báo Outlet trong file .h bằng đoạn code:</p>
 <div class="bogus-wrapper">
 <notextile>
-<figure class='code'><figcaption>
-<span>flake.py </span>
-</figcaption>
- 
+<figure class="code">
 <div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='objc'><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="n">nonatomic</span><span class="p">,</span> <span class="n">unsafe_unretained</span><span class="p">)</span> <span class="kt">IBOutlet</span> <span class="n">UILabel</span> <span class="o">*</span><span class="n">nameLabel</span><span class="p">;</span>
+</span><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="n">nonatomic</span><span class="p">,</span> <span class="n">unsafe_unretained</span><span class="p">)</span> <span class="kt">IBOutlet</span> <span class="n">UISwitch</span> <span class="o">*</span><span class="n">switcher</span><span class="p">;</span>
+</span><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="n">nonatomic</span><span class="p">,</span> <span class="n">unsafe_unretained</span><span class="p">)</span> <span class="kt">IBOutlet</span> <span class="n">UIButton</span> <span class="o">*</span><span class="n">aButton</span><span class="p">;</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Sau đó, chuyển sang file xib, bấm vào Custom Table Cell ở panel bên trái, bấm vào Connections Inspector tab ở panel bên phải rồi kéo outlet vào các thành phần của view:</p>
+<p><img src="/images/CustomCell/outlet_component.png"></p>
+<p>Vậy là đã xong các bước cài đặt cho Custom Table Cell. Tiếp đến là sử dụng TableCell này như thế nào. Hãy cùng so sánh 2 đoạn code của hàm -(UITableViewCell <em>)tableView:(UITableView </em>)tableView_ cellForRowAtIndexPath:(NSIndexPath *)indexPath:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='objc'><span class='line'><span class="k">static</span> <span class="n">NSString</span> <span class="o">*</span><span class="n">identifier</span> <span class="o">=</span> <span class="s">@&quot;NormalCell&quot;</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">UITableViewCell</span> <span class="o">*</span><span class="n">cell</span> <span class="o">=</span> <span class="p">[</span><span class="n">tableView</span> <span class="nl">dequeueReusableCellWithIdentifier:</span><span class="n">identifier</span><span class="p">];</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">cell</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">cell</span> <span class="o">=</span> <span class="p">[[</span><span class="n">UITableViewCell</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithStyle:</span><span class="n">UITableViewCellStyleDefault</span> <span class="nl">reuseIdentifier:</span><span class="n">identifier</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">cell</span><span class="p">;</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='objc'><span class='line'><span class="k">static</span> <span class="n">NSString</span> <span class="o">*</span><span class="n">identifier</span> <span class="o">=</span> <span class="s">@&quot;CustomIdentifier&quot;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">CustomTableCell</span> <span class="o">*</span><span class="n">cell</span> <span class="o">=</span> <span class="p">[</span><span class="n">tableView</span> <span class="nl">dequeueReusableCellWithIdentifier:</span><span class="n">identifier</span><span class="p">];</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">cell</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">UIViewController</span> <span class="o">*</span><span class="n">tempVC</span> <span class="o">=</span> <span class="p">[[</span><span class="n">UIViewController</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithNibName:</span><span class="s">@&quot;CustomTableCell&quot;</span> <span class="nl">bundle:</span><span class="nb">nil</span><span class="p">];</span>
+</span><span class='line'>        <span class="n">cell</span> <span class="o">=</span> <span class="p">(</span><span class="n">CustomTableCell</span> <span class="o">*</span><span class="p">)</span><span class="n">tempVC</span><span class="p">.</span><span class="n">view</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="k">return</span> <span class="n">cell</span><span class="p">;</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Đoạn code đầu tiên là cách khởi tạo UITableViewCell bình thường. Cách thứ 2 là khởi tạo CustomTableCell. Hãy chú ý là identifier được sử dụng chính là identifier chúng ta đã đặt trong file xib, và biến này phải được để là static. Tại vì sao lại để là static thì tôi sẽ đề cập trong 1 bài viết khác.</p>
+<p>Sau khi khởi tạo Cell xong, chúng ta có thể tuỳ chỉnh nó, như trong ví dụ:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='objc'><span class='line'><span class="c1">// Set up cell</span>
+</span><span class='line'>    <span class="n">cell</span><span class="p">.</span><span class="n">nameLabel</span><span class="p">.</span><span class="n">text</span> <span class="o">=</span> <span class="p">[</span><span class="n">NSString</span> <span class="nl">stringWithFormat:</span><span class="s">@&quot;Cell %d&quot;</span><span class="p">,</span> <span class="n">indexPath</span><span class="p">.</span><span class="n">row</span><span class="p">];</span>
+</span><span class='line'>    <span class="n">cell</span><span class="p">.</span><span class="n">switcher</span><span class="p">.</span><span class="n">on</span> <span class="o">=</span> <span class="n">indexPath</span><span class="p">.</span><span class="n">row</span> <span class="o">%</span> <span class="mi">2</span><span class="p">;</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Vậy là xong. Hãy viết nốt đoạn code cho TableView và đây là kết quả cuối cùng:</p>
+<p><img src="/images/CustomCell/final.png" width="320" height="480"></p>
+<p>Toàn bộ code của ví dụ bạn có thể download ở đây https://github.com/toandk/Custom-UITableViewCell</p>
+		
+		
+	</div>
+
+</article>
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-04T06:20:00+09:00" data-updated="true" itemprop="datePublished">Jul 4<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/database/'>Database</a>, <a class='category' href='/blog/categories/oracle/'>Oracle</a>, <a class='category' href='/blog/categories/plsql/'>PLSQL</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/07/04/gioi-thieu-mot-so-object-cua-oracle-2/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/07/04/gioi-thieu-mot-so-object-cua-oracle-2/" itemprop="url">Giới Thiệu Một Số Object Của Oracle - Phần 2</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h2 id="tổng-quan-về-oracle-và-những-điểm-mạnh">Tổng quan về Oracle và những điểm mạnh</h2>
+<p>Như đã giới thiệu với độc giả từ bài viết trước. Oracle là hệ cơ sở dữ liệu có nhiều object tiện dụng được chuẩn bị sẵn, và những hỗ trợ mạnh mẽ từ các công cụ trên top của tầng RDBMS.</p>
+<p>Bài viết lần này sẽ giới thiệu tiếp về những object còn lại, và về chính ngôn ngữ của Oracle DB : PL/SQL</p>
+<h2 id="materialized-view-log">MATERIALIZED VIEW LOG</h2>
+<p>MATERIALIZED VIEW LOG là object bắt buộc phải có nếu bạn lựa chọn chiến lược FAST REFRESH của object MATERIALIZED VIEW trong bài trước. Chúng ta sẽ nhắc lại 1 chút về chiến lược REFRESH của object MATERIALZED VIEW.</p>
+<p>MATERIALIZED VIEW có 3 kiểu REFRESH sau:</p>
+<ul>
+<li>COMPLETE: REFRESH mới hoàn toàn, Oracle sẽ query lại và tính toán lại, Nếu Table chứa lượng data lớn và việc tính toán mất nhiều thời gian thì mỗi lần COMPLETE REFRESH sẽ tốn nhiều thời gian,</li>
+<li>FAST: REFRESH những phần mới từ lần gần đây nhất. thời gian cho mỗi lần FAST REFRESH sẽ được rút ngắn tối thiểu.</li>
+<li>FORCE: là default của REFRESH. Oracle sẽ cố FAST REFRESH, và nếu không được thì sẽ COMPLETE REFRESH</li>
+</ul>
+<p>Bạn có thể hình dung mỗi lần Oracle tính toán và ra kết quả cho MATERIALZED VIEW, bạn sẽ có 1 snapshot. Đến lần sau khi FAST REFRESH bạn sẽ update laị kết quả từ last snapshot lần trước. Tất nhiên cái giá phải trả cho việc có được thời gian REFRESH ngắn là sẽ mất thêm dung lượng đĩa cứng để lưu các snapshot ! Tuy nhiên để application chạy được smoothly hết mức có thể thì tốc độ luôn là ưu tiên hàng đầu :D</p>
+<p>Vậy snapshot (hay là change log) của MATERIALZED VIEW là gì ? Chúng ta đang nói đến object đề cập ở bên trên: MATERIALIZED VIEW LOG</p>
+<p>Cần lưu ý là COMPLETE hay FAST là phương pháp REFRESH (how). Còn thời điểm REFRESH (when) sẽ định nghĩa khi nào thì MATERIALZIED VIEW được REFRESH. Có 2 mode cơ bản là manually (ON DEMAND) và automatically (ON COMMIT, DBMS_JOB). ON DEMAND là khi nào bạn (user) ra lệnh REFRESH, ON COMMIT là khi nào MATERIALZED bị thay đổi (COMMIT), còn DBMS_JOB là cho REFRESH thành 1 job được đặt lịch sẵn (giống như cron của Unix system :D)</p>
+<p>MATERIALIZED còn có nhiều điểm cần lưu ý khi áp dụng cụ thể. Bài viết chỉ trình bày những khái niệm cơ bản nhất. Bạn có thể xem thêm các restriction và cách create cụ thể tại <a href="http://docs.oracle.com/cd/E11882_01/server.112/e10706/repmview.htm">Oracle Doc</a></p>
+<h2 id="trigger">TRIGGER</h2>
+<p>Nếu bạn đã biết TRIGGER trong MySQL thì sẽ không thấy lạ lẫm với obejct này. TRIGGER về cơ bản là để định nghĩa các action tự động khi có 1 event xảy ra.</p>
+<p>Ví dụ: Khi bạn có table Users và 2 table Students, Teachers. Bạn muốn khi 1 User mới được INSERT vào table Users, có thể phán đoán dựa theo conđition để cùng insert vào table Students hoặc Teachers</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>materialized_view.sql </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -467,253 +556,69 @@ Builder Pattern là &hellip;">
 <span class='line-number'>21</span>
 <span class='line-number'>22</span>
 <span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-<span class='line-number'>64</span>
-<span class='line-number'>65</span>
-<span class='line-number'>66</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="kn">import</span> <span class="nn">simplejson</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">sys</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">tornado.httpserver</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">tornado.ioloop</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">tornado.options</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">tornado.web</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sql'><span class='line'><span class="k">CREATE</span> <span class="k">OR</span> <span class="k">REPLACE</span> <span class="k">TRIGGER</span> <span class="n">teacher_trigger</span>
+</span><span class='line'>   <span class="k">BEFORE</span> <span class="k">INSERT</span>
+</span><span class='line'>   <span class="k">ON</span> <span class="n">USERS</span>
+</span><span class='line'>   <span class="k">FOR</span> <span class="k">EACH</span> <span class="k">ROW</span>
+</span><span class='line'>   <span class="k">WHEN</span> <span class="p">(</span><span class="k">NEW</span><span class="p">.</span><span class="n">FIELD1</span><span class="o">=</span> <span class="s1">&#39;TEACHER_CONDITION&#39;</span><span class="p">)</span> <span class="c1">-- Or any other condition</span>
+</span><span class='line'><span class="k">BEGIN</span>
 </span><span class='line'>
-</span><span class='line'><span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
-</span><span class='line'><span class="kn">from</span> <span class="nn">tornado.options</span> <span class="kn">import</span> <span class="n">define</span><span class="p">,</span> <span class="n">options</span>
+</span><span class='line'>    <span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">TEACHERS</span> <span class="p">(</span><span class="n">col1</span><span class="p">,</span> <span class="n">col2</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col1</span><span class="p">,</span> <span class="p">:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col2</span><span class="p">);</span>
 </span><span class='line'>
-</span><span class='line'><span class="n">define</span><span class="p">(</span><span class="s">&quot;port&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">8888</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;run on the given port&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-</span><span class='line'><span class="n">define</span><span class="p">(</span><span class="s">&quot;worker_id&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;globally unique worker_id between 0 and 1023&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+</span><span class='line'><span class="k">END</span><span class="p">;</span>
 </span><span class='line'>
+</span><span class='line'><span class="k">CREATE</span> <span class="k">OR</span> <span class="k">REPLACE</span> <span class="k">TRIGGER</span> <span class="n">student_trigger</span>
+</span><span class='line'>   <span class="k">AFTER</span> <span class="k">INSERT</span>
+</span><span class='line'>   <span class="k">ON</span> <span class="n">USERS</span>
+</span><span class='line'>   <span class="k">FOR</span> <span class="k">EACH</span> <span class="k">ROW</span>
+</span><span class='line'>   <span class="k">WHEN</span> <span class="p">(</span><span class="k">NEW</span><span class="p">.</span><span class="n">FIELD1</span><span class="o">=</span> <span class="s1">&#39;STUDENT_CONDITION&#39;</span><span class="p">)</span> <span class="c1">-- Or any other condition</span>
+</span><span class='line'><span class="k">BEGIN</span>
 </span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">IDHandler</span><span class="p">(</span><span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">RequestHandler</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">max_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="p">()</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">sequence</span> <span class="o">=</span> <span class="mi">0</span>
-</span><span class='line'>    <span class="n">worker_id</span> <span class="o">=</span> <span class="bp">False</span>
-</span><span class='line'>    <span class="n">epoch</span> <span class="o">=</span> <span class="mi">137079712900000</span> <span class="c"># 2013-06-09</span>
+</span><span class='line'>    <span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">STUDENTS</span> <span class="p">(</span><span class="n">col1</span><span class="p">,</span> <span class="n">col2</span><span class="p">,</span> <span class="n">col3</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col1</span><span class="p">,</span> <span class="p">:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col2</span><span class="p">,</span> <span class="p">:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col3</span><span class="p">);</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span class='line'>        <span class="n">curr_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="p">()</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
+</span><span class='line'><span class="k">END</span><span class="p">;</span>
 </span><span class='line'>
-</span><span class='line'>        <span class="k">if</span> <span class="n">curr_time</span> <span class="o">&lt;</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">max_time</span><span class="p">:</span>
-</span><span class='line'>            <span class="c"># stop handling requests til we&#39;ve caught back up</span>
-</span><span class='line'>            <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="s">&#39;Clock went backwards! </span><span class="si">%d</span><span class="s"> &lt; </span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">curr_time</span><span class="p">,</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">max_time</span><span class="p">))</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">if</span> <span class="n">curr_time</span> <span class="o">&gt;</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">max_time</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span> <span class="o">=</span> <span class="mi">0</span>
-</span><span class='line'>            <span class="n">IDHandler</span><span class="o">.</span><span class="n">max_time</span> <span class="o">=</span> <span class="n">curr_time</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span> <span class="o">+=</span> <span class="mi">1</span>
-</span><span class='line'>        <span class="k">if</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span> <span class="o">&gt;</span> <span class="mi">4095</span><span class="p">:</span>
-</span><span class='line'>            <span class="c"># Sequence overflow, bail out</span>
-</span><span class='line'>            <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="s">&#39;Sequence Overflow: </span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="n">generated_id</span> <span class="o">=</span> <span class="p">((</span><span class="n">curr_time</span> <span class="o">-</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">epoch</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">22</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">IDHandler</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">&lt;&lt;</span> <span class="mi">12</span><span class="p">)</span> <span class="o">+</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">set_header</span><span class="p">(</span><span class="s">&quot;Content-Type&quot;</span><span class="p">,</span> <span class="s">&quot;text/plain&quot;</span><span class="p">)</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">generated_id</span><span class="p">))</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span> <span class="c"># avoid ETag, etc generation</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
-</span><span class='line'>    <span class="n">tornado</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">parse_command_line</span><span class="p">()</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">if</span> <span class="s">&#39;worker_id&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
-</span><span class='line'>        <span class="k">print</span> <span class="s">&#39;missing --worker_id argument, see </span><span class="si">%s</span><span class="s"> --help&#39;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-</span><span class='line'>        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">options</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">&lt;</span> <span class="mi">1024</span><span class="p">:</span>
-</span><span class='line'>        <span class="k">print</span> <span class="s">&#39;invalid worker id, must be between 0 and 1023&#39;</span>
-</span><span class='line'>        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">IDHandler</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">worker_id</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">application</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">Application</span><span class="p">([</span>
-</span><span class='line'>        <span class="p">(</span><span class="s">r&quot;/&quot;</span><span class="p">,</span> <span class="n">IDHandler</span><span class="p">),</span>
-</span><span class='line'>    <span class="p">],</span> <span class="n">static_path</span><span class="o">=</span><span class="s">&quot;./static&quot;</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">http_server</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">httpserver</span><span class="o">.</span><span class="n">HTTPServer</span><span class="p">(</span><span class="n">application</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">http_server</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">port</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">tornado</span><span class="o">.</span><span class="n">ioloop</span><span class="o">.</span><span class="n">IOLoop</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
-</span><span class='line'>    <span class="n">main</span><span class="p">()</span>
-</span></code></pre></td></tr></table>
+</span><span class='line'><span class="o">/</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
 </div>
 </figure>
 </notextile>
 </div>
-<p>Đoạn code trên được trích từ repository <a href="https://github.com/formspring/flake/blob/master/flake.py">flake</a> Sử dụng <a href="http://www.tornadoweb.org/en/stable/">tornado</a> - Python web framework and asynchronous networking library, ở một thời điểm (độ chính xác tới millisecond), một node có thể handle được nhiều request, mỗi một request sẽ được trả về một số là ID được sinh ra. Số lượng ID được sinh ra bởi một node, tại một thời điểm bị giới hạn bởi 4096, nếu lớn hơn, request sẽ bị báo lỗi</p>
-<h1 id="kết-luận">Kết luận</h1>
-<p>Bài viết trình bày một số phương pháp sinh ID 64 bit, kèm code minh hoạ. Tuỳ vào hệ thống của bạn, bạn có thể sử dụng ID 64 bit cho những mục đích khác nhau. Ví dụ như đánh số tất cả các đối tượng trong database (giống như FB làm với graph API), hoặc sử dụng 64 bit ID như một bước đệm và áp dụng thêm một bước mã hoá để sinh ID cho một loại đối tượng (giống như youtube đánh số các video).</p>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-06-08T23:46:00+09:00" data-updated="true" itemprop="datePublished">Jun 8<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/html5/'>html5</a>, <a class='category' href='/blog/categories/introduction/'>introduction</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/06/08/playing-with-web-audio-api/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/08/playing-with-web-audio-api/" itemprop="url">Playing With Web Audio Api</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h3 id="web-audio-api-là-gì">Web audio api là gì?</h3>
-<p>Web audio api là là javascript API dành cho xử lý (processing) và tái tạo(synthesizing) âm thanh. Mới được ra đời vào thời gian gần đây (first draft vào 2011/05/12), mặc dù chưa được sử dụng nhiều ( do phần nhiều là chưa được support rộng rãi, tình trạng support các bạn có thể xem ở <a href="http://caniuse.com/audio-api">đây</a> ), nhưng cá nhân mình thấy web audio api có tiềm năng ứng dụng không nhỏ, nằm ở các lý do dưới đây:</p>
+<p>Bạn có thể thấy ở đoạn code trên, TRIGGER có thể được fire BEFORE hoặc AFTER event mà bạn định nghĩa. Event trong trường hợp này là INSERT vào table USERS, thuộc loại DML statements (INSERT, UPDATE, DELETE trong các table…). TRIGGER còn có thể fire on DDL statements (CREATE hoặc ALTER table …) và Database events (logon. logoff, startup, shutdown ..)</p>
+<h2 id="plsql-procedural-languagestructured-query-language-và-package-object">PL/SQL (Procedural Language/Structured Query Language) và PACKAGE Object</h2>
+<p>PL/SQL Là 1 procedutal programming language, trong khi SQL chỉ là declarative language. Điều đó có nghĩa bạn có thể viết PL/SQL giống như các ngôn ngữ phổ biến khác. PL/SQL cũng có variable, có try catch exception, có if-statement, loop, function, regex, convert, file reader … đẩy đủ các builtin function mà Oracle đã chuẩn bị sẵn. PL/SQL còn nắm lợi thế là thao tác trực tiếp với cursor, table, view, materialized view… các object của Database, remote action qua DB_LINK …</p>
+<p>Như vậy với năng lực của 1 ngôn ngữ hoàn chỉnh, cộng với khả năng tương tác với DB giống như SQL, PL/SQL được dùng để đóng gói xử lý trên DB server.</p>
+<p>Bạn có thể developer web application = Java, Ruby, PHP v.v… chỉ gọi đến DB thông qua các PACKAGE object. Mỗi PACKAGE (viết bằng PL/SQL) là 1 “gói” được viết như 1 module xử lỹ nội bộ trong Oracle DB. Ưu điểm của phương pháp này là tốc độ xử lý sẽ được cải thiện, và communication giữa Application server vs DB server (chỉ là truyền parameter cho PACKAGE và nhận lại result từ PACKAGE) được giảm thiểu.</p>
+<p>VD: với xử lý như sau:</p>
 <ul>
-<li>Web audio cung cấp api ở tầng cao, giúp cho việc xử lý âm thanh trở nên dễ dàng hơn rất nhiều, đặc biệt bạn không phải quan tâm nhiều đến những công đoạn như xử lý binary data, phân tích FFT, encode/decode, input/output.</li>
-<li>Engine để xử lý âm thanh của web audio api chạy trên một thread riêng biệt, chính vì thế một số xử lý nặng như convolve, filter sẽ không làm ảnh hưởng đến GUI thread, chính vì vậy bạn sẽ đỡ phải quan tâm nhiều đến việc phải xử lý thế nào cho nhẹ, hay cho không block UI.</li>
-<li>Việc xử lý âm thanh (đặc biệt là play vào thời điểm nào- timing control) là rất quan trọng với việc làm game. Xu hướng làm rich game trên browser ngày càng phát triển, khiến cho việc sử dụng và phát triên web audio api là không thể tránh khỏi.</li>
+<li>PHP validate 1 string ADD_ME và nhận 1 string UserId từ user input (trong request gửi đến web server)</li>
+<li>Nếu ADD_ME không tồn tại trong table USERS, insert 1 record mới vào table USERS</li>
+<li>Nếu ADD_ME = “teacher”, kiểm tra xem trong table TEACHERS có tồn tại UserID không</li>
+<li>Nếu trong table TEACHERS không có UserID, INSERT 1 record vào table TEACHERS</li>
+<li>Nếu ADD_ME = “student”, kiểm tra xem trong table STUDENTS có tồn tại UserID không</li>
+<li>Nếu trong table STUDENTS không có UserID, INSERT 1 record vào table STUDENTS … (Lặp lại n lần với n table khác nhau)</li>
 </ul>
-<p>Để tìm hiểu và sử dụng web audio api thì bài viết này mình sẽ chia làm 2 ý, đầu tiên là kiến thức cơ bản về xử lý âm thanh, và thứ hai là web audio cung cấp những gì, và sử dụng nó ra sao.</p>
-<h3 id="cơ-bản-về-xử-lý-âm-thanh">Cơ bản về xử lý âm thanh</h3>
-<p>Bài viết này sẽ không đi quá sâu về xử lý âm thanh, mình sẽ đi qua một số khái niệm cơ bản để giúp cho việc sử dụng web audio api dễ dàng hơn. Đầu tiên các bạn nên tham khảo trước ở một số tài liệu cơ bản về digital audio processing. Mình có google thì nó ra một cái tài liệu khá dễ hiểu ở <a href="http://smc.dei.unipd.it/education/algo4smc_ch1.pdf">đây</a>. Sau khi đọc tài liệu trên thì mình mong muốn các bạn nắm rõ được các khái niệm</p>
-<ol type="1">
-<li><strong>Khái niệm âm thanh là gì và được biểu diễn thế nào trên máy tính?</strong> Âm thanh là các dao động cơ học được truyền trong không khí, va đập vào màng nhĩ , làm rung màng nhĩ và kích thích não người. Trên máy tính ở dạng raw thì âm thanh thường được biểu diễn dưới dạng đồ thị dạng time-series data, tức là có 1 trục là thời gian , và một trục là độ lớn (amplitude)</li>
-</ol>
-<p><img src="/images/webaudioapi/sound1.png"></p>
-<p>Để biểu diễn được trên máy tính thì sẽ cần làm 2 việc, 1 là sampling (tức là một khoảng thời gian bao nhiêu lại lấy dữ liệu một lần) và 2 là quantitize , tức là với sóng có biên độ là X thì bạn phải biểu diễn X dưới dạng bit để máy tính có thể hiểu được. Như hình vẽ dưới đây thì data được sampling với thời gian là 0.1s và được sử dụng 8bit để quantitize.</p>
-<p><img src="/images/webaudioapi/sound2.png"></p>
-<ol start="2" type="1">
-<li><strong>Khái niệm về tần số (frequency) và biến đổi Fourier(Fourier transform)</strong>. Khái niệm về tần số các bạn có thể tìm hiểu thông qua google. Về Fourier transform, hay viết tắt là FT, thì FT giúp biên dữ liệu time series data nói chung ( ở đây là sound wave ) từ dạng ban đầu là trục độ lớn(x)/trục thời gian(y) trở thành trục độ lớn(x)/trục tần số(y). Việc biến đổi này có ích ở việc là giúp phân tích thành phần của sound wave, giúp cho ta biết trong data đó có những sóng có tần số thế nào, độ lớn ra sao. Điều này sẽ giúp cho việc nhận diện/ biểu diễn sound wave được thực hiện một cách dễ dàng hơn rất nhiều.</li>
-</ol>
-<p><img src="/images/webaudioapi/ft.gif"></p>
-<p>Nắm được các khái niệm trên một cách rõ ràng, chúng ta đã có thể sử dụng web audio api để làm một số việc từ đơn giản đến tương đối phức tạp rồi :).</p>
-<h3 id="cấu-trúc-cơ-bản-của-web-audio-api">Cấu trúc cơ bản của web audio api</h3>
-<p>Web audio api có thiết kế dưới dạng <strong>graph</strong>, được cấu thành bởi các <strong>node</strong> ( kiến trúc này còn được gọi là <strong>modular routing</strong> ). Mỗi node có thể có nhiều inputs và/hoặc nhiều outputs.</p>
-<p><img src="/images/webaudioapi/graph.png"></p>
-<p>Tại sao lại là dưới dạng graph? Vì audio processing thường qua nhiều công đoạn, mỗi công đoạn xử lý lại có thể có nhiều output ( giống như hình trên ), do đó mà việc biểu diễn dưới dạng graph và connection giữa các node giúp cho việc tách các xử lý ra/ tổng hợp kết quả xử lý lại được thực hiện một cách dễ dàng và clean hơn.</p>
-<h3 id="load-audio-file-một-cách-đơn-giản">Load audio file một cách đơn giản</h3>
-<p>Chúng ta sẽ bắt đầu sử dụng web audio api bằng cách load và play một file audio đơn giản:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>loadfile.js </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">context</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">webkitAudioContext</span><span class="p">();</span>
-</span><span class='line'><span class="nx">sourceNode</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">createBufferSource</span><span class="p">();</span>
-</span><span class='line'><span class="nx">sourceNode</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">destination</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">function</span> <span class="nx">loadSound</span><span class="p">(</span><span class="nx">source</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">req</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">XMLHttpRequest</span><span class="p">();</span>
-</span><span class='line'>    <span class="nx">req</span><span class="p">.</span><span class="nx">open</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="nx">source</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
-</span><span class='line'>    <span class="nx">req</span><span class="p">.</span><span class="nx">responseType</span> <span class="o">=</span> <span class="s1">&#39;arraybuffer&#39;</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nx">req</span><span class="p">.</span><span class="nx">onload</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nx">context</span><span class="p">.</span><span class="nx">decodeAudioData</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">response</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">buffer</span><span class="p">){</span>
-</span><span class='line'>        <span class="nx">playSound</span><span class="p">(</span><span class="nx">buffer</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">},</span> <span class="kd">function</span><span class="p">(){});</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="nx">req</span><span class="p">.</span><span class="nx">send</span><span class="p">();</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">function</span> <span class="nx">playSound</span><span class="p">(</span> <span class="nx">buffer</span> <span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="nx">sourceNode</span><span class="p">.</span><span class="nx">buffer</span> <span class="o">=</span> <span class="nx">buffer</span><span class="p">;</span>
-</span><span class='line'>  <span class="nx">sourceNode</span><span class="p">.</span><span class="nx">noteOn</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Các bạn sẽ thấy để thao tác với web audio api thì đầu tiên các bạn sẽ phải tạo ra một object gọi là AudioContext ( trên chrome sẽ gọi là WebkitAudioContext ). Toàn bộ các thao tác như tạo node mới sẽ quay quanh object này</p>
-<p>Sau khi đã có context rồi thì các bước tiếp theo sẽ là :</p>
-<ol type="1">
-<li>Tạo ra sourceNode (sourceNode còn là Node dùng để input data)</li>
-<li>Tạo ra destinationNode (là Node dùng để output data)</li>
-<li>Load data thông qua XHR</li>
-<li>play thông qua hàm noteOn của sourceNode (noteOn(0) tức là play tại thời điểm 0 là thời điểm bắt đầu của audio data)</li>
-</ol>
-<p>Các bạn có thể thấy ở trên một graph đơn giản nhất đã được tạo ra với 2 node là Source và Destination được connect với nhau.</p>
-<h3 id="kết-luận">Kết luận</h3>
-<p>Như vậy các bạn đã có hình dung cơ bản về web audio api.</p>
-<p>Ở bài viết tiếp theo mình sẽ nói về các node xử lý cơ bản như AnalyzerNode, ConvolverNode, OscillatorNode và các ứng dụng của chúng.</p>
-<p>Các bạn có thể xem bài trình bày của mình tại osaka htmlday (bài viết bằng tiếng Nhật :D):</p>
-<script async class="speakerdeck-embed" data-id="8575d620b2e30130eaf25236bfdba4c0" data-ratio="1.33333333333333" src="//speakerdeck.com/assets/embed.js"></script>
+<p>Như vậy trong các bước kể trên, ngoại trừ bước đầu tiên, tất cả các bước còn lại đều phải init connection từ Application server đến DB server. (Không quan tâm bạn dùng DAO hay ORM hay execute query thẳng trên DB)</p>
+<p>Tôi có thể design lại xử lý trên như sau:</p>
+<ul>
+<li>PHP validate 1 string ADD_ME và nhận 1 string UserId từ user input (trong request gửi đến web server)</li>
+<li>PHP truyền parameter ADD_ME và UserId cho PACKAGE “EVALUATE_USER” của Oracle</li>
+<li>“EVALUATE_USER” does all the stuff :D</li>
+<li>“EVALUATE_USER” trả kết quả về cho PHP : 0: kết thúc không có lỗi, 1: Kết thúc với lỗi ở TABLE USERS, 2: Kết thúc với lỗi ở TABLE TEACHER, …..</li>
+</ul>
+<p>Như vậy connection từ Application server sang DB server chỉ phát sinh ở bước 2 và bước 4. Tôi dám cá là hệ thống sẽ speedup với 1 tốc độ không nhỏ :D</p>
+<h2 id="kết-luận">Kết luận</h2>
+<ul>
+<li>MATERIALIZED VIEW LOG : là snapshot, là object bắt buộc phải có khi dùng MATERIALZED VIEW với chiến lược FAST REFRESH .</li>
+<li>TRIGGER: Là object định nghĩa sẽ fire event nào khi các action nào được thực hiện trong database.</li>
+<li>PL/SQL: Là extend của SQL, produceral programming language của Oracle, cho phép thao tác trực tiếp với các object của Database trên Database server với đầy đủ năng lực xử lý như 1 ngôn ngữ hoàn chỉnh</li>
+</ul>
 		
 		
 	</div>
@@ -731,7 +636,7 @@ Builder Pattern là &hellip;">
     <div class="center"><a href="/blog/archives">Blog Archives</a></div>
 </nav></div>
 			</div>
-			<footer id="footer" class="inner">Copyright &copy; 2014
+			<footer id="footer" class="inner">Copyright &copy; 2015
 
     kỹ thuật máy tính
 

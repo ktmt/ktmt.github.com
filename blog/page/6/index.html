@@ -7,7 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Sep 17th, 2013 iOS Comments Những Mẹo Lập Trình Với Objective-C Phần 2 Tiếp theo phần trước, trong bài viết này sẽ giới thiệu 1 kỹ thuật khác trong &hellip;">
+	<meta name="description" content="Mar 22nd, 2014 algorithm,, graph Comments Thuật Toán Floyd-Warshall để Duyệt đồ Thị Introduction
+Khi nhắc đến các thuật toán duyệt đồ thị, có thể &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -37,7 +38,7 @@
 	<div class="container">
 		<div class="left-col">
 			<div class="intrude-less">
-			<header id="header" class="inner"><div class="profilepic">	
+			<header id="header" class="inner"><div class="profilepic">
 	<script src="/javascripts/md5.js"></script>
 	<img src='/images/logo.jpg' alt='Profile Picture' style='width: 160px;' />
 </div>
@@ -66,9 +67,9 @@
 	</div>
 </nav>
 
-</header>				
+</header>
 			</div>
-		</div>	
+		</div>
 		<div class="mid-col">
 			
 				
@@ -92,97 +93,87 @@
   
 
 
-<time datetime="2013-09-17T10:29:00+09:00" data-updated="true" itemprop="datePublished">Sep 17<span>th</span>, 2013</time></div>
+<time datetime="2014-03-22T21:45:00+09:00" data-updated="true" itemprop="datePublished">Mar 22<span>nd</span>, 2014</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/ios/'>iOS</a>
+	<a class='category' href='/blog/categories/algorithm/'>algorithm,</a>, <a class='category' href='/blog/categories/graph/'>graph</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/09/17/nhung-meo-lap-trinh-voi-objective-c-phan-2/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2014/03/22/thuat-toan-floyd-warshall-de-duyet-do-thi/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/09/17/nhung-meo-lap-trinh-voi-objective-c-phan-2/" itemprop="url">Những Mẹo Lập Trình Với Objective-C Phần 2</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2014/03/22/thuat-toan-floyd-warshall-de-duyet-do-thi/" itemprop="url">Thuật Toán Floyd-Warshall để Duyệt đồ Thị</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<p>Tiếp theo phần trước, trong bài viết này sẽ giới thiệu 1 kỹ thuật khác trong Objective C: Swizzling method.</p>
-<h1 id="swizzling">Swizzling</h1>
-<p>Thông thường, khi muốn thêm vào 1 class có sẵn 1 vài hàm mới, chúng ta có thể dùng <code>Categories</code>, đặc biệt là các class của thư viện (ko có source code) như NSArray, NSDictionary… Tuy nhiên, cách dùng <code>Categories</code> có 1 hạn chế là bạn không thể override các hàm có sẵn. Vậy đây chính là lý do chúng ta cần sử dụng đến Swizzling method.</p>
-<p>Trong Objective C, khi bạn viết 1 đoạn code</p>
+		<h1 id="introduction">Introduction</h1>
+<p>Khi nhắc đến các thuật toán duyệt đồ thị, có thể bạn đã biết (và đã từng implement) Depth-First Search, Breadth-First Search, hoặc Dijkstra. Xin nhắc lại về ý nghĩa của từng thuật toán, đứng ở khía cạnh bài toán tìm đường đi ngắn nhất. DFS dùng để giải các bài toán mà chúng ta muốn tìm được lời giải (không nhất thiết phải là quãng đường ngắn nhất), hoặc ta muốn thăm tất cả các đỉnh của đồ thị. BFS cũng để duyệt các đỉnh của đồ thị, nhưng có một tính chất quan trọng là: nếu tất cả các cạnh <em>không có trọng số</em>, lần đầu tiên một đỉnh được thăm, ta có ngay đường đi ngắn nhất đến đỉnh đó. Bây giờ đến thuật toán Disjkstra, đây là thuật toán nổi tiếng dùng để tìm đường đi ngắn nhất từ một đỉnh cho trước đến các đỉnh còn lại, trong một đồ thị có các cạnh <em>có trọng số không âm</em>. Như vậy, Dijkstra đã tiến hơn một bước so với BFS.</p>
+<p>Đó là sơ qua về ba thuật toán mà có thể mọi người đều đã biết. Trong bài viết này, tôi xin giới thiệu một thuật toán ít biết đến hơn để duyệt đồ thị, đó là Floyd-Warshall.</p>
+<h1 id="thuật-toán-floyd-warshall-là-gì">Thuật toán Floyd-Warshall là gì?</h1>
+<p>Nếu như Dijkstra giải quyết bài toán tìm đường đi ngắn nhất từ <em>một đỉnh cho trước</em> đến mọi đỉnh khác trong đồ thị, thì Floyd-Warshall sẽ tìm đường đi ngắn nhất <em>giữa mọi đỉnh</em> sau một lần chạy thuật toán. Một tính chất nữa là Floyd-Warshall có thể chạy trên đồ thị có các cạnh có trọng số <em>có thể âm</em>, tức là không bị giới hạn như Dijkstra. Tuy nhiên, lưu ý là trong đồ thị không được có vòng (cycle) nào có tổng các cạnh là âm, nếu có vòng như vậy ta không thể tìm được đường đi ngắn nhất (mỗi lần đi qua vòng này độ dài quãng đường lại giảm, nên ta có thể đi vô hạn lần)</p>
+<p>Thuật toán Floyd-Warshall so sánh tất cả các đường đi có thể giữa từng cặp đỉnh. Nó là một dạng của quy hoạch động (Dynamic Programming). Đặt hàm adj(i,j,k) là đường đi ngắn nhất từ i đến j, chỉ dùng các đỉnh trong tập {1,2,…,k}. Giả sử ta muốn tính adj{i,j,k+1}. Với mỗi cặp đỉnh i và j, đường đi ngắn nhất có thể là: (1) đường đi chỉ sử dụng các đỉnh trong tập {1,…k} hoặc (2) đường đi từ i đến k+1 rồi từ k+1 đến j, cũng chỉ sử dụng các đỉnh trong tập {1,…k}. Do vậy:</p>
+<p>Trường hợp cơ bản: adj(i,j,0) = w(i,j)</p>
+<p>Đệ quy: adj(i,j,k+1) = min{adj(i,j,k), adj(i,k+1, k) + adj(k+1, j, k)}</p>
+<p>Đây là đoạn pseudocode của Floyd-Warshall (có một chút thay đổi, nhưng ý tưởng là như nhau)</p>
 <div class="bogus-wrapper">
 <notextile>
-<figure class='code'> 
+<figure class="code">
+<figcaption>
+<span>pseudo.c </span>
+</figcaption>
 <div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="p">[</span><span class="n">self</span> <span class="nl">presentViewController:</span><span class="n">mailController</span> <span class="nl">animated:</span><span class="n">YES</span> <span class="nl">completion:</span><span class="nb">nil</span><span class="p">];</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>bạn không thực sự gọi đến hàm <code>presentViewController:animated:completion:</code> mà thay vào đó là gửi đi 1 message <code>presentViewController:animated:completion:</code>. Trong quá trình chạy, object sẽ tìm kiếm method tương ứng dựa vào id của message này. Chúng ta có thể dựa vào swizzling để thay đổi cách object tìm kiếm method tương ứng này:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'> 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="kt">SEL</span> <span class="n">firstMethodSelector</span> <span class="o">=</span> <span class="k">@selector</span><span class="p">(</span><span class="n">firstMethod</span><span class="p">);</span>
-</span><span class='line'><span class="kt">SEL</span> <span class="n">secondMethodSelector</span> <span class="o">=</span> <span class="k">@selector</span><span class="p">(</span><span class="n">secondMethod</span><span class="p">);</span>
-</span><span class='line'><span class="n">Method</span> <span class="n">firstMethod</span> <span class="o">=</span> <span class="n">class_getInstanceMethod</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">firstMethodSelector</span><span class="p">);</span>
-</span><span class='line'><span class="n">Method</span> <span class="n">secondMethod</span> <span class="o">=</span> <span class="n">class_getInstanceMethod</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">secondMethodSelector</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">BOOL</span> <span class="n">methodAdded</span> <span class="o">=</span> <span class="n">class_addMethod</span><span class="p">([</span><span class="n">self</span> <span class="n">class</span><span class="p">],</span>
-</span><span class='line'>                                   <span class="n">firstMethodSelector</span><span class="p">,</span>
-</span><span class='line'>                                   <span class="n">method_getImplementation</span><span class="p">(</span><span class="n">secondMethod</span><span class="p">),</span>
-</span><span class='line'>                                   <span class="n">method_getTypeEncoding</span><span class="p">(</span><span class="n">secondMethod</span><span class="p">));</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">methodAdded</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'><span class="n">class_replaceMethod</span><span class="p">([</span><span class="n">self</span> <span class="n">class</span><span class="p">],</span>
-</span><span class='line'>                      <span class="n">secondMethodSelector</span><span class="p">,</span>
-</span><span class='line'>                      <span class="n">method_getImplementation</span><span class="p">(</span><span class="n">firstMethod</span><span class="p">),</span>
-</span><span class='line'>                      <span class="n">method_getTypeEncoding</span><span class="p">(</span><span class="n">firstMethod</span><span class="p">));</span>
-</span><span class='line'><span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-</span><span class='line'>  <span class="n">method_exchangeImplementations</span><span class="p">(</span><span class="n">firstMethod</span><span class="p">,</span> <span class="n">secondMethod</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table>
+</pre>
+</td>
+<td class="code">
+<pre><code class='c'><span class='line'><span class="k">for</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="mi">1</span> <span class="n">to</span> <span class="n">n</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="n">i</span><span class="o">=</span><span class="mi">1</span> <span class="n">to</span> <span class="n">n</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">for</span><span class="p">(</span><span class="n">j</span><span class="o">=</span><span class="mi">1</span> <span class="n">to</span> <span class="n">n</span><span class="p">)</span>
+</span><span class='line'>          <span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">min</span><span class="p">(</span><span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">],</span> <span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">+</span> <span class="n">adj</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">j</span><span class="p">]);</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
 </div>
 </figure>
 </notextile>
 </div>
-<p>Đi từng bước cho đoạn code ở trên:</p>
-<ol type="1">
-<li><p>Trước hết chúng ta tạo ra các selectors (SEL): <code>firstMethodSelector</code> và <code>secondMethodSelector</code></p></li>
-<li><p>Lấy ra các hàm tương ứng với selectors gán vào <code>firstMethod</code> và <code>secondMethod</code> Method</p></li>
-<li><p>Thêm vào class định nghĩa của method thứ 2 dưới cách gọi của method thứ nhất. Trường hợp này xảy ra khi method thứ nhất không thực sự tồn tại (trong 1 khả năng nào đó)</p></li>
-<li><p>Nếu điều này xảy ra, chúng ta cần 1 định nghĩa cho selector của method thứ 2, vì vậy thay thế nó bằng implementation của method thứ nhất (rỗng)</p></li>
-<li><p>Nếu không xảy ra, nghĩa là method thứ nhất có tồn tại, chúng ta thay đổi implementation của 2 method.</p></li>
-</ol>
-<h1 id="ví-dụ-1">Ví dụ 1</h1>
-<p>Khi sử dụng Google Analystics, chúng ta muốn track page view cho tất cả các UIViewController trong project, tuy nhiên, nếu ở class nào cũng gọi hàm <code>trackView:&lt;class_name&gt;</code> thì tương đối nhiều, mà có thể còn bỏ sót. Vậy cách đơn giản nhất là override lại hàm <code>viewDidLoad</code> của <code>UIViewController</code>, trong đó chúng ta thực hiện <code>trackView</code> hoặc gọi 1 hàm khác bất kỳ, tuỳ theo mục đích của mình.</p>
-<p>Chúng ta viết phần code trên trong <code>Categories</code> của <code>NSObject</code>, từ đó có thể gọi nó từ bất kỳ class nào:</p>
+<p>Dễ thấy độ phức tạp thuật toán là O(n^3) với n là số đỉnh của đồ thị.</p>
+<h1 id="thuật-toán-floyd-warshall-dùng-cho-tìm-tính-chất-kết-nối">Thuật toán Floyd-Warshall dùng cho tìm tính chất kết nối</h1>
+<p>Tư tưởng của thuật toán Floyd-Warshall trong việc tìm đường đi ngắn nhất có thể áp dụng vào các bài toán dạng tìm tính chất kết nối giữa các đỉnh. Tôi xin lấy một ví dụ, đó là bài <a href="http://community.topcoder.com/stat?c=problem_statement&amp;pm=2356&amp;rd=4740">TopCoder SRM 184, Div 2, 1000-point problem</a></p>
+<p>Đề bài như sau (xin chịu khó đọc hiểu đề bài)</p>
+<blockquote>
+<p>You are arranging a weird game for a team building exercise. In this game there are certain locations that people can stand at, and from each location there are paths that lead to other locations, but there are not necessarily paths that lead directly back. You have everything set up, but you need to know two important numbers. There might be some locations from which every other location can be reached. There might also be locations that can be reached from every other location. You need to know how many of each of these there are.</p>
+<p>Create a class TeamBuilder with a method specialLocations that takes a String[] paths that describes the way the locations have been connected, and returns a int[] with exactly two elements, the first one is the number of locations that can reach all other locations, and the second one is the number of locations that are reachable by all other locations. Each element of paths will be a String containing as many characters as there are elements in paths. The i-th element of paths (beginning with the 0-th element) will contain a ‘1’ (all quotes are for clarity only) in position j if there is a path that leads directly from i to j, and a ‘0’ if there is not a path that leads directly from i to j.</p>
+<p><strong>Examples</strong></p>
+<ul>
+<li><p>{“010”,“000”,“110”} Returns: { 1, 1 } Locations 0 and 2 can both reach location 1, and location 2 can reach both of the other locations, so we return {1,1}.</p></li>
+<li><p>{“0010”,“1000”,“1100”,“1000”} Returns: { 1, 3 } Only location 3 is able to reach all of the other locations, but it must take more than one path to reach locations 1 and 2. Locations 0, 1, and 2 are reachable by all other locations. The method returns {1,3}.</p></li>
+<li><p>{“01000”,“00100”,“00010”,“00001”,“10000”} Returns: { 5, 5 } Each location can reach one other, and the last one can reach the first, so all of them can reach all of the others.</p></li>
+<li><p>{“0110000”,“1000100”,“0000001”,“0010000”,“0110000”,“1000010”,“0001000”} Returns: { 1, 3 }</p></li>
+</ul>
+</blockquote>
+<p><em>Solution</em> Về cơ bản, bài này cần tìm số lượng các đỉnh mà từ đó có thể đi đến tất cả các đỉnh khác, và số lượng các đỉnh mà các đỉnh khác đều có thể đi tới. Một ví dụ rất tốt để áp dụng thuật toán Floyd-Warshall tìm tính chất kết nối giữa 2 đỉnh bất kì.</p>
+<p>Trong bài này, chúng ta chỉ cần phải kiểm tra xem có đường đi từ đỉnh i đến đỉnh j trong đồ thị hay không. Chúng ta sẽ áp dụng thuật toán Floyd-Warshall trên, nhưng có thay đổi một chút trong dòng xử lý bên trong vòng lặp. Về cơ bản, chúng ta vẫn sử dụng ý tưởng là update thông tin giữa 2 đỉnh i và j, mỗi khi ta có thêm thông tin giữa đỉnh i và đỉnh k, đỉnh k và đỉnh j, với k là một đỉnh khác i và j. Nhưng ta không cập nhật thông tin về * đường đi ngắn nhất* nữa, mà ta cập nhật thông tin về <em>có hay không đường đi từ i đến j</em>. Với mỗi cặp đỉnh i và j chưa có kết nối, ta sẽ kiểm tra xem nếu có đường đi từ i đến k và từ k đến j, thì ta cập nhật là có đường đi từ i đến j.</p>
+<p>Sau đây là đoạn code C++ minh hoạ:</p>
 <div class="bogus-wrapper">
 <notextile>
-<figure class='code'> 
+<figure class="code">
+<figcaption>
+<span>TeamBuilder.cpp </span>
+</figcaption>
 <div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -209,44 +200,243 @@
 <span class='line-number'>25</span>
 <span class='line-number'>26</span>
 <span class='line-number'>27</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="cp">#import &quot;NSObject+Swizzle.h&quot;</span>
-</span><span class='line'><span class="cp">#import &lt;objc/runtime.h&gt;</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='cpp'><span class='line'><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">TeamBuilder</span><span class="o">::</span><span class="n">specialLocations</span><span class="p">(</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">string</span><span class="o">&gt;</span> <span class="n">paths</span><span class="p">){</span>
 </span><span class='line'>
-</span><span class='line'><span class="k">@implementation</span> <span class="nc">NSObject</span> <span class="nl">(Swizzle)</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">+</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="nf">swizzleInstanceSelector:</span><span class="p">(</span><span class="kt">SEL</span><span class="p">)</span><span class="nv">originalSelector</span>
-</span><span class='line'>                 <span class="nf">withNewSelector:</span><span class="p">(</span><span class="kt">SEL</span><span class="p">)</span><span class="nv">newSelector</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="n">Method</span> <span class="n">originalMethod</span> <span class="o">=</span> <span class="n">class_getInstanceMethod</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">originalSelector</span><span class="p">);</span>
-</span><span class='line'>  <span class="n">Method</span> <span class="n">newMethod</span> <span class="o">=</span> <span class="n">class_getInstanceMethod</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">newSelector</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="kt">BOOL</span> <span class="n">methodAdded</span> <span class="o">=</span> <span class="n">class_addMethod</span><span class="p">([</span><span class="n">self</span> <span class="n">class</span><span class="p">],</span>
-</span><span class='line'>                                     <span class="n">originalSelector</span><span class="p">,</span>
-</span><span class='line'>                                     <span class="n">method_getImplementation</span><span class="p">(</span><span class="n">newMethod</span><span class="p">),</span>
-</span><span class='line'>                                     <span class="n">method_getTypeEncoding</span><span class="p">(</span><span class="n">newMethod</span><span class="p">));</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="n">methodAdded</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="n">class_replaceMethod</span><span class="p">([</span><span class="n">self</span> <span class="n">class</span><span class="p">],</span>
-</span><span class='line'>                        <span class="n">newSelector</span><span class="p">,</span>
-</span><span class='line'>                        <span class="n">method_getImplementation</span><span class="p">(</span><span class="n">originalMethod</span><span class="p">),</span>
-</span><span class='line'>                        <span class="n">method_getTypeEncoding</span><span class="p">(</span><span class="n">originalMethod</span><span class="p">));</span>
-</span><span class='line'>  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-</span><span class='line'>    <span class="n">method_exchangeImplementations</span><span class="p">(</span><span class="n">originalMethod</span><span class="p">,</span> <span class="n">newMethod</span><span class="p">);</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">N</span> <span class="o">=</span> <span class="n">paths</span><span class="p">.</span><span class="n">size</span><span class="p">();</span>
+</span><span class='line'>  <span class="n">vector</span><span class="o">&lt;</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="o">&gt;</span> <span class="n">adj</span><span class="p">;</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">i</span> <span class="o">++</span><span class="p">){</span>
+</span><span class='line'>      <span class="n">string</span> <span class="n">s</span> <span class="o">=</span> <span class="n">paths</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+</span><span class='line'>      <span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">row</span><span class="p">;</span>
+</span><span class='line'>      <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>          <span class="n">row</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span><span class="sc">&#39;0&#39;</span><span class="p">);</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>      <span class="n">adj</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">row</span><span class="p">);</span>
 </span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'><span class="k">@end</span>
-</span></code></pre></td></tr></table>
+</span><span class='line'>  <span class="c1">//Floyd-Warshall</span>
+</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">k</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>      <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>          <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>              <span class="c1">//i,j,k must be different</span>
+</span><span class='line'>              <span class="k">if</span><span class="p">(</span><span class="n">i</span><span class="o">==</span><span class="n">j</span> <span class="o">||</span> <span class="n">j</span> <span class="o">==</span> <span class="n">k</span> <span class="o">||</span> <span class="n">k</span><span class="o">==</span><span class="n">i</span><span class="p">)</span>
+</span><span class='line'>                  <span class="k">continue</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>              <span class="c1">//only update those no-paths</span>
+</span><span class='line'>              <span class="k">if</span><span class="p">(</span><span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>                  <span class="k">if</span><span class="p">(</span><span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">!=</span><span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">adj</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>                      <span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>                  <span class="p">}</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//find number of locations that can reach all other locations</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">firstNum</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>      <span class="kt">bool</span> <span class="n">canReachAll</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+</span><span class='line'>      <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span><span class="o">&lt;</span><span class="n">N</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>          <span class="k">if</span><span class="p">(</span><span class="n">j</span><span class="o">==</span><span class="n">i</span><span class="p">)</span> <span class="k">continue</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="k">if</span><span class="p">(</span><span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>              <span class="n">canReachAll</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+</span><span class='line'>              <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>      <span class="k">if</span><span class="p">(</span><span class="n">canReachAll</span><span class="p">)</span>
+</span><span class='line'>          <span class="n">firstNum</span> <span class="o">++</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//find number of locations that are reachable from other locations</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">secondNum</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>      <span class="kt">bool</span> <span class="n">canBeReachedFromAll</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+</span><span class='line'>      <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">N</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>          <span class="k">if</span><span class="p">(</span><span class="n">j</span><span class="o">!=</span><span class="n">i</span> <span class="o">&amp;&amp;</span> <span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>              <span class="n">canBeReachedFromAll</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+</span><span class='line'>              <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>      <span class="k">if</span><span class="p">(</span><span class="n">canBeReachedFromAll</span><span class="p">)</span>
+</span><span class='line'>          <span class="n">secondNum</span> <span class="o">++</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">res</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">res</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">firstNum</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">res</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">secondNum</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">res</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
 </div>
 </figure>
 </notextile>
 </div>
-<p>Bây giờ tạo tiếp <code>Categories</code> cho UIViewController:</p>
+<h1 id="tham-khảo">Tham khảo:</h1>
+<ol type="1">
+<li><a href="http://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm">Floyd-Warshall Algorithm</a></li>
+<li><a href="http://community.topcoder.com/tc?module=Static&amp;d1=tutorials&amp;d2=graphsDataStrucs3">TopCoder Graph Tutorial</a></li>
+</ol>
+		
+		
+	</div>
+
+</article>
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-03T01:43:00+09:00" data-updated="true" itemprop="datePublished">Mar 3<span>rd</span>, 2014</time></div>
+		<div class="tags">
+
+</div>
+		
+			<span class="comments"><a href="/blog/2014/03/03/full-text-search-tu-khai-niem-den-thuc-tien-phan-4/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2014/03/03/full-text-search-tu-khai-niem-den-thuc-tien-phan-4/" itemprop="url">Full Text Search Từ Khái Niệm đến Thực Tiễn (Phần 4)</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1 id="introduction">Introduction</h1>
+<p>Trong <a href="http://ktmt.github.io/blog/2014/01/04/full-text-search-engine-part-3/">phần 3</a>, các bạn đã được tìm hiểu về việc sử dụng Boolean Logic để tìm ra các Document chứa các term trong query cần tìm kiếm. Vậy sau khi tìm được các Document thích hợp rồi thì chỉ việc trả lại cho người dùng, hay đưa lên màn hình? Bài toán sẽ rất đơn giản khi chỉ có 5, 10 kết quả, nhưng khi kết quả lên đến hàng trăm nghìn, thì mọi việc sẽ không đơn giản là trả lại kết quả nữa. Lúc đó sẽ có vấn đề mới cần giải quyết, đó là <strong>đưa kết quả nào lên trước</strong>, hay chính là bài toán về <strong>Ranking</strong></p>
+<p>Việc Ranking trong Full Text Search thông thường sẽ được thực hiện thông qua việc <strong>tính điểm</strong> các Document được tìm thấy, rồi Rank dựa vào điểm số tính được. Việc tính điểm thế nào sẽ được thực hiện thông qua các công thức, hay thuật toán, mà mình gọi chung là <strong>Ranking Model</strong></p>
+<h1 id="ranking-model">Ranking Model</h1>
+<p>Trong bài viết về <a href="http://ktmt.github.io/blog/2013/08/06/a-little-bit-about-news-ranking/">Ranking news</a>, mình đã nói về việc giải quyết một bài toán gần tương tự. Tuy nhiên bài toán lần này cần giải quyết khác một chút, đó là việc Ranking sẽ phải thực hiện dựa trên mối quan hệ giữa “query terms” và “document”.</p>
+<p>Ranking Model được chia làm 3 loại chính: <strong>Static, Dynamic, Machine Learning</strong>. Dưới đây mình sẽ giới thiệu lần lượt về mỗi loại này.</p>
+<h1 id="static">Static</h1>
+<p>Static ở đây có nghĩa là, Ranking Model thuộc loại này sẽ <strong>không phụ thuộc</strong> vào mối quan hệ ngữ nghĩa giữa “query term” và “document”. Tại sao không phụ thuộc vào “query term” mà vẫn ranking được? Việc này được giải thích dựa theo quan điểm khoa học là <code>độ quan trọng của document phụ thuộc vào mối quan hệ giữa các document với nhau</code>.</p>
+<p>Chúng ta sẽ đi vào cụ thể một Ranking Model rất nổi tiếng trong loại này, đó chính là <a href="http://en.wikipedia.org/wiki/PageRank">PageRank</a>. PageRank là thuật toán đời đầu của Google, sử dụng chủ yếu cho web page, khi mà chúng có thể “link” được đến nhau. Idea của PageRank là “Page nào càng được nhiều link tới, và được link tới bởi các page càng quan trọng, thì score càng cao”. Để tính toán được PageRank, thì chúng ta chỉ cần sử dụng WebCrawler để crawl được mối quan hệ “link” giữa tất cả các trang web, và tạo được một Directed Graph của chúng.</p>
+<p>Chính vì cách tính theo kiểu, tạo được Graph xong là có score, nên mô hình dạng này được gọi là “Static”.</p>
+<p>Ngoài PageRank ra còn có một số thuật toán khác gần tương tự như <a href="http://en.wikipedia.org/wiki/HITS_algorithm">HITS</a> đã từng được sử dụng trong Yahoo! trong thời gian đầu.</p>
+<h1 id="dynamic">Dynamic</h1>
+<p>Ranking Model thuộc dạng Dynamic dựa chủ yếu vào <strong>Mối quan hệ</strong> giữa “query term” và “document”. Có rất nhiều thuật toán thuộc dạng này, có thuật toán dựa vào tần suất xuất hiện của “query term” trong document, có thuật toán lại dựa vào các đặc tính ngữ nghĩa (semantic) của query term , có thuật toán lại sử dụng những quan sát mang tính con người như thứ tự xuất hiện các từ trong “query term” và thứ tự xuất hiện trong “document”.</p>
+<p>Một trong những thuật toán được sử dụng nhiều nhất là <a href="http://en.wikipedia.org/wiki/Tf%E2%80%93idf">TF-IDF</a> (Term Frequency Inverse Document Frequency). Thuật toán này dựa vào Idea là “query term” xuất hiện càng nhiều trong document, document sẽ có điểm càng cao.</p>
+<p>Thuật toán này được biểu diễn dưới công thức sau <span class="math">\[TF-IDF(t, d, D) = TF(t, d) * IDF (t, D)\]</span> Ở đây t là query term, d là document cần được score, và D là tập hợp “tất cả” các documents. Trong đó thì: <span class="math">\[TF(t, d) = frequency(t, d)\]</span> <span class="math">\[IDF(t, D) = log{N \over \|\{d \in D : t \in d\}\|}\]</span></p>
+<p>Một cách đơn giản thì:</p>
+<ul>
+<li>TF : tần suất xuất hiện của term t trong document d</li>
+<li>IDF : chỉ số này biểu hiện cho tần suất xuất hiện của term t trong toàn bộ các documents. t xuất hiện càng nhiều, chỉ số càng thấp (vì xuất hiện quá nhiều đồng nghĩa với độ quan trọng rất thấp)</li>
+</ul>
+<p>Công thức của TF-IDF đã phối hợp một cách rất hợp lý giữa tần suất của term và ý nghĩa/độ quan trọng của term đó.</p>
+<p>Trong thực tế thì người ta hay sử dụng thuật toán <a href="http://en.wikipedia.org/wiki/Okapi_BM25">Okapi BM25</a> hay gọi tắt là BM25, là một mở rộng của TF-IDF, nhưng thêm một vài weight factor hợp lý.</p>
+<h1 id="machine-learning">Machine Learning</h1>
+<p>Ngoài việc sử dụng các mối quan hệ đơn giản giừa query term và document, hay giứa document với nhau, thì gần đây việc sử dụng học máy (Machine Learning) trong Ranking cũng đang trở nên rất phổ biến. Để nói về Machine Learning thì không gian bài viết này có lẽ là không đủ, mình sẽ nói về ý tưởng của Model này.</p>
+<p>Idea của việc sử dụng Machine Learning trong ranking là chúng ta sẽ sử dụng một mô hình xác suất để tính toán. Cụ thể hơn là chúng ta sẽ sử dụng supervised learning, nghĩa là chúng ta sẽ có input là một tập dữ liệu X để training, một model M ban đầu, một hàm error để so sánh kết quả output X’ có được từ việc áp dụng model M vào query term, và một hàm boost để từ kêt quả của hàm error chúng ta có thể tính lại được model M. Việc này được lặp đi lặp lại mỗi lần có query, hoặc lặp lại một cách định kỳ (1 ngày 1 lần, 1 tháng 1 lần..) để model M luôn luôn được cải thiện.</p>
+<p>Thuật toán gần đây được sử dụng khá nhiều trong Ranking model chính là Gradient Boosting Decision Tree mà các bạn có thể tham khảo ở <a href="https://www.cse.cuhk.edu.hk/irwin.king/_media/presentations/gbdt-tom.pdf">đây</a></p>
+<h1 id="conclusion">Conclusion</h1>
+<p>Bài viết đã giới thiệu về 3 mô hình chính dùng để Ranking kết quả tìm kiếm trong Full Text Search. Trong thực tế thì các công ty lớn nhưn Google, Yahoo, MS sẽ không có một mô hình cố định nào cả, mà sẽ dựa trên các kết quả có từ người dùng để liên tục cải thiện. Không có một mô hinh nào là “đúng” hay “không đúng” cả, mà để đánh giá Ranking Model chúng ta sẽ phải dựa trên thông kê người dùng (như click rate, view time…). Việc hiểu rõ Ranking Model sẽ giúp chúng ta build được một search engine tốt cho service của mình, đông thời cũng giúp ích rất nhiều cho việc SEO (Search Engine Optimization).</p>
+<p>Tài liệu tham khảo: - <a href="http://jmlr.org/proceedings/papers/v14/chapelle11a/chapelle11a.pdf">Yahoo! Learning to Rank Challenge Overview</a></p>
+		
+		
+	</div>
+
+</article>
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-01-06T04:14:00+09:00" data-updated="true" itemprop="datePublished">Jan 6<span>th</span>, 2014</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/clang/'>Clang</a>, <a class='category' href='/blog/categories/compiler/'>Compiler</a>, <a class='category' href='/blog/categories/modules/'>Modules</a>, <a class='category' href='/blog/categories/objective-c/'>Objective-C</a>, <a class='category' href='/blog/categories/ios/'>iOS</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2014/01/06/clang-modules/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2014/01/06/clang-modules/" itemprop="url">#include, #import, @import (Clang Modules)</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1 id="mở-đầu">Mở đầu</h1>
+<p>Happy New Year! Chúc mọi người năm mới vui vẻ, hạnh phúc.</p>
+<p>Như các bạn cũng biết gần đây XCode5 cùng iOS7 đã được giới thiệu. Đi cùng XCode5 là feature mới “modules” của Clang, một giải pháp nhằm giải quyết một số vấn đề như tăng tốc độ compile source code của ứng dụng. Hôm nay mình sẽ giới thiệu qua về tính năng modules này. Hiện tại thì modules đã có thể sử dụng trong C và Objective-C trên môi trường iOS7 hoặc MacOSX 10.9. Các đoạn code dưới đây tuy mình viết bằng Objective-C nhưng cũng gần như tương tự với C. Để hiểu về modules thì trước tiên mình sẽ giải thích lần lượt về <code>#include</code>, <code>#import</code>, và pre-compiled headers (PCH), sau đó là về modules.</p>
+<h2 id="include">#include</h2>
+<p>Khi chúng ta include 1 file header thì tại giai đoạn preprocessing của quá trình compile, compiler sẽ copy nội dung của file header này và paste vào dòng #include. Và tất nhiên quá trình copy/paste này là đệ quy cho đến khi copy xong tất cả file header mà nó include và các file header khác được include tại các file nó include. (hơi xoắn)</p>
+<p>Ví dụ với chương trình helloworld quen thuộc như dưới đây:</p>
 <div class="bogus-wrapper">
 <notextile>
-<figure class='code'> 
+<figure class="code">
+<figcaption>
+<span>helloworld.m </span>
+</figcaption>
 <div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -254,709 +444,305 @@
 <span class='line-number'>6</span>
 <span class='line-number'>7</span>
 <span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="cp">#import &quot;UIViewController+ Swizzling.h&quot;</span>
-</span><span class='line'><span class="cp">#import &quot;NSObject+Swizzle.h&quot;</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='objc'><span class='line'><span class="cp">#include &lt;Foundation/Foundation.h&gt;</span>
 </span><span class='line'>
-</span><span class='line'><span class="k">@implementation</span> <span class="nc">UIViewController</span> <span class="nl">(Swizzling)</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">+</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">load</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">static</span> <span class="n">dispatch_once_t</span> <span class="n">onceToken</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">dispatch_once</span><span class="p">(</span><span class="o">&amp;</span><span class="n">onceToken</span><span class="p">,</span> <span class="o">^</span><span class="p">{</span>
-</span><span class='line'>        <span class="p">[</span><span class="n">self</span> <span class="nl">swizzleInstanceSelector:</span><span class="k">@selector</span><span class="p">(</span><span class="n">viewDidLoad</span><span class="p">)</span>
-</span><span class='line'>                      <span class="nl">withNewSelector:</span><span class="k">@selector</span><span class="p">(</span><span class="n">myViewDidLoad</span><span class="p">)];</span>
-</span><span class='line'>    <span class="p">});</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="nf">myViewDidLoad</span> <span class="p">{</span>
-</span><span class='line'>    <span class="n">NSLog</span><span class="p">(</span><span class="s">@&quot;This is my view did load&quot;</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="c1">// Track Google Analystic here</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="p">[</span><span class="n">self</span> <span class="n">myViewDidLoad</span><span class="p">];</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Khi Objective-C run-time load 1 category, nó sẽ gọi đến hàm <code>load</code>. Chúng ta sử dụng dispatch_once để chắc chắn rằng hàm swizzle chỉ được gọi 1 lần. Sau khi import category này, (tốt nhất là trong file prefix - pch) tất cả các hàm <code>viewDidLoad</code> của <code>UIViewController</code> sẽ được thay thế bằng hàm <code>myViewDidLoad</code>.</p>
-<h1 id="ví-dụ-2">Ví dụ 2</h1>
-<p>1 ứng dụng khác của swizzling method là khi debug lỗi <code>index out of range</code> của NSArray. Nhiều khi gặp phải lỗi này nhưng chương trình không dừng lại ở đúng đoạn code bị lỗi (nhảy ra hàm main). 1 cách đơn giản để xử lý trường hợp này là override hàm <code>objectAtIndex:</code> của NSArray và bắt exception trong đó. Tuy nhiên, cách sử dụng swizzling method ở đây có hơi khác 1 chút.</p>
-<p>Trước hết là tạo <code>Category</code> cho <code>NSArray</code>:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'> 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">@implementation</span> <span class="nc">NSArray</span> <span class="nl">(OutOfRange)</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">-</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">safeObjectAtIndex:</span><span class="p">(</span><span class="n">NSUInteger</span><span class="p">)</span><span class="nv">index</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="n">self</span><span class="p">.</span><span class="n">count</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="n">NSLog</span><span class="p">(</span><span class="s">@&quot;%s self = %@, pointer = %p, index = %lu&quot;</span><span class="p">,</span> <span class="n">__FUNCTION__</span><span class="p">,</span> <span class="n">self</span><span class="p">,</span> <span class="n">self</span><span class="p">,</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span><span class="n">index</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="p">[</span><span class="n">self</span> <span class="nl">safeObjectAtIndex:</span><span class="n">index</span><span class="p">];</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">@end</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Đặt 1 breakpoint vào trong điều kiện <code>if (index &gt;= self.count)</code> để có thể biết được lỗi đến từ đâu. Sau đó, trong hàm <code>main</code> của <code>main.m</code>, thực hiện exchange method:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'> 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="cp">#import &lt;objc/runtime.h&gt;</span>
-</span><span class='line'><span class="cp">#import &quot;NSArray+OutOfRange.h&quot;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
 </span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">Class</span> <span class="n">arrayClass</span> <span class="o">=</span> <span class="n">NSClassFromString</span><span class="p">(</span><span class="s">@&quot;__NSArrayM&quot;</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">Method</span> <span class="n">originalMethod</span> <span class="o">=</span> <span class="n">class_getInstanceMethod</span><span class="p">(</span><span class="n">arrayClass</span><span class="p">,</span> <span class="k">@selector</span><span class="p">(</span><span class="nl">objectAtIndex:</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">Method</span> <span class="n">categoryMethod</span> <span class="o">=</span> <span class="n">class_getInstanceMethod</span><span class="p">([</span><span class="n">NSArray</span> <span class="n">class</span><span class="p">],</span> <span class="k">@selector</span><span class="p">(</span><span class="nl">safeObjectAtIndex:</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">method_exchangeImplementations</span><span class="p">(</span><span class="n">originalMethod</span><span class="p">,</span> <span class="n">categoryMethod</span><span class="p">);</span>
+</span><span class='line'>     <span class="n">NSLog</span><span class="p">(</span><span class="err">@“</span><span class="n">Hello</span> <span class="n">world</span><span class="err">”</span><span class="p">);</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="n">NSAutoreleasePool</span> <span class="o">*</span> <span class="n">pool</span> <span class="o">=</span> <span class="p">[[</span><span class="n">NSAutoreleasePool</span> <span class="n">alloc</span><span class="p">]</span> <span class="n">init</span><span class="p">];</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">retVal</span> <span class="o">=</span> <span class="n">UIApplicationMain</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span> <span class="n">argv</span><span class="p">,</span> <span class="nb">nil</span><span class="p">,</span> <span class="nb">nil</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">[</span><span class="n">pool</span> <span class="n">release</span><span class="p">];</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">retVal</span><span class="p">;</span>
+</span><span class='line'>     <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
 </span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table>
+</span></code></pre>
+</td>
+</tr>
+</table>
 </div>
 </figure>
 </notextile>
 </div>
-<p>Lưu ý ở đây chúng ta gọi Class <code>arrayClass = NSClassFromString(@&quot;__NSArrayM&quot;);</code> là bởi vì hàm <code>objectAtIndex:</code> không đến từ <code>NSArray</code> class mà đến từ <code>__NSArrayM</code> (xem trên console debug). Chính vì thế chúng ta không thể sử dụng cách swizzle thông thường như trong ví dụ 1.</p>
-<p>Để test đoạn code này, trong 1 đoạn chương trình bất kỳ, tạo ra 1 bug:</p>
+<p>Chúng ta có thể chạy preprocessor để xem file sinh ra sau giai đoạn này bằng lệnh <code>clang -E helloworld.m | less</code>.</p>
+<p>Nhìn vào kết quả output chúng ta có thể thấy tới hơn 92000 dòng là của Foundation.h (và của các file header mà Foundation.h include), chỉ 8 dòng cuối là code của chúng ta.</p>
+<p>Với việc sử dụng <code>#include</code> tồn tại vấn đề gọi là recursive include. Ví dụ :</p>
 <div class="bogus-wrapper">
 <notextile>
-<figure class='code'> 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">NSMutableArray</span> <span class="o">*</span><span class="n">list</span> <span class="o">=</span> <span class="p">[</span><span class="n">NSMutableArray</span> <span class="nl">arrayWithObjects:</span><span class="s">@&quot;1&quot;</span><span class="p">,</span> <span class="s">@&quot;2&quot;</span><span class="p">,</span> <span class="nb">nil</span><span class="p">];</span>
-</span><span class='line'><span class="n">NSLog</span><span class="p">(</span><span class="s">@&quot;Test: %@&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">list</span> <span class="nl">objectAtIndex:</span><span class="mi">3</span><span class="p">]);</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Bây giờ, chạy chương trình và tận hưởng thành quả :)</p>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-09-16T17:21:00+09:00" data-updated="true" itemprop="datePublished">Sep 16<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/data-analytic/'>Data Analytic</a>, <a class='category' href='/blog/categories/map-reduce/'>Map-Reduce</a>, <a class='category' href='/blog/categories/pig-latin/'>Pig Latin</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/09/16/data-analysis-pig-latin-programming/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/09/16/data-analysis-pig-latin-programming/" itemprop="url">Data Analysis - Pig Latin Programming</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h2 id="giới-thiệu-về-data-analysis-bằng-pig-latin">Giới thiệu về Data Analysis bằng Pig Latin</h2>
-<p>Nếu bạn đã từng làm việc với DB, chắc hẳn đã nghe đến Hadoop và Map-Reduce.</p>
-<p>Map-Reduce, hay NoSQL style là một phương pháp tiếp cận ko thể thiếu cho các database lớn, tuy nhiên lượng knowhow cần phải có và phương pháp tư duy đặc thù là những rào cản lớn đối với những Data Analyser hay ngay cả những DB engineer thông thường.</p>
-<p>Một Data Analyser muốn viết được job cho Map-Reduce, trước hết phải có kỹ năng của 1 Java Engineer, phải re-invent 1 số hàm common (JOIN, FILTER …)</p>
-<p>Yahoo đã giới thiệu 1 hướng tiệp cận khác: Pig Latin, là 1 programming language build trên top của Hadoop, cú pháp tương đối giống SQL thuần tuý, tuy nhiên ở tầng dưới có thể “translate” program execution thành các job Map-Reduce và trả lại kết quả với tốc độ của Map-Reduce.</p>
-<p>Pig Latin (kể từ đây sẽ gọi tắt là “Pig” :D ) với bộ engine đằng sau là Java, có thể extend bằng các thư viện viết = Java hay thậm chí Python. Pig có hiệu suất phát triển cao, nghĩa là thay vì bỏ ra 1 tiếng để viết job 100 lines Map-Reduce bằng Java, bạn có thể chỉ cần 10 phút với 10 lines Pig :D</p>
-<p>Ở các phần tiếp theo của bài viết này, bạn sẽ được giới thiệu những bước học hỏi đầu tiên của Pig Developer.</p>
-<h2 id="get-start">Get Start</h2>
-<p>Rất may là chúng ta không phải ngồi tưởng tượng chay cách hoạt động của Pig. Cloudera có <a href="http://blog.cloudera.com/blog/2012/08/hadoop-on-your-pc-clouderas-cdh4-virtual-machine/">free VM image</a>, bạn chỉ cần down bản tương ứng về chạy trên Virtual Box hoặc VMWare.</p>
-<p>Pig có cấu trúc khá tương đồng với SQL. Trước hết để làm với 1 cục dữ liệu cần phân tích, cần LOAD cả cục lên rồi tiến hành “mổ xẻ”, sau đó STORE lại 1 file kết quả.</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>sample.sql </span>
+<figure class="code">
+<figcaption>
+<span>FirstFile.h </span>
 </figcaption>
- 
 <div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='objc'><span class='line'><span class="cp">#include &quot;SecondFile.h&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/* Some code */</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>SecondFile.h </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='objc'><span class='line'><span class="cp">#include &quot;FirstFile.h&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/* Some other code */</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Khi đấy preprocessor sẽ duyệt file FirstFile.h và copy nội dung của SecondFile.h vào FirstFile.h. Khi duyệt file SecondFile.h lại copy/paste nội dung của file FirstFile.h. Vấn đề này được gọi là recursive include.</p>
+<h2 id="import">#import</h2>
+<p>Trong Objective-C để tránh vấn đề recursive include như trên thì chúng ta thường dùng <code>#import</code>. Khi dùng <code>#import</code> thì trước khi include 1 file header, preprocessor sẽ kiểm tra xem file đấy đã được include chưa, nếu đã include rồi thì sẽ không include nữa. Tương tự trong C chúng ta cũng tránh recursive include bằng việc kiểm tra file header đã được include chưa như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="n">city</span> <span class="o">=</span> <span class="k">LOAD</span> <span class="s1">&#39;/input/gotham/people.txt&#39;</span> <span class="k">AS</span> <span class="p">(</span><span class="n">name</span><span class="p">:</span><span class="n">chararray</span><span class="p">,</span> <span class="n">age</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">income</span><span class="p">:</span><span class="nb">int</span><span class="p">);</span>
-</span><span class='line'><span class="n">citizens</span> <span class="o">=</span> <span class="k">ORDER</span> <span class="n">city</span> <span class="k">BY</span> <span class="n">age</span><span class="p">;</span>
-</span><span class='line'><span class="n">max_age</span> <span class="o">=</span> <span class="k">LIMIT</span> <span class="n">citizens</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class='line'><span class="n">STORE</span> <span class="n">max_age</span> <span class="k">INTO</span> <span class="s1">&#39;output/gotham/analysis1.txt&#39;</span>
-</span></code></pre></td></tr></table>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class=''><span class='line'>#ifndef MYFILE_H
+</span><span class='line'>#define MYFILE_H
+</span><span class='line'> 
+</span><span class='line'>// Some code
+</span><span class='line'>  
+</span><span class='line'>#endif</span></code></pre>
+</td>
+</tr>
+</table>
 </div>
 </figure>
 </notextile>
 </div>
-<p>people.txt là data đầu vào được tạo ra từ table trong DB.</p>
-<h2 id="basic-functions">Basic functions</h2>
-<p>Về cơ bản Pig có những function/commands sau :</p>
+<h2 id="import-1"><span class="citation" data-cites="import">@import</span></h2>
+<p>Tuy nhiên việc sử dụng <code>#import</code> cũng như <code>#include</code> khiến cho preprocessor đối mặt với 1 số vấn đề khác như Fragility và Performance. Để hiểu về vấn đề Header Fragility chúng ta xem qua một ví dụ đơn giản sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>MyFile.h </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='objc'><span class='line'><span class="cp">#define NSURL @“my url&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#import &lt;Foundation/Foundation.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">@interface</span> <span class="nc">MyClass</span> :<span class="nc">NSObject</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">@end</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Khi đó sau quá trình preprocessing thì file header của chúng ta sẽ như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='objc'><span class='line'><span class="cp">#define NSURL @“my url&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// đoạn code được copy từ Foundation.h</span>
+</span><span class='line'><span class="c1">// và tất cả những đoạn có chứa NSURL của Foundation.h đều bị thay bằng “my url”</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">@interface</span> <span class="nc">MyClass</span> :<span class="nc">NSObject</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">@end</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Tất cả những đoạn NSURL của Foundation.h đều bị preprocessor thay thế bằng “my url” do có <code>#define NSURL @“my url”</code> bên trên. Từ đó ta thấy với việc dùng <code>#include</code> hay <code>#import</code> thông thường thì các header của các file khác, hay của thư viện mà chúng ta dùng đều có thể bị ảnh hưởng như việc dùng <code>#define</code> ở trên.</p>
+<p>Về vấn đề performance thì như ở trên ta đã thấy <code>#include</code> và <code>#import</code> sẽ copy/paste toàn bộ file header mà nó include (đệ quy). Như ở ví dụ đầu tiên chúng ta chỉ include mình Foundation.h nhưng sau khi preprocessing thì có tới hơn 92000 dòng là của Foundation.h (và các file header mà Foundation.h include), chỉ 8 dòng cuối là code của chúng ta. Thế nên thời gian compile sẽ trở nên nhiều hơn rất nhiều.</p>
+<h2 id="pre-compiled-headers">Pre-compiled headers</h2>
+<p>Để giải quyết 1 phần vấn đề performance chúng ta có thể dùng precompiled headers (.pch). Nếu các bạn chú ý thì tất cả iOS project khi được XCode tạo ra đều có file PROJECTNAME-Prefix.pch như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>PROJECTNAME-Prefix.pch </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='objc'><span class='line'><span class="cp">#import &lt;Availability.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#ifndef __IPHONE_3_0</span>
+</span><span class='line'><span class="cp">#warning &quot;This project uses features only available in iOS SDK 3.0 and later.&quot;</span>
+</span><span class='line'><span class="cp">#endif</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#ifdef __OBJC__</span>
+</span><span class='line'>    <span class="err">#</span><span class="n">import</span> <span class="o">&lt;</span><span class="n">UIKit</span><span class="o">/</span><span class="n">UIKit</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;</span>
+</span><span class='line'>    <span class="err">#</span><span class="n">import</span> <span class="o">&lt;</span><span class="n">Foundation</span><span class="o">/</span><span class="n">Foundation</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;</span><span class="n">Foundation</span><span class="p">;</span>
+</span><span class='line'><span class="cp">#endif</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Trong file .pch này chúng ta sẽ include những header mà có khả năng được include tại nhiều nơi trong source code của ứng dụng như Foundation.h, UIKit.h… Khi source code của ứng dụng được compile thì file .pch này sẽ được compile đầu tiên, đồng nghĩa với việc tất cả file header được include trong file .pch này sẽ được compile trước và được include vào tất cả source code.</p>
+<p>Bằng viêc caching những file header đã được biên dịch này thì những file này chỉ cần compile 1 lần, những lần sau chỉ cần sử dụng lại nên thời gian compile sẽ được rút gọn.</p>
+<p>Thế nhưng các developer thường không hay quản lý file .pch này, và không phải file header nào cũng được dùng tại nhiều nơi trong source code nên hiệu quả của .pch chưa được cao.</p>
+<h2 id="modules">Modules</h2>
+<p>Vào tháng 11 năm 2012, Doug Gregor (một kỹ sư của Apple) đã giới thiệu tính năng modules nhằm giải quyết vấn đề trên của proprocessor thay cho .pch. Vậy module là gì? Module chính là một package mô tả một library, framework.</p>
+<p>Ví dụ chạy 2 lệnh dưới đây ta sẽ có thể xem được các module trong SDK của iOS7.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class=''><span class='line'>% cd `xcrun --sdk iphoneos --show-sdk-path`
+</span><span class='line'>% find . -name module.map   
+</span><span class='line'>
+</span><span class='line'> ./Developer/Library/Frameworks/XCTest.framework/module.map   
+</span><span class='line'> ./System/Library/Frameworks/AudioToolbox.framework/module.map   
+</span><span class='line'> ./System/Library/Frameworks/AudioUnit.framework/module.map   
+</span><span class='line'> ./System/Library/Frameworks/CoreAudio.framework/module.map     
+</span><span class='line'>    :     
+</span><span class='line'>    :   
+</span><span class='line'> ./usr/include/dispatch/module.map   
+</span><span class='line'> ./usr/include/mach-o/module.map   
+</span><span class='line'> ./usr/include/module.map   
+</span><span class='line'> ./usr/include/objc/module.map</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Với mỗi framework ta thấy có 1 file module.map để mô tả framework đấy.</p>
+<p>Và để sử dụng framework chúng ta có thể thay <code>#import &lt;Frameworkname.h&gt;</code> bằng <code>@import Frameworkname;</code> Ví dụ khi sử dụng framework Foundation ta sẽ dùng <code>@import Foundation;</code> Vậy khi trong một file header gặp đoạn import module thì compiler đã xử lý gì và tại sao lại giải quyết được vấn đề Fragility và Performance của preprocessor?</p>
+<p>Ví dụ khi trong một file header, preprocessor gặp <code>@import Foundation</code> thì sẽ xử lý các bước như sau:</p>
 <ul>
-<li>LOAD, STORE: lấy dữ liệu trước khi xử lý và lưu sau khi xử lý. Ngoài ra DUMP có thể dùng để debug kiểu data.</li>
-<li>GROUP, FILTER, ORDER BY, DISTINCT, LIMIT, UNION: những xử lý cơ bản giống hệt SQL.</li>
-<li>FOREACH: loop function, để tạo nest operator (có thể hiểu đơn giản như cách tạo sub-query).</li>
-<li>JOIN: giống JOIN của SQL, cũng có INNER, LEFT OUTER hay RIGHT OUTER… Những bước JOIN trong Pig thường là những bước quan trọng khi muốn tạo relation từ 2 cục data riêng rẽ trở lên.</li>
-<li>Eval functions (MAX, AVG, COUNT, SUM….).</li>
-<li>Math functions (SIN, COS, TAN, SQRT, …).</li>
-<li>Tuple. Bag, Map functions. Phần này khá là khó và tác giả cũng không có nhiều kinh nghiệm sử dụng.</li>
-<li>UDF (User Define Functions): là functions do developer tự viết bằng Java hoặc Python :D</li>
+<li>Tìm file module.map của framework có tên là Foundation</li>
+<li>Dựa vào mô tả về framework trong file module.map này compiler sẽ parse các file headers và sinh ra file module (lưu dưới dạng AST - biểu diễn dưới dạng tree trước khi chuyển sang mã máy)</li>
+<li>Load file module này tại đoạn khai báo import</li>
+<li>Cache file module này để sử dụng lại cho những lần sau</li>
 </ul>
-<p>Bạn có thể xem cụ thể ở <a href="http://pig.apache.org/docs/r0.10.0/basic.html">Pig Latin Basics</a> hoặc <a href="http://pig.apache.org/docs/r0.10.0/func.html">Pig Latin Built In Functions</a></p>
-<h2 id="challenge-1-group-và-foreach">Challenge 1: GROUP và FOREACH</h2>
-<p>Bài toán đơn giản đầu tiên, với data đầu vào là thông tin của các công dân thành phố gotham như ở trên, ta cần tìm người giàu nhất (income cao nhất) trong các nhóm độ tuổi 20~30, 30~40, 40~50, v.v..</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>sample.sql </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="n">city</span> <span class="o">=</span> <span class="k">LOAD</span> <span class="s1">&#39;/input/gotham/people.txt&#39;</span> <span class="k">AS</span> <span class="p">(</span><span class="n">name</span><span class="p">:</span><span class="n">chararray</span><span class="p">,</span> <span class="n">age</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">income</span><span class="p">:</span><span class="nb">int</span><span class="p">);</span>
-</span><span class='line'><span class="n">city_divide</span> <span class="o">=</span> <span class="n">FOREACH</span> <span class="n">city</span> <span class="n">GENERATE</span>
-</span><span class='line'>  <span class="n">name</span><span class="p">,</span>
-</span><span class='line'>  <span class="n">age</span><span class="o">/</span><span class="mi">10</span> <span class="k">AS</span> <span class="k">class</span><span class="p">,</span>
-</span><span class='line'>  <span class="n">income</span><span class="p">;</span>
-</span><span class='line'><span class="n">city_classes</span> <span class="o">=</span> <span class="k">GROUP</span> <span class="n">city_divide</span> <span class="k">BY</span> <span class="k">class</span><span class="p">;</span>
-</span><span class='line'><span class="n">citizens</span> <span class="o">=</span> <span class="n">FOREACH</span> <span class="n">city_classes</span> <span class="err">{</span>
-</span><span class='line'>  <span class="n">ord</span> <span class="o">=</span> <span class="k">ORDER</span> <span class="n">city_divide</span> <span class="k">BY</span> <span class="n">income</span><span class="p">;</span>
-</span><span class='line'>  <span class="n">lim</span> <span class="o">=</span> <span class="k">LIMIT</span> <span class="n">ord</span> <span class="k">BY</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class='line'>  <span class="n">GENERATE</span> <span class="k">class</span><span class="o">*</span><span class="mi">10</span> <span class="k">as</span> <span class="k">class</span><span class="p">,</span> <span class="n">lim</span><span class="p">.</span><span class="n">name</span> <span class="k">AS</span> <span class="n">name</span><span class="p">,</span> <span class="n">lim</span><span class="p">.</span><span class="n">income</span> <span class="k">AS</span> <span class="n">income</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">STORE</span> <span class="n">citizens</span> <span class="k">INTO</span> <span class="s1">&#39;output/gotham/analysis2.txt&#39;</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Đến đây chắc độc gỉả đã phần nào hình dung được data analyser dùng Pig Latin như thế nào :D</p>
-<h2 id="challende-2-join">Challende 2: JOIN</h2>
-<p>Giả sử ngoài data về từng công dân của gotham, chúng ra có 1 data khác về các …“super heroes”, bao gồm “strength”, “ability”. Làm thế nào để biết các “super heroes” có thu nhập bao nhiêu trong cuộc sống thường ngày của họ ?</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>sample.sql </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="n">city</span> <span class="o">=</span> <span class="k">LOAD</span> <span class="s1">&#39;/input/gotham/people.txt&#39;</span> <span class="k">AS</span> <span class="p">(</span><span class="n">name</span><span class="p">:</span><span class="n">chararray</span><span class="p">,</span> <span class="n">age</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">income</span><span class="p">:</span><span class="nb">int</span><span class="p">);</span>
-</span><span class='line'><span class="n">heroes</span> <span class="o">=</span> <span class="k">LOAD</span> <span class="s1">&#39;/input/gotham/heroes.txt&#39;</span> <span class="k">AS</span> <span class="p">(</span><span class="n">name</span><span class="p">:</span><span class="n">chararray</span><span class="p">,</span> <span class="n">strength</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">ability</span><span class="p">:</span><span class="n">chararray</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">op</span> <span class="o">=</span> <span class="k">JOIN</span> <span class="n">city</span> <span class="k">BY</span> <span class="n">name</span><span class="p">,</span> <span class="n">heroes</span> <span class="k">BY</span> <span class="n">name</span><span class="p">;</span>
-</span><span class='line'><span class="n">opt</span> <span class="o">=</span> <span class="n">FOREACH</span> <span class="n">op</span> <span class="n">GENERATE</span>
-</span><span class='line'>  <span class="err">$</span><span class="mi">0</span> <span class="k">AS</span> <span class="n">name</span><span class="p">,</span>
-</span><span class='line'>  <span class="err">$</span><span class="mi">1</span> <span class="k">AS</span> <span class="n">age</span><span class="p">,</span>
-</span><span class='line'>  <span class="err">$</span><span class="mi">2</span> <span class="k">AS</span> <span class="n">income</span><span class="p">,</span>
-</span><span class='line'>  <span class="err">$</span><span class="mi">4</span> <span class="k">AS</span> <span class="n">strength</span><span class="p">,</span>
-</span><span class='line'>  <span class="err">$</span><span class="mi">5</span> <span class="k">AS</span> <span class="n">ability</span><span class="p">;</span>
-</span><span class='line'><span class="n">STORE</span> <span class="n">opt</span> <span class="k">INTO</span> <span class="s1">&#39;output/gotham/analysis3.txt&#39;</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Ở đây bạn có thể để ý $0, $1, $2 lần lượt là name, age, income của biến city, $3, $4, $5 là name, strength, ability của biến heroes. Như vậy kết quả sau khi JOIN gồm tất cả các fields của 2 biến JOIN thành phần!</p>
-<h2 id="pig-tuning">Pig Tuning</h2>
-<p>Qua 2 ví dụ trên đây, bạn có thể thế thấy Pig dễ phát triển như thế nào. Tuy nhiên khi engineer hoàn toàn không có kinh nghiệm về Map-Reduce viết Pig thì chắc chắn sẽ không thể biết cách optimize để các job Hadoop bên dưới đạt tốc độ nhanh nhất có thể.</p>
-<p>Để giữ có Pig program có hiệu suất xử lý cao, engineer có thể áp dụng các trick dưới đây:</p>
+<p>Thứ nhất thay vì copy nội dung các file header được include rồi mới compile, mà import trưc tiếp file module đã được lưu dưới dạng AST nên các header của framework ko bị ảnh hưởng bởi các đoạn code trước khi import (như #define) -&gt; tránh được vấn đề Fragility.</p>
+<p>Thứ hai là nhờ việc cache những file module này mà compiler không phải biên dịch lần 2 nên sẽ rút gọn thời gian biên dịch.</p>
+<p>Ngoài ra một điều thú vị nữa mà tính năng module mang lại cho lập trình viên đó là chúng ta không phải tự tay link các framework mà chúng ta import. Ví dụ như trước đây nếu trong file tmp.m có <code>#include &lt;Foundation/Foundation.h&gt;</code> thì khi biên dịch chúng ta phải tự link tới Foundation bằng lệnh : <code>clang tmp.m -o tmp -framework Foundation</code></p>
+<p>Thế nhưng khi sử dụng <code>@import</code> thì chúng ta không cần phải tự link tới framework nữa mà chỉ cần:</p>
+<p><code>clang tmp.m -o tmp -fmodules</code></p>
+<p>Với XCode chúng ta sẽ không phải add thêm các framework mà mình muốn dùng trong <code>Link Binary With Libraries</code> như hình dưới đây.</p>
+<p><img src="/images/clang_modules/link_framework.png"></p>
+<p>Đối với những project được tạo từ XCode5 thì tính năng module tự động được enable. Nhưng những project được tạo trước đây các bạn phải tự enable trong phần <code>Build Settings</code> (tức là set flag -fmodules).</p>
+<p><img src="/images/clang_modules/enable_module.png"></p>
+<h1 id="kết-luận">Kết luận</h1>
+<p>Bài viết này mình đã giới thiệu qua tính năng module của Clang trong được giới thiệu từ XCode5. Và đồng thời cũng giải thích qua về <code>#include</code>, <code>#import</code>, pch. Mặc dù tính năng module vẫn đang trong quá trình hoàn thiện nhưng hiện tại chúng ta đã có thể sử dụng với XCode5.</p>
+<p>Các bạn có thể tìm hiểu thêm tại:</p>
 <ul>
-<li><p>Dùng FILTER nhiều nhất và sớm nhất có thể. Nếu bạn JOIN a và b rồi lại FILTER, thì hãy tìm cách FILTER a và b trước rồi hãy JOIN.</p></li>
-<li><p>Loại bỏ các cột (các fields) không cần thiết. Giả sử biến a có 11 fields và bạn chỉ cần 7 fields, hãy “FOREACH a GENERATE ($0…$6)” để lập tức loại bỏ 4 fields.</p></li>
-<li><p>PARALLEL là 1 magic keyword. Dùng PARALLEL để chỉ định số lượng reduceers.</p></li>
+<li><a href="http://clang.llvm.org/docs/Modules.html">clang_modules</a></li>
+<li><a href="http://llvm.org/devmtg/2012-11/Gregor-Modules.pdf">Bài phát biểu của Gregor</a></li>
 </ul>
-<h2 id="udfs">UDFs</h2>
-<p>Điều cuối cùng tác giả muốn chia sẻ, là khi bạn có những tasks xử lý nhỏ sử dụng nhiều lần với các fields, hãy cố gắng viết UDFs để xử lý. Pig được ship cùng với 1 package UDF viết sẵn <a href="https://cwiki.apache.org/confluence/display/PIG/PiggyBank">Piggy Bank</a>.</p>
-<p>UDF có thể viết bằng Java hoặc Python. Java UDFs có tốc độ và khả năng ứng dụng trong Pig tốt hơn. Khi đã làm chủ được cấu trúc dữ liệu giữa Python/Java và Pig, bạn sẽ thấy UDFs là một feature mạnh mẽ và không thể sống thiếu :D</p>
-<h2 id="tóm-tắt">Tóm tắt:</h2>
-<ul>
-<li>Pig Latin: Ngôn ngữ được build trên top của Hadoop, với bộ core Java và engine có thể translate logic sang 1 set các Map-Reduce Jobs.</li>
-<li>VM có thể dùng cho mục đích học hỏi từ đầu <a href="http://blog.cloudera.com/blog/2012/08/hadoop-on-your-pc-clouderas-cdh4-virtual-machine/">Cloudera Pig VM image</a>.</li>
-<li>Tất cả các hàm có thể tra cứu tại <a href="http://pig.apache.org/docs/r0.10.0/func.html">Pig Latin Built In Functions</a>.</li>
-<li>UDFs được viết sẵn <a href="https://cwiki.apache.org/confluence/display/PIG/PiggyBank">Piggy Bank</a>.</li>
-<li><a href="http://blog.cloudera.com/wp-content/uploads/2010/01/IntroToPig.pdf">Slide giới thiệu tổng hợp của Cloudera</a>.</li>
-</ul>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-09-10T16:33:00+09:00" data-updated="true" itemprop="datePublished">Sep 10<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/09/10/su-dung-metaclass-trong-python/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/09/10/su-dung-metaclass-trong-python/" itemprop="url">Sử Dụng Metaclass Trong Python</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<p>Bài viết này trình bày về metaclass và một số cách dùng metaclass trong Python. Để hiểu bài viết này, bạn nên có kiến thức về <code>magic method</code> trong Python. Cụ thể là các hàm <code>__init__</code>, <code>__new__</code>, <code>__call__</code></p>
-<h1 id="metaclass-là-gì">1. Metaclass là gì</h1>
-<p>Trong Python, tất cả mọi thứ đều là object, là instance của một Class nào đó. Để kiểm tra class của một object, chúng ta có thể sử dụng hàm <code>type</code> hoặc thuộc tính <code>__class__</code></p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>test.py </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">__class__</span>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">type</span> <span class="s">&#39;int&#39;</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">A</span><span class="p">:</span> <span class="k">pass</span>
-</span><span class='line'>    <span class="o">...</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="n">A</span><span class="p">()</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
-</span><span class='line'><span class="o">&lt;</span><span class="k">class</span> <span class="err">&#39;</span><span class="nc">__main__</span><span class="o">.</span><span class="n">A</span><span class="s">&#39;&gt;</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Trong ví dụ trên, a là một instance của class A, class của a chính là A. Vậy còn kiểu của A là gì?</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>test.py </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="nb">type</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">type</span> <span class="s">&#39;type&#39;</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Kiểu của A là <code>type</code>. Bởi vì mặc đinh thì class A tạo bởi hàm <a href="http://docs.python.org/2/library/functions.html#type"><code>type</code></a>, với 3 tham số truyền vào</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>test.py </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="nb">type</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">name</span> <span class="o">-</span> <span class="n">T</span><span class="err">ê</span><span class="n">n</span> <span class="n">c</span><span class="err">ủ</span><span class="n">a</span> <span class="k">class</span> <span class="nc">s</span><span class="err">ẽ</span> <span class="err">đượ</span><span class="n">c</span> <span class="n">t</span><span class="err">ạ</span><span class="n">o</span> <span class="n">ra</span>
-</span><span class='line'>    <span class="n">bases</span> <span class="o">-</span> <span class="n">Tuple</span> <span class="n">danh</span> <span class="n">s</span><span class="err">á</span><span class="n">ch</span> <span class="n">c</span><span class="err">á</span><span class="n">c</span> <span class="n">parent</span> <span class="k">class</span> <span class="nc">c</span><span class="err">ủ</span><span class="n">a</span> <span class="k">class</span> <span class="nc">s</span><span class="err">ẽ</span> <span class="err">đượ</span><span class="n">c</span> <span class="n">t</span><span class="err">ạ</span><span class="n">o</span> <span class="n">ra</span>
-</span><span class='line'>    <span class="nb">dict</span> <span class="o">-</span> <span class="n">Danh</span> <span class="n">s</span><span class="err">á</span><span class="n">ch</span> <span class="n">c</span><span class="err">á</span><span class="n">c</span> <span class="n">thu</span><span class="err">ộ</span><span class="n">c</span> <span class="n">t</span><span class="err">í</span><span class="n">nh</span> <span class="n">c</span><span class="err">ủ</span><span class="n">a</span> <span class="k">class</span> <span class="nc">s</span><span class="err">ẽ</span> <span class="err">đượ</span><span class="n">c</span> <span class="n">t</span><span class="err">ạ</span><span class="n">o</span> <span class="n">ra</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Sử dụng hàm <code>type</code>, chúng ta có thể tạo ra một class mới</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>test.py </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">Person</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="s">&#39;Person&#39;</span><span class="p">,</span> <span class="p">(),</span> <span class="p">{</span><span class="s">&#39;country&#39;</span><span class="p">:</span> <span class="s">&#39;vietnam&#39;</span><span class="p">}</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">Person</span><span class="o">.</span><span class="n">country</span>
-</span><span class='line'><span class="n">vietnam</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Chúng ta có thể thay đổi quá trình tạo ra class A bằng cách set thuộc tính <code>__metaclass__</code> của A. Thuộc tính <code>__metaclass__</code> là một callable object (một function, hoặc một object) nhận 3 tham số truyền vào như hàm <code>type</code> nói trên.</p>
-<p>Khi định nghĩa một class bằng từ khoá <code>class</code>, nếu <code>__metaclass__</code> được set, metaclass sẽ được gọi sau khi các thuộc tính khác của class đã được set.</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>test.py </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">PersonMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">PersonMeta</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">PersonMeta</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">country</span> <span class="o">=</span> <span class="s">&#39;Vietnam&#39;</span>
-</span><span class='line'>    <span class="n">people</span> <span class="o">=</span> <span class="p">[]</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p><code>PersonMeta</code> sẽ được gọi với các tham số (‘Person’, (object), {‘country’: ‘Vietnam’, ‘people’: []}). Bằng cách metaclass được gọi cuối cùng, chúng ta có thể sử dụng metaclass để can thiệp vào qúa trình tạo ra class, cụ thể là các thuộc tính ở mức class của class đó. Có thể coi Metaclass là Class của class. Và class là một instance của Metaclass. Những thuộc tính của ở mức class của một class (các class attribute, các <span class="citation" data-cites="classmethod">@classmethod</span>) chính là các thuộc tính ở mức instance của một Metaclass</p>
-<h1 id="giới-thiệu-một-số-trường-hợp-sử-dụng-metaclass">2. Giới thiệu một số trường hợp sử dụng Metaclass</h1>
-<p>Metaclass là một trong những <code>black magic</code> và rất ít khi được sử dụng trong Python.</p>
-<p>“Metaclasses are deeper magic than 99% of users should ever worry about. If you wonder whether you need them, you don’t (the people who actually need them know with certainty that they need them, and don’t need an explanation about why).” -Python Guru Tim Peters&quot;</p>
-<p>(Tạm dịch: Metaclass sâu sắc hơn 99% những gì mà người dùng nên lo lắng. Nếu bạn phân vân khi nào bạn cần chúng, bạn sẽ không bao giờ cần (những người thực sự cần Metaclass, sẽ biết chính xác trong trường hợp nào họ cần, và không cần phải giải thích lý do vì sao)</p>
-<p>Tuy nhiên để giúp bạn đọc hiểu rõ metaclass, trong bài viết này, tôi trình bày 2 ví dụ về cách sử dụng metaclass</p>
-<h2 id="sử-dụng-metaclass-để-can-thiệp-vào-việc-tạo-instance-của-class">2.1. Sử dụng metaclass để can thiệp vào việc tạo instance của class</h2>
-<p>Giả sử chúng ta có B là metaclass của A. Việc tạo ra một instance của A chính là việc gọi hàm <code>A(*args, **kwargs)</code>. Nhưng vì A là một instance của B, nên gọi A, chính là gọi hàm <code>__call__</code> của một instance của B. Do đó, để can thiệp vào quá trình tạo instance của class, chúng ta có thể override hàm <code>__call__</code> trong class B</p>
-<p>Xét ví dụ chúng ta muốn tạo ra một Singleton class bằng Metaclass</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>singleton.py </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">SingletonMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span> <span class="o">=</span> <span class="bp">None</span>
-</span><span class='line'>        <span class="nb">super</span><span class="p">(</span><span class="n">SingletonMeta</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="p">:</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">SingletonMeta</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__call__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</span><span class='line'>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">SingletonMeta</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;kiennt&#39;</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="mi">26</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">a</span> <span class="o">=</span> <span class="n">Person</span><span class="p">()</span>
-</span><span class='line'><span class="k">print</span> <span class="n">a</span><span class="o">.</span><span class="n">name</span> <span class="c"># kiennt</span>
-</span><span class='line'><span class="k">print</span> <span class="n">a</span><span class="o">.</span><span class="n">age</span> <span class="c"># 26</span>
-</span><span class='line'><span class="n">b</span> <span class="o">=</span> <span class="n">Person</span><span class="p">()</span>
-</span><span class='line'><span class="k">print</span> <span class="n">b</span> <span class="o">==</span> <span class="n">a</span> <span class="c"># True</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Nếu bỏ thuộc tính <code>__metaclass__</code> trong class Person, thì b sẽ không bằng a nữa</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>singleton.py </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="c">#__metaclass__ = SingletonMeta</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;kiennt&#39;</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="mi">26</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">a</span> <span class="o">=</span> <span class="n">Person</span><span class="p">()</span>
-</span><span class='line'><span class="n">b</span> <span class="o">=</span> <span class="n">Person</span><span class="p">()</span>
-</span><span class='line'><span class="k">print</span> <span class="n">b</span> <span class="o">==</span> <span class="n">a</span> <span class="c"># False</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<h2 id="sử-dụng-metaclass-để-can-thiệp-vào-các-thuộc-tính-của-một-class">2.2. Sử dụng metaclass để can thiệp vào các thuộc tính của một class</h2>
-<p>Hãy xem xét một ví dụ về cài đặt ORM (Object Relational Mapping)</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>orm.py </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Field</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">pass</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">CharField</span><span class="p">(</span><span class="n">Field</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">pass</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">IntegerField</span><span class="p">(</span><span class="n">Field</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">pass</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">name</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">age</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Giờ nếu chúng ta muốn lưu một biến <code>_fields</code> để chứa tất cả các thuộc tính của class là một instance của <code>Field</code>, chúng ta có thể sử dụng metaclass để can thiệp</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>orm.py </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">ModelMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
-</span><span class='line'>        <span class="c"># get all Field attributes</span>
-</span><span class='line'>        <span class="n">fields</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span class='line'>        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-</span><span class='line'>            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">Field</span><span class="p">):</span>
-</span><span class='line'>                <span class="n">fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">__class__</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="c">## update attrs</span>
-</span><span class='line'>        <span class="n">attrs</span><span class="p">[</span><span class="s">&#39;_fields&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fields</span>
-</span><span class='line'>        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">ModelMeta</span><span class="p">,</span> <span class="n">cls</span><span class="p">)</span><span class="o">.</span><span class="n">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">ModelMeta</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">name</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">age</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">print</span> <span class="n">Programmer</span><span class="o">.</span><span class="n">_fields</span> <span class="c"># [&lt;class &#39;__main__.IntegerField&#39;&gt;, &lt;class &#39;__main__.CharField&#39;&gt;]</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Chú ý rằng <code>__new__</code> là static class, nên chúng ta cần truyền <code>cls</code> vào trong lời gọi <code>super(ModelMeta, cls).__new__(cls, name, bases, attrs)</code></p>
-<p>Nếu không implement ở trong hàm <code>__new__</code>, chúng ta có thể implement ở trong hàm <code>__init__</code> của metaclass như sau</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>orm.py </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">ModelMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span class='line'>        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-</span><span class='line'>            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">Field</span><span class="p">):</span>
-</span><span class='line'>                <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">__class__</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">ModelMeta</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">name</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">age</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">print</span> <span class="n">Programmer</span><span class="o">.</span><span class="n">_fields</span> <span class="c"># [&lt;class &#39;__main__.IntegerField&#39;&gt;, &lt;class &#39;__main__.CharField&#39;&gt;]</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Tuy nhiên cách implement này thường it khi được sử dụng bằng cách implement thứ nhất trong hàm <code>__new__</code>, vì trong Python, hàm <code>__new__</code> thường được sử dụng để allocate object, và <code>__init__</code> được sử dụng để khởi tạo object</p>
-<h1 id="kết-luận">3. Kết luận</h1>
-<p>Bài viết trình bày về khái niệm metaclass và một số cách sử dụng metaclass trong python. Với metaclass, chúng ta có thể thay đổi các thuộc tính ở mức class của một class thông qua hàm <code>__new__</code> và <code>__init__</code> của Metaclass, can thiệp vào quá trình tạo ra instance của class bằng cách thay đổi hàm <code>__call__</code> của metaclass.</p>
-<p>Metaclass là một trong những vấn đề khó và ít khi gặp trong python. Để hiểu và sử dụng metaclass một cách dễ dàng,cách ngăn nhất là code và đọc code python thật nhiều</p>
-<h1 id="tham-khảo">4. Tham khảo</h1>
-<p><a href="http://www.amazon.com/Python-Cookbook-David-Beazley/dp/1449340377">Python Cookbook</a></p>
-<p><a href="https://github.com/kiddouk/redisco">redisco</a></p>
 		
 		
 	</div>
@@ -974,7 +760,7 @@
     <div class="center"><a href="/blog/archives">Blog Archives</a></div>
 </nav></div>
 			</div>
-			<footer id="footer" class="inner">Copyright &copy; 2014
+			<footer id="footer" class="inner">Copyright &copy; 2015
 
     kỹ thuật máy tính
 

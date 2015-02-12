@@ -7,7 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="May 28th, 2013 sql Comments Sql and Null Khi sử dụng SQL, chắc hẳn các bạn đã biết có một cái gọi là NULL (mình gọi là cái vì NULL không phải là một &hellip;">
+	<meta name="description" content="Jun 21st, 2013 html5 Comments Playing With Web Audio Api (Part 2) Playing audio with multisource and precise timing
+Để làm game một game hay trên &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -37,7 +38,7 @@
 	<div class="container">
 		<div class="left-col">
 			<div class="intrude-less">
-			<header id="header" class="inner"><div class="profilepic">	
+			<header id="header" class="inner"><div class="profilepic">
 	<script src="/javascripts/md5.js"></script>
 	<img src='/images/logo.jpg' alt='Profile Picture' style='width: 160px;' />
 </div>
@@ -66,9 +67,9 @@
 	</div>
 </nav>
 
-</header>				
+</header>
 			</div>
-		</div>	
+		</div>
 		<div class="mid-col">
 			
 				
@@ -92,172 +93,36 @@
   
 
 
-<time datetime="2013-05-28T22:28:00+09:00" data-updated="true" itemprop="datePublished">May 28<span>th</span>, 2013</time></div>
+<time datetime="2013-06-21T23:07:00+09:00" data-updated="true" itemprop="datePublished">Jun 21<span>st</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/sql/'>sql</a>
+	<a class='category' href='/blog/categories/html5/'>html5</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/05/28/sql-and-null/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/06/21/playing-with-web-audio-api-part-2/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/05/28/sql-and-null/" itemprop="url">Sql and Null</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/06/21/playing-with-web-audio-api-part-2/" itemprop="url">Playing With Web Audio Api (Part 2)</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<p>Khi sử dụng SQL, chắc hẳn các bạn đã biết có một cái gọi là <strong>NULL</strong> (mình gọi là cái vì NULL <strong>không phải là một giá trị</strong>) Để so sánh với NULL thì các bạn sẽ dùng toán tử <strong>is</strong> và <strong>is not</strong> thay vì <strong>=</strong>(equal) hoặc là <strong>&lt;&gt;</strong>(not equal)</p>
+		<h3 id="playing-audio-with-multisource-and-precise-timing">Playing audio with multisource and precise timing</h3>
+<p>Để làm game một game hay trên html5 thì âm thanh là một thứ không thể thiếu. Đầu tiên hãy đến với một game rất nổi tiếng: <a href="http://chrome.angrybirds.com/">Angry bird chrome</a></p>
+<p>Các bạn có thể để ý khi play một màn game bất kì nào đấy thì sẽ thấy rất nhiều âm thanh với các lớp (layer) khác nhau, được play vào các thời điểm khác nhau một cách hợp lý. Nếu chỉ đơn thuần dùng audio tag thì việc control các layer âm thanh khác nhau được play vào thời điểm nào sẽ rất khó.</p>
+<p>Nhờ có web audio api mà việc này trở nên dễ dàng hơn rất nhiều.</p>
+<p>Như mình đã nói ở bài trước, web audio api xoay quanh audio context. Điều đặc biệt là <strong>một context có thể load cùng một lúc nhiều audio source</strong>, và <strong>play mỗi audio source tại các thời điểm khác nhau</strong>, với một interface rất dễ hiểu. Đầu tiên là việc load nhiều audio source vào cùng một context. Dưới đây là module <strong><em>BufferLoader</em></strong> có nhiệm vụ load các file audio từ nhiều source khác nhau và quản lý thông qua bufferList.</p>
 <div class="bogus-wrapper">
 <notextile>
-<figure class='code'><figcaption>
-<span>null.sql </span>
+<figure class="code">
+<figcaption>
+<span>loadfile.js </span>
 </figcaption>
- 
 <div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="k">SELECT</span> <span class="o">*</span> <span class="k">WHERE</span> <span class="n">field</span> <span class="k">IS</span> <span class="k">NULL</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Bạn đã bao giờ tự hỏi tại sao lại không dùng (=) và (&lt;&gt;). Đầu tiên chúng ta hãy thử nhé</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>null.sql </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="k">select</span> <span class="ss">&quot;1&quot;</span> <span class="k">where</span> <span class="mi">1</span> <span class="o">&lt;&gt;</span> <span class="k">NULL</span><span class="p">;</span>
-</span><span class='line'><span class="k">select</span> <span class="ss">&quot;2&quot;</span> <span class="k">where</span> <span class="mi">1</span> <span class="k">IS</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">;</span>
-</span><span class='line'><span class="k">select</span> <span class="ss">&quot;3&quot;</span> <span class="k">where</span> <span class="k">NULL</span> <span class="o">=</span> <span class="k">NULL</span><span class="p">;</span>
-</span><span class='line'><span class="k">select</span> <span class="ss">&quot;4&quot;</span> <span class="k">where</span> <span class="k">NULL</span> <span class="o">&lt;&gt;</span> <span class="k">NULL</span><span class="p">;</span>
-</span><span class='line'><span class="k">select</span> <span class="ss">&quot;5&quot;</span> <span class="k">where</span> <span class="k">NULL</span> <span class="k">IS</span> <span class="k">NULL</span><span class="p">;</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>và kết quả nhận được sẽ là “2” và “5”. Từ đấy có thể thấy một điều đơn giản là: để so sánh với NULL chúng ta chỉ có thể dùng IS và IS NOT. Vậy nếu bạn thực hiện các phép toán với NULL thì sao? Mọi phép toán như cộng ,trừ ,nhân ,chia ,concat mà có sự tham gia của NULL đều cho kết quả là NULL cả.</p>
-<p>Đầu tiên để hiểu lý do thì chúng ta phải biết là tại sao lại có giá trị NULL. Giá trị NULL trong SQL mục đích chính là để nhằm tạo ra một cách thể hiện cho cái gọi là “không có thông tin hoặc thông tin không phù hợp” (missing information and inapplicable information). Do đó về mặt tự nhiên, bạn sẽ nói là field X không có thông tin, chứ sẽ không nói là field X bằng (equal) không có thông tin, đúng không. Tuy nhiên lý do trên không có giá trị về mặt giải thích.</p>
-<p>Để giải thích cặn kẽ thì chúng ta phải đi lại một chút về khái niệm Logic. Về mặt toán học thì có rất nhiều loại LOGIC. Boolean logic được biết đến nhiều nhất. Bản chất của Boolean là chỉ tồn tại 2 giá trị TRUE, FALSE và các phép toán trên chúng. Do đó Boolean được xếp vào loại 2VL (2 valued logic). Tuy nhiên logic trong SQL rất tiếc lại không phải Boolean, vì trong SQL sẽ tồn tại 3 khái niệm logic: TRUE, FALSE, và Unknown ( hay chính là NULL ). Do đó logic trong SQL gọi là 3VL (3 valued logic). Trong Boolean chỉ có 2 phép so sánh là equal (=) và not(&lt;&gt;), tuy nhiên với 3VL như SQL sẽ có thêm phép so sánh là <strong>IS</strong> và <strong>IS NOT</strong>. Kết hợp 3 loại giá trị với các phép so sánh đó sẽ cho chúng ta kết quả là 3 loại bảng truth table dưới đây:</p>
-<p><img src="/images/sqlandnull/truthtbl.png" width="500" height="1000" title="truth table" ></p>
-<p><img src="/images/sqlandnull/truthtbl2.png" width="300" height="600" title="truth table" ></p>
-<p>(trích dẫn từ Wikipedia)</p>
-<p>Trên đây là những kiến thức hết sức basic về giá trị NULL trên SQL, hy vọng có thể giúp các bạn đỡ nhầm lẫn khi thực hiện các phép toán với NULL.</p>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-05-28T16:53:00+09:00" data-updated="true" itemprop="datePublished">May 28<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/unittest/'>unittest</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/05/28/thiet-ke-huong-test/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/05/28/thiet-ke-huong-test/" itemprop="url">Sử Dụng Unittest để Refactoring Code</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<p>Ở bài viết trước tôi đã đề cập đến <a href="http://ktmt.github.io/blog/2013/05/09/mock-with-unittest-in-python/">cách sử dụng mock để viết unittest</a>. Unittest có tác dụng không chỉ trong việc đảm bảo các đoạn code mới được viết thêm không phá vỡ các yêu cầu logic trước đó, trong bài viết này, tôi sẽ chia sẽ các kinh nghiệm sử dụng unittest để refactoring các đoạn code</p>
-<p>Một trong những vấn đề khi viết các hàm đó là các hàm thường quá phức tạp. <a href="http://en.wikipedia.org/wiki/Robert_Cecil_Martin">Robert Martin</a> trong cuốn sách “Clean code - a handbook of Agile Software Craftmenship” đã nói về nói về các quy tắc khi thiết kế hàm: Quy tắc đầu tiên của function đó là chúng nên nhỏ, quy tắc thứ hai là chúng nên nhỏ hơn thế nữa&quot; (The first rule ò functions is that they should be small. The second rule of functions is that they should be smaller than that). Function càng ngắn thì càng dễ hiểu, function càng ngắn thì nó càng tách biệt so với các hàm khác. Và hơn thế nữa hàm càng ngắn, thì test càng đơn giản. Vậy làm thế nào để biết function bạn viết là đủ ngắn hay chưa? Nếu để test 1 hàm cần tới hơn 20 dòng code, theo bản thân tôi, hàm đó nên được viết lại.</p>
-<p>Hãy xét một ví dụ sau</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>models.py </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Order</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-</span><span class='line'>    <span class="c"># define fields in here</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">create_final_pdf_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_order_id</span><span class="p">):</span>
-</span><span class='line'>        <span class="n">front_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">create_frontcover_image</span><span class="p">()</span>
-</span><span class='line'>        <span class="n">back_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">create_backcover_image</span><span class="p">(</span><span class="n">client_order_id</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_type</span> <span class="o">==</span> <span class="n">Order</span><span class="o">.</span><span class="n">SOFT_COVER</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">frontcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
-</span><span class='line'>                <span class="p">[</span><span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">front_image</span><span class="p">),</span> <span class="bp">None</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_size</span><span class="p">)</span>
-</span><span class='line'>            <span class="n">backcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
-</span><span class='line'>                <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">back_image</span><span class="p">)],</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_size</span><span class="p">)</span>
-</span><span class='line'>            <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">frontcover_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached_pdf_file</span><span class="p">,</span> <span class="n">backcover_file</span><span class="p">]</span>
-</span><span class='line'>        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_type</span> <span class="o">==</span> <span class="n">Order</span><span class="o">.</span><span class="n">HARD_COVER</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">hardcover_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_hardcover_image</span><span class="p">(</span><span class="n">back_image</span><span class="p">,</span> <span class="n">front_image</span><span class="p">)</span>
-</span><span class='line'>            <span class="n">hardcover_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PDF_SIZES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">size_type</span><span class="p">]</span>
-</span><span class='line'>            <span class="n">hardcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
-</span><span class='line'>                <span class="p">[</span><span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">hardcover_image</span><span class="p">)],</span> <span class="n">hardcover_size</span><span class="p">)</span>
-</span><span class='line'>            <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">hardcover_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached_pdf_file</span><span class="p">]</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="n">new_path</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">merge_pdf_files</span><span class="p">(</span><span class="n">input_files</span><span class="p">)</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">new_path</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Hàm <code>create_final_pdf_file</code> nhận tham số là một <code>client_order_id</code>, tạo ra một pdf file tương ứng <code>client_order_id</code>, và trả về đường dẫn của pdf file đó. Hàm này tạo ra một ảnh cover trước, và ảnh cover sau, sau đó ghép với một file pdf có sẵn để tạo nên <code>final_pdf</code>.</p>
-<p>Tuy nhiên tuỳ theo giá trị của <code>self.order_type</code> mà cách tạo các ảnh trước và ảnh sau là khác nhau.</p>
-<p>Nếu chỉ dừng ở đây, bản thân tôi, thấy khá hài lòng với hàm <code>create_final_pdf_file</code>. Hàm dài vừa đủ, không quá dài (19 lines), chỉ có một input đầu vào, và 1 output đầu ra. Tuy nhiên, nếu viết testcase cho hàm này, chúng ta sẽ thấy có vấn đề</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>test_models.py </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -303,79 +168,78 @@
 <span class='line-number'>44</span>
 <span class='line-number'>45</span>
 <span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">TestModel</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span class='line'>        <span class="n">tree</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">()</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="n">Order</span><span class="p">(</span><span class="n">tree</span><span class="o">=</span><span class="n">tree</span><span class="p">)</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">BufferLoader</span><span class="p">(</span><span class="nx">context</span><span class="p">,</span> <span class="nx">urlList</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">context</span> <span class="o">=</span> <span class="nx">context</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">urlList</span> <span class="o">=</span> <span class="nx">urlList</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">onload</span> <span class="o">=</span> <span class="nx">callback</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">bufferList</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">();</span>
+</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">loadCount</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.image_helper.save_image&#39;</span><span class="p">)</span>
-</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.generator.pdf.merge_pdf_files&#39;</span><span class="p">)</span>
-</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.generator.pdf.create_pdf_from_images&#39;</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">test_create_final_pdf_file_soft_cover</span><span class="p">(</span>
-</span><span class='line'>            <span class="bp">self</span><span class="p">,</span> <span class="n">mock_create_pdf</span><span class="p">,</span> <span class="n">mock_merge_pdf</span><span class="p">,</span> <span class="n">mock_save_image</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">order_type</span> <span class="o">=</span> <span class="n">Order</span><span class="o">.</span><span class="n">SOFT_COVER</span>
+</span><span class='line'><span class="nx">BufferLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadBuffer</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">url</span><span class="p">,</span> <span class="nx">index</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">// Load buffer asynchronously</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">request</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">XMLHttpRequest</span><span class="p">();</span>
+</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">open</span><span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="nx">url</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">responseType</span> <span class="o">=</span> <span class="s2">&quot;arraybuffer&quot;</span><span class="p">;</span>
 </span><span class='line'>
-</span><span class='line'>        <span class="n">mock_cached_pdf</span> <span class="o">=</span> <span class="n">PropertyMock</span><span class="p">(</span>
-</span><span class='line'>            <span class="n">return_value</span><span class="o">=</span><span class="s">&#39;StoryTree/tests/fixtures/1.pdf&#39;</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">mock_backcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">mock_frontcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">loader</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
 </span><span class='line'>
-</span><span class='line'>        <span class="k">with</span> <span class="n">nested</span><span class="p">(</span>
-</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="s">&#39;cached_pdf_file&#39;</span><span class="p">,</span> <span class="n">mock_cached_pdf</span><span class="p">),</span>
-</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="s">&#39;create_backcover_image&#39;</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="p">),</span>
-</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="s">&#39;create_frontcover_image&#39;</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="p">)):</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">create_final_pdf_file</span><span class="p">(</span><span class="s">&#39;STORYTREE01111&#39;</span><span class="p">)</span>
+</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">onload</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Asynchronously decode the audio file data in request.response</span>
+</span><span class='line'>    <span class="nx">loader</span><span class="p">.</span><span class="nx">context</span><span class="p">.</span><span class="nx">decodeAudioData</span><span class="p">(</span>
+</span><span class='line'>      <span class="nx">request</span><span class="p">.</span><span class="nx">response</span><span class="p">,</span>
+</span><span class='line'>      <span class="kd">function</span><span class="p">(</span><span class="nx">buffer</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">buffer</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;error decoding file data: &#39;</span> <span class="o">+</span> <span class="nx">url</span><span class="p">);</span>
+</span><span class='line'>          <span class="k">return</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>        <span class="nx">loader</span><span class="p">.</span><span class="nx">bufferList</span><span class="p">[</span><span class="nx">index</span><span class="p">]</span> <span class="o">=</span> <span class="nx">buffer</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="o">++</span><span class="nx">loader</span><span class="p">.</span><span class="nx">loadCount</span> <span class="o">==</span> <span class="nx">loader</span><span class="p">.</span><span class="nx">urlList</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span>
+</span><span class='line'>          <span class="nx">loader</span><span class="p">.</span><span class="nx">onload</span><span class="p">(</span><span class="nx">loader</span><span class="p">.</span><span class="nx">bufferList</span><span class="p">);</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="kd">function</span><span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;decodeAudioData error&#39;</span><span class="p">,</span> <span class="nx">error</span><span class="p">);</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>    <span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">mock_create_pdf</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
-</span><span class='line'>            <span class="n">first_args</span> <span class="o">=</span> <span class="n">mock_create_pdf</span><span class="o">.</span><span class="n">call_args_list</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">first_args</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">)</span>
+</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">onerror</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;BufferLoader: XHR error&#39;</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.image_helper.save_image&#39;</span><span class="p">)</span>
-</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.generator.pdf.merge_pdf_files&#39;</span><span class="p">)</span>
-</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.generator.pdf.create_pdf_from_images&#39;</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">test_create_final_pdf_file_hard_cover</span><span class="p">(</span>
-</span><span class='line'>            <span class="bp">self</span><span class="p">,</span> <span class="n">mock_create_pdf</span><span class="p">,</span> <span class="n">mock_merge_pdf</span><span class="p">,</span> <span class="n">mock_save_image</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">order_type</span> <span class="o">=</span> <span class="n">Order</span><span class="o">.</span><span class="n">HARD_COVER</span>
+</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">send</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'>        <span class="n">mock_cached_pdf</span> <span class="o">=</span> <span class="n">PropertyMock</span><span class="p">(</span>
-</span><span class='line'>            <span class="n">return_value</span><span class="o">=</span><span class="s">&#39;StoryTree/tests/fixtures/1.pdf&#39;</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">mock_backcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">mock_frontcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">mock_hardcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">with</span> <span class="n">nested</span><span class="p">(</span>
-</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="s">&#39;create_backcover_image&#39;</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="p">),</span>
-</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="s">&#39;create_frontcover_image&#39;</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="p">),</span>
-</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="s">&#39;cached_pdf_file&#39;</span><span class="p">,</span> <span class="n">mock_cached_pdf</span><span class="p">),</span>
-</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="s">&#39;create_hardcover_image&#39;</span><span class="p">,</span> <span class="n">mock_hardcover</span><span class="p">)):</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">create_final_pdf_file</span><span class="p">(</span><span class="s">&#39;STORYTREE01111&#39;</span><span class="p">)</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_hardcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_create_pdf</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
-</span></code></pre></td></tr></table>
+</span><span class='line'><span class="nx">BufferLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">load</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">urlList</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="o">++</span><span class="nx">i</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="nx">loadBuffer</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">urlList</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span> <span class="nx">i</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
 </div>
 </figure>
 </notextile>
 </div>
-<p>Đoạn code test trên có vấn đề gì? Để test hàm <code>create_final_pdf_file</code>, chúng ta cần viết 2 test case, cho 2 trường hợp trong đoạn code if-else. Và 2 đoạn code test bị lặp lại khá nhiều, đặc biệt là ở việc mock các objects. Chúng ta có thể viết lại test case gọn hơn bằng cách viết một function chung, hoặc một function tạo ra các mock object và gọi nó trong từng hàm test. Nhưng liệu có phải đó là vấn đề chính.</p>
-<p>Điều tôi muốn nói ở đây là: Code smell trong test code có nguyên nhân từ test code, hay từ bản thân đoạn code chúng ta muốn test. Hãy xem lại hàm <code>create_final_pdf_file</code>. Hàm nãy đã thực sự tốt? Một hàm tốt, là một hàm chỉ nên làm một việc. Hàm <code>create_final_pdf_file</code> ở đây, ngoài việc gọi các hàm khác, còn thêm vào nó đoạn xử lý logic xét kiểu của <code>order</code>. Đoạn code if-else xử lý 2 logic khác nhau, chúng nên được tách ra thành một hàm khác.</p>
+<p>Giải thích đoạn code trên một chút, module BufferLoader sẽ có properties là <strong>urllist</strong> chứa một list url của các audio source, BufferList là một <strong>array các buffer</strong> tương ứng với từng source đã load.</p>
+<p>Hàm <strong>load</strong> sẽ chạy từng file trong urllist, gọi hàm <strong><em>loadBuffer</em></strong> để load từng file thông qua <strong>XHR</strong>, sau khi load được qua XHR thì buffer được tạo ra và cho vào <strong>bufferList</strong> Như vậy là chúng ta đã có thể control multiple audio source thông qua <strong><em>BufferLoader</em></strong></p>
+<p>Giờ đến việc play theo precise timing, như bài lần trước chúng ta đã biết để play thì chúng ta sẽ dùng hàm noteOn(t), để play từ đầu thì t = 0, thế nên để play tại một thời điểm bất kì thì chúng ta sẽ chỉ cần set t(với đơn vị là second và relative theo thời điêm bắt đầu của audio).</p>
+<p>Hãy thử bằng một ví dụ đơn giản :D, bạn muốn làm 1 game bắn súng, trong đấy có một khẩu súng rất cool, giả sử là m4a1 đi :D. Chắc hẳn bạn nào đã chơi counter strike rồi thì sẽ biết là m4a1 thì phải bắt phát một được, hoặc bắn 3 viên một, hoặc bắn liên thanh. Cơ mà bạn chỉ có 1 file âm thanh chứa ngắn chứa một tiếng súng, vậy bạn phải làm sao? Rất đơn giản, bạn chỉ cần timing để playback lại cái source của bạn là ok . Hãy tham khảo đoạn code dưới đây:</p>
 <div class="bogus-wrapper">
 <notextile>
-<figure class='code'><figcaption>
-<span>models.py </span>
+<figure class="code">
+<figcaption>
+<span>loadfile.js </span>
 </figcaption>
- 
 <div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -398,93 +262,42 @@
 <span class='line-number'>21</span>
 <span class='line-number'>22</span>
 <span class='line-number'>23</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Order</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='js'><span class='line'><span class="nx">MachineGun</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">shootRound</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">type</span><span class="p">,</span> <span class="nx">rounds</span><span class="p">,</span> <span class="nx">interval</span><span class="p">,</span> <span class="nx">random</span><span class="p">,</span> <span class="nx">random2</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="k">typeof</span> <span class="nx">random</span> <span class="o">==</span> <span class="s1">&#39;undefined&#39;</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">random</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">time</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">currentTime</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">rounds</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="kd">var</span> <span class="nx">source</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">makeSource</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">buffers</span><span class="p">[</span><span class="nx">type</span><span class="p">]);</span>
+</span><span class='line'>        <span class="nx">source</span><span class="p">.</span><span class="nx">playbackRate</span><span class="p">.</span><span class="nx">value</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="nx">random2</span><span class="p">;</span>
+</span><span class='line'>        <span class="nx">source</span><span class="p">.</span><span class="nx">noteOn</span><span class="p">(</span><span class="nx">time</span> <span class="o">+</span> <span class="nx">i</span> <span class="o">*</span> <span class="nx">interval</span> <span class="o">+</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="nx">random</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">create_input_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">front_image</span><span class="p">,</span> <span class="n">back_image</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_type</span> <span class="o">==</span> <span class="n">Order</span><span class="o">.</span><span class="n">SOFT_COVER</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">frontcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
-</span><span class='line'>                <span class="p">[</span><span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">front_image</span><span class="p">),</span> <span class="bp">None</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_size</span><span class="p">)</span>
-</span><span class='line'>            <span class="n">backcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
-</span><span class='line'>                <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">back_image</span><span class="p">)],</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_size</span><span class="p">)</span>
-</span><span class='line'>            <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">frontcover_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached_pdf_file</span><span class="p">,</span> <span class="n">backcover_file</span><span class="p">]</span>
-</span><span class='line'>        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_type</span> <span class="o">==</span> <span class="n">Order</span><span class="o">.</span><span class="n">HARD_COVER</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">hardcover_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_hardcover_image</span><span class="p">(</span><span class="n">back_image</span><span class="p">,</span> <span class="n">front_image</span><span class="p">)</span>
-</span><span class='line'>            <span class="n">hardcover_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PDF_SIZES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">size_type</span><span class="p">]</span>
-</span><span class='line'>            <span class="n">hardcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
-</span><span class='line'>                <span class="p">[</span><span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">hardcover_image</span><span class="p">)],</span> <span class="n">hardcover_size</span><span class="p">)</span>
-</span><span class='line'>            <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">hardcover_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached_pdf_file</span><span class="p">]</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">input_files</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">create_final_pdf_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_order_id</span><span class="p">):</span>
-</span><span class='line'>        <span class="n">front_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">create_frontcover_image</span><span class="p">()</span>
-</span><span class='line'>        <span class="n">back_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">create_backcover_image</span><span class="p">(</span><span class="n">client_order_id</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">input_files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_input_files</span><span class="p">(</span><span class="n">front_image</span><span class="p">,</span> <span class="n">back_image</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">new_path</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">merge_pdf_files</span><span class="p">(</span><span class="n">input_files</span><span class="p">)</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">new_path</span>
-</span></code></pre></td></tr></table>
+</span><span class='line'><span class="nx">MachineGun</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">makeSource</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">buffer</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">source</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">createBufferSource</span><span class="p">();</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">compressor</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">createDynamicsCompressor</span><span class="p">();</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">gain</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">createGainNode</span><span class="p">();</span>
+</span><span class='line'>    <span class="nx">gain</span><span class="p">.</span><span class="nx">gain</span><span class="p">.</span><span class="nx">value</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">;</span>
+</span><span class='line'>    <span class="nx">source</span><span class="p">.</span><span class="nx">buffer</span> <span class="o">=</span> <span class="nx">buffer</span><span class="p">;</span>
+</span><span class='line'>    <span class="nx">source</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">gain</span><span class="p">);</span>
+</span><span class='line'>    <span class="nx">gain</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">compressor</span><span class="p">);</span>
+</span><span class='line'>    <span class="nx">compressor</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">destination</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nx">source</span><span class="p">;</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
 </div>
 </figure>
 </notextile>
 </div>
-<p>Hàm <code>create_final_pdf_file</code> sau khi được refactoring, đã trở nên đơn giản và dễ đọc hơn, thay vì phải lướt qua 19 lines, và đọc hiểu logic của đoạn code if-else, giờ đây bạn có thể hiểu nó chỉ bằng <code>create_input_files</code>. Và code test mới cho hàm <code>create_final_pdf_file</code> như sau</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>test_models.py </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">TestModel</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="n">Order</span><span class="p">()</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nd">@mock.patch</span><span class="p">(</span><span class="s">&#39;StoryTree.helpers.generator.pdf.merge_pdf_files&#39;</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">test_create_final_pdf_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_merge_pdf</span><span class="p">):</span>
-</span><span class='line'>        <span class="n">mock_cached_pdf</span> <span class="o">=</span> <span class="n">PropertyMock</span><span class="p">(</span>
-</span><span class='line'>            <span class="n">return_value</span><span class="o">=</span><span class="s">&#39;StoryTree/tests/fixtures/1.pdf&#39;</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">mock_backcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">mock_frontcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">mock_input_files</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_values</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;&#39;</span><span class="p">])</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">with</span> <span class="n">nested</span><span class="p">(</span>
-</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="s">&#39;create_input_files&#39;</span><span class="p">,</span> <span class="n">mock_input_files</span><span class="p">)</span>
-</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="s">&#39;cached_pdf_file&#39;</span><span class="p">,</span> <span class="n">mock_cached_pdf</span><span class="p">),</span>
-</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="s">&#39;create_backcover_image&#39;</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="p">),</span>
-</span><span class='line'>                <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="s">&#39;create_frontcover_image&#39;</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="p">)):</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">create_final_pdf_file</span><span class="p">(</span><span class="s">&#39;STORYTREE01111&#39;</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">assertEquals</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_input_files</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Việc tách logic của đoạn code tạo 2 input files ra thành một hàm <code>create_input_files</code>, làm cho hàm <code>create_final_pdf</code> dễ hiểu hơn, nói cách khác, nó che giấu thông tin không cần thiết cho lập trình viên khi đọc tới đoạn code của <code>create_final_pdf</code>. Hàm <code>create_final_test</code> giờ đây không làm gì khác ngoại việc gọi tới các hàm khác. Không có bất cứ logic nào được đặt trong hàm này. Trên thực tế rất nhiều lập trình viên sẽ không viết test cho những hàm như <code>create_final_pdf</code> nữa. Họ chỉ cần viết test cho 4 hàm <code>create_input_files</code>, <code>create_backcover_image</code>, <code>create_frontcover_image</code>, và <code>cached_pdf_file</code> là đủ.</p>
-<p>Tóm lại, bạn có thể tìm kiếm code smell trong unittest, và refactoring hàm mà unittest đó muốn test</p>
+<p>Đoạn code trên có 2 hàm là <strong>shootRound</strong> và <strong>makeSource</strong>. Hàm <strong>makeSource</strong> nhận đầu vào là buffer , chỉnh lại âm thanh cho nhỏ đi một chút thông qua việc set gain = 0.2, sử dụng compressor Node để smoothing data đi một chút trước khi kết nối với destination node. Hàm <strong>shootRound</strong> có mục đích đúng như cái tên của nó, dùng để bắn, hay chính xác là timing buffer có sẵn theo các paramter đầu vào. Các parameter ở đây gồm có rounds ( là số lần lặp lại, ví dụ súng của bạn bắn 3 phát một thì rounds sẽ là 3), interval (khoảng cách giữa 2 lần bắn), 2 biến random và random2 dùng để set xem nên bắn đều đều hay bắn một cách random cho nó thật :D.</p>
+<p>Chỉ nói lý thuyết không hơi khó hiểu, các bạn có thể xem ví dụ trực quan ở: <a href="https://github.com/huydx/html5collection.git" class="uri">https://github.com/huydx/html5collection.git</a> Ví dụ ở trên mình đặt ở html5collection / webaudioapi / guneffect.html. Lưu ý một chút là mình dùng XHR để load file nên các bạn sẽ phải sử dụng thông qua web server (đơn giản nhất là XAMPP) và xem thông qua localhost.</p>
 		
 		
 	</div>
@@ -506,86 +319,371 @@
   
 
 
-<time datetime="2013-05-21T21:50:00+09:00" data-updated="true" itemprop="datePublished">May 21<span>st</span>, 2013</time></div>
+<time datetime="2013-06-16T21:23:00+09:00" data-updated="true" itemprop="datePublished">Jun 16<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/c-plus-plus/'>c++</a>, <a class='category' href='/blog/categories/programming/'>programming</a>
+	<a class='category' href='/blog/categories/computation/'>computation</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/05/21/quy-tac-xoan-oc/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/06/16/cach-tinh-can-bac-hai/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/05/21/quy-tac-xoan-oc/" itemprop="url">Quy Tắc Xoắn ốc</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/06/16/cach-tinh-can-bac-hai/" itemprop="url">Cách Tính Căn Bậc 2</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h3 id="quy-tắc-xoắn-ốc">Quy tắc xoắn ốc</h3>
-<p>Có một quy tắc gọi là “quy tắc xoắn ốc” cho phép lập trình viên C/C++ phân tích trong đầu bất cứ khai báo nào. Quy tắc này rất đơn giản như sau:</p>
+		<h2 id="câu-chuyện">Câu chuyện</h2>
+<p>Trong một buổi phỏng vấn kỹ thuật tại công ty XXX, một lập trình viên “lão thành” chịu trách nhiệm phỏng vấn Tèo hỏi Tèo một câu:</p>
+<blockquote>
+<p>“Hãy viết chương trình C tính căn bậc 2 của số nguyên x”</p>
+</blockquote>
+<p>Tèo cười thầm và tự nghĩ “Công ty công nghệ hàng đầu Việt Nam gì mà hỏi một câu dễ vậy. Nó đâu phải là thằng mới học lập trình!”</p>
+<p>Và Tèo trong chớp mắt đưa ra ngay lời giải với đoạn code như dưới đây:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>sqrt.c </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;math.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">x</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Input x: &quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">scanf</span><span class="p">(</span><span class="s">&quot;%d&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">x</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Sqrt of %d = %f</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">x</span><span class="p">));</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<div>
+<pre><code class='bash'>Input x: 3
+Sqrt of 3 = 1.732051</code></pre>
+</div>
+<p>Chương trình compiled không có 1 lỗi và kết quả đúng.</p>
+<p>Tèo tự tin. Không ngờ công ty XXX nổi tiếng mà lại hỏi một câu ngớ ngẩn đến thế! Nó nghĩ.</p>
+<p>Lập trình viên kinh nghiệm nhìn code của Tèo và khen: “Cậu có căn bản!”. Tèo sung sướng và nghĩ rằng mình đã chắc chắn 100% được nhận vào làm việc. Đúng lúc đấy vị lập trình viên già kia hỏi tiếp:</p>
+<blockquote>
+<p>“Cậu hãy trả lời lại câu hỏi trên, lần này không dùng hàm sqrt của thư viện C”</p>
+</blockquote>
+<p>“Chà câu hỏi có vẻ khó hơn. Tèo bắt đầu suy nghĩ. Sau một lúc cậu bắt đầu gãi đầu gãi tai. Làm thế nào để tính bây giờ? Tèo nghĩ mãi nghĩ mãi…”</p>
+<p>Hết giờ! Người phỏng vấn Tèo nhận xét: “Cậu vẫn còn phải học nhiều”. Tèo buồn bã vì biết rằng mình đã trượt. Tuy vậy, nó nghĩ dù trượt nhưng nó nên ra về biết thêm 1 điều gì mới, nó liền hỏi người phỏng vấn:</p>
+<p>“Làm thế nào tôi có thể tính được căn bậc hai? Phải chăng tôi cần một thuật toán phức tạp với rất nhiều dòng mã?”.</p>
+<p>Vị lập trình viên “lão thành” cười và trả lời: “Máy tính làm phép tính rất nhanh, thay vì có câu trả lời tuyệt đối, ta có thể bắt nó đoán câu trả lời cho ta!”. Nhìn mặt Tèo lớ ngớ, vị kỹ sư già vừa cười vừa từ tốn giải thích tiếp.</p>
+<p>Căn bậc hai của y được định nghĩa là số x sao cho: x^2 == y hay x = y / x. Nếu x là kết quả thì x = y / x, còn nếu không kết quả sẽ phải là 1 số x’ nằm trong khoảng x và y/x. Ta không biết số này là bao nhiêu, nhưng ta có 1 cách để đoán lấy 1 số trong khoảng này đó là trung bình cộng!</p>
+<p>Tèo gật gù.</p>
+<p>Ví dụ: cần tính căn bậc 2 của 3. Ta đoán kết quả là 1.0. Kết quả này không đúng rồi, nên đáp số sẽ nằm trong khoảng 1.0 và 3/1.0 = 2.0. Lấy trung bình cộng lần 1 ta có kết quả là 1.5. Lại thử với 1.5 và 3/1.5 = 2.0 ta có kết quả là 1.75! Sau nhiều lần lặp ta sẽ có kết quả tiệm cận với đáp số!</p>
+<p>Tèo sáng mắt! Vị kỹ sư cười và tiếp tục.</p>
+<p>Vì ta không có kết quả chính xác, nên số lần lặp sẽ là vô hạn. Tuy vậy tại mỗi bước lặp, ta sẽ thử xem kết quả đủ chính xác theo yêu cầu chưa. Ví dụ nếu đáp số hiện tại là x = 1.73, x^2 = 2.99 và ta chỉ cần độ chính xác đến 2 số sau dấu phẩy, thì 1.73 là đáp án phù hợp. Do vậy ta sẽ có chương trình tính căn bậc 2 như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>sqrt.c </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;math.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#define PRECISE 0.0001f</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">double</span> <span class="nf">mysqrt</span><span class="p">(</span><span class="kt">int</span> <span class="n">x</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">double</span> <span class="n">guess</span> <span class="o">=</span> <span class="mf">1.0f</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">while</span> <span class="p">(</span><span class="n">fabs</span><span class="p">(</span><span class="n">guess</span><span class="o">*</span><span class="n">guess</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span><span class="o">/</span><span class="n">x</span> <span class="o">&gt;=</span> <span class="n">PRECISE</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">guess</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="o">/</span><span class="n">guess</span> <span class="o">-</span> <span class="n">guess</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">guess</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">guess</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">x</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Input x: &quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">scanf</span><span class="p">(</span><span class="s">&quot;%d&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">x</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Sqrt of %d = %f</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">mysqrt</span><span class="p">(</span><span class="n">x</span><span class="p">));</span>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<div>
+<pre><code class='bash'>Input x: 3
+Sqrt of 3 = 1.732051</code></pre>
+</div>
+<p>Và Tèo được khai sáng!</p>
+<h2 id="tham-khảo">Tham khảo</h2>
+<ol type="1">
+<li><a href="http://mitpress.mit.edu/sicp/full-text/book/book.html">Structure and Interpretation of Computer Programs</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Newton&#39;s_method">Newton method</a></li>
+</ol>
+		
+		
+	</div>
+
+</article>
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-06-16T21:16:00+09:00" data-updated="true" itemprop="datePublished">Jun 16<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/database/'>Database</a>, <a class='category' href='/blog/categories/oracle/'>Oracle</a>, <a class='category' href='/blog/categories/plsql/'>PLSQL</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/06/16/gioi-thieu-mot-so-object-cua-oracle/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/06/16/gioi-thieu-mot-so-object-cua-oracle/" itemprop="url">Giới Thiệu Một Số Object Của Oracle - Phần 1</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h2 id="tổng-quan-về-oracle-và-những-điểm-mạnh">Tổng quan về Oracle và những điểm mạnh</h2>
+<p>Oracle là hệ có sở dữ liệu hay dùng trong business application, gồm phiên bản free (standard edition) và phiên bản trả phí (enterprise edition). Với một set rất nhiều feature được develop trong thời gian dài, những object tiện dụng được chuẩn bị sẵn, hay quan trọng hơn hết là các tool tương thích trên top của tầng RDBMS (như RAC hay Datawarehouse), Oracle tỏ ra có ưu thế vượt trội so với các hệ cơ sở dữ liệu quan hệ open source.</p>
+<p>Bài viết này sẽ mang đến cho độc giả những khái niệm đầu tiên về các object hay được sử dụng và những feature nổi bật của oracle</p>
+<h2 id="view">VIEW</h2>
+<p>VIEW là 1 object cũng available trên MySQL, tuy nhiên trước khi đi vào một số object phía sau, mình sẽ nói lại một chút về object này.</p>
+<p>Needs của VIEW phát sinh khi bạn có 1 complex query. Thay vì gửi complex query về DB mỗi lần, bạn có thể create sẵn 1 VIEW mang nội dung của complex query, và mỗi lần gọi từ tầng application chỉ cần SELECT * FROM VIEW</p>
+<p>Như vậy syntax của VIEW đơn giản như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>view.sql </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sql'><span class='line'><span class="k">CREATE</span> <span class="k">VIEW</span> <span class="n">demo_view</span> <span class="k">AS</span>
+</span><span class='line'>  <span class="c1">-- select ... (complex query)</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
 <ul>
-<li>Bắt đầu bằng tên biến và di chuyển <strong>xoắn ốc</strong> theo chiều kim đồng hồ.</li>
-<li>Nếu gặp từ khóa const thì đối tượng nằm trên đường xoắn ốc trước const không đổi.</li>
-<li>Nếu gập ký tự * thì đối tượng trước khi đến * là một con trỏ.</li>
-<li>Nếu gặp [] thì đối tượng trước [] là một mảng.</li>
-<li>Nếu gặp (kiểu dữ liệu 1, kiểu dữ liệu 2), đối tượng trước đó là một function.</li>
+<li><p>Một điểm cần lưu ý là, sau khi VIEW được tạo ra thì database không mất bất cứ dung lượng nào ngoại trừ 1 cái dictionary entry để định nghĩa bản thân VIEW. Nói cách khác, VIEW chỉ là định nghĩa, mỗi lần bạn gọi VIEW thì Oracle sẽ đi thực hiện nội dung cái VIEW và trả lại cho bạn kết quả.</p></li>
+<li><p>VIEW cũng thường được dùng để hide table columns. Nói đơn giản, bạn muốn user A chỉ nhìn thấy 1 số chứ ko không tất cả column của table T, bạn có thể create VIEW V chỉ bao gồm những column của table T mà bạn muốn cho user A access, và đơn giản give access control của V cho A</p></li>
+<li><p>Cuối cùng: Predicate pushing, là 1 behaviour của Oracle View thường sẽ đem lại good performance những cũng gây hậu quả ngược trong không ít trường hợp.</p></li>
 </ul>
-<h3 id="áp-dụng">Áp dụng</h3>
-<p>Ta tử áp dụng quy tắc trên để phân tích thử 1 số khai báo.</p>
-<h4 id="khai-báo-đơn-giản">1. Khai báo đơn giản</h4>
-<pre><code>                 +-------+
-                 | +-+   |
-                 | ^ |   |
-            char *str[10];
-             ^   ^   |   |
-             |   +---+   |
-             +-----------+</code></pre>
-<p><strong>Ý nghĩa</strong>: str là một mảng (10 ký tự) con trỏ có kiểu dữ liệu ký tự (char).</p>
-<h4 id="con-trỏ-hàm">2. Con trỏ hàm</h4>
-<pre><code>          +--------------------+
-          | +---+              |
-          | |+-+|              |                    
-          | |^ ||              |
-     char *(*fp)( int, float *);
-      ^   ^ ^  ||              |
-      |   | +--+|              |
-      |   +-----+              |
-      +------------------------+</code></pre>
-<p><strong>Ý nghĩa</strong>: fp là 1 con trỏ, trỏ đến 1 function (nhận 2 đối số là int, và con trỏ kiểu float), trả về 1 con trỏ có kiểu dữ liệu ký tự (char).</p>
-<h4 id="const">3. Const</h4>
+<p>Giả sử bạn có 2 view như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>view.sql </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sql'><span class='line'><span class="k">CREATE</span> <span class="k">VIEW</span> <span class="n">V1</span> <span class="k">AS</span>
+</span><span class='line'>  <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">GOTHAM_CITIZENS</span><span class="p">;</span>
+</span><span class='line'><span class="k">CREATE</span> <span class="k">VIEW</span> <span class="n">V2</span> <span class="k">AS</span>
+</span><span class='line'>  <span class="n">SELECR</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">V1</span>
+</span><span class='line'>  <span class="k">WHERE</span>
+</span><span class='line'>    <span class="n">NAME</span> <span class="o">=</span> <span class="s1">&#39;Batman&#39;</span><span class="p">;</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Giả sử query gọi từ tầng Application là</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>query.sql </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sql'><span class='line'><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">V2</span>
+</span><span class='line'><span class="k">WHERE</span>
+</span><span class='line'>  <span class="n">ABILITY</span> <span class="o">=</span> <span class="s1">&#39;can fly&#39;</span><span class="p">;</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Ở đây predicate là những điều kiện đằng sau WHERE, cụ thể là NAME = ‘Batman’ và ABILITY = ‘can fly’. Trong trường hợp này Oracle sẽ cố biến VIEW V1 thành như sau</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>query.sql </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sql'><span class='line'><span class="k">CREATE</span> <span class="k">VIEW</span> <span class="n">V1</span> <span class="k">AS</span>
+</span><span class='line'>  <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">GOTHAM_CITIZENS</span>
+</span><span class='line'>  <span class="k">WHERE</span>
+</span><span class='line'>    <span class="n">NAME</span> <span class="o">=</span> <span class="s1">&#39;Batman&#39;</span>
+</span><span class='line'>  <span class="k">AND</span>
+</span><span class='line'>    <span class="n">ABILITY</span> <span class="o">=</span> <span class="s1">&#39;can fly&#39;</span><span class="p">;</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Nói cách khác, Oracle sẽ cố push các predicates xuống tầng cuối cùng! Bạn có thể có 10 hay 100 predicates trải từ V1 đến V100 (stack views), tất cả sẽ được push xuống tầng tiếp xúc trực tiếp với table! Điềy này có ý nghĩa gì ?</p>
+<p>V1 sẽ có thể dùng index và tăng performance nhanh chóng cho cả stack views.</p>
+<h2 id="materialized-view">MATERIALIZED VIEW</h2>
+<p>MATERIALIZED VIEW là 1 object đặc thù của Oracle. Trên MySQL bạn cũng có thể implement MATERIALIZED VIEW dưới dạng 1 table mới.</p>
+<p>Needs của MATERIALZED VIEW phát sinh khi bạn có 1 complex computation hoặc 1 complex JOIN statement . Dĩ nhiên bạn không muốn mỗi lần query DB, DB engine lại bắt đầu select từ các table và thực hiện lại các thao tác tính toán phức tạp.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>materialized_view.sql </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sql'><span class='line'><span class="k">CREATE</span> <span class="n">MATERIALIZED</span> <span class="k">VIEW</span> <span class="n">demo_materialized_view</span> <span class="k">AS</span>
+</span><span class='line'>  <span class="c1">-- select ... (comlex JOIN or computation)</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
 <ul>
-<li><p>Ví dụ 1</p>
-<pre><code>char greeting[] = &quot;Hello&quot;;
-       +-----------------+
-       |   +-----------+ |
-       |   | +-------+ | |
-       |   ^ ^       v | | 
-const char * p = greeting;
-   ^   ^   ^         | | |
-   |   |   |         | | |
-   |   |   +---------+ | |
-   |   +---------------+ |   
-   +---------------------+</code></pre></li>
+<li><p>Khác với VIEW, MATERIALIZED VIEW thực sự chiếm storage của DB. Khi được tạo ra MATERIALZED VIEW sẽ đi tính toán theo công thức được chỉ định sẵn và lưu vào 1 object trong DB. Mỗi lần bạn SELECT FROM MATERIALZED_VIEW thì sẽ nhận được kết quả tính toán của lần gần nhất.</p></li>
+<li><p>Kết quả tính toán sẽ được update trong mỗi lần REFRESH. Giữa 2 lần REFRESH thì kết quả tính toán là không đổi.</p></li>
+<li><p>REFRESH có thể được kích hoạt bẳng COMMIT, bằng TRIGGER hoặc được đặt SCHEDULE.</p></li>
+<li><p>Chiến lược REFRESH của MATERIALZED_VIEW bao gồm COMPLETE (mới hoàn toàn), FAST (chỉ lấy thêm phần khác biệt so với lần trước). FAST REFRESH đòi hỏi phải có 1 object nữa là MATERIALZED VIEW LOG, sẽ được đề cập trong bài tiếp.</p></li>
+<li><p>Khi dữ liệu quá lớn và tính toán quá phức tạp, MATERIALZED VIEW sẽ đưa toàn bộ phần load của complex computation về thời điểm REFRESH và giúp câu query tại các thời điểm khác trả về kết quả tức thì. Nói hình tượng, bạn có thể schedule cho MATERIALZED VIEW được REFRESH vào lúc nửa đêm, khi user của bạn không mấy khi phát sinh request nào đến Application có thể động chạm đến DB, và trong 1 ngày tiếp theo bạn sẽ có kết quả tính toán được query ra trong 1s và đảm bảo là luôn dúng cho đến ngày hôm trước!</p></li>
 </ul>
-<p><strong>Ý nghĩa</strong>: p có giá trị giống greeting, và là 1 con trỏ, trỏ đến dữ liệu kiểu char, giá trị này là hằng số (không thay đổi).</p>
+<h2 id="kết-luận">Kết luận</h2>
 <ul>
-<li><p>Ví dụ 2</p>
-<pre><code>char greeting[] = &quot;Hello&quot;;
-         +------------------------+   
-         | +-------------------+  |
-         | |     +-----------+ |  |
-         | |     | +-------+ | |  |
-         | |     ^ ^       v | |  |
-const char * const p = greeting;  |
-   ^     ^ ^     ^         | | |  |
-   |     | |     |         | | |  |
-   |     | |     +---------+ | |  |
-   |     | +-----------------+ |  |
-   |     +---------------------+  |
-   +------------------------------+</code></pre></li>
+<li>VIEW: là logical object, không chiếm storage của DB và thường tổng hợp 1 set các SQL query để có thể gọi 1 cách đơn giản từ application.</li>
+<li>Predicates pusing: là behaviour của Oracle khi tạo nhiều VIEW chồng nhau thành cấu trúc stack views. Oracle luôn cố push predicates xuống tầng cuối cùng để index.</li>
+<li>MATERIALZED VIEW: là object chiếm storage trực tiếp của DB, thường tổng hợp 1 set các tính toán hoặc JOIN phức tạp và được REFRESH dựa theo chiến lược được định nghĩa sẵn. Với khả năng index chính các kết quả sau khi tính toán, MATERIALZED VIEW cho kết quả trả lại gần như ngay lập tức đối với những data up-to-date đến 1 thời điểm nhất định.</li>
 </ul>
-<p><strong>Ý nghĩa</strong>: p có giá trị giống greeting, giá trị của p không đổi, và nó là 1 con trỏ, trỏ đến dữ liệu kiểu chả, và dữ liệu của là hằng số.</p>
-<h3 id="cuối-cùng">Cuối cùng</h3>
-<p>Quy tắc <strong>xoắc ốc</strong> giúp ta hiểu ý nghĩa khai báo C/C++ một cách dễ dàng. Bây giờ với quy tắc này, bạn chắc chắn khai báo dưới đây dễ hiểu như ăn kẹo rồi phải không? void (<em>signal(int, void (</em>fp)(int)))(int);</p>
 		
 		
 	</div>
@@ -603,7 +701,7 @@ const char * const p = greeting;  |
     <div class="center"><a href="/blog/archives">Blog Archives</a></div>
 </nav></div>
 			</div>
-			<footer id="footer" class="inner">Copyright &copy; 2014
+			<footer id="footer" class="inner">Copyright &copy; 2015
 
     kỹ thuật máy tính
 

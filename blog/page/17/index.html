@@ -7,8 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jun 3rd, 2013 unix Comments Unix Tools Phần 2 Giới thiệu
-Hàng ngày chúng ta gặp phải rất nhiều bài toán thống kê khác nhau. Bài toán thống kê số &hellip;">
+	<meta name="description" content="Jul 2nd, 2013 linux, system, Comments Tìm Hiểu Redis - Phần 1 1. Giới thiệu
+Redis là hệ thống lưu trữ key-value với rất nhiều tính năng và được sử &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -38,7 +38,7 @@ Hàng ngày chúng ta gặp phải rất nhiều bài toán thống kê khác nh
 	<div class="container">
 		<div class="left-col">
 			<div class="intrude-less">
-			<header id="header" class="inner"><div class="profilepic">	
+			<header id="header" class="inner"><div class="profilepic">
 	<script src="/javascripts/md5.js"></script>
 	<img src='/images/logo.jpg' alt='Profile Picture' style='width: 160px;' />
 </div>
@@ -67,9 +67,9 @@ Hàng ngày chúng ta gặp phải rất nhiều bài toán thống kê khác nh
 	</div>
 </nav>
 
-</header>				
+</header>
 			</div>
-		</div>	
+		</div>
 		<div class="mid-col">
 			
 				
@@ -93,325 +93,159 @@ Hàng ngày chúng ta gặp phải rất nhiều bài toán thống kê khác nh
   
 
 
-<time datetime="2013-06-03T22:15:00+09:00" data-updated="true" itemprop="datePublished">Jun 3<span>rd</span>, 2013</time></div>
+<time datetime="2013-07-02T23:38:00+09:00" data-updated="true" itemprop="datePublished">Jul 2<span>nd</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/unix/'>unix</a>
+	<a class='category' href='/blog/categories/linux/'>linux</a>, <a class='category' href='/blog/categories/system/'>system,</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/06/03/unix-tools-2/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/07/02/tim-hieu-redis/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/03/unix-tools-2/" itemprop="url">Unix Tools Phần 2</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/07/02/tim-hieu-redis/" itemprop="url">Tìm Hiểu Redis - Phần 1</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h3 id="giới-thiệu">Giới thiệu</h3>
-<p>Hàng ngày chúng ta gặp phải rất nhiều bài toán thống kê khác nhau. Bài toán thống kê số liệu cũng có thể xuất hiện dưới nhiều dạng khác nhau như: bằng việc kiểm apache acccess log thống kê xem có tổng số truy cập vào 1 API trong 1 phút, hay 1 API cụ thể được truy cập từ những địa điểm nào và cụ thể là bao nhiều lần. Xử lý số liệu là một bài toán khó, và việc bóc tách dữ liệu nhiều khi cũng không hể đơn giản. Tuy vậy, bằng việc sử dụng thành thạo các công cụ command line của linux, nhiều khi ta có thể giải quyết những bài toán trên một cách nhanh chóng chỉ bằng 1, 2 dòng lệnh. Bài viết này sẽ đưa ra 1 bài toán cụ thể và cách sử dụng các unix command line tool để giải quyết các bài toán đó.</p>
-<h3 id="khái-lược-các-tool-dùng-trong-bài">Khái lược các tool dùng trong bài</h3>
+		<h2 id="giới-thiệu">1. Giới thiệu</h2>
+<p><a href="www.redis.io">Redis</a> là hệ thống lưu trữ key-value với rất nhiều tính năng và được <a href="http://redis.io/topics/whos-using-redis">sử dụng rộng rãi</a>. Redis nổi bật bởi việc hỗ trợ nhiều cấu trúc dữ liệu cơ bản (hash, list, set, sorted set, string), đồng thời cho phép scripting bằng ngôn ngữ lua. Bên cạnh lưu trữ key-value trên RAM với hiệu năng cao, redis còn hỗ trợ lưu trữ dữ liệu trên đĩa cứng (persistent redis) cho phép phục hồi dữ liệu khi gặp sự cố. Ngoài tính năng replicatation (sao chép giữa master-client), tính năng cluster (sao lưu master-master) cũng đang được phát triển . Để sử dụng một cách hiệu quả những tính năng redis hỗ trợ cũng như vận hành redis với hiệu suất cao nhất thì việc am hiểu hệ thống lưu trữ này là điều không thể thiếu. Chính vì lý do này, mình quyết định tìm hiểu mã nguồn redis. Loạt bài viết về redis này tóm tắt những điều mình tìm hiểu được từ việc đọc mã nguồn của redis.</p>
+<h2 id="khái-quát">2. Khái quát</h2>
+<p>Bạn có thể clone mã nguồn redis về máy tính mình bằng câu lệnh dưới đây:</p>
+<div>
+<pre><code class='bash'>git clone https://github.com/antirez/redis.git</code></pre>
+</div>
+Trước hết là một số thống kê nho nhỏ về redis (tại thời điểm bài viết): * Số lượng file mã nguồn: 55
+<div>
+<pre><code class='bash'>ls *.c | wc -l
+55</code></pre>
+</div>
 <ul>
-<li>Grep: Cho phép tìm một chuỗi bất kỳ trong một file. Chuỗi có thể được mô tả bằng regular expression.</li>
-<li>uniq: công cụ giúp loại bỏ</li>
-<li>sort: sắp xếp các record trong 1 file</li>
-<li>wc: đếm từ và dòng trong 1 file</li>
-<li>awk: công cụ để in các cột dữ liệu, cũng như xử lý dữ liệu trên từng cột</li>
+<li>Số lượng file header: 30
+<div>
+<pre><code class='bash'>ls *.h | wc -l
+30</code></pre>
+</div></li>
+<li>Tổng số dòng code: 43829
+<div>
+<pre><code class='bash'>wc -l *.[ch]
+341    adlist.c     197   pqsort.c            228   sha1.c          810   dict.c
+93     adlist.h     40    pqsort.h            17    sha1.h          173   dict.h
+435    ae.c         359   pubsub.c            169   slowlog.c       124   endianconv.c
+130    ae_epoll.c   93    rand.c              47    slowlog.h       64    endianconv.h
+315    ae_evport.c  38    rand.h              50    solarisfixes.h  52    fmacros.h
+118    ae.h         1230  rdb.c               530   sort.c          759   help.h
+132    ae_kqueue.c  114   rdb.h               144   syncio.c        483   intset.c
+99     ae_select.c  683   redis-benchmark.c   57    testhelp.h      50    intset.h
+441    anet.c       3008  redis.c             761   t_hash.c        295   lzf_c.c
+60     anet.h       218   redis-check-aof.c   1149  t_list.c        150   lzf_d.c
+1178   aof.c        768   redis-check-dump.c  913   t_set.c         100   lzf.h
+47     asciilogo.h  1556  redis-cli.c         459   t_string.c      159   lzfP.h
+220    bio.c        1517  redis.h             2205  t_zset.c        279   memtest.c
+41     bio.h        52    release.c           520   util.c          323   multi.c
+412    bitops.c     3     release.h           41    util.h          1444  networking.c
+2866   cluster.c    1658  replication.c       1     version.h       128   notify.c
+1726   config.c     198   rio.c               1534  ziplist.c       580   object.c
+195    config.h     104   rio.h               46    ziplist.h
+88     crc16.c      1065  scripting.c         467   zipmap.c
+191    crc64.c      732   sds.c               49    zipmap.h
+8      crc64.h      99    sds.h               351   zmalloc.c
+815    db.c         3160  sentinel.c          85    zmalloc.h
+929    debug.c      261   setproctitle.c
+43829  total</code></pre>
+</div></li>
 </ul>
-<h3 id="bài-toán">Bài toán</h3>
-<p>Để dễ hình dung cũng như dễ kiểm tra tính đúng đắn, ta giả sử 1 bài toán tưởng tượng như sau:</p>
-<p>Có log file:</p>
-<pre><code>    IP1 2 20:00:01 Get /A 
-    IP2 2 20:00:02 Get /B
-    IP2 3 20:00:03 Get /C
-    IP4 2 20:02:01 Get /A 
-    IP5 2 20:03:01 Get /B
-    IP2 3 20:03:02 Get /A
-    IP3 2 20:03:04 Get /B 
-    IP2 2 20:04:01 Get /B
-    IP1 3 20:05:12 Get /C
-    IP6 2 20:05:31 Get /C 
-    IP5 2 20:06:02 Get /B
-    IP4 3 20:07:03 Get /A</code></pre>
-<p>Bài toán: Hãy đếm xem trong 1 phút có bao nhiêu requests và thử đếm xem có bao nhiêu request đến A, B.</p>
-<h3 id="phương-pháp-giải-quyết">Phương pháp giải quyết</h3>
-<p>Theo đề bài, ta có 2 bài toán * Thống kê requests theo từng phút. * Thống kê requests đến A, B.</p>
-<p>Ta sẽ lần lượt giải từng bài toán 1.</p>
-<h4 id="thống-kê-requests-đến-a-b">Thống kê requests đến A, B</h4>
-<p>Bài toán này thực chất khá dễ và ta có thể giải quyết bằng grep và wc. Để ý rằng mỗi dòng là 1 requests đến A, B hoặc C vì vậy bài toán có thể chuyển về là: đếm số dòng có ký tự A và ký tự B. Để lọc ký tự ta có thể dùng grep, để đếm số dòng ta có thể dùng wc. Như vậy bài toán có thể được giải quyết bằng cách pipe kết quả grep sang wc.</p>
-<p>Lời giải:</p>
-<div>
-<pre><code class='bash'>grep A data.dat | wc -l
-4
-grep B data.dat | wc -l
-5</code></pre>
-</div>
-<p>Như vậy có 4 requests đến A và 5 requests đến B trong log file. Bằng 1 câu lệnh, ta có thể đưa ngay ra được kết quả. Dễ như ăn kẹo!</p>
-<h4 id="đếm-số-request-trong-1-phút.">Đếm số request trong 1 phút.</h4>
-<p>Bài toán này khó hơn 1 chút do ta chỉ có trong log các request theo từng giây, trong khi ta cần thống kê theo phút. Liệu có cách nào biến bài toán về bài toán đếm số dòng như ở trên không? Nếu như ta có thể nhóm các dòng dữ liệu theo phút, bài toán có thể được giải quyết tương tự như bài toán trên.</p>
-<p>Trước tiên, làm thế nào để nhóm dòng theo phút? Muốn nhóm dòng theo phút ta phải tách được phần phút ra. Để ý giờ:phút là trường thứ 3 trong file. Do vậy nếu tách được cột thứ 3 và lấy 5 ký tự đầu tiên, ta có thể lấy phút của từng request. Tách cột là việc của awk!</p>
-<div>
-<pre><code class='bash'>awk '{print substr($3, 1, 5)}' data.dat
-20:00
-20:00
-20:00
-20:02
-20:03
-20:03
-20:03
-20:04
-20:05
-20:05
-20:06
-20:07</code></pre>
-</div>
-<p>Ồ, ta đã tiến được 1 bước! Bước tiếp theo, nếu như ta có thể nhóm các phần tử giống nhau và đếm các phần tử đó, ta sẽ có kết quả mong muốn. Nhóm các giá trị giống nhau là nhiệm vụ của uniq!</p>
-<div>
-<pre><code class='bash'>awk '{print substr($3, 1, 5)}' data.dat | uniq -c
-3 20:00
-2 20:02
-3 20:03
-1 20:04
-2 20:05
-1 20:06
-1 20:07</code></pre>
-</div>
-<p>Tuyệt! Như vậy bằng 1 dòng lệnh, ta đã nhóm được các API trong cùng 1 phút, cũng như số lượng API trong thời điểm đấy. Nếu số lượng request nhiều, số dòng kết quả lớn và ta chỉ muốn biết thời điểm có truy cập lớn nhất, ta có thể sắp xếp theo số lượng truy cập. Sắp xếp các dòng theo giá trị cột là công việc của sort! Bằng câu lệnh sort ta có kết quả như dưới đây:</p>
-<div>
-<pre><code class='bash'>awk '{print substr($3, 1, 5)}' data.dat | uniq -c | sort -nk1 -r
-3 20:03
-3 20:00
-2 20:05
-1 20:07
-1 20:06
-1 20:04
-1 20:02</code></pre>
-</div>
-<p>Bài toán đầu tiên cũng đã được giải quyết chỉ với 1 dòng lệnh!</p>
-<h3 id="kết-luận">Kết luận</h3>
-<p>Bài viết đã giới thiệu qua các công cụ commandline của unix cũng như cách áp dụng công cụ đó vào bài toán cụ thể. Hy vọng qua bài viết bạn đã thấy được phần nào tầm quan trọng cũng như sức mạng của các chương trình tiện ích như awk, wc, grep, uniq, sort. Và để hiểu rõ công cụ thì không cách nào khác là áp dụng thật sáng tạo chúng vào công việc hàng ngày, do vậy bạn hãy thử áp dụng các công cụ trên vào bài toán sau nhé:</p>
-<p><strong>Với log file trên, đếm xem có bao nhiêu nguồn truy cập, và nguồn truy cập nào có số lượng truy cập lớn nhất</strong> ;)</p>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-06-02T19:47:00+09:00" data-updated="true" itemprop="datePublished">Jun 2<span>nd</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/code-golf/'>Code golf</a>, <a class='category' href='/blog/categories/php/'>PHP</a>, <a class='category' href='/blog/categories/web-programming/'>Web programming</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/06/02/99-bottles-of-beer/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/02/99-bottles-of-beer/" itemprop="url">99-bottles-of-beer</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h2 id="the-song-and-the-home-page">The song, and the home page</h2>
-<p>Đầu tiên có thể độc giả sẽ tự hỏi ý nghĩa của tiêu đề bài viết là gì ? Vậy trước hết mời bạn ghé qua <a href="http://99-bottles-of-beer.net">home page</a> và enjoy the <a href="http://www.youtube.com/watch?v=qVjCag8XoHQ">song</a></p>
-<p>99-bottles-of-beer cũng từng là đề bài của code golf và phpgolf. Mission của chúng ta là code 1 đoạn PHP snippet print <a href="http://99-bottles-of-beer.net/lyrics.html">lyric</a> của bài hát mà dung lượng đoạn code là nhỏ nhất. Logic thật đơn giản phải không :D</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>lyric</span>
-</figcaption>
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>99 bottles of beer on the wall, 99 bottles of beer.
-</span><span class='line'>Take one down and pass it around, 98 bottles of beer on the wall.
-</span><span class='line'>
-</span><span class='line'>98 bottles of beer on the wall, 98 bottles of beer.
-</span><span class='line'>Take one down and pass it around, 97 bottles of beer on the wall.
-</span><span class='line'>
-</span><span class='line'>97 bottles of beer on the wall, 97 bottles of beer.
-</span><span class='line'>Take one down and pass it around, 96 bottles of beer on the wall.
-</span><span class='line'>
-</span><span class='line'>...
-</span><span class='line'>
-</span><span class='line'>1 bottle of beer on the wall, 1 bottle of beer.
-</span><span class='line'>Go to the store and buy some more, 99 bottles of beer on the wall.</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Với mục tiêu dùng ít code nhất có thể, tôi sẽ không dùng cấu trúc rẽ nhánh if-else, thay vào đó là ternary operator của PHP ( có nghĩa là bạn có thể viết “(condition)?true-action:false-action” thay vì “if (condition) {true-action} else {false-action}” )</p>
-<p>Đoạn code đầu tiên tôi nghĩ ra trong đầu như sau:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>sol1.php </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'>  <span class="nv">$a</span><span class="o">=</span><span class="s2">&quot;beer on the wall&quot;</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="nv">$i</span><span class="o">=</span><span class="mi">99</span><span class="p">;</span><span class="nv">$i</span><span class="o">&gt;=</span><span class="mi">1</span><span class="p">;</span><span class="nv">$i</span><span class="o">--</span><span class="p">){</span>
-</span><span class='line'>    <span class="nv">$x</span><span class="o">=</span><span class="p">(</span><span class="nv">$i</span><span class="o">==</span><span class="mi">1</span><span class="p">)</span><span class="o">?</span><span class="s2">&quot;bottle&quot;</span><span class="o">:</span><span class="s2">&quot;bottles&quot;</span><span class="p">;</span>
-</span><span class='line'>    <span class="nv">$b</span><span class="o">=</span><span class="s2">&quot;&lt;p&gt;</span><span class="si">$i</span><span class="s2"> </span><span class="si">$x</span><span class="s2"> of </span><span class="si">$a</span><span class="s2">, </span><span class="si">$i</span><span class="s2"> </span><span class="si">$x</span><span class="s2"> of beer.&lt;br&gt;&quot;</span><span class="p">;</span>
-</span><span class='line'>    <span class="nv">$b</span><span class="o">.=</span><span class="p">(</span><span class="nv">$i</span><span class="o">==</span><span class="mi">1</span><span class="p">)</span><span class="o">?</span><span class="s2">&quot;Go to the store and buy some more, 99 bottles of </span><span class="si">$a</span><span class="s2">.&quot;</span><span class="o">:</span><span class="s2">&quot;Take one down and pass it around, &quot;</span><span class="o">.</span><span class="p">(</span><span class="nv">$i</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="s2">&quot; </span><span class="si">$x</span><span class="s2"> of </span><span class="si">$a</span><span class="s2">.&lt;/p&gt;&quot;</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">print</span> <span class="nv">$b</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<h2 id="optimize">Optimize</h2>
-<p>Bạn thử ls -l sẽ thấy đoạn code trên có dung lượng 288 bytes!</p>
-<p>Để rút ngắn đoạn code trên, đầu tiên tôi nhớ lại những kiến thức cơ bản về PHP: dấu space hoàn toàn không cần thiết, và ký tự “?&gt;” ở cuối cũng có thể bỏ đi PHP long tag ở đầu có thể thay = PHP short tag</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>sol2.php </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?</span>
-</span><span class='line'><span class="nv">$a</span><span class="o">=</span><span class="s2">&quot;beer on the wall&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="k">for</span><span class="p">(</span><span class="nv">$i</span><span class="o">=</span><span class="mi">99</span><span class="p">;</span><span class="nv">$i</span><span class="o">&gt;=</span><span class="mi">1</span><span class="p">;</span><span class="nv">$i</span><span class="o">--</span><span class="p">){</span>
-</span><span class='line'><span class="nv">$x</span><span class="o">=</span><span class="p">(</span><span class="nv">$i</span><span class="o">==</span><span class="mi">1</span><span class="p">)</span><span class="o">?</span><span class="s2">&quot;bottle&quot;</span><span class="o">:</span><span class="s2">&quot;bottles&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="nv">$b</span><span class="o">=</span><span class="s2">&quot;&lt;p&gt;</span><span class="si">$i</span><span class="s2"> </span><span class="si">$x</span><span class="s2"> of </span><span class="si">$a</span><span class="s2">, </span><span class="si">$i</span><span class="s2"> </span><span class="si">$x</span><span class="s2"> of beer.&lt;br&gt;&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="nv">$b</span><span class="o">.=</span><span class="p">(</span><span class="nv">$i</span><span class="o">==</span><span class="mi">1</span><span class="p">)</span><span class="o">?</span><span class="s2">&quot;Go to the store and buy some more, 99 bottles of </span><span class="si">$a</span><span class="s2">.&quot;</span><span class="o">:</span><span class="s2">&quot;Take one down and pass it around, &quot;</span><span class="o">.</span><span class="p">(</span><span class="nv">$i</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="s2">&quot; </span><span class="si">$x</span><span class="s2"> of </span><span class="si">$a</span><span class="s2">.&lt;/p&gt;&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="k">print</span> <span class="nv">$b</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>263 bytes!</p>
-<p>Làm thế nào để rút ngắn hơn nữa ? Nếu để ý vào những chi tiết nhỏ hơn, bạn sẽ thấy:</p>
+<p>Một số thư viện được sử dụng: <a href="http://www.canonware.com/jemalloc/">jemalloc</a>, <a href="https://github.com/antirez/linenoise">linenoise</a>, <a href="http://www.lua.org/">lua</a></p>
+<h2 id="các-modules">3. Các modules</h2>
+<p>Redis bao gồm các module sau:</p>
 <ul>
-<li>trong điều kiện vòng lặp, thay “<span class="math">\(i&gt;=1&quot; bằng &quot;\)</span>i&gt;0”</li>
-<li>“(<span class="math">\(i==1)?&quot; là quá dài. Ta có thể bỏ đi 2 dấu ngoặc &quot;\)</span>i==1?”</li>
-<li>print có thể thay bằng echo. ( Thực tế trong PHP bạn còn có thể thay rtrim -&gt; chop, explode -&gt; split, implode -&gt; join, preg_split -&gt; split (trong 1 vài trường hợp) và preg_replace -&gt; preg_filter trong hầu hết các TH )</li>
-<li>“<span class="math">\(x=(\)</span>i==1)?”bottle“:”bottles“;” có thể được viết lại : “<span class="math">\(x=&#39;bottle&#39;;\)</span>i==1?:$x.=‘s’;”</li>
-<li>Mỗi lần sử dụng biến $a ta đều có “of” ở đăng trước. Vậy có thể đơn giản cho word “of” vào trong biến a</li>
-<li>“99 bottles of <span class="math">\(a&quot; có thể rewrite tiếp lại thành &quot;99{\)</span>x}s of $a”</li>
-<li>Chúng ta có thể xoá “<span class="math">\(i&#8211;&quot; trong vòng lặp for, vì thế thêm &#8211; vào trước &quot;\)</span>i==1” ở dòng gần cuối thành “<span class="math">\(i&#8211;==1&quot; và vì thế bỏ luôn đoạn (\)</span>i-1) ở sau đó</li>
+<li>Framework hỗ trợ xử lý bất đồng bộ, networking: ae, anet</li>
+<li>Mô tả dữ liệu: sds.c, t_hash.c, t_list.c, t_string.c, t_zset.c, object.c, notify.c (pub-sub)</li>
+<li>Lưu trữ dữ liệu, cơ sở dữ liệu: db.c, dict.c, ziplist.c, zipmap.c, adlist.c</li>
+<li>Module hỗ trợ IO/persistent redis: rdb.c, aof.c, bio.c, rio.c</li>
+<li>Utilities: crc16.c, crc64.c, pqsort.c, lzf_c.c, lzf_d.c</li>
 </ul>
-<p>Như vậy solution tiếp theo của chúng ta sẽ là</p>
+<p>Mình sẽ lần lượt giới thiệu các modules trong các bài viết sau. Ở bài viết này, mình sẽ tập trung vào module IO/persistent redis.</p>
+<h2 id="persistent-redis">4. Persistent redis</h2>
+<p>Bên cạnh việc lưu key-value trên bộ nhớ RAM, Redis có 2 background threads chuyên làm nhiệm vụ định kỳ ghi dữ liệu lên đĩa cứng.</p>
+<p>Có 2 loại file được ghi xuống đĩa cứng:</p>
+<ul>
+<li>RDB</li>
+<li>AOF</li>
+</ul>
+<p>RDB lưu dữ liệu dưới dạng đã mã hóa. AOF lưu lại toàn bộ dưới liệu dưới dạng command, giống như command mà redis client gửi đến server để thao tác bằng cách ghi đè xuống cuối file.</p>
+<p>File rdb có thể coi là một snapshot của cơ sở dữ liệu tại một thời điểm nhất định. File dữ liệu này được dùng với 2 mục đích</p>
+<ul>
+<li>Cho phép redis có thể phục hồi lại dữ liệu trên memory bằng việc đọc file</li>
+<li>Bản thân dữ liệu được ghi ra file rdb sẽ được gửi đến các redis slave server, phục vụ mục đích sao lưu server.</li>
+</ul>
+<p>Dữ liệu ghi ra file rdb được chỉnh sửa và mã hóa để giảm kích thước ghi trên đĩa, đồng thời tằng tốc độ replication. Cụ thể định dạng của file rdb như sau.</p>
+<p>Với những key ngắn, việc dùng 32 bit để mô tả key là thừa thãi, do vậy redis quy định những key ngắn được mã hóa sử dụng 2 bit đầu tiên của 1 byte. Cụ thể: 00|000000 =&gt; 00, độ dài dữ liệu mô tả bởi 6 bit 01|000000 00000000 =&gt; 01, độ dài dữ liệu là 14 bit 10|000000 [số 32 bit] =&gt; 1 chuỗi độ dài 32 bit sẽ theo sau 11|000000 =&gt; obj được encode đặc biệt sẽ theo sau byte này. 6 bit sau sẽ xác định kiểu object.</p>
+<p>Kiểu object ở đây cụ thể như sau:</p>
 <div class="bogus-wrapper">
 <notextile>
-<figure class='code'><figcaption>
-<span>sol2.php </span>
+<figure class="code">
+<figcaption>
+<span>rdb.c </span>
 </figcaption>
- 
 <div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
 <span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?</span>
-</span><span class='line'><span class="nv">$a</span><span class="o">=</span><span class="s2">&quot; of beer on the wall&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="k">for</span><span class="p">(</span><span class="nv">$i</span><span class="o">=</span><span class="mi">99</span><span class="p">;</span><span class="nv">$i</span><span class="o">&gt;=</span><span class="mi">1</span><span class="p">;){</span>
-</span><span class='line'><span class="nv">$x</span><span class="o">=</span><span class="s1">&#39;bottle&#39;</span><span class="p">;</span><span class="nv">$i</span><span class="o">==</span><span class="mi">1</span><span class="o">?:</span><span class="nv">$x</span><span class="o">.=</span><span class="s1">&#39;s&#39;</span><span class="p">;</span>
-</span><span class='line'><span class="nv">$b</span><span class="o">=</span><span class="s2">&quot;&lt;p&gt;</span><span class="si">$i</span><span class="s2"> </span><span class="si">$x$a</span><span class="s2">, </span><span class="si">$i</span><span class="s2"> </span><span class="si">$x</span><span class="s2"> of beer.&lt;br&gt;&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="nv">$b</span><span class="o">.=</span><span class="nv">$i</span><span class="o">--==</span><span class="mi">1</span><span class="o">?</span><span class="s2">&quot;Go to the store and buy some more, 99 </span><span class="si">{</span><span class="nv">$x</span><span class="si">}</span><span class="s2">s</span><span class="si">$a</span><span class="s2">.&quot;</span><span class="o">:</span><span class="s2">&quot;Take one down and pass it around, &quot;</span><span class="o">.</span><span class="nv">$i</span><span class="o">.</span><span class="s2">&quot; </span><span class="si">$x$a</span><span class="s2">.&lt;/p&gt;&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="k">echo</span> <span class="nv">$b</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table>
+</pre>
+</td>
+<td class="code">
+<pre><code class='c'><span class='line'><span class="cm">/* When a length of a string object stored on disk has the first two bits</span>
+</span><span class='line'><span class="cm"> * set, the remaining two bits specify a special encoding for the object</span>
+</span><span class='line'><span class="cm"> * accordingly to the following defines: */</span>
+</span><span class='line'><span class="cp">#define REDIS_RDB_ENC_INT8 0        </span><span class="cm">/* 8 bit signed integer */</span><span class="cp"></span>
+</span><span class='line'><span class="cp">#define REDIS_RDB_ENC_INT16 1       </span><span class="cm">/* 16 bit signed integer */</span><span class="cp"></span>
+</span><span class='line'><span class="cp">#define REDIS_RDB_ENC_INT32 2       </span><span class="cm">/* 32 bit signed integer */</span><span class="cp"></span>
+</span><span class='line'><span class="cp">#define REDIS_RDB_ENC_LZF 3         </span><span class="cm">/* string compressed with FASTLZ */</span><span class="cp"></span>
+</span></code></pre>
+</td>
+</tr>
+</table>
 </div>
 </figure>
 </notextile>
 </div>
-<p>241 bytes!</p>
-<h2 id="the-trick">The trick</h2>
-<p>Bạn có nghĩ đã hết cách để rút gọn đoạn code ?</p>
-<p>Bạn có quên điều gì không ? Bỏ đi tất cả các ký tự line-feed (line break), cho code thành 1 dòng, chúng ra sẽ có kết quả tốt hơn.</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>sol4.php </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?</span><span class="nv">$a</span><span class="o">=</span><span class="s2">&quot; of beer on the wall&quot;</span><span class="p">;</span><span class="k">for</span><span class="p">(</span><span class="nv">$i</span><span class="o">=</span><span class="mi">99</span><span class="p">;</span><span class="nv">$i</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">;){</span><span class="nv">$x</span><span class="o">=</span><span class="s1">&#39;bottle&#39;</span><span class="p">;</span><span class="nv">$i</span><span class="o">^</span><span class="mi">1</span><span class="o">?</span><span class="nv">$x</span><span class="o">.=</span><span class="s1">&#39;s&#39;</span><span class="o">:</span><span class="mi">0</span><span class="p">;</span><span class="nv">$b</span><span class="o">=</span><span class="s2">&quot;&lt;p&gt;</span><span class="si">$i</span><span class="s2"> </span><span class="si">$x$a</span><span class="s2">, </span><span class="si">$i</span><span class="s2"> </span><span class="si">$x</span><span class="s2"> of beer.&lt;br&gt;&quot;</span><span class="p">;</span><span class="nv">$b</span><span class="o">.=</span><span class="err">$</span>
-</span><span class='line'><span class="nx">i</span><span class="o">--==</span><span class="mi">1</span><span class="o">?</span><span class="s2">&quot;Go to the store and buy some more, 99 </span><span class="si">{</span><span class="nv">$x</span><span class="si">}</span><span class="s2">s</span><span class="si">$a</span><span class="s2">.&quot;</span><span class="o">:</span><span class="s2">&quot;Take one down and pass it around, &quot;</span><span class="o">.</span><span class="nv">$i</span><span class="o">.</span><span class="s2">&quot; </span><span class="si">$x$a</span><span class="s2">.&lt;/p&gt;&quot;</span><span class="p">;</span><span class="k">echo</span>
-</span><span class='line'> <span class="nv">$b</span><span class="p">;}</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>233 bytes!</p>
-<p>Bạn có tin có 1 đoạn code sẽ cho kết quả tương tự với … 30 bytes ???</p>
-<p>!!</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>trick.php </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="cp">&lt;?</span><span class="k">include</span><span class="p">(</span><span class="s1">&#39;http://bit.ly/xxxx&#39;</span><span class="p">);</span> <span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>PHP là 1 ngôn ngữ web! Với allow_url_fopen và allow_url_include turn on có thể dễ dàng load 1 link kết quả có sẵn đi kèm 1 dịch vụ như bitly !</p>
-<p>Stay hungry, stay foolish :D</p>
-<h2 id="tham-khảo">Tham khảo</h2>
+<p>Với AOF file, các command sẽ được nhóm thành các block. Các block được tổ chức dưới dạng danh sách liên kết. Mỗi block có độ lớn 10MB là vì trong trường hợp redis server chịu tải cao, số lượng key được cập nhật lớn, nếu kích thước buffer lớn, việc realloc buffer dùng cho các command với tốc độ lớn không đảm bảo.</p>
+<p>Trong trường hợp file rdb, redis fork 1 process con và thực hiện ghi dữ liệu xuống đĩa cứng sử dụng rio (stream IO).</p>
+<p>Trong trường hợp file aof, việc thực hiện ghi dữ liệu là của background threads. Toàn bộ chức năng này được code trong file bio.c (background IO?). Thiết kế background IO này khá đơn giản. Môt loạt thread sẽ chia sẻ 1 job queue và thay nhau đợi việc từ job queue. Mỗi khi có job mới, thread sẽ chạy và thực thi job được mô tả. Có 2 loại job đơn giản:</p>
+<ul>
+<li>REDIS_BIO_CLOSE_FILE: đóng file</li>
+<li><p>REDIS_BIO_AOF_FSYNC: thực hiện việc flush dữ liệu từ buffer của kernel xuống buffer của đĩa cứng.</p>
+<p>process -&gt; job 1 -&gt; job2 -&gt; … background threads</p></li>
+</ul>
+<p>Tạo ra các job là công việc của child process. Để thực hiện ghi dữ liệu ra đĩa cứng, redis sẽ fork ra 1 process con. Process con này sẽ tạo ra việc cho các background threads. Một đặc điểm cùa aof file đấy là dữ liệu trong các block mới sẽ không được ghi trực tiếp vào file aof hiện tại, mà sẽ được ghi vào file tạm thời. Khi việc ghi dữ liệu hoàn thành, redis mới tiến hành ghi đè file tạm lên file thật. Việc này đảm bảo trong trường hợp hệ thống có sự cố, file aof cũ vẫn được duy trì, giúp phục hồi phần nào dữ liệu.</p>
+<p>Trong cả 2 trường hợp, redis sử dụng tính năng <a href="http://en.wikipedia.org/wiki/Copy-on-write">Copy-on-Write</a> của linux khi fork process con, do vậy hiệu năng không vì fork process con mà suy giảm.</p>
+<p>Đến đây, sau khi tìm hiểu về định dạng của 2 files dữ liệu cũng như phương thức ghi dữ liệu của từng loại file, ta vẫn còn những câu hỏi mở về persistent redis như sau:</p>
+<ul>
+<li>Tần suất ghi dữ liệu là bao nhiêu?</li>
+<li>Ai chịu trách nhiệm fork process con.</li>
+</ul>
+<p>Thực chất redis định nghĩa 1 giá trị gọi là tần số ghi: REDIS_DEFAULT_HZ với giá trị mặc định là 10 (redis.h). Như vậy trong 1s, redis sẽ thực hiện 10 lần việc gọi hàm fork. Toàn bộ thao tác ghi dữ liệu redis và thao tác với các key hết hạn được thực hiện bởi 1 hệ thống các “cron”. Hàm cron thực hiện việc validate các key là: databaseCron. Hàm cron thực hiện ghi dữ liệu là serverCron. Hàm serverCron sẽ được gọi theo cơ chế bất đồng bộ (dùng thư viện bất đồng bộ của chính redis) với tần số 1/1000s. Với REDIS_DEFAULT_HZ là 10, cứ 100 lần gọi, serverCron sẽ thực hiện fork child process 1 lần để ghi dữ liệu xuống bộ đĩa cứng.</p>
+<h2 id="tại-sao-phải-fsync">5. Tại sao phải fsync</h2>
+<p>Đến đây chắc bạn đã hiểu phần nào về cơ chế persistent của redis. Tuy nhiên ta vẫn còn 1 câu hỏi nhỏ khá thú vị: tại sao phải flush liên tục như vậy (100ms / lần)? Tại sao không chỉ dùng hàm write/read của kernel và mặc định việc ghi dữ liệu xuống đĩa cứng cho kernel. Để trả lời câu hỏi nhỏ này, ta cần hiểu mối liên quan giữa OS - đĩa cứng - buffer của tầng ứng dụng.</p>
+<p>Về mặt trực quan tra có mô hình như sau:</p>
+<pre><code>buffer ---(Write) --| (kernel buffer) ---&gt; hard disk buffer ---&gt; đĩa từ.</code></pre>
+<p>Một thao tác ghi dùng write/read api của kernel sẽ copy dữ liệu từ buffer tần ứng dụng xuống buffer của kernel. Đây là thao tác cơ bản của write api. Tại buffer của kernel, kernel có toàn quyền quyết định với buffer này như: khi nào ghi, ghi bao nhiêu bytes… Khi kernel ghi dữ liệu (sử dụng các hàm IO của đĩa), dữ liệu sẽ được ghi xuống hard disk buffer và được schedule ghi xuống đĩa từ. Do vậy nếu tại tầng kernel hệ thống gặp sự cố, dữ liệu vẫn có thể bị mất dù rằng write <strong>thành công</strong> (và tầng ứng dụng không có cách nào biết write không thành công). Bằng việc định kỳ gọi fsync, ứng dụng có thể <strong>thoát khỏi sử quản lý của kernel</strong>, ghi thằng dữ liệu đang có ở buffer xuống hard disk buffer. Bằng việc gọi fsync, ta tránh khỏi được rủi ro mất dữ liệu do đổ vớ ở tầng ứng dụng. Tất nhiên dữ liệu hard disk vẫn chưa hoàn toàn an toàn (ví dụ trường hợp đĩa cứng bị hỏng).</p>
+<p>Đây là cách làm chung của các hệ thống cơ sở dữ liệu RDMS hiện hành.</p>
+<h2 id="kết-luận">6. Kết luận</h2>
+<p>Bài viết giới thiệu khái quát các module redis, đồng thời trình bày cụ thể cơ chế ghi dữ liệu của redis. Bài viết cũng làm rõ hơn ý nghĩa của fsync cũng như quy trình ghi dữ liệu của hệ điều hành. Hy vọng qua bài viết, người đọc hiểu phần nào cơ chế, hành vi của redis, qua đó sử dụng công cụ này hiệu quả hơn.</p>
+<h2 id="tham-khảo">7. Tham khảo</h2>
 <ol type="1">
-<li><a href="http://www.phpgolf.org/tips">phpgolf tips and tricks</a></li>
-<li><a href="http://stackoverflow.com/questions/3801097/solve-this-php-puzzle-in-as-few-bytes-as-possible">Question on StackOverFlow</a></li>
+<li><a href="http://redis.io/topics/persistence">persistent redis</a></li>
+<li><a href="http://redis.io/topics/virtual-memory">vm</a></li>
+<li><a href="http://www.redhat.com/magazine/001nov04/features/vm/">Understanding Virtual Memory</a></li>
+<li><a href="http://openmymind.net/redis.pdf">redis book</a></li>
 </ol>
 		
 		
@@ -434,94 +268,155 @@ grep B data.dat | wc -l
   
 
 
-<time datetime="2013-06-02T08:06:00+09:00" data-updated="true" itemprop="datePublished">Jun 2<span>nd</span>, 2013</time></div>
+<time datetime="2013-06-30T09:07:00+09:00" data-updated="true" itemprop="datePublished">Jun 30<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/garbage-collector/'>garbage collector</a>, <a class='category' href='/blog/categories/java/'>java</a>, <a class='category' href='/blog/categories/programming/'>programming</a>
+	<a class='category' href='/blog/categories/hash/'>hash</a>, <a class='category' href='/blog/categories/java/'>java,</a>, <a class='category' href='/blog/categories/programming/'>programming,</a>, <a class='category' href='/blog/categories/thread/'>thread,</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/06/02/weakhashmap-va-weak-reference-trong-java/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/06/30/tutorial-duplicate-file-finder-java/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/02/weakhashmap-va-weak-reference-trong-java/" itemprop="url">WeakHashMap và Weak Reference Trong Java</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/06/30/tutorial-duplicate-file-finder-java/" itemprop="url">Tutorial: Duplicate File Finder (Java)</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h1 id="giới-thiệu">Giới thiệu</h1>
-<p>Trong thư viện Collection của Java, có một lớp đặc biệt: <strong>WeakHashMap</strong>. Về hoạt động nói chung nó rất giống với <strong>HashMap</strong>, đều có chức năng quản lý key, value như thêm, bớt, truy xuất value theo key… Vậy khác biệt của <strong>WeakHashMap</strong> so với <strong>HashMap</strong> là gì? Đó chính là khả năng phối hợp của <strong>WeakHashMap</strong> với garbage collector nhằm loại bỏ khả năng leak memory có thể xảy ra với <strong>HashMap</strong>. Trong bài viết này, chúng ta sẽ tìm hiểu <strong>WeakHashMap</strong> là gì, cách hoạt động của nó như thế nào, và cách nó xóa bỏ những entry không dùng đến ra sao.</p>
-<h1 id="mở-đầu">Mở đầu</h1>
-<p>Thử tưởng tượng một tình huống như thế này: bạn muốn sử dụng một class nào đó, nhưng không thể extend được nó (ví dụ trường hợp đơn giản nhất là class đó được chỉ định là <strong>final</strong>). Vậy bạn làm gì khi muốn thêm property cho object thuộc class đó?</p>
-<p>Ví dụ, bạn muốn sử dụng một class <strong>Product</strong> mà không thể extend được. Bây giờ muốn thêm <strong>serialNumber</strong> cho product đó, ứng cử viên hàng đầu là HashMap, bạn có thể tạo một cặp <strong>key</strong> là Product object, <strong>value</strong> là serialNumber:</p>
+		<h1 id="mở-đầu">Mở đầu</h1>
+<p>Trong quá trình dọn dẹp máy tính cá nhân, tôi gặp phải vấn đề là quá nhiều file trùng lặp trong máy tính. Việc có quá nhiều file như vậy gây lãng phí ổ cứng, cộng thêm đôi lúc tôi không còn nhớ là file này đặt ở thư mục này có ý nghĩa gì nữa. Giá mà có công cụ nào đó để tìm tự động các file này cho tôi thì tốt quá nhỉ??</p>
+<p>Không cần phải giá mà nữa, không gì bằng làm ra cho mình một công cụ như vậy. Bài viết này sẽ trình bày những bước đầu tiên tôi prototype công cụ tìm kiếm các file trùng lặp. Thông qua bài viêt này, tôi cũng sẽ giới thiệu về những chủ đề sau trong Java: tính hash, thread pooling.</p>
+<h1 id="md5-checksum">MD5 checksum</h1>
+<p>MD5 là một thuật toán mã hóa thông điệp (message-digest), về bản chất là một hàm băm (hash) xuất ra một giá trị 128-bit (16-byte). MD5 được sử dụng rất nhiều trong các ứng dụng bảo mật, và cũng được sử dụng để kiểm tra tính toàn vẹn dữ liệu (ví dụ như bạn down một file từ Internet về, thường có một MD5 key đi kèm, để bạn kiểm tra xem file bạn down có chính xác giống nguồn down không.)</p>
+<p>Tôi không có ý định đi sâu vào cách tính MD5, bạn có thể tham khảo trên google. Lưu ý là thuật toán MD5 vẫn có thể sinh ra cùng một giá trị hash với 2 file có nội dung khác nhau (tuy nhiên trường hợp này rất hiếm). Để chắc chắn tìm được 2 file có nội dung giống hệt nhau, ta sẽ so sánh theo thứ tự: so sánh giá trị hash, so sánh độ lớn của file, và cuối cùng là so sánh từng byte của hai file để chắc chắn chúng trùng nhau.</p>
+<p>Trong Java, hàm băm đã được đưa vào thư viện <em>java.security</em>, thông qua class <em>MessageDigest</em>. Bạn chỉ cần khai báo đối tượng <em>MessageDigest</em>, sau đó chọn phương thức mã hóa MD5, hoặc SHA. Việc bạn phải làm đối với từng file là chuyển file thành byte stream, và update dòng input này vào đối tượng <em>MessageDigest</em> trên, và bạn sẽ nhận được một dòng byte kết quả.</p>
+<p>Chi tiết về class <em>MessageDigest</em>, bạn có thể tham khảo tại đây: <a href="http://docs.oracle.com/javase/6/docs/api/java/security/MessageDigest.html" class="uri">http://docs.oracle.com/javase/6/docs/api/java/security/MessageDigest.html</a></p>
 <div class="bogus-wrapper">
 <notextile>
-<figure class='code'><figcaption>
-<span>product.java </span>
+<figure class="code">
+<figcaption>
+<span>MD5.java </span>
 </figcaption>
- 
 <div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">import</span> <span class="nn">java.util.HashMap</span><span class="o">;</span>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'><span class="n">Map</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">productMap</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">,</span><span class="n">String</span><span class="o">&gt;();</span>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'><span class="n">productMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">product</span><span class="o">,</span> <span class="n">serialNo</span><span class="o">);</span>
-</span><span class='line'><span class="o">...</span>
-</span></code></pre></td></tr></table>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='java'><span class='line'> <span class="kd">public</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">getMD5</span><span class="o">(</span><span class="n">File</span> <span class="n">file</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">{</span>
+</span><span class='line'>      <span class="k">if</span><span class="o">(!</span><span class="n">file</span><span class="o">.</span><span class="na">exists</span><span class="o">())</span>
+</span><span class='line'>          <span class="k">return</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
+</span><span class='line'>      <span class="k">try</span>
+</span><span class='line'>      <span class="o">{</span>
+</span><span class='line'>          <span class="n">MessageDigest</span>  <span class="n">md</span> <span class="o">=</span>  <span class="n">MessageDigest</span><span class="o">.</span><span class="na">getInstance</span><span class="o">(</span><span class="s">&quot;MD5&quot;</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="c1">//read the file into a byte array</span>
+</span><span class='line'>          <span class="kt">byte</span><span class="o">[]</span> <span class="n">input</span> <span class="o">=</span> <span class="k">new</span> <span class="kt">byte</span><span class="o">[(</span><span class="kt">int</span><span class="o">)</span> <span class="n">file</span><span class="o">.</span><span class="na">length</span><span class="o">()];</span>
+</span><span class='line'>          <span class="n">InputStream</span> <span class="n">in</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FileInputStream</span><span class="o">(</span><span class="n">file</span><span class="o">);</span>
+</span><span class='line'>          <span class="n">in</span><span class="o">.</span><span class="na">read</span><span class="o">(</span><span class="n">input</span><span class="o">);</span>
+</span><span class='line'>          <span class="n">in</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
+</span><span class='line'>          
+</span><span class='line'>          <span class="c1">//update the MessageDigest and process</span>
+</span><span class='line'>          <span class="n">md</span><span class="o">.</span><span class="na">update</span><span class="o">(</span><span class="n">input</span><span class="o">);</span>
+</span><span class='line'>          <span class="kt">byte</span><span class="o">[]</span> <span class="n">fileDigest</span> <span class="o">=</span> <span class="n">md</span><span class="o">.</span><span class="na">digest</span><span class="o">();</span>
+</span><span class='line'>          
+</span><span class='line'>          <span class="k">return</span> <span class="nf">ByteArrayToString</span><span class="o">(</span><span class="n">fileDigest</span><span class="o">);</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      <span class="k">catch</span><span class="o">(</span><span class="n">IOException</span> <span class="n">e</span> <span class="o">)</span>
+</span><span class='line'>      <span class="o">{</span>
+</span><span class='line'>          <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>          <span class="k">return</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      <span class="k">catch</span><span class="o">(</span><span class="n">NoSuchAlgorithmException</span> <span class="n">e</span><span class="o">)</span>
+</span><span class='line'>      <span class="o">{</span>
+</span><span class='line'>          <span class="k">return</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="kd">private</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">ByteArrayToString</span><span class="o">(</span><span class="kt">byte</span><span class="o">[]</span> <span class="n">ba</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">{</span>
+</span><span class='line'>     <span class="n">StringBuilder</span> <span class="n">sb</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StringBuilder</span><span class="o">();</span>
+</span><span class='line'>     <span class="k">for</span><span class="o">(</span><span class="kt">byte</span> <span class="nl">b:</span> <span class="n">ba</span><span class="o">)</span>
+</span><span class='line'>        <span class="n">sb</span><span class="o">.</span><span class="na">append</span><span class="o">(</span><span class="n">String</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">&quot;%02x&quot;</span><span class="o">,</span> <span class="n">b</span><span class="o">&amp;</span><span class="mh">0xff</span><span class="o">));</span>
+</span><span class='line'>     <span class="k">return</span> <span class="n">sb</span><span class="o">.</span><span class="na">toString</span><span class="o">();</span>
+</span><span class='line'>  <span class="o">}</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
 </div>
 </figure>
 </notextile>
 </div>
-<p>Đoạn code trên có vẻ đã hoàn thành mục tiêu thêm thuộc tính cho Product object, nhưng có vấn đề gì ở đây không? Cách giải quyết này gặp phải vấn đề liên quan đến việc giải phóng bộ nhớ. Vì <strong>HashMap</strong> sử dụng <strong>strong reference</strong> để trỏ đến Product object, nên khi trong chương trình không còn reference nào đến Product object nữa, <strong>garbage collector</strong> nhận thấy vẫn còn strong reference ở trong <strong>HashMap</strong>, nên nó không giải phóng object này nữa. Lâu dần, sẽ xuất hiện hiện tượng <strong>Leak Memory</strong>: ta không thể giải phóng được cặp key, value nằm trong <strong>HashMap</strong>, khi mà <strong>HashMap</strong> còn được sử dụng (để hiểu rõ hơn, bạn có thể xem ví dụ demo ở cuối bài).</p>
-<p>Nhân đây, xin giải thích thêm về <strong>Strong reference</strong>. Đây là Java reference bình thường mà ta thường sử dụng. Như ví dụ sau:</p>
+<h1 id="theading">Theading</h1>
+<p>Threading, hay concurrency, trong Java là một chủ đề khá phức tạp và tôi cũng chưa đủ khả năng nắm rõ được tất cả. Do vậy, trong bài viết này, tôi xin chỉ đề cập đến kĩ thuật thread pooling để phân bài toán ra thành nhiều tác vụ, chạy trên nhiều luồng khác nhau.</p>
+<p>Thread pool là gì? Bạn có thể hiểu nôm na là thay vì cứ gọi một luồng mới cho từng tác vụ khi cần thiết (phương pháp này gặp nhược điểm vì việc tạo thread mới sẽ gặp overhead), ta tạo sẵn một cái “bể” (pool) trong đó khởi động sẵn một loạt các luồng (thread). Các luồng này ngoi ngoi lên để đợi ta ném tác vụ vào để chúng thực hiện. Sau khi thực hiện xong, nó sẽ báo cáo lại kết quả, kết thúc tác vụ, và quay trở lại “bể” để tiếp tục ngoi ngoi chờ tác vụ mới. Chỉ khi nào đóng “bể”, thì các luồng mới bị mất đi.</p>
+<p>Trong bài toán tìm file trùng lặp này, tôi sẽ áp dụng thread pooling như sau:</p>
+<ul>
+<li>Tạo một class DuppFind, implement Runnable class (đây là class ta có thể truyền vào cho pool), đại diện cho tác vụ tìm kiếm. Với mỗi object DuppFind, nó sẽ được truyền vào các tham số gồm có:</li>
+</ul>
+<p>– Thư mục bắt đầu tìm kiếm</p>
+<p>– Map<String, List<String>&gt;: là một map chứa key là md5 và value là một List chứa đường dẫn đến các file có md5 value như vậy</p>
+<p>– pool, thuộc class ExcutorService.</p>
+<ul>
+<li>Mỗi tác vụ sau khi được luồng chọn để thực thi, nó sẽ làm gì? Nhiệm vụ của tác vụ là quét tất cả các file, thư mục có trong thư mục được chỉ định tìm kiếm. Nếu gặp file, nó sẽ tính MD5 cho file đó, và thêm vào Map. Nếu gặp thư mục, tác vụ này sẽ tạo ra một tác vụ DuppFind mới, chỉ định thư mục mới này cho tác vụ DuppFind mới, và ném vào pool (bây giờ bạn đã hiểu tại sao object DuppFind luôn được truyền pool vào rồi đấy:) )</li>
+</ul>
+<p>Một vài điểm lưu ý:</p>
+<ul>
+<li><p>Mỗi tác vụ phải có trách nhiệm đợi tất cả các tác vụ con nó tạo ra hoàn thành thì mới được chấm dứt. Tôi thực hiện điều này bằng cách sử dụng đối tượng Future được trả lại mỗi lần ném tác vụ mới vào pool. Sau đó chỉ cần gọi polling kết quả từ tác vụ con là được.</p></li>
+<li><p>Với những Collection dùng chung giữa các thread, cần phải dùng những Concurrecy Collection mà Java cung cấp. Cụ thể ở đây, tôi dùng ConcurrentHashMap cho Map và CopyOnWriteArrayList cho List.</p></li>
+</ul>
+<p>Dưới đây là đoạn code cho phần thread pooling:</p>
 <div class="bogus-wrapper">
 <notextile>
-<figure class='code'><figcaption>
-<span>strong.java </span>
+<figure class="code">
+<figcaption>
+<span>DuppFind.java </span>
 </figcaption>
- 
 <div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">String</span> <span class="n">serialNo</span> <span class="o">=</span> <span class="k">new</span> <span class="n">String</span><span class="o">();</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>sẽ tạo một object String và lưu một strong reference đến nó vào biến serialNo. Ta cần phải để ý mới quan hệ giữa strong reference và garbage collector như sau: Nếu một object được trỏ đến qua một số strong references, object đó sẽ không được garbage collector để ý đến.</p>
-<h1 id="weakhashmap">WeakHashMap</h1>
-<p>Trái ngược lại với <strong>strong reference</strong> là <strong>weak reference</strong>. *Weak reference** sẽ không thể cản trở garbage collector giải phóng object khỏi memory. Khai báo như sau:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>weak.java </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">WeakReference</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">&gt;</span> <span class="n">weakProduct</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WeakReference</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">&gt;(</span><span class="n">product</span><span class="o">);</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Sau đó, ta có thể truy cập đến Product object thông qua việc gọi method weakProduct.get(). Tuy nhiên, ta cần phải chú ý khi gọi method này. Vì weak reference không đủ khả năng chặn quá trình garbage collection, nên đến một cycle nào đó, garbage collector sẽ giải phóng Product object (khi không còn strong reference nào đến nó) , và bạn sẽ thấy weakProduct.get() đột nhiên trả về null.</p>
-<p>Quay trở lại với ví dụ Product ở trên, ta giải quyết vấn đề đã nêu bằng cách sử dụng <strong>WeakHashMap</strong> class. <strong>WeakHashMap</strong> hoạt động y hệt như <strong>HashMap</strong>, chỉ khác là key được refer đến bằng <strong>weak reference</strong>. Lúc này, khi một object chỉ reachable bởi <strong>WeakReference</strong>, garbage collector sẽ giải phóng object, đồng thời sẽ đặt <strong>weak reference</strong> trỏ đến object kia vào một queue. WeakHashMap sẽ định kì kiểm tra queue này xem có weak reference nào mới đến không. Nếu thấy một weak reference trong queue, nghĩa là key đã không được ai sử dụng nữa và nó đã bị garbage collector “tịch thu”. Lúc đó, WeakHashMap sẽ bỏ entry liên quan đi. No more memory leak ! :)</p>
-<h1 id="demo">Demo</h1>
-<p>Lý thuyết là vậy. Để dễ hiểu hơn, quan sát đoạn demo WeakHashMap sau:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>WeakHashMapDemo.java </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -560,106 +455,174 @@ grep B data.dat | wc -l
 <span class='line-number'>37</span>
 <span class='line-number'>38</span>
 <span class='line-number'>39</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">package</span> <span class="n">corejava</span><span class="o">.</span><span class="na">collection</span><span class="o">;</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">DuppFind</span> <span class="kd">implements</span> <span class="n">Runnable</span><span class="o">{</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">File</span> <span class="n">directory</span><span class="o">;</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">md5FileMap</span><span class="o">;</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">ExecutorService</span> <span class="n">pool</span><span class="o">;</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="kd">public</span> <span class="nf">DuppFind</span><span class="o">(</span><span class="n">File</span> <span class="n">directory</span><span class="o">,</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">md5FileMap</span><span class="o">,</span> <span class="n">ExecutorService</span> <span class="n">pool</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">{</span>
+</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">directory</span> <span class="o">=</span> <span class="n">directory</span><span class="o">;</span>
+</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">md5FileMap</span> <span class="o">=</span> <span class="n">md5FileMap</span><span class="o">;</span>
+</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">pool</span> <span class="o">=</span> <span class="n">pool</span><span class="o">;</span>
+</span><span class='line'>  <span class="o">}</span>    
 </span><span class='line'>
-</span><span class='line'><span class="kn">import</span> <span class="nn">java.util.Map</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">java.util.WeakHashMap</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">WeakHashMapTest</span> <span class="o">{</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="c1">//add one element to the map...</span>
-</span><span class='line'>      <span class="n">Map</span><span class="o">&lt;</span><span class="n">Data</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">map</span>  <span class="o">=</span> <span class="k">new</span> <span class="n">WeakHashMap</span><span class="o">&lt;</span><span class="n">Data</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;();</span>
-</span><span class='line'>      <span class="n">Data</span> <span class="n">someDataObject</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Data</span><span class="o">(</span><span class="s">&quot;test&quot;</span><span class="o">);</span>
-</span><span class='line'>      <span class="n">map</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">someDataObject</span><span class="o">,</span> <span class="n">someDataObject</span><span class="o">.</span><span class="na">value</span><span class="o">);</span>
-</span><span class='line'>      <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;map contains someDataObject ? &quot;</span> <span class="o">+</span> <span class="n">map</span><span class="o">.</span><span class="na">containsKey</span><span class="o">(</span><span class="n">someDataObject</span><span class="o">));</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="c1">//now make someDataObject eligible for garbage collection...</span>
-</span><span class='line'>      <span class="n">someDataObject</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">1000000</span><span class="o">;</span> <span class="n">i</span><span class="o">++){</span>
-</span><span class='line'>          <span class="k">if</span><span class="o">(</span><span class="n">map</span><span class="o">.</span><span class="na">size</span><span class="o">()!=</span><span class="mi">0</span><span class="o">)</span>
+</span><span class='line'>  <span class="nd">@Override</span>
+</span><span class='line'>  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span> <span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>      <span class="k">try</span>
+</span><span class='line'>      <span class="o">{</span>
+</span><span class='line'>          <span class="n">File</span><span class="o">[]</span> <span class="n">files</span> <span class="o">=</span> <span class="n">directory</span><span class="o">.</span><span class="na">listFiles</span><span class="o">();</span>
+</span><span class='line'>          <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">Future</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">results</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">Future</span><span class="o">&lt;?&gt;&gt;();</span>
+</span><span class='line'>          <span class="k">for</span><span class="o">(</span><span class="n">File</span> <span class="n">file</span> <span class="o">:</span> <span class="n">files</span><span class="o">)</span>
 </span><span class='line'>          <span class="o">{</span>
-</span><span class='line'>              <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;At iteration &quot;</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s">&quot; the map still holds the reference on someDataObject&quot;</span><span class="o">);</span>
-</span><span class='line'>          <span class="o">}</span>
-</span><span class='line'>          <span class="k">else</span>
-</span><span class='line'>          <span class="o">{</span>
-</span><span class='line'>              <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;someDataObject has finally been garbage collected at iteration &quot;</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s">&quot;, so the map is now empty&quot;</span><span class="o">);</span>
-</span><span class='line'>              <span class="k">break</span><span class="o">;</span>
+</span><span class='line'>              <span class="k">if</span><span class="o">(</span><span class="n">file</span><span class="o">.</span><span class="na">isDirectory</span><span class="o">())</span>
+</span><span class='line'>              <span class="o">{</span>
+</span><span class='line'>                  <span class="c1">//System.out.println(&quot;Dir: &quot; + file.getAbsolutePath());</span>
+</span><span class='line'>                  <span class="n">DuppFind</span> <span class="n">df</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DuppFind</span><span class="o">(</span><span class="n">file</span><span class="o">,</span> <span class="n">md5FileMap</span><span class="o">,</span> <span class="n">pool</span><span class="o">);</span>
+</span><span class='line'>                  <span class="n">Future</span><span class="o">&lt;?&gt;</span> <span class="n">result</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">df</span><span class="o">);</span>
+</span><span class='line'>                  <span class="n">results</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">result</span><span class="o">);</span>
+</span><span class='line'>              <span class="o">}</span>
+</span><span class='line'>              <span class="k">else</span> <span class="nf">if</span><span class="o">(</span><span class="n">file</span><span class="o">.</span><span class="na">isFile</span><span class="o">())</span>
+</span><span class='line'>              <span class="o">{</span>
+</span><span class='line'>                  <span class="c1">//calculate md5</span>
+</span><span class='line'>                  <span class="n">String</span> <span class="n">md5</span> <span class="o">=</span> <span class="n">MD5Utils</span><span class="o">.</span><span class="na">getMD5</span><span class="o">(</span><span class="n">file</span><span class="o">);</span>
+</span><span class='line'>                  <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">listFile</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CopyOnWriteArrayList</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;();</span>
+</span><span class='line'>                  <span class="k">if</span><span class="o">(</span><span class="n">md5FileMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">md5</span><span class="o">)</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+</span><span class='line'>                  <span class="o">{</span>
+</span><span class='line'>                      <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Duplicate md5: &quot;</span> <span class="o">+</span> <span class="n">md5</span> <span class="o">+</span> <span class="s">&quot;, size now: &quot;</span> <span class="o">+</span> <span class="n">md5FileMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">md5</span><span class="o">).</span><span class="na">size</span><span class="o">());</span>
+</span><span class='line'>                      <span class="n">listFile</span><span class="o">.</span><span class="na">addAll</span><span class="o">(</span><span class="n">md5FileMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">md5</span><span class="o">));</span>
+</span><span class='line'>                  <span class="o">}</span>
+</span><span class='line'>                  <span class="n">listFile</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">file</span><span class="o">.</span><span class="na">getAbsolutePath</span><span class="o">());</span>
+</span><span class='line'>                  <span class="n">md5FileMap</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="n">md5</span><span class="o">);</span>
+</span><span class='line'>                  <span class="n">md5FileMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">md5</span><span class="o">,</span> <span class="n">listFile</span><span class="o">);</span>
+</span><span class='line'>                  <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Add: File&quot;</span> <span class="o">+</span> <span class="n">file</span><span class="o">.</span><span class="na">getAbsolutePath</span><span class="o">()</span> <span class="o">+</span> <span class="s">&quot;, MD5: &quot;</span> <span class="o">+</span> <span class="n">md5</span><span class="o">);</span>
+</span><span class='line'>              <span class="o">}</span>
 </span><span class='line'>          <span class="o">}</span>
 </span><span class='line'>          
+</span><span class='line'>          <span class="c1">//wait until all sub-tasks complete</span>
+</span><span class='line'>          <span class="k">for</span><span class="o">(</span><span class="n">Future</span><span class="o">&lt;?&gt;</span> <span class="nl">result:</span> <span class="n">results</span><span class="o">)</span>
+</span><span class='line'>          <span class="o">{</span>
+</span><span class='line'>              <span class="n">result</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+</span><span class='line'>          <span class="o">}</span>
 </span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="kd">static</span> <span class="kd">class</span> <span class="nc">Data</span><span class="o">{</span>
-</span><span class='line'>      <span class="n">String</span> <span class="n">value</span><span class="o">;</span>
-</span><span class='line'>      <span class="n">Data</span><span class="o">(</span><span class="n">String</span> <span class="n">value</span><span class="o">){</span>
-</span><span class='line'>          <span class="k">this</span><span class="o">.</span><span class="na">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">;</span>
+</span><span class='line'>      <span class="k">catch</span><span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span>
+</span><span class='line'>      <span class="o">{</span>
+</span><span class='line'>          <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      <span class="k">catch</span><span class="o">(</span><span class="n">ExecutionException</span> <span class="n">e</span><span class="o">)</span>
+</span><span class='line'>      <span class="o">{</span>
+</span><span class='line'>          <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
 </span><span class='line'>      <span class="o">}</span>
 </span><span class='line'>  <span class="o">}</span>
 </span><span class='line'><span class="o">}</span>
-</span></code></pre></td></tr></table>
+</span></code></pre>
+</td>
+</tr>
+</table>
 </div>
 </figure>
 </notextile>
 </div>
-<p>Chạy đoạn code trên: kết quả như sau:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>output </span>
-</figcaption>
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>map contains someDataObject ? true
-</span><span class='line'>At iteration 0 the map still holds the reference on someDataObject
-</span><span class='line'>At iteration 1 the map still holds the reference on someDataObject
-</span><span class='line'>...
-</span><span class='line'>At iteration 29574 the map still holds the reference on someDataObject
-</span><span class='line'>someDataObject has finally been garbage collected at iteration 29575, hence the map is now empty</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>thay <strong>WeakHashMap</strong> bằng <strong>HashMap</strong>, kết quả sẽ như thế nào?</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>output </span>
-</figcaption>
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>map contains someDataObject ? true
-</span><span class='line'>At iteration 0 the map still holds the reference on someDataObject
-</span><span class='line'>At iteration 1 the map still holds the reference on someDataObject
-</span><span class='line'>...
-</span><span class='line'>At iteration 999997 the map still holds the reference on someDataObject
-</span><span class='line'>At iteration 999998 the map still holds the reference on someDataObject
-</span><span class='line'>At iteration 999999 the map still holds the reference on someDataObject</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Bạn đã thấy điểm khác biệt? Sau một khoảng thời gian, <strong>WeakHashMap</strong> sẽ bỏ đi entry tương ứng với weak reference. Còn <strong>HashMap</strong>, vì là strong reference, trong map sẽ luôn chứa cặp phần tử (someDataObject, value) mặc dù bên ngoài someDataObject đã set là null.</p>
-<h1 id="kết-luận">Kết luận</h1>
-<p>Bài viết này đã trình bày tác dụng của một lớp trong Collection của Java: <strong>WeakHashSet</strong>. Đồng thời, bài viết cũng giới thiệu <strong>weak reference</strong> và <strong>strong reference</strong> và mối quan hệ của chúng với Java garbage collector.</p>
+<p>Toàn bộ code đã ở trên github: <a href="https://github.com/viethnguyen/DuppFind" class="uri">https://github.com/viethnguyen/DuppFind</a></p>
+<h1 id="đánh-giá">Đánh giá</h1>
+<ul>
+<li><p>Đoạn code trên chạy chính xác với những thư mục nhỏ, không có quá nhiều thư mục con, cháu… Tuy nhiên, với những thư mục chứa nhiều thư mục con, vì có quá nhiều tác vụ vào thread pool, nên hay xảy ra exception out of memory - heap.</p></li>
+<li><p>Mới chỉ kiểm tra xem 2 file có MD5 trùng nhau không. Nếu trùng nhau rồi, ta cần kiểm tra thêm độ dài 2 file có trùng nhau không, rồi nếu trùng tiếp thì phải check từng byte để chắc chắn nhất có thể (xóa đi khỏi hối hận :P)</p></li>
+<li><p>Ở trên mới hiển thị ra những file nào trùng lặp. Cần cho phép user xóa file trùng lặp trong chương trình.</p></li>
+<li><p>Cần thiết kế GUI!</p></li>
+</ul>
+<p>Bạn thấy đó, còn khá nhiều vấn đề cần giải quyết để có một tool hoàn chỉnh. Những vấn đề này sẽ được cải tiến và được report lại trong một ngày không xa :) Nếu bạn cảm thấy hứng thú, rất welcome contribute :)</p>
 <h1 id="tham-khảo">Tham khảo</h1>
 <ol type="1">
-<li>Core Java Volume I–Fundamentals</li>
-<li><a href="http://docs.oracle.com/javase/6/docs/api/java/util/WeakHashMap.html">http://docs.oracle.com/javase/6/docs/api/java/util/WeakHashMap.html</a></li>
+<li>Core Java</li>
+<li>Java Concurrency in Practice</li>
+<li>Effective Java</li>
 </ol>
+		
+		
+	</div>
+
+</article>
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-06-25T21:07:00+09:00" data-updated="true" itemprop="datePublished">Jun 25<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/git/'>git</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/06/25/using-githook-to-automatically-test-your-app/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/06/25/using-githook-to-automatically-test-your-app/" itemprop="url">Giới Thiệu về Githook và Client Side Hook</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1 id="githook-là-gì">Githook là gì</h1>
+<p>Giống như các hệ thống quản lý version khác, Git cung cấp một cách để gọi những custom script khi một hành động đặc biệt được thực hiện trong git. Có 2 nhóm hook trong git: hook cho client, và hook cho server. Client hook là dành cho những hoạt động xảy ra ở client như commit và merge. Server hook là dành cho những hoạt động xảy ra ở Git server như nhận được một commit push lên từ client. Bài viết này giới thiệu một số cách sử dụng hook cả client side hook</p>
+<h1 id="install-hook">Install hook</h1>
+<p>Các hooks được lưu trong thư mục <code>hooks</code> của <code>.git</code> folder. Trong phần lớn các project, nó là <code>.git/hooks</code>. Ở chế độ mặc định, Git cung cấp một loạt các examples cho các hooks, các ví dụ này đưa ra khá nhiều chỉ dẫn về inputs của mỗi hook. Tất cả các examples được viết bằng shell script, với một vài mã lệnh Perl, tuy nhiên bạn có thể viết các script này bằng bất cứ ngôn ngữ nào (ví dụ như Python, Ruby). Tất cả các examples đều có tên kết thúc bằng <code>.sample</code>, bạn cần đổi tên các script trước khi chạy</p>
+<p>Để enable các hook script, đặt một file trong thư mục <code>hooks</code> với tên tương ứng với tên của hook, và set quyền cho script đó là executable.</p>
+<h1 id="client-side-hooks">Client side hooks</h1>
+<p>Có rất nhiều loại client side hooks, chúng ta chia chúng theo work flow</p>
+<h2 id="committing-workflow-hooks">Committing-Workflow Hooks</h2>
+<p><code>pre-commit</code> hook được gọi đầu tiên, trước khi bạn gõ nội dung của một commit message. Hook này được sử dụng để kiểm tra nội dụng các files được commit. Bạn có thể viết script để kiểm tra coding convetion, hoặc để run test, để chạy static analysis trước khi commit. Nếu script trả về kết quả khác 0, commit sẽ bị loại bỏ. Tuy nhiên bạn có thể bỏ qua chạy hook này khi commit với lệnh <code>git commit --no-verify</code></p>
+<p><code>prepare-commit-msg</code> là hook được chạy trước khi trình soạn thảo commit message được gọi đế và sau khi message mặc định được tạo ra. Hook này giúp bạn thay đổi default message trước khi commit author thấy nó. Hook này về cơ bản là ít khi hữu dụng, chỉ trừ khi các commit message được sinh ra tự động.</p>
+<p><code>commit-msg</code> hook nhận duy nhất một input là đường dẫn của file chứa commit message. Nếu script này trả về kết quả khác 0, commit sẽ bị loại bỏ. Hook này có tác dụng giúp bạn chuẩn hoá mesage trước khi commit</p>
+<p>Sau khi toàn bộ quá trình commit được hoàn tất, <code>post-commit</code> hook sẽ chạy. hook này không nhận tham số đầu vào, nhưng bạn có thể dễ dàng lầy last commit bằng cách gọi <code>git log -1 HEAD</code>. Thông thường, hook này dụng để notification.</p>
+<p>Committing-workflow client side scripts được sử dụng và setup bới chính các developer tại máy local của họ. Các developers phải tự maintain chúng, tuy nhiên họ có thể thay đổi chúng bất cứ lúc nào</p>
+<h2 id="email-workflow-hooks">Email workflow hooks</h2>
+<p>Bạn có thể set up 3 client side hooks cho email workflow. Tất cả các hooks này đều liên quan đến <code>git am</code> command. Nếu bạn không sử dụng câu lệnh này trong workflow của bạn, bạn có thể bỏ qua phần này. Nếu bạn nhận patch qua email được chuẩn bị bới lệnh <code>git format-patch</code>, thì có thể những hook này sẽ có ích với bạn</p>
+<p>Hook đầu tiên là <code>applypatch-msg</code>. Nó nhận một tham số: tên của file tạm chứ nội dụng của commit message. Git sẽ bỏ qua patch nếu hook này trả về giá trị khác 0. Bạn có thể sử dụng hook này để đảm bảo commit message là đúng chuẩn.</p>
+<p>Hook tiếp theo khi apply patches thông qua <code>git am</code> là <code>pre-applypatch</code>. Hook không nhận giá trị đầu vào và được chay sau khi patch được applied. Vì thế bạn có thể sử dụng hook này để kiểm tra toàn bộ mã nguồn trước khi make commit. VD: chạy test, chạy static analysis, kiểm tra style (hook này tương đối giống <code>pre-commit</code> trong phần trước)</p>
+<p>Hook cuối cùng được chạy trong process của <code>git am</code> là <code>post-applypatch</code>. Bạn có thể sử dụng nó để notify cho một group hoặc một author về patch này.</p>
+<h2 id="một-vài-client-hooks-khác">Một vài client hooks khác</h2>
+<p><code>pre-rebase</code> hooks run trước khi bạn rebase bất cứ commit nào, và sẽ cả process lại nếu hook trả về giái trị khác 0.</p>
+<p><code>post-checkout</code> được gọi sau khi bạn chạy lệnh <code>git checkout</code> thành công. Bạn có thể sử dụng nó để setup environment, hoặc tự động sinh document sau khi checkout</p>
+<p><code>post-merge</code> hook được chạy sau khi bạn chạy lệnh <code>git merge</code>. Bạn có thể sử dụng để phục hồi lại dữ liệu trong thư mục làm việc mà Git không thể kiểm tra ví dụ như dữ liệu liên quan đến permission.</p>
+<h1 id="kết-luận">Kết luận</h1>
+<p>Bài viết giới thiệu về githooks và một số client hooks thường dùng. Hy vọng bạn tìm thấy một vài thông tin hữu ích giúp bạn tự động hoá một số công việc hàng ngày khi làm việc với git.</p>
+<h1 id="tham-khảo">Tham khảo</h1>
+<p><a href="http://git-scm.com/book/en/Customizing-Git-Git-Hooks">Githook documentation</a></p>
 		
 		
 	</div>
@@ -677,7 +640,7 @@ grep B data.dat | wc -l
     <div class="center"><a href="/blog/archives">Blog Archives</a></div>
 </nav></div>
 			</div>
-			<footer id="footer" class="inner">Copyright &copy; 2014
+			<footer id="footer" class="inner">Copyright &copy; 2015
 
     kỹ thuật máy tính
 

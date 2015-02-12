@@ -7,8 +7,7 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jan 4th, 2014 Comments Full Text Search, Từ Khái Niệm đến Thực Tiễn (Phần 3) Introduction
-Trong phần 2, chúng ta đã nắm được một kĩ thuật cơ bản và &hellip;">
+	<meta name="description" content="Aug 1st, 2014 linux, macosx, programming, python, twitter Comments Tôi đã Xây Dựng Một Phần Mềm Mã Nguồn Mở Như Thế Nào Lưu ý trước khi đọc tiếp: Ở &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -38,7 +37,7 @@ Trong phần 2, chúng ta đã nắm được một kĩ thuật cơ bản và &h
 	<div class="container">
 		<div class="left-col">
 			<div class="intrude-less">
-			<header id="header" class="inner"><div class="profilepic">	
+			<header id="header" class="inner"><div class="profilepic">
 	<script src="/javascripts/md5.js"></script>
 	<img src='/images/logo.jpg' alt='Profile Picture' style='width: 160px;' />
 </div>
@@ -67,9 +66,9 @@ Trong phần 2, chúng ta đã nắm được một kĩ thuật cơ bản và &h
 	</div>
 </nav>
 
-</header>				
+</header>
 			</div>
-		</div>	
+		</div>
 		<div class="mid-col">
 			
 				
@@ -93,280 +92,470 @@ Trong phần 2, chúng ta đã nắm được một kĩ thuật cơ bản và &h
   
 
 
-<time datetime="2014-01-04T21:23:00+09:00" data-updated="true" itemprop="datePublished">Jan 4<span>th</span>, 2014</time></div>
+<time datetime="2014-08-01T20:00:00+09:00" data-updated="true" itemprop="datePublished">Aug 1<span>st</span>, 2014</time></div>
 		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/linux/'>linux</a>, <a class='category' href='/blog/categories/macosx/'>macosx</a>, <a class='category' href='/blog/categories/programming/'>programming</a>, <a class='category' href='/blog/categories/python/'>python</a>, <a class='category' href='/blog/categories/twitter/'>twitter</a>
+
 
 </div>
 		
-			<span class="comments"><a href="/blog/2014/01/04/full-text-search-engine-part-3/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2014/08/01/toi-da-xay-dung-1-phan-mem-ma-nguon-mo-nhu-the-nao/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2014/01/04/full-text-search-engine-part-3/" itemprop="url">Full Text Search, Từ Khái Niệm đến Thực Tiễn (Phần 3)</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2014/08/01/toi-da-xay-dung-1-phan-mem-ma-nguon-mo-nhu-the-nao/" itemprop="url">Tôi đã Xây Dựng Một Phần Mềm Mã Nguồn Mở Như Thế Nào</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<h1 id="introduction">Introduction</h1>
-<p>Trong <a href="http://ktmt.github.io/blog/2013/11/03/full-text-search/">phần 2</a>, chúng ta đã nắm được một kĩ thuật cơ bản và quan trọng để tạo ra search-engine, đó chính là kĩ thuật tách chữ (Tokenize), thông qua 2 phương pháp chính là N-gram và Morphological Analysis. Nhờ có kĩ thuật này mà văn bản gốc sẽ được bóc tách thành các kí tự, sau đó sẽ được lưu trữ dưới dạng Inverted Index như đã giới thiệu ở <a href="http://ktmt.github.io/blog/2013/10/27/full-text-search-engine/">phần 1</a>.</p>
-<p>Trong bài viết này, chúng ta sẽ tìm hiểu là làm thế nào, mà khi được cung cấp đầu vào là một chuỗi truy vấn (query string), search engine sẽ cung cấp được cho chúng ta kết quả phù hợp nhất. Về cơ bản, để tìm kiếm bên trong một khối dữ liệu khổng lồ đã được index dưới dạng “Inverted Index”, search-engine sẽ sử dụng “Boolean Logic”.</p>
-<h1 id="boolean-logic-và-tại-sao-search-engine-lại-sử-dụng-boolean-logic">Boolean Logic và tại sao Search Engine lại sử dụng Boolean Logic</h1>
-<p>Khi nhắc đến Boolean Logic, các bạn sẽ hình dung ra trong đầu những hình ảnh như thao tác AND/OR/XOR với bit, mạch logic trong điện tử số, hay biểu đồ ven. Đối tượng thao tác của Boolean Logic có thể là bit, cổng logic, hay là tập hợp (set). Trong bài này, Boolean Logic sẽ được nhắc đến với đối tượng là tập hợp (set), và hình ảnh dễ hình dung nhất khi thao tác với đối tượng này chính là biểu đồ Ven.</p>
-<p>Để tìm hiểu mối liên quan giữa Boolean Logic và Search Engine, chúng ta hãy thử hình dung cơ chế của Search Engine. Khi được cung cấp một chuỗi truy vấn (query string), việc đầu tiên Search Engine sẽ phải sử dụng Parser module để bóc tách chuỗi truy vấn này theo một <strong>ngữ pháp</strong> đã được qui định trước, để tạo thành các token sử dụng cho logic tìm kiếm. Việc sử dụng Parser này cũng giống như compiler hay intepreter sẽ sử dụng các cú pháp đã được định nghĩa trước của một ngôn ngữ bất kỳ để dịch một đoạn code ra mã máy hoặc là bytecode. Ngữ pháp qui định trước càng phức tạp, không chỉ dẫn đến việc parse chuỗi truy vấn trở nên phức tạp hơn, việc viết ra một câu truy vấn phức tạp hơn (ảnh hưởng đến người dùng), mà còn khiến logic tìm kiếm cũng trở nên phức tạp, qua đó làm giảm hiệu suất của việc tìm kiếm. Chính vì thế mà việc tận dụng một ngữ pháp gần giống với Boolean Logic không những sẽ giúp giữ cho độ phức tạp khi parse query string ở mức thấp, mà nó còn giúp cho người dùng tạo ra những câu truy vấn dễ hiểu hơn.</p>
-<h1 id="sử-dụng-boolean-logic-trong-search-engine">Sử dụng Boolean Logic trong Search Engine</h1>
-<p>Boolean logic sử dụng trong Search Engine thường sẽ gồm 3 phép toán chính là <strong>AND</strong>, <strong>NOT</strong> <strong>và OR</strong> Hãy trở lại ví dụ gần giống trong <a href="http://ktmt.github.io/blog/2013/10/27/full-text-search-engine/">phần 1</a>, chúng ta có 5 documents {D1, D2, D3, D4, D5} đã được index như sau:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'>
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>D1 = "This is first document"
-</span><span class='line'>D2 = "This is second one"
-</span><span class='line'>D3 = "one two"
-</span><span class='line'>D4 = "This one is great"
-</span><span class='line'>D5 = "This two is great!"</span></code></pre></td></tr></table>
-</div>
+		<p><em>Lưu ý trước khi đọc tiếp: Ở bài viết này tác giả dùng chữ “hacker”, không phải theo nghĩa chỉ những người làm trong lĩnh vực bảo mật hay an toàn thông tin. “Hacker” ở đây là những kỹ sư, những nhà phát triền có năng lực tự tìm hiểu, mày mò, có kỹ năng “bắt máy tính phục vụ sở thích của mình”.</em></p>
+<h1 id="ý-tưởng">Ý tưởng</h1>
+<p>Nếu bạn là một hacker làm việc nhiều với Mac hoặc Linux, chắc các bạn chẳng xa lạ gì với terminal - giao diện dòng lệnh cơ bản nhất của hệ điều hành Unix. Tôi là một hacker bị “cuồng terminal”, <code>zsh</code>, <code>prezto</code>, <code>tmux</code>, <code>irssi</code>, <code>vim</code>, <code>tig</code> là những tools ưa thích nhất. Tôi từng có ước mơ muốn từ bỏ các giao diện đồ hoạ, có thể lập trình, chat chit, nghe nhạc v.v.. ngay trên môi trường không-đồ-hoạ.</p>
+<p>Bên cạnh đó, mặc dù không mấy mặn mà với Facebook nhưng gần đây lại bị nghiện Twitter, trong đầu tôi luôn hiện lên câu hỏi: làm thế nào để cũng có thể tương tác với Twitter chỉ qua terminal của MacOSX ?</p>
+<p>Trên thực tế đã có khá nhiều thư viện mã nguồn mở có thể đáp ứng được nhu cầu trên. <a href="https://github.com/sferik/t">t</a> hay <a href="https://github.com/jugyo/earthquake">earthquake</a> là những gem(Ruby) được viết rất bài bản và đa tính năng. Tuy nhiên tôi đã quyết định tự viết một phần mềm của riêng mình, bởi tự phát triền và làm sản phẩm của mình được cộng đồng đón nhận là một mục tiêu mới mẻ và đầy thử thách.</p>
+<p>Trong bài viết này, tôi sẽ giới thiệu với các bạn tôi đã xây dựng một phần mềm mã nguồn mở như thế nào, về cả kỹ năng phát triển và cách mang phần mềm của mình đến với cộng đồng hacker trên thế giới.</p>
+<h1 id="xác-định-mục-tiêu">Xác định mục tiêu</h1>
+<p>Khi bạn bắt đầu viết một phần mềm mã nguồn mở, điều quan trọng đầu tiên sẽ là : <strong>đã có ai thực hiện ý tưởng của bạn chưa</strong> và họ <strong>đã thực hiện được tốt đến đâu</strong>. Khi chuẩn bị viết phần mềm của mình, tôi nhận thấy <a href="https://github.com/sferik/t">t</a> giống như <em>1 twitter command trên Unix</em>, focus vào khả năng pipe với các command khác. Ngược lại, <a href="https://github.com/jugyo/earthquake">earthquake</a> là 1 app hoàn chỉnh nhưng <em>xử lý hiển thị tweets lại chưa thật tốt</em>.</p>
+<p>Và từ đó <a href="https://github.com/DTVD/rainbowstream">Rainbow Stream</a> ra đời. Bạn có thể nhận ra 2 điểm nêu trên khi nhìn vào cách thức hoạt động của app dưới đây:</p>
+<figure>
+<img src="https://raw.githubusercontent.com/DTVD/rainbowstream/master/screenshot/rs.gif" />
 </figure>
-</notextile>
-</div>
+<h1 id="tạo-nên-sự-khác-biệt">Tạo nên sự khác biệt</h1>
+<p>Để gây được ấn tượng với người dùng, sản phẩm của bạn vẫn cần có 1 đến 2 tính năng nổi trội. Bạn sẽ không muốn phần mềm mình viết ra mãi chỉ là “alternative to xxx or yyy, can consider if zzz stops development”. Ở đây, tôi xây đựng <a href="https://github.com/DTVD/rainbowstream">Rainbow Stream</a> tập trung vào 2 tính năng chính:</p>
+<ul>
+<li>Khả năng hiển thị màu sắc trên các terminal hỗ trợ 256 màu, cung cấp sẵn 1 số themes nổi tiếng.</li>
+<li>Hiện thị ảnh <em>trực tiếp trên terminal</em>.</li>
+</ul>
+<p>Chúng ta sẽ đi vào cụ thể trong các phần tiếp theo.</p>
+<h1 id="hiển-thị-màu-của-terminal">Hiển thị màu của terminal</h1>
+<p>Hầu hết các terminal hiện đại đều hỗ trợ hiển thị <em>256 ANSI colors</em>. Trên shell bạn có thể dễ dàng in ra chữ theo các màu định sẵn bẳng các dùng <em>Escape character</em> như dưới đây</p>
 <div class="bogus-wrapper">
 <notextile>
-<figure class='code'>
+<figure class="code">
+<figcaption>
+<span>color - color.sh </span>
+</figcaption>
 <div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
 <span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>"this" =&gt; {D1, D2, D4, D5}
-</span><span class='line'>"is" =&gt; {D1, D2, D4, D5}
-</span><span class='line'>"first" =&gt; {D1}
-</span><span class='line'>"document" =&gt; {D1}
-</span><span class='line'>"second" =&gt; {D2}
-</span><span class='line'>"one" =&gt; {D2, D3, D4}
-</span><span class='line'>"two" =&gt; {D3, D5}</span></code></pre></td></tr></table>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sh'><span class='line'><span class="nv">$ </span><span class="nb">echo</span> -e <span class="s2">&quot;\e[31mRed&quot;</span>
+</span><span class='line'><span class="nv">$ </span><span class="nb">echo</span> -e <span class="s2">&quot;\e[32mGreen&quot;</span>
+</span><span class='line'><span class="nv">$ </span><span class="nb">echo</span> -e <span class="s2">&quot;\e[33mYellow&quot;</span>
+</span><span class='line'><span class="nv">$ </span><span class="nb">echo</span> -e <span class="s2">&quot;\e[34mBlue&quot;</span>
+</span><span class='line'><span class="nv">$ </span><span class="nb">echo</span> -e <span class="s2">&quot;\e[35mMagenta&quot;</span>
+</span><span class='line'><span class="nv">$ </span><span class="nb">echo</span> -e <span class="s2">&quot;\e[36mCyan&quot;</span>
+</span><span class='line'><span class="nv">$ </span><span class="nb">echo</span> -e <span class="s2">&quot;\e[37mLight gray&quot;</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
 </div>
 </figure>
 </notextile>
 </div>
-<p>Giả sử chúng ta muốn query một câu truy vấn như sau : “This one”. Sử dụng Morphological Analysis đã giới thiệu trong <a href="http://ktmt.github.io/blog/2013/11/03/full-text-search/">phần 2</a>, chúng ta sẽ tách câu truy vấn đó thành 2 token là “This” và “one”. Bỏ qua yếu tố chữ hoa và chữ thường, thì “This” đã được index {D1, D2, D4, D5}, và “one” đã được index {D2, D3, D4}.</p>
-<p>Thông thường để cho dễ hiểu và phù hợp với logic của người dùng, thì space sẽ tương đương với logic AND, hay là việc tìm kiếu “This one” sẽ tương đương với kết tìm kiếm “This” AND với kết quả tìm kiếm “one”. Hay như trong ví dụ này thì kết quả tìm kiếm sẽ là kết quả AND của 2 set {D1, D2, D4, D5} và {D2, D3, D4}. Kết quả này có thể thấy dễ dàng là {D2, D4}</p>
-Vậy nếu người dùng input là “This OR one” thì sao? Lúc này kết quả tìm kiếm sẽ là
+<p>Hiện thị màu trên Python có thể được viết gọn theo function như sau</p>
 <div class="bogus-wrapper">
 <notextile>
-<figure class='code'>
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>{D1, D2, D4, D5} OR {D2, D3, D4} = {D1, D3, D5}</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-Từ ví dụ trên chúng ta thấy rằng độ phức tạp của việc tìm kiếm lúc này sẽ chuyển thành
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'>
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>Độ phức tạp của parse query string(1) 
-</span><span class='line'>+ Độ phức tạp của Index lookup(2) 
-</span><span class='line'>+ Độ phức tạp của thao tác boolean Logic dựa trên kết quả của Index lookup(3)</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>(1) thường sẽ không lớn do query string do user input khá ngắn, và trong trường hợp query string được generate phức tạp khi sử dụng lucene hoặc solr, thì việc sử dụng boolean logic rất đơn giản cũng làm độ phức tạp khi parse query string là không cao.</p>
-<p>(2) Độ phức tạp của Index lookup tương đương với việc tìm kiếm giá trị của một key trong Hash table, chỉ khác là trên HDD, tuy nhiên so sánh với việc tìm kiếm trên BTree của MySQL thì performance của xử lý này là hoàn toàn vuợt trội.</p>
-<p>(3) Thao tác này có thể được optimize rất nhiều dựa vào các lý thuyết tập hợp, hay các thư viện toán học cho big number.</p>
-<p>Như vậy chúng ta có thể thấy bài toán tìm kiếm ban đầu đã được đưa về 3 bài toán nhỏ hơn, dễ optimize hơn.</p>
-<h1 id="kết-luận">Kết luận</h1>
-<p>Bài viết đã giới thiệu về việc sử dụng Boolean Logic trong Full Text Search Engine. Qua đó các bạn chắc đã hình dung ra phần nào khi các bạn gõ một câu lệnh tìm kiếm vào ô tìm kiếm của Google, những gì sẽ xảy ra đằng sau (mặc dù trên thực tế những gì google làm sẽ phức tạp hơn rất nhiều).</p>
-<p>Tham khảo:</p>
-<ul>
-<li><a href="http://gihyo.jp/dev/serial/01/make-findspot">Make Findspot</a></li>
-</ul>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-12-22T20:36:00+09:00" data-updated="true" itemprop="datePublished">Dec 22<span>nd</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/dependability/'>dependability</a>, <a class='category' href='/blog/categories/failure/'>failure,</a>, <a class='category' href='/blog/categories/system/'>system,</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/12/22/tro-lai-co-ban-1-do-tin-cay/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/12/22/tro-lai-co-ban-1-do-tin-cay/" itemprop="url">Trở Lại Cơ Bản - Độ Tin Cậy</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h3 id="giới-thiệu">Giới thiệu</h3>
-<p>Các bạn là fan của <a href="http://en.wikipedia.org/wiki/Distributed_computing">tính toán phân tán</a> chắc hẳn đều biết <a href="http://en.wikipedia.org/wiki/Werner_Vogels">Werner Vogels</a> (CTO của amazon) cũng như trang blog <a href="www.allthingsdistributed.com">All Things Distributed</a> của ông. Một trong những loạt bài viết mà cá nhân tôi rất thích là loạt bài viết có tựa đề: Back-to-Basic của Vogels. Trong loạt bài viết này, Vogels giới thiệu những paper nổi tiếng mà những người làm tính toán phân tán cần đọc và tất cả đều hết sức cơ bản.</p>
-<p>Lấy cảm hứng từ trùm bài viết đấy, mình quyết định sẽ viết trùm bài có tựa đề “Trở lại cơ bản” tổng hợp lại những kiến thức cơ bản, trước hết là để cho bản thân và sau đấy để là để chia sẻ cho mọi người (có những thứ bạn nghĩ là cơ bản nhưng không phải ai cũng biết ;) ).</p>
-<p>Bài viết tuần này sẽ nêu khái lược khái niệm độ tin cậy, cách tính độ tin cậy.</p>
-<h3 id="độ-tin-cậy-là-gì">Độ tin cậy là gì?</h3>
-<p>Độ tin cậy có thể hiểu là độ bền của sản phẩm hoặc dịch vụ . Sản phẩm (dịch vụ) của bạn càng bền, chạy càng lâu mà không hỏng hóc gì, thì độ bền của sản phẩm càng cao, và do đó độ tin cậy vào sản phẩm của bạn nói riêng và của người dùng nói chung vào sản phẩm càng cao. Đối với dịch vụ (cloud, website) thì độ tin cậy có thể đo bằng thời gian hệ thống sẵn sàng phục vụ bạn (không bị dừng vì sự cố hay hỏng hóc).</p>
-<p>Với cách hiểu trên, một vấn đề đặt ra là làm thế nào <strong>cân đo đong đếm</strong> độ tin cậy. Ví dụ khi một hãng phần cứng bán cho bạn 1 chiếc ổ cứng và họ bảo đảm với bạn rằng phần cứng của họ có độ tin cậy cao, thì họ dựa vào điều gì để nói như vậy?</p>
-<p>Các hãng bán máy tính đều đưa ra chế độ bảo hành cho sản phẩm của họ, với lời quảng cáo rằng trong thời gian bảo hành họ sẵn sàng thay thế sản phầm của họ nếu sản phẩm của họ bị lỗi. Độ tin cậy như vậy có thể đo bằng thời gian bảo hành. Qua thời gian bảo hành, sản phẩm có thể bị hỏng hóc và hãng sẽ không chịu trách nhiệm cho những hỏng hóc đó. Ví dụ máy tính apple thường có thời gian bảo hành 1 năm.</p>
-<p>Đối với các sản phẩm là dịch vụ trên internet, người ta thường đưa ra các <a href="http://en.wikipedia.org/wiki/Service-level_agreement">Service Level Agreements (SLA)</a> hoặc <strong>Service Level Objectives (SLO)</strong> để quảng cáo cho độ tin cậy của dịch vụ, và họ sẵn sàng bồi thường cho khách hàng nếu sản phẩm của họ không đáp ứng được những “đồng ý” này. Amazon EC2 cam kết trong <a href="http://aws.amazon.com/ec2-sla/">Amazon SLA</a> rằng họ đảm bảo EC2 99.95% có uptime thời gian trong 1 tháng. Nếu họ không đáp ứng điều kiện này, họ sẽ có chính xác bồi thường cho người dùng. Giống như vậy, các công ty dịch vụ cloud khác nhưng rackspace cũng đều có <a href="http://www.rackspace.com/information/legal/cloud/sla">Rackspace SLA</a> của riêng họ. Ngược lại việc hãng cloud như heroku không có một đảm bảo SLA nào ngoài <a href="https://www.heroku.com/policy/promise">Heroku Promise</a>, làm cho độ tin tưởng vào sản phẩm của họ giảm hẳn.</p>
-<h3 id="đo-độ-tin-cậy-thế-nào">Đo độ tin cậy thế nào?</h3>
-<p>Chắc chắn amazon sẽ không ngu gì đưa ra 1 cam kết không tưởng 100% uptime, nhưng họ cũng không thể đưa ra con số quá thấp được vì điều đó sẽ làm giảm khả năng cạnh tranh với các công ty khác. Apple cũng không dại gì đưa ra số năm bảo hành cao hơn vì nó sẽ làm giảm lợi nhuận của họ. Vậy các hãng đưa ra các con số trên như thế nào?</p>
-<p>Mỗi công ty cung câp dịch vụ sẽ có nhiều chỉ số riêng để đánh giá và tính toán trước khi đưa ra con số của dịch vụ của họ, tuy vậy các tính toán đề dựa vào cách tính cơ bản trình bày dưới đây.</p>
-<p>Để tính toán độ tin cậy, ta chia hệ thống làm 2 trạng thái tương ứng như được ghi trong SLA:</p>
-<ul>
-<li>Thời gian phục vụ như cam kết</li>
-<li>Thời gian dừng dịch vụ (do hỏng hóc)</li>
-</ul>
-<p>Hệ thống thay đổi giữa 2 trạng thái này là: hỏng hóc và phục hồi. Để đo được độ tin cậy của hệ thống, ta cần đo được thời gian hệ thống ở 1 trong 2 trạng thái trên. Một hệ thống được xây dựng từ nhiều modules, do vậy độ tin cậy của hệ thống sẽ liên quan đến độ tin cậy của từng module trong hệ thống. Trước hết ta tìm hiểu các chỉ số tương ứng với 2 trạng thái trên.</p>
-<p>Độ tin cậy của 1 thành phần (module) được đo bằng thời gian phục vụ liên tục từ lúc bắt đầu được sử dụng đến lúc hỏng hóc gọi là MTTF (Mean Time to Failure). Nghịch đảo của con số này chính là tỉ lệ hỏng hóc FIT (Failures in time) và thường được đo bằng số hỏng hóc / 1 tỷ giờ vận hành.</p>
-<p>Độ hỏng hóc (hỏng nặng hay nhẹ) được đo bằng MTTR (Mean Time To Repair) hay thời gian từ lúc hệ thống hỏng hóc cho đến lúc được phục hồi.</p>
-<p>Thời gian giữa 2 lần hỏng hóc</p>
-<pre><code>MTBF (Mean Time Between Failures) = MTTF + MTTR</code></pre>
-<p>Tính sẵn sàng của 1 modules (Module availability) được đo bởi thời gian hoạt động cho đến lúc hỏng hóc trên tổng thời gian giữa 2 lần hỏng hóc:</p>
-<pre><code>Module Availability = MTTF / (MTTF + MTTR)</code></pre>
-<p>Từ công thức trên, ta có thể đo được tính sẵn sàng của hệ thống dựa vào tính tin cậy của từng module dùng để xây dựng nên hệ thống.</p>
-<h3 id="áp-dụng">Áp dụng</h3>
-<p>Tính MTTF của 1 hệ thống Giả sử ta có 1 hệ thống được xây dựng bởi</p>
-<ul>
-<li>10 đĩa cứng, mỗi đĩa có MTTF 1000000 giờ</li>
-<li>1 bộ điều khiển <a href="http://en.wikipedia.org/wiki/SCSI">SCSI</a> có MTTF 500000 giờ</li>
-<li>1 bộ nguồn có MTTF 200000 giờ</li>
-<li>1 quạt làm mát có MTTF 200000 giờ</li>
-<li>1 cáp SCSI có MTTF 1000000 giờ.</li>
-</ul>
-<p>Hãy tính MTTF của cả hệ thống.</p>
-<p>Lời giải</p>
-<p>Tỉ lệ hỏng hóc của toàn hệ thống:</p>
-<pre><code>Failure rate = 10 / 1000000 + 1/500000 + 1/200000 + 1/200000 + 1/1000000
-             = (10 + 2 + 5 + 5 + 1) / 1000000 = 23 / 1000000 = 23000 / 1000000000</code></pre>
-<p>hệ thống sẽ có tỉ lệ hỏng hóc 23000FIT. MTTF của hệ thống sẽ bằng nghịch đảo con số trên</p>
-<pre><code>MTTF = 1000000000 / 230000 = 43450 giờ (khoảng 5 năm)</code></pre>
-<p>Từ con số trên, ta có thể thấy mặc dù MTTF của từng module khá lớn, nhưng MTTF của cả hệ thống nói chung chỉ là 5 năm. MTTF của các module trong máy tính cá nhân có lẽ thấp hơn nhiều. Có lẽ vì vậy mà các công ty bán phần cứng không bao giờ đưa ra thời gian bảo hành lâu quá 2, 3 năm! Từ con số này các công ty làm dịch vụ internet cũng phải có cách lập kế hoạch bảo trì thay mới máy chủ để đảm bảo tính tin cậy của dịch vụ của mình. Trong trường hợp công ty mình, tất cả các máy chủ đều được thay mới sau 5 năm (Và giờ bạn đã hiều tại sao phải thay và con số 5 này từ đâu ra :) ).</p>
-<h3 id="kết-luận">Kết luận</h3>
-<p>Qua bài viết này, chúng ta đã có thể lý giải và cân đong đo đếm được độ tin cậy của hệ thống dựa trên các chỉ số MTTF, MTTR, FIT, cũng như lý giải được ý nghĩa của SLA của 1 dịch vụ.</p>
-<h3 id="tham-khảo">Tham khảo</h3>
-<ul>
-<li><a href="http://www.amazon.com/Computer-Architecture-Quantitative-Approach-Edition/dp/0123704901">Computer Architecture A quantitative Approach</a></li>
-</ul>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-11-03T20:21:00+09:00" data-updated="true" itemprop="datePublished">Nov 3<span>rd</span>, 2013</time></div>
-		<div class="tags">
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/11/03/full-text-search/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/11/03/full-text-search/" itemprop="url">Full Text Search, Từ Khái Niệm đến Thực Tiễn (Phần 2)</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h1 id="introduction">Introduction</h1>
-<p>Trong <a href="http://ktmt.github.io/blog/2013/10/27/full-text-search-engine/">phần 1</a>, chúng ta đã tìm hiểu sơ qua về khái niệm Full Text Search, cũng như về Inverted Index. Qua bài viết đầu tiên, các bạn đã nắm được tại sao Inverted Index lại được sử dụng để tăng tốc độ tìm kiếm trong một “Full Text Database”. Đồng thời ở ví dụ của phần một, các bạn cũng đã thấy, để tạo ra Inverted Index thì các bạn phải tách được một string ra thành các <strong>term</strong>, sau đó sẽ index string đó theo term đã tách được. Chính vì thế việc <strong>tách string</strong>, hay còn gọi là <strong>Tokenize</strong> là một bài toán con quan trọng nằm trong bài toán lớn của Full Text Search. Ở bài này, chúng ta sẽ tìm hiểu về 2 kĩ thuật Tokenize cơ bản là:</p>
-<ul>
-<li>N-Gram</li>
-<li>Morphological Analysis</li>
-</ul>
-<h1 id="n-gram">N-gram</h1>
-<p>N-gram là kĩ thuật tokenize một chuỗi thành các chuỗi con, thông qua việc <strong>chia đều</strong> chuỗi đã có thành các chuỗi con đều nhau, có độ dài là N. Về cơ bản thì N thường nằm từ 1~3, với các tên gọi tương ứng là unigram(N==1), bigram(N==2), trigram(N==3). Ví dụ đơn giản là chúng ta có chuỗi “good morning”, được phân tích thành bigram:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'>
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>"good morning" =&gt; {"go", "oo", "od", "d ", " m", "mo", "or", "rn", "ni", "in", "ng"}</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Từ ví dụ trên các bạn có thể dễ dàng hình dung về cách thức hoạt động của N-gram. Để implement N-gram, chỉ cần một vài ba dòng code như sau, như ví dụ viết bằng python như sau:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span></span>
+<figure class="code">
+<figcaption>
+<span>color - color.py </span>
 </figcaption>
 <div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">split_ngram</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statement</span><span class="p">,</span> <span class="n">ngram</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">statement</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">ngram</span><span class="p">):</span>
-</span><span class='line'>      <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">statement</span><span class="p">)</span> <span class="o">-</span> <span class="n">ngram</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-</span><span class='line'>        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">statement</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="n">ngram</span><span class="p">])</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">result</span>
-</span></code></pre></td></tr></table>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='py'><span class='line'><span class="k">def</span> <span class="nf">basic_color</span><span class="p">(</span><span class="n">code</span><span class="p">):</span>
+</span><span class='line'>    <span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="sd">    16 colors supported</span>
+</span><span class='line'><span class="sd">    &quot;&quot;&quot;</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">inner</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">bold</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">c</span> <span class="o">=</span> <span class="n">code</span>
+</span><span class='line'>        <span class="k">if</span> <span class="n">bold</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">c</span> <span class="o">=</span> <span class="s">&quot;1;</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">c</span>
+</span><span class='line'>        <span class="k">return</span> <span class="s">&quot;</span><span class="se">\033</span><span class="s">[</span><span class="si">%s</span><span class="s">m</span><span class="si">%s</span><span class="se">\033</span><span class="s">[0m&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">inner</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">term_color</span><span class="p">(</span><span class="n">code</span><span class="p">):</span>
+</span><span class='line'>    <span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="sd">    256 colors supported</span>
+</span><span class='line'><span class="sd">    &quot;&quot;&quot;</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">inner</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">c</span> <span class="o">=</span> <span class="n">code</span>
+</span><span class='line'>        <span class="k">return</span> <span class="s">&quot;</span><span class="se">\033</span><span class="s">[38;5;</span><span class="si">%s</span><span class="s">m</span><span class="si">%s</span><span class="se">\033</span><span class="s">[0m&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">inner</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
 </div>
 </figure>
 </notextile>
 </div>
-<h1 id="morphological-analysis">Morphological Analysis</h1>
-<p>Morphological Analysis, rất may mắn có định nghĩa trên [wikipedia](http://vi.wikipedia.org/wiki/H%C3%ACnh_th%C3%A1i_h%E1%BB%8Dc_(ng%C3%B4n_ng%E1%BB%AF_h%E1%BB%8Dc) bằng tiếng Việt. Định nghĩa khá dài dòng, các bạn có thể xem bằng [Tiếng Anh](http://en.wikipedia.org/wiki/Morphology_(linguistics) Về cơ bản Morphological Analysis (từ bây giờ mình sẽ gọi tắt là MA), là một kĩ thuật phổ biến trong xử lý ngôn ngữ tự nhiên (Natural Language Processing). Morphological chính là “cấu trúc” của từ, như vậy MA sẽ là “phân tích cấu trúc của từ”, hay nói một cách rõ ràng hơn, MA sẽ là kĩ thuật tokenize mà để tách một chuỗi ra thành các từ có ý nghĩa. Ví dụ như cũng cụm từ “good morning” ở trên, chúng ta sẽ phân tích thành:</p>
+<p>Sử dụng những function ở trên thực tế rất đơn giản: gọi thẳng function với parameter là mã ANSI color, trả về là <em>một function khác</em> và lần này nhận parameter là string để đổi thành string có màu tương ứng.</p>
 <div class="bogus-wrapper">
 <notextile>
-<figure class='code'><figcaption>
-<span></span>
+<figure class="code">
+<figcaption>
+<span>color - color.py </span>
 </figcaption>
 <div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="s">&quot;good morning&quot;</span> <span class="o">=&gt;</span> <span class="p">{</span><span class="s">&quot;good&quot;</span><span class="p">,</span> <span class="s">&quot;morning&quot;</span><span class="p">}</span>
-</span></code></pre></td></tr></table>
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='py'><span class='line'><span class="n">black</span> <span class="o">=</span> <span class="n">basic_color</span><span class="p">(</span><span class="s">&#39;30&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">red</span> <span class="o">=</span> <span class="n">basic_color</span><span class="p">(</span><span class="s">&#39;31&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">green</span> <span class="o">=</span> <span class="n">basic_color</span><span class="p">(</span><span class="s">&#39;32&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">yellow</span> <span class="o">=</span> <span class="n">basic_color</span><span class="p">(</span><span class="s">&#39;33&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">blue</span> <span class="o">=</span> <span class="n">basic_color</span><span class="p">(</span><span class="s">&#39;34&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">magenta</span> <span class="o">=</span> <span class="n">basic_color</span><span class="p">(</span><span class="s">&#39;35&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">cyan</span> <span class="o">=</span> <span class="n">basic_color</span><span class="p">(</span><span class="s">&#39;36&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">print</span> <span class="n">green</span><span class="p">(</span><span class="s">&quot;Green text&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="k">print</span> <span class="n">term_color</span><span class="p">(</span><span class="s">&#39;112&#39;</span><span class="p">)(</span><span class="s">&quot;A text with ANSI color 112&quot;</span><span class="p">)</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
 </div>
 </figure>
 </notextile>
 </div>
-<p>Để có được kết quả phân tích như trên, ngoài việc phải sở hữu một bộ từ điển tốt (để phân biệt được từ nào là có ý nghĩa, và thứ tự các từ thế nào thì có ý nghĩa), MA phải sử dụng các nghiên cứu sâu về xử lý ngôn ngữ tự nhiên, mà mình sẽ không đi sâu ở đây. Thông thường các công ty lớn sở hữu các search engine của riêng họ(như Yahoo, Google, Microsoft..) sẽ có các đội ngũ nghiên cứu để tạo ra nhiều bộ thư viện MA riêng của họ, thích hợp với nhiều ngôn ngữ. Ngoài ra chúng ta cũng có thể sử dụng các bộ thư viện được open source, hoặc sử dụng các package có sẵn trong các bộ full text search engine mà tiêu biểu là lucene.</p>
-<h1 id="mở-rộng">Mở rộng</h1>
-<p>Các bạn đọc đến đây chắc hẳn sẽ có suy nghĩ, để phân tách chuỗi, thì rõ ràng phân tích theo MA là quá hợp lý rồi, tại sao lại cần N-gram làm gì? Như mình đã nói ở trên, để xây dựng MA thì cần một bộ từ điển tốt, để giúp cho máy tính có thể phân biệt được các từ có nghĩa. Như thế nào là một từ điển tốt, thì về cơ bản, từ điển tốt là từ điển chứa càng nhiều từ (terms) càng tốt. Tuy nhiên ngôn ngữ thì mỗi ngôn ngữ lại có đặc trưng riêng, và không ngừng mở rộng, không ngừng thêm các từ mới. Việc chỉ sử dụng MA sẽ gây ra một tác dụng phụ là có rất nhiều từ không/chưa có trong từ điển, dẫn đến không thể index, và do đó sẽ không thể tiến hành tìm kiếm từ đó được.</p>
-<p>Vậy cách giải quyết như thế nào? Cách giải quyết tốt nhất là chúng ta sẽ <strong>kết hợp(hybrid)</strong> cả MA và N-gram. Cách hybrid thế nào thì sẽ tuỳ vào ngôn ngữ/ hoàn cảnh sử dụng, và cả performance cần thiết nữa. Về cơ bản thì những từ nào khó/không có thể phân tích được bằng MA, thì chúng ta sẽ dùng N-gram.</p>
+<p>Giả sử chúng ta có một tập vô hạn các word không biết trước. muốn mỗi word có một màu và các word lặp lại sẽ có màu giống nhau, chúng ta có thể dùng <em>Memoization</em> trong Python như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>color - color.py </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='py'><span class='line'><span class="kn">import</span> <span class="nn">itertools</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+</span><span class='line'><span class="n">cyc</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">cycle</span><span class="p">([</span><span class="n">black</span><span class="p">,</span><span class="n">red</span><span class="p">,</span><span class="n">green</span><span class="p">,</span><span class="n">yellow</span><span class="p">,</span><span class="n">blue</span><span class="p">,</span><span class="n">magenta</span><span class="p">,</span><span class="n">cyan</span><span class="p">])</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">Memoize</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">cache</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span class='line'>    <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">if</span> <span class="n">args</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cache</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">cache</span><span class="p">[</span><span class="n">args</span><span class="p">]</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">cache</span><span class="p">[</span><span class="n">args</span><span class="p">]</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">wrapper</span>
+</span><span class='line'>
+</span><span class='line'><span class="nd">@Memoize</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">cycle_color</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="n">cyc</span><span class="p">)(</span><span class="n">s</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&quot;w1&quot;</span><span class="p">,</span><span class="s">&quot;w2&quot;</span><span class="p">,</span><span class="s">&quot;w3&quot;</span><span class="p">,</span><span class="s">&quot;w1&quot;</span><span class="p">,</span><span class="s">&quot;w4&quot;</span><span class="p">]:</span>
+</span><span class='line'>    <span class="k">print</span> <span class="n">cycle_color</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="c"># Now every word will has its own color, while the 1st &quot;w1&quot; and 2nd &quot;w1&quot; ends up with same color</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Các màu sắc hiển thị trong <a href="https://github.com/DTVD/rainbowstream">Rainbow Stream</a> đều dựa theo nguyên lý nói trên.</p>
+<h1 id="hiển-thị-ảnh-trên-terminal">Hiển thị ảnh trên terminal</h1>
+<p>Để nói cụ thể về phần này sẽ hơi dài dòng, nhưng có thể tóm gọn trong các ý sau đây:</p>
+<ul>
+<li>Python có một thư viện xử lý ảnh rất tốt là <code>Pillow</code>. <code>Pillow</code> cung cấp những tính năng cơ bản để thao tác với lượng thông tin trong một tấm ảnh. Nhược điểm của Pillow là khá buggy khi install và không hỗ trợ Window.</li>
+<li>Tôi dùng <code>Pillow</code> để đọc thông tin về từng Pixel trong một ảnh, mỗi pixel sẽ có 4 chỉ số gồm 3 chỉ số màu (R,G,B) và 1 chỉ số về độ trong (A).</li>
+<li>Màu sắc của 1 pixel nói trên được quy đổi về tập 256 màu ANSI hiển thị được trên terminal (phương pháp xem ở dưới).</li>
+<li>Với mỗi pixel, tôi in ra như 1 ký tự Space với màu ANSI tương ứng, sử dụng hàm <code>term_color</code> ở đoạn trên.</li>
+</ul>
+<p>Trong các bước trên thì bước quy đổi màu là quan trọng nhất. Thuật toán quy đổi dùng ở đây là phương pháp tính khoảng cách vector trong không gian Euclide 3 chiều:</p>
+<ul>
+<li>Mỗi màu RGB coi như 1 vector với 3 chiều là R (Red), G (Green), B (Blue).</li>
+<li>Mỗi màu ANSI (trong tập 256 màu của terminal) cũng tương ứng với 1 vector 3 chiều. Chúng ta có tập tiêu chuẩn 256 vector ở đây.</li>
+<li>Mỗi vector RGB của 1 pixel sẽ được quy về vector tiêu chuẩn ANSI <em>gần nhất</em>. Công thức tính khoảng cách giữa 2 đầu vector như trong hình học 3 chiều : <code>((x1-x2)**2 + (y1-y2)**2 + (z1-z2)**2)**0.5</code></li>
+</ul>
+<p>Như vậy “ảnh” ở trên terminal thực chất là các ký tự Space với màu ANSI đã được quy đổi và in ra liên tiếp :)</p>
+<h1 id="các-vấn-đề-kỹ-thuật-khác">Các vấn đề kỹ thuật khác</h1>
+<p>Để hoàn thiện <a href="https://github.com/DTVD/rainbowstream">Rainbow Stream</a> thực ra cần một số kỹ năng khác như lập trình với thread, tạo interactive input bẳng readline, gọi chương trình C compile sẵn hay xử lý chung cho cả Python 2 và Python 3… Trong khuôn khổ một bài viết tôi khó có thể trình bày hết những vấn đề trên, vì vậy nếu bạn quan tâm hãy mở thẳng <a href="https://github.com/DTVD/rainbowstream">Github repo</a> và đọc source code. <a href="https://github.com/DTVD/rainbowstream">Rainbow Stream</a> là một phần mềm mã nguồn mở với MIT license.</p>
+<p><em>(… còn tiếp - Làm thế nào để mang phần mềm của mình đến với thế giới hacker …)</em></p>
+		
+		
+	</div>
+
+</article>
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-20T19:31:00+09:00" data-updated="true" itemprop="datePublished">Jul 20<span>th</span>, 2014</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/linux/'>linux,</a>, <a class='category' href='/blog/categories/programming/'>programming,</a>, <a class='category' href='/blog/categories/sysadmin/'>sysadmin</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2014/07/20/load-average/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2014/07/20/load-average/" itemprop="url">Trở Lại Với Cơ Bản (2): Load Average</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1 id="giới-thiệu">Giới thiệu</h1>
+<p>Load Average – tạm dịch là “giá trị tải trung bình” – là một chỉ số liên quan đến CPU rất cơ bản và quan trọng. Việc nắm rõ ý nghĩa của chỉ số này giúp chúng ta đánh giá được hiệu năng hiện thời của máy tính cũng như sử dụng CPU nói riêng, máy tính nói chung một cách hiệu quả nhất</p>
+<p>Bài viết này bắt đầu bằng việc giải thích ý nghĩa của “giá trị tải trung bình”. Sau đó bài viết sẽ trình bày cách đánh giá chỉ số này trong thực tế. Cuối cùng bài viết đưa ra một trường hợp thực tế về cách đánh giá hiệu năng máy tính theo chỉ số này.</p>
+<h1 id="tải-trung-bình-là-gì">“Tải trung bình” là gì?</h1>
+<h2 id="ví-dụ-trạm-thu-phí">Ví dụ trạm thu phí</h2>
+<p>Để hiểu *tải trung bình&quot; là gì ta sẽ xem xét một ví dụ thực tế như sau.</p>
+<p>Bạn đang tham gia giao thông trên đường cao tốc và trước mặt của bạn là trạm thu phí đường bộ. Bạn giảm tốc để chuẩn bị qua cửa soát vé. Trạm xoát vé có 4 cửa soát vé. Tất cả các cửa đều trống và bạn chọn cửa số 1 như dưới đây.</p>
+<pre><code>    H                               &lt;-- Xe ôtô của bạn
+|   1   |   2   |   3   |   4   |   &lt;-- Trạm thu phí</code></pre>
+<p>Bạn đánh xe đến cửa số 1, trả phí cho nhân viên soát vé. Nhân viên soát vé mở barrier chắn, và bạn đi qua. Có duy nhất xe bạn qua trạm nên từ phía trạm thu phí, <em>trạm đang phục vụ 1 xe</em>.</p>
+<pre><code>|   H   |   2   |   3   |   4   |</code></pre>
+<p>Giờ tưởng tượng có nhiều xe khác cũng lưu thông trên đường cao tốc. Giả sử có trước khi bạn đến trạm thu phí, đang có 2 xe khác làm thủ tục ở cửa số 1 và số 2, bạn chú ý cửa số 3,4 còn trống nên lái xe qua cửa số 3 và làm thủ tục mà không phải chờ đợi. <em>Trạm phục vụ 3 xe</em>.</p>
+<pre><code>|   H&#39;   |   H&#39;   |   H   |   4   |</code></pre>
+<p>Có thể thấy ở 2 trường hợp trên, trạm thu phí đang làm việc khá <em>hiệu quả</em>. Các xe ôtô đi qua với thời gian chờ đợi bằng 0. Các xe ôtô đi qua trạm xoát vé một cách nhanh chóng. Người lái xe là bạn cảm thấy thoải mái vì không phải chờ đợi.</p>
+<p>Giả sử hôm nay là ngày nghỉ lễ, mọi người về quê đông nên xe khách chạy rất đông. Các gia đình tranh thủ ngày lễ nên cũng đánh xe đi chơi xa. Đường cao tốc trở nên đông đúc. Bạn đến trạm thu phí và nhận ra rằng 4 cửa đang có xe làm thủ tục. Chưa kể bạn còn đến sau 2 xe khác và phải đợi xếp hàng sau 2 xe này.</p>
+<pre><code>    H                                   &lt;-- Xe ôtô của bạn
+    H&#39;
+    H&#39;
+|   H&#39;   |   H&#39;   |   H&#39;   |   H&#39;   |   &lt;-- Trạm thu phí</code></pre>
+<p>Trong trường hợp này, bạn chắc chắn sẽ phải chờ, không những chờ các xe đang làm thủ tục tại cửa trạm mà còn chờ cả các xe đến trước bạn. Thời gian có thể bị kéo dài vì nhiều lý do như 1 xe làm thủ tục mất thời gian hơn các xe khác hoặc có sự cố ở cửa soát vé. Đứng từ góc độ của trạm thu phí, trạm đang phải xử lý số lượng xe (7 xe) nhiều hơn khả năng của trạm (4 cửa). Tại thời điểm hiện tại, trạm đang bị <em>quá tải</em>.</p>
+<p>Ta định nghĩa số lượng tải trung bình của trạm là số lượng xe mà trạm phải phục vụ trong một đơn vị thời gian. Như vậy ở ví dụ trên <em>trung bình tải</em> của trạm thu phí tại thời điểm bạn đến là 7.</p>
+<h2 id="load-average-của-cpu">Load Average của CPU</h2>
+<p>Tương tự như ví dụ trạm soát vé, “Load Average” của CPU được định nghĩa là số lượng process cần tài nguyên tính toán của CPU tại thời điểm nhất định. Giả sử tải trung bình của máy tính bạn hiện tại là 3.2, điều đó có nghĩa là tại thời điểm đó đang có trung bình 3.2 processes cần CPU xử lý. Tại thời điểm process cần CPU, nếu CPU đang rảnh process sẽ được OS cho chạy trên CPU rảnh.</p>
+<p>Mổi “cửa soát vé” trong CPU máy tính sẽ là 1 lõi CPU. Với các CPU thế hệ mới trang bị công nghệ Hyperthreading, mỗi lõi vật lý có thể hoạt động được như 2 lõi logic. Vì vậy OS sẽ nhận diện 8 lõi. Ví dụ máy tính của bạn được trang bị chip mới nhất hiện tại Corei7 MQ– 4 cores 8 threads với công nghệ Hyperthreading thì đối với hệ điều hành máy tính của bạn có 8 cores.</p>
+<p>Để kiểm tra máy tính của bạn có bao nhiêu lõi (cores), trên windows bạn có thể kiểm tra qua TaskManager &gt; Performance. Bên cạnh biểu đồ tỉ lệ sử dụng CPU nói chung là tỉ lệ sử dụng CPU của từng lõi. Số lượng cửa sổ bên tay phải là số lượng lõi logic.</p>
+<p>Trên Linux bạn có thể kiểm tra bằng nhiều cách:</p>
+<pre><code>$ top
+# ấn 1
+top - 20:38:48 up 2 days,  4:50,  1 user,  load average: 11.30, 11.54, 10.17
+Tasks: 430 total,   2 running, 428 sleeping,   0 stopped,   0 zombie
+Cpu0  : 20.5%us,  2.4%sy,  0.0%ni, 76.2%id,  0.4%wa,  0.0%hi,  0.5%si,  0.0%st
+Cpu1  : 20.2%us,  1.9%sy,  0.0%ni, 77.4%id,  0.5%wa,  0.0%hi,  0.1%si,  0.0%st
+Cpu2  : 19.9%us,  1.8%sy,  0.0%ni, 77.7%id,  0.5%wa,  0.0%hi,  0.1%si,  0.0%st
+Cpu3  : 19.9%us,  2.3%sy,  0.0%ni, 77.2%id,  0.2%wa,  0.0%hi,  0.4%si,  0.0%st
+Cpu4  : 19.8%us,  2.3%sy,  0.0%ni, 77.1%id,  0.4%wa,  0.0%hi,  0.4%si,  0.0%st
+Cpu5  : 19.7%us,  2.3%sy,  0.0%ni, 77.4%id,  0.2%wa,  0.0%hi,  0.4%si,  0.0%st
+Cpu6  : 20.1%us,  1.6%sy,  0.0%ni, 78.1%id,  0.1%wa,  0.0%hi,  0.0%si,  0.0%st
+Cpu7  : 19.6%us,  2.2%sy,  0.0%ni, 77.7%id,  0.1%wa,  0.0%hi,  0.3%si,  0.0%st
+Cpu8  : 19.4%us,  2.2%sy,  0.0%ni, 78.0%id,  0.1%wa,  0.0%hi,  0.3%si,  0.0%st
+Cpu9  : 19.8%us,  2.2%sy,  0.0%ni, 77.6%id,  0.1%wa,  0.0%hi,  0.3%si,  0.0%st
+Cpu10 : 19.5%us,  1.6%sy,  0.0%ni, 78.8%id,  0.1%wa,  0.0%hi,  0.0%si,  0.0%st
+Cpu11 : 19.9%us,  2.2%sy,  0.0%ni, 77.5%id,  0.1%wa,  0.0%hi,  0.3%si,  0.0%st
+Mem:  32846220k total, 32593588k used,   252632k free,   434464k buffers
+Swap:  4194296k total,        0k used,  4194296k free, 22380012k cached
+
+PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND
+14489 hadoop    20   0 1643m 684m  16m S 104.7  2.1  32:15.93 java
+14496 hadoop    20   0 1635m 705m  16m S 104.7  2.2  32:14.63 java
+16194 hadoop    20   0 1637m 655m  16m S 104.7  2.0  29:45.06 java
+16243 hadoop    20   0 1630m 687m  16m S 104.7  2.1  29:28.34 java</code></pre>
+<p>hoặc</p>
+<pre><code>$ mpstat -P ALL
+Linux 2.6.32-358.11.1.el6.x86_64 (bb2-dn07)     07/20/2014      _x86_64_        (12 CPU)
+
+08:39:53 PM  CPU    %usr   %nice    %sys %iowait    %irq   %soft  %steal  %guest   %idle
+08:39:53 PM  all   19.88    0.00    2.09    0.23    0.00    0.27    0.00    0.00   77.53
+08:39:53 PM    0   20.52    0.00    2.38    0.42    0.00    0.46    0.00    0.00   76.21
+08:39:53 PM    1   20.19    0.00    1.85    0.51    0.00    0.11    0.00    0.00   77.35
+08:39:53 PM    2   19.95    0.00    1.81    0.48    0.00    0.11    0.00    0.00   77.65
+08:39:53 PM    3   19.92    0.00    2.33    0.20    0.00    0.38    0.00    0.00   77.16
+08:39:53 PM    4   19.82    0.00    2.28    0.39    0.00    0.45    0.00    0.00   77.07
+08:39:53 PM    5   19.74    0.00    2.33    0.19    0.00    0.38    0.00    0.00   77.36
+08:39:53 PM    6   20.14    0.00    1.64    0.13    0.00    0.01    0.00    0.00   78.09
+08:39:53 PM    7   19.65    0.00    2.19    0.13    0.00    0.35    0.00    0.00   77.69
+08:39:53 PM    8   19.38    0.00    2.20    0.11    0.00    0.34    0.00    0.00   77.97
+08:39:53 PM    9   19.78    0.00    2.23    0.07    0.00    0.35    0.00    0.00   77.57
+08:39:53 PM   10   19.53    0.00    1.59    0.11    0.00    0.01    0.00    0.00   78.76
+08:39:53 PM   11   19.93    0.00    2.21    0.07    0.00    0.34    0.00    0.00   77.45</code></pre>
+<p>hoặc</p>
+<pre><code>$　cat /proc/cpuinfo
+.....</code></pre>
+<h1 id="hiểu-và-đánh-giá-tải-trung-bình-như-thế-nào">Hiểu và đánh giá “tải trung bình” như thế nào?</h1>
+<p>Bên cạnh chỉ số tận dụng CPU bạn có thêm 1 chỉ số nữa gọi là “tải trung bình”. Bạn nên hiểu 2 giá trị này thế nào?</p>
+<p>Tỉ lệ tận dụng CPU nói rằng một process sử dụng CPU nhiều hay ít. Giả sử bạn có một tính toán khá lớn (ví dụ sắp xếp 10GB dữ liệu), phần lớn thời gian của CPU của bạn chắc chắn sẽ bận rộn so sánh và di chuyển dữ liệu. Phần trăm sử dụng CPU sẽ cao, thời gian rảnh (idle) của CPU chắc sẽ thấp.</p>
+<p>Tải trung bình nói rằng số lượng process đang đợi CPU là lớn hay nhỏ. Nếu số lượng process đợi CPU lớn, thời gian một process đợi sẽ dài, thời gian hoàn thành tác vụ của process đó sẽ dài. Bạn sẽ phải chờ kết quả lâu hơn. Ngược lại nếu số lượng process đợi thấp, bạn sẽ không phải đợi các process khác. Thời gian bạn đợi kết quả sẽ chỉ là thời gian tính toán.</p>
+<p>Làm thế nào để biết được số lượng process đang đợi CPU là lớn hay nhỏ? Giống như trường hợp trạm thu phí, nếu số lượng process lớn hơn số lượng lõi CPU, chắc chắn sẽ phải có process đợi. Ngược lại nếu số lượng process nhỏ hơn số lượng lõi CPU, các process hầu như sẽ không phải xếp hàng chờ đợi mà sẽ được OS gán cho lõi đang rảnh rỗi tính toán.</p>
+<p>Từ đây đặt ra câu hỏi: “đánh giá hiệu năng máy tính dựa vào tỉ lệ sử dụng CPU và tải trung bình như thế nào?”.</p>
+<p>Việc đánh giá hiệu năng CPU tùy thuộc vào từng bài toán cụ thể. Ta sẽ đánh giá về hiệu năng sử dụng CPU qua các trường hợp sau (giả sử máy tính có 6 cores 12 threads - ví dụ Intel Xeon):</p>
+<ul>
+<li>Tỉ lệ sử dụng CPU thấp (1%), tải CPU thấp (3 - 3 processes / 12 cores)</li>
+<li>Tỉ lệ sử dụng CPU cao (80%), tải CPU thấp (3 - 3 processes / 12 cores)</li>
+<li>Tỉ lệ sử dụng CPU thấp (1%), tải CPU cao (18 - 18 processes / 12 cores)</li>
+<li>Tỉ lệ sử dụng CPU cao (80%), tải CPU cao (18 - 18 processes / 12 cores)</li>
+</ul>
+<p>Trong trường hợp đầu, máy tính của bạn hầu như không dùng CPU mấy. CPU dành hầu hết thời gian cho tính toán thấp, số lượng process cũng không cao. Đứng từ góc độ chi phí, bạn đã chi tiền mua 1 CPu quá tốt so với nhu cầu thực tế :-)</p>
+<p>Trường hợp 2, bạn đang sử dụng CPU ở mức khá. Bạn bắt CPU tính toán cật lực. Tuy vậy tải trung bình của CPU chỉ có 3, có nghĩa là năng lực CPU của bạn vẫn còn rất lớn mà bạn hoàn toàn có thể tận dụng. Bạn hoàn toán có thể bật thêm 9 processes với mức tính toán như hiện tại mới có thể tận dụng được hết hiệu năng của CPU.</p>
+<p>Trường hợp 3 khá lý thú. CPU của bạn được dùng cho những tính toán rất nhẹ nhàng có thể xong ngay lập tức nhưng số lượng process cần CPU lại khá cao. Điều này nói lên rằng CPU của bạn đang bị quá tải process. Có nhiều lý do dẫn đến trường hợp này và mỗi trường hợp có nhiều cách giải quyết khác nhau. Một ví dụ cho trường hợp này là máy chủ web. Việc render các trang web là tính toán không hề nặng, tuy vậy với các máy chủ web chịu trafic lớn (số lượng connection lớn), các process phục vụ request sẽ phải xếp hàng dẫn đến tình trạng trang web bị phục vụ thời gian kéo dài hơn. Một ví dụ khác là máy chủ dành thời gian chủ yếu đợi thao tác vào ra (I/O) chẳng hạn nhưng truy vấn cơ sở dữ liệu. Số lượng query lớn, số lượng truy vấn cần sắp xếp lớn nhưng dữ liệu cần sắp xếp lại bé, thời gian đợi dữ liệu từ đĩa cứng lại cao. Vì vậy phần lớn CPU sẽ idle, nhưng tải CPU vẫn cao. Đối với trường hợp này, ta chỉ có cách là mua CPU với tần số thấp hơn và chia tải ra nhiều máy hơn để tối ưu hóa chi phí.</p>
+<p>Trường hợp 4 là trường hợp bạn đang sử dụng CPU một cách hiệu quả nhất. Mỗi cores đều bận rộn tính toán và hầu hết các cores đều được cho sử dụng. Tùy bài toán tính toán mà trường hợp này có thể là tốt hay xấu. Nếu đây là máy chủ web có lẽ đã đến lúc bạn mua thêm máy tính.</p>
+<h1 id="trường-hợp-thực-tế">Trường hợp thực tế</h1>
+<p>Hiểu được ý nghĩa của tải trung bình, chúng ta hiểu rằng sử dụng CPU hiệu quả có nghĩa là phải overload CPU. Một máy tính với CPU được sử dụng hết công suất suất là một máy tính được sử dụng tốt. Nắm được cách sử dụng vũ khí tải trung bình, chúng ta sẽ thử áp dụng cho 2 trường hợp thực tế.</p>
+<h3 id="cấu-hình-máy-chủ-web-1">Cấu hình máy chủ web 1</h3>
+<p>Bạn có máy tính chuyên trả về file static (css, image, js). Bạn sử dụng nginx và cấu hình để nginx trả về dữ liệu trong một thư mục nhất định. Bạn sẽ cấu hình nginx với bao nhiêu workers.</p>
+<p>Trả lời: 12! Nếu bạn cấu hình ít hơn 12 workers, khả năng cao là CPU của máy tính bạn đang không được sử dụng hết công suất. Tại một thời điểm nào đó sẽ có một vì cores rong chơi.</p>
+<h3 id="cấu-hình-máy-chủ-web-2">Cấu hình máy chủ web 2</h3>
+<p>Giả sử bạn có máy chủ web 12 cores (logic :-)) và load average hiện tại là 5. Liệu đã đến lúc bạn mua thêm máy chủ mới chưa?</p>
+<p>Trả lời: Không biết :-). Nếu máy chủ của bạn dành phần lớn thời gian idle đợi dữ liệu từ đĩa cứng hoặc cơ sở dữ liệu, nút thắt cổ chai hệ thống của bạn không phải là CPU mà có thể là cơ sở dữ liệu hoặc là đĩa cứng (thao tác I/O). Nếu cơ sở dữ liệu của bạn chưa hết công suất (I/O chưa hết công suất), bạn hoàn toàn không cần mua thêm máy chủ web. Bạn có thể cầu hình lại nginx / gunicorn…) để load average cao hơn (không quá 12 - số lượng cores) nhằm tận dụng hết năng lực của CPU của máy tính hiện tại).</p>
+<h3 id="cấu-hình-hadoop">Cấu hình hadoop</h3>
+<p>hadoop nổi tiếng trong giới BigData. Một datanode chạy các thủ tục map / reduce viết bằng java để lấy 1 block dữ liệu từ ổ cứng; chạy thao tác map để trích xuất dữ liệu; chạy thao tác reduce để tổng hợp dữ liệu. Một datanode thực hiện rất nhiều truy vấn dữ liệu từ ổ cúng cũng như sử dụng rất nhiều cpu cho thao tác sắp xếp, tổng hợp dữ liệu. Với 1 máy tính 12 cores, bạn sẽ cấu hình bao nhiêu java process cho thao tác map/reduce?</p>
+<p>Trả lời: Không biết :-) nhưng chắc chắn là lớn hơn 12. Bạn sẽ bất ngờ vì thấy câu trả lời hơi khác máy chủ web dù rằng bài toán có vẻ giống nhau! Lý do là: mô hình map/reduce của hadoop cần rất nhiều dữ liệu do vậy truy vấn đĩa cứng sẽ rất cao, thao tác I/O lớn. Dù thao tác sắp xếp dữ liệu cũng khá tốn CPU nhưng để có dữ liệu sắp xếp, 1 map process vẫn cần thời gian để chờ dữ liệu từ ổ cúng. Trong khoảng thời gian này CPU sẽ idle. Nếu bạn chỉ cấu hình số lượng map/reduce là 12 (bằng số lượng cores), sẽ có 1 khoảng thời gian mà các cores không làm việc vì phải chờ đĩa cứng. Vì vậy CPU thực chất sẽ có những lúc rất bận và những lúc rất rảnh. Để hạn chế thời gian rảnh của CPU, “best-practice” sẽ là overload CPU bằng cách cấu hình cho số lượng process lớn hơn số cores. Tỉ lệ được khuyến cáo là 1.5 lần. Nhờ vậy trong khi có những process đợi I/O, CPU sẽ bận rộn với các process trước đó.</p>
+<p><strong>Cấu hình cụ thể là bài toán tùy trường hợp. Bạn nên xem bản chất bài toán và hành vi của máy chủ trước khi cấu hình</strong></p>
 <h1 id="kết-luận">Kết luận</h1>
-<p>Qua bài viết lần này, các bạn đã hiểu thêm về 2 kĩ thuật tách từ (tokenize) cơ bản là N-gram và MA.</p>
-<p>Sử dụng 2 kĩ thuật này như thế nào để index dữ liệu đầu vào, sẽ được giới thiệu trong các bài viết sắp tới.</p>
+<p>Bài viết đã giải thích ý nghĩa của load-average, một chỉ số quan trọng cũng như giới thiệu một số trường hợp cấu hình thực tế liên quan đến load-average. Hy vọng qua bài viết này, bạn hiểu được ý nghĩa của load-average, áp dụng vào thực tiễn công việc sử dụng máy tính hiệu quả nhất với chi phí tốt nhất.</p>
+<h1 id="câu-hỏi-phụ--">Câu hỏi phụ :-)</h1>
+<p>Một câu hỏi phỏng vấn vị trí SRE của Google:</p>
+<blockquote>
+<p>Lệnh uptime trả về 3 kết quả Load Average. 3 con số này là gì?</p>
+</blockquote>
+<h1 id="tài-liệu-tham-khảo">Tài liệu tham khảo</h1>
+<ol type="1">
+<li><a href="http://shop.oreilly.com/product/0636920025085.do">hadoop operations</a></li>
+<li><a href="http://www.amazon.com/Computer-Architecture-Quantitative-Approach-Edition/dp/0123704901">Computer Architecture, A Quantitative Approach</a></li>
+<li><a href="http://nginx.org/en/docs/" class="uri">http://nginx.org/en/docs/</a></li>
+</ol>
+		
+		
+	</div>
+
+</article>
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-06-24T20:11:00+09:00" data-updated="true" itemprop="datePublished">Jun 24<span>th</span>, 2014</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/thinking/'>thinking</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2014/06/24/doi-dieu-suy-nghi-ve-thiet-ke-phan-mem/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2014/06/24/doi-dieu-suy-nghi-ve-thiet-ke-phan-mem/" itemprop="url">Đôi điều Suy Nghĩ về Thiết Kế Phần Mềm</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<p>Là một lập trình viên, công việc hàng ngày của bạn là viết code. Viết code cũng như xây dựng vậy, bạn phải đắp từng viên gạch để xây nên một ngôi nhà. Một ngôi nhà có chắc chắn và dễ thay đổi hay không không chỉ dựa vào việc bạn có dùng gạch tốt hay không, mà còn phụ thuộc rất lớn vào nhà thiết kế.</p>
+<p>Gần đây tôi có đọc cuốn sách tựa đề <a href="http://www.poodr.com/">‘Practical Object Oriented Design in Ruby’</a> của Sandi Metz, một diễn giả ưa thích của tôi. Cuốn sách dành phần lớn để nói về các kĩ thuật thiết kế phần mềm với đối tượng là ngôn ngữ là Ruby. Tuy nhiên có rất nhiều ý tưởng của tác giả mà không chỉ giới hạn ở Ruby nói chung mà có thể áp dụng cho bất kì ngôn ngữ nào. Trong bài viết này tôi sẽ liệt kê ra một số ý trong cuốn sách mà tôi thấy rất hay và đáng nhớ.</p>
+<h1 id="why">Why</h1>
+<p>Hãy bắt đầu từ việc <strong>tại sao nên dành thời gian cho việc thiết kế phần mềm</strong>:</p>
+<ul>
+<li>Việc nên dành một khoảng thời gian tương đối cho việc thiết kế phần mềm một cách nghiêm chỉnh hay không phụ thuộc vào việc: Logic mà bạn sẽ viết có tầm ảnh hưởng như thế nào đến hiện tại và tương lai. Ảnh hưởng đến hiện tại là nhiều khi một tính năng có ngay lập tức là quan trọng hơn cả. Ảnh hưởng đến tương lai là khi mà tính năng mà bạn code một cách cẩu thả sẽ ảnh hưởng vô cùng lớn đến tốc độ phát triển trong tương lai, gây ra các lỗi nghiêm trọng. Hãy nhìn việc thiết kế nghiêm chỉnh hay không như là một <strong>món nợ kĩ thuật</strong> (technical debt). Bạn thiết kế cẩu thả ở thời điểm hiện tại cũng như là bạn vay mượn thời gian ở tương lai vậy. Nếu khoảng thời gian đó không đến thì sẽ không sao, nhưng nếu đằng nào nó cũng xảy đến thì hãy suy nghĩ thật kĩ, bạn có thể đang làm mất thời gian trong tương lai của mình đó :).</li>
+</ul>
+<h1 id="how">How</h1>
+<p>Vậy việc nên dành thời gian nghiêm chỉnh để thiết kế phần mêm là nên, thì chúng ta <strong>nên thiết kế theo phương pháp thế nào</strong>:</p>
+<ul>
+<li>Từ xưa, việc thiết kế phần mêm thường được thực hiện theo mô hình thác nước (water flow). Mô hình này được tiến hành từ trên cao xuống thấp qua các bước như nhận yêu cầu (requirement), thiết kế kiến trúc (architecture design), thiết kế cơ bản (Basic design).. Tuy nhiên mô hình này đòi hỏi bạn phải nắm rõ 90% yêu cẩu của dự án ngày từ đầu, và việc này gần như là không thể. Do đó gần đây xu hướng là <strong>Agile development</strong>, khi mà việc phát triển chia thành nhiều chặng nhỏ, mỗi chặng sẽ có yêu cầu rõ ràng, và qua mỗi chặng sẽ đánh giá lại tính khả thi của dự án và đưa ra yêu cầu cho chặng tiếp theo. Về cơ bản thì Agile development có tính khả thi hơn cả khi mà không ai có thể đoán trước được sản phẩm đầu ra khi nào sẽ hoàn thành và nên có tính năng ra sao.</li>
+</ul>
+<h1 id="detail">Detail</h1>
+<p>Khi đã quyết được phương pháp thiết kế, việc quan trọng nhất, khó nhất, đó là bắt tay vào làm, bắt tay vào thiết kế chương trình. Để làm được việc này tốt quả thật là rất khó, bởi vì không có một tiêu chuẩn chung nào có thể áp dụng cho mọi yêu cầu, mọi chương trình. Bản thân tôi cũng là một junior software developer, nên tôi luôn gặp khó khăn mỗi khi viết một chương trình từ đầu (from the scratch). Có rất nhiều cách để giảm khó khăn, và tăng khả năng thiết kế của bạn như: nắm vững về các design pattern, nắm vững về domain logic, đọc về kiến trúc của các phần mêm open source nổi tiếng, và sử dụng các “luật” về thiết kế. Ở dưới đây tôi sẽ nói về một số “luật” mà cuốn sách đề cập đến, mà bản thân tôi thấy khá hữu dụng.</p>
+<ul>
+<li><p>Rule 1: Nền tảng cơ bản của việt thiết kế hướng đối tượng, là việc các đối tượng thao tác với nhau qua việc gửi thông điệp (sending message). Do đó mà việc thiết kế một phần mêm sẽ xoay quanh việc bạn thiết kế sao cho các đối tượng <strong>gửi thông điệp cho nhau thông qua một interface dễ hiểu nhất, rõ ràng nhất</strong>. Hãy luôn hình dung bài toán của bạn sẽ được giải quyết thông qua một loạt các đối tượng gửi rất nhiều loại thông điệp cho nhau, bạn sẽ hình dung được kiến trúc tổng thể của chương trình dễ dàng hơn.</p></li>
+<li><p>Rule 2: Single Responsibility: Đây là một luật khá cơ bản trong thiết kế hướng đối tượng. Ai cũng biết về luật này nhưng rất khó để làm theo, nhất là khi khối lượng chương trình tăng lên, và công việc chính của bạn hàng ngày là thêm logic vào một code base đã có. Luật này nói rằng mỗi class chỉ nên đảm trách một vai trò duy nhất. Làm thế nào để đảm bảo tính chất này là một việc khá mơ hồ. Cuốn sách nói rằng với mỗi class, bạn nên có thử <strong>mô tả về nó chỉ trong 1 câu</strong>. Làm được việc này một cách dễ dàng đảm bảo cho việc logic của class đó thống nhất và không bị lai tạp.</p></li>
+<li><p>Rule 3: Giảm sự kết dính của code (<strong>Writing loosely coupled code</strong>). Cá nhân tôi thấy rule này là rule quan trọng bậc nhất trong việc thiết kế phần mềm. Muốn đánh giá một phần mềm được thiết kế tồi hay không, hãy nhìn vào việc các logic có bị kết dính(couple) hay phụ thuộc vào nhau hay không. Vậy các bạn sẽ hỏi “kết dính” cụ thể ở đây có nghĩa là gì? Sự kết dính được hình thành khi logic này “phụ thuộc” vào logic khác. Cụ thể hơn ở khái niệm phụ thuộc, đó là việc mà khi mà một trong <strong>logic của class A lại chứa các logic class B</strong>, hay nói cách khác là khi A “biết” quá nhiều về B thì khi đó A sẽ phụ thuộc vào B. Khái niệm này hay được nhắc đến bằng những cụm từ khác như là logic hiding, tức khi thiết kế một class, bạn phải giấu logic của class đó càng nhiều càng tốt. Đó chính là lý do tại sao các ngôn ngữ như java có những keyword như public, private hay protected. Vậy quay lại từ đầu, để giảm sự kết dính của code thì chúng ta phải làm một việc là thiết kế sao cho các class không phụ thuộc vào nhau, và <strong>“biết”</strong> càng ít về nhau càng tốt. Vì vậy mỗi khi bạn viết một đoạn code nào đó, bạn hãy tự đọc lại và xem đoạn code đó có sử dụng quá nhiều logic của một class hay logic bên ngoài không. Để giải quyết cho việc “writing loosely coupled code” thì có khá nhiều kĩ thuật nổi tiếng như là: Inject Dependencies, Isolate Dependencies, Reversing Dependencies mà nếu có dịp tôi sẽ giới thiệu trong một bài viết khác. Ngoài ra còn có một luật rất hữu dụng để giải quyết vấn đề kết dính của code được gọi là <a href="http://c2.com/cgi/wiki?LawOfDemeter">Law of Demeter</a>, các bạn có thể tham khảo ở đường link tôi vừa gửi.</p></li>
+</ul>
+<h1 id="auto-testing">Auto Testing</h1>
+<p>Bản thân việc testing không nằm trong khâu “thiết kế” phần mềm. Auto testing (hay là unit test) chỉ là một bước để đảm bảo rằng logic hiện tại đang có là đang chạy “gần như là” tốt (nói gần như là do unit test không thể đảm bảo 100% việc “chạy tốt” của tất cả mọi logic. Tuy nhiên chỉ việc đảm bảo “gần như” tốt thôi đã cho thấy tầm quan trọng của testing. Có một việc mà bất kì một nhà phát triển nào khi mới bắt đầu viết test, và ngay cả những người đã quá quen việc kĩ thuật TDD (Test Driven Development) cũng sẽ băn khoăn, đó là việc <strong>nên test cái gì</strong>. Trong cuốn sách Sandi đã chia khá rõ ràng về 2 phần mà bạn nên test đó là:</p>
+<ul>
+<li>Test Incomming Message</li>
+<li>Test Ougoing Message</li>
+</ul>
+<p>Như tôi đã đề cập ở trên, bản chất của việc thiết kế hướng đối tượng xoay quanh việc các class sẽ gửi message cho nhau. Do đó khi test chúng ta cũng nên xoay quanh khái niệm mesage này. Một cách đơn giản, <strong>Incomming Message</strong> tức là các message được “gửi” đến một object X, và test các message đó tương đương với việc bạn sẽ test các interface của object X đó được công khai (public interface) ra ngoài. <strong>Outgoing Message</strong> hơi phức tạp hơn một chút, giả sử bạn có một object X với method Foo, trong Foo sẽ gọi method Bar để thực hiện một logic nào đó. Việc test Foo sẽ gọi Bar đúng N lần, với kết quả nhất định sẽ được gọi là test <strong>Outgoing Message</strong>. Việc chia ra làm 2 loại message cần test sẽ giúp cho bạn nhìn thấy một cách rõ ràng hơn cái gì nên test, và cái gì không nên test.</p>
+<h1 id="conclusion">Conclusion</h1>
+<p>Ở trên tôi đã trình bày về một số suy nghĩ của cá nhân, và các suy nghĩ của Sandi Metz trong cuốn sách về thiết kế phần mềm. Bản thân việc thiết kế được phần mềm tốt là rất khó, mà mỗi một dạng phần mềm, với mỗi một logic domain lại có một cách giải quyết riêng. Không có một cách giải quyết nào chung cho mọi bài toán cả, nhưng có một số qui tắc chung mà bán có thể áp dụng được cho nhiều bài toán khác nhau. Để nắm được các qui tắc đó đòi hỏi bạn không những phải đọc nhiều, làm nhiều, tích luỹ nhiều kinh nghiệm, mà còn dựa trên việc bạn thất bại nhiều nữa. Tạo ra các phần mềm tồi, khó bảo trì cũng là một bước đệm tốt để bạn rút kinh nghiệm cho các lần sau :).</p>
 		
 		
 	</div>
@@ -384,7 +573,7 @@ Từ ví dụ trên chúng ta thấy rằng độ phức tạp của việc tìm
     <div class="center"><a href="/blog/archives">Blog Archives</a></div>
 </nav></div>
 			</div>
-			<footer id="footer" class="inner">Copyright &copy; 2014
+			<footer id="footer" class="inner">Copyright &copy; 2015
 
     kỹ thuật máy tính
 

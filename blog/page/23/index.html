@@ -7,7 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Apr 28th, 2013 linux, tips, tutorial Comments Fun With Unix Command Prompt Chắc hẳn là một unix user (có thể mac os hay linux), lại là một &hellip;">
+	<meta name="description" content="May 13th, 2013 concurrency, database, storage Comments Exclusive Lock - Shared Lock 1. Mở đầu
+Nhân tiện trả lời thắc mắc của bạn kiennt về shared &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -37,7 +38,7 @@
 	<div class="container">
 		<div class="left-col">
 			<div class="intrude-less">
-			<header id="header" class="inner"><div class="profilepic">	
+			<header id="header" class="inner"><div class="profilepic">
 	<script src="/javascripts/md5.js"></script>
 	<img src='/images/logo.jpg' alt='Profile Picture' style='width: 160px;' />
 </div>
@@ -66,9 +67,9 @@
 	</div>
 </nav>
 
-</header>				
+</header>
 			</div>
-		</div>	
+		</div>
 		<div class="mid-col">
 			
 				
@@ -92,554 +93,105 @@
   
 
 
-<time datetime="2013-04-28T00:06:00+09:00" data-updated="true" itemprop="datePublished">Apr 28<span>th</span>, 2013</time></div>
+<time datetime="2013-05-13T04:52:00+09:00" data-updated="true" itemprop="datePublished">May 13<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/linux-tips-tutorial/'>linux, tips, tutorial</a>
+	<a class='category' href='/blog/categories/concurrency/'>concurrency</a>, <a class='category' href='/blog/categories/database/'>database</a>, <a class='category' href='/blog/categories/storage/'>storage</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/04/28/make-fun-with-unix-command-prompt/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/05/13/exclusivelock-sharedlock/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/04/28/make-fun-with-unix-command-prompt/" itemprop="url">Fun With Unix Command Prompt</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/05/13/exclusivelock-sharedlock/" itemprop="url">Exclusive Lock - Shared Lock</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<p><img src="/images/UnixCommandPrompt/unix.png"></p>
-<p>Chắc hẳn là một unix user (có thể mac os hay linux), lại là một programmer, bạn sẽ phải hàng ngày sử dụng terminal cho việc lập trình, quản lý source, monitoring hệ thống…. Và đã là người sử dụng terminal hàng ngày thì cái bạn phải nhìn thấy nhiều nhất chính là cái gọi là “Command prompt”</p>
-<p><img src="/images/UnixCommandPrompt/unix-terminal.png"></p>
-<p>Cái command prompt này thì tùy thuộc vào shell bạn đang dùng (bash hay zsh..) mà sẽ có những cách tùy chỉnh khác nhau. Mình thì đang dùng bash (chắc một ngày gần đây sẽ chuyển qua zsh), nên bài viết này sẽ áp dụng chủ yếu ở trên bash. Command prompt ở trên bash thì gồm có 4 biến môi trường (environment variable) chính: PS1, PS2, PS3, PS4 (Ngoài ra còn có COMMAND_PROMPT nữa nhưng thằng này na ná PS1 nên mình không đề cập đến). Để sử dụng các biến môi trường này thì bạn chỉ cần:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>export export.sh </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">export </span><span class="nv">PS1</span> <span class="o">=</span> <span class="s2">&quot;abcxyz&quot;</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>hoặc đặt đoạn code đó vào ~/.bash_profile hoặc ~/.bashrc rồi</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>export export.sh </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">source</span> ~/.bash_profile
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>để shell load lại các setting trong file tương ứng là biến môi trường đã được set.</p>
-<p>Dưới đây mình sẽ nói về việc sử dụng các biến môi trường này để biến cái command prompt của bạn trở nên <strong>màu mè</strong> và <strong>thân thiện</strong> hơn. Về thứ tự thì mình sẽ nói về cái có độ tùy biến thấp đến cao</p>
-<h2 id="ps2">PS2</h2>
-<p>Trong 5 biến mình nói ở trên thì biến PS2 là thằng nhàm chán nhất. PS2 gọi là Continuation interactive prompt. Tại sao lại gọi như vậy thì: khi một câu lệnh unix quá dài thì bạn thường dùng kí hiệu “\” ở cuối dòng để làm cho câu lệnh đấy thành multiple-line (gõ được ở nhiều dòng). Và PS2 là biến quyết định <strong>cái gì được in ở đầu mỗi dòng đó</strong></p>
-<p><img src="/images/UnixCommandPrompt/PS2-1.png"></p>
-<p>Cách sử dụng thì vô cùng đơn giản:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>export export.sh </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">export </span><span class="nv">PS2</span><span class="o">=</span><span class="s2">&quot;continue here -&gt; &quot;</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Và kết quả là:</p>
-<p><img src="/images/UnixCommandPrompt/PS2-2.png"></p>
-<p>Chắc bạn cũng đã hình dung ra cách dùng PS2 thế nào rồi nhỉ, và hẳn bạn đang nghĩ, biến này chả có gì thú vị lắm nhỉ, mình cũng nghĩ thế :D. Thế nên chúng ta qua thằng tiếp theo nhé: PS3</p>
-<h2 id="ps3">PS3</h2>
-<p>PS3 gọi là biến dùng cho việc “select inside shell script” Giả sử bạn phải viết một đoạn script cho lựa chọn (ví dụ như bạn làm infra, phải viết script kiểu như: hãy chọn giữa install rvm hay rbenv chẳng hạn).Thì chắc đoạn script đó sẽ trông như sau:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>select select.sh </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="o">==</span>&gt; code
-</span><span class='line'><span class="nb">echo</span> <span class="s2">&quot;Select your option:&quot;</span>
-</span><span class='line'><span class="k">select </span>i in 1<span class="o">)</span> 2<span class="o">)</span> 3<span class="o">)</span>
-</span><span class='line'><span class="k">do</span>
-</span><span class='line'><span class="k">  case</span> <span class="nv">$i</span> in
-</span><span class='line'>    x<span class="o">)</span>....
-</span><span class='line'>    y<span class="o">)</span>....
-</span><span class='line'>    z<span class="o">)</span>....
-</span><span class='line'>  <span class="k">esac</span>
-</span><span class='line'><span class="k">done</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">==</span>&gt; run
-</span><span class='line'><span class="c"># /.select.sh</span>
-</span><span class='line'>x<span class="o">)</span>....
-</span><span class='line'>y<span class="o">)</span>....
-</span><span class='line'>z<span class="o">)</span>....
-</span><span class='line'>
-</span><span class='line'><span class="c">#? 1</span>
-</span><span class='line'>x<span class="o">)</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Như các bạn thấy, prompt để lựa chọn khi không có setting gì sẽ là <strong>không hiện gì</strong>, quite boring Giờ nếu chúng ta chỉ cần setting PS3 cho đoạn code đó như sau</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>select select.sh </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="o">==</span>&gt; code
-</span><span class='line'><span class="nv">PS3</span><span class="o">=</span><span class="s2">&quot;Select an option of installer (1-3): &quot;</span>
-</span><span class='line'><span class="k">select </span>i in 1<span class="o">)</span> 2<span class="o">)</span> 3<span class="o">)</span>
-</span><span class='line'><span class="k">do</span>
-</span><span class='line'><span class="k">  case</span> <span class="nv">$i</span> in
-</span><span class='line'>    x<span class="o">)</span>....
-</span><span class='line'>    y<span class="o">)</span>....
-</span><span class='line'>    z<span class="o">)</span>....
-</span><span class='line'>  <span class="k">esac</span>
-</span><span class='line'><span class="k">done</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">==</span>&gt; run
-</span><span class='line'><span class="c"># /.select.sh</span>
-</span><span class='line'>x<span class="o">)</span>....
-</span><span class='line'>y<span class="o">)</span>....
-</span><span class='line'>z<span class="o">)</span>....
-</span><span class='line'>
-</span><span class='line'><span class="c">#? Select an option of installer (1-3): 1</span>
-</span><span class='line'>x<span class="o">)</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Như vậy là chúng ta sẽ có một cái prompt <strong>có hiện gì</strong>, use case để dùng thì chắc trong phần lớn các trường hợp sẽ là để cung cấp thông tin cho user về các option lựa chọn phía dưới. PS3 có vẻ khá useful trong một số case nhất định đúng không :D, tiếp theo chúng ta sẽ đến với PS4</p>
-<h2 id="ps4">PS4</h2>
-<p>Khi execute một đoạn script mà bạn muốn tracking output (để debug chẳng hạn), bạn sẽ dùng {set -x} để làm việc đó. ví dụ như đoạn code ở dưới đây:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>tracking tracking.sh </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="o">==</span>&gt; code tracking.sh
-</span><span class='line'><span class="nb">set</span> -x
-</span><span class='line'>ls -all -lrt | grep xyz
-</span><span class='line'><span class="nb">pwd</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">==</span>&gt; run
-</span><span class='line'>++ ls -all -lrt
-</span><span class='line'>++ grep xyz
-</span><span class='line'>drwxr-xr-x   2 doxuanhuy  staff   68 Apr 28 11:45 xyz
-</span><span class='line'>++ <span class="nb">pwd</span>
-</span><span class='line'>/Users/doxuanhuy/cur-project/android-globalit
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Như các bạn thấy, {set -x} sẽ output ra các câu lệnh được execute và prefix bằng cái “++”. 2 kí tự này có vè không thể hiện được gì nhỉ, và với PS4, bạn có thể thêm thông tin hữu ích cho việc debug như line number thông qua biến $LINENO, hay function name thông qua biến $FUNCNAME, hay script name thông qua biến $0</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>tracking tracking.sh </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="o">==</span>&gt; code tracking.sh
-</span><span class='line'><span class="nb">export </span><span class="nv">PS4</span><span class="o">=</span><span class="s1">&#39;$0.$FUNCNAME $LINENO &#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="nb">set</span> -x
-</span><span class='line'>somefunction<span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>    ls -all -lrt | grep xyz
-</span><span class='line'>      <span class="nb">pwd</span>
-</span><span class='line'><span class="o">}</span>
-</span><span class='line'><span class="nv">somefunction</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">==</span>&gt; run
-</span><span class='line'>../test.sh. 8 somefunction
-</span><span class='line'>../test.sh.somefunction 5 ls -all -lrt
-</span><span class='line'>../test.sh.somefunction 5 grep xyz
-</span><span class='line'>drwxr-xr-x   2 doxuanhuy  staff   68 Apr 28 11:45 xyz
-</span><span class='line'>../test.sh.somefunction 6 <span class="nb">pwd</span>
-</span><span class='line'>/Users/doxuanhuy/cur-project/android-globalit
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Như vậy chúng ta đã có những thông tin khá hữu ích để debug đúng không. Và tiếp theo chúng ta sẽ đi đến bộ đôi thú vị nhất trong ngày: PS1 và COMMAND_PROMPT</p>
-<h2 id="ps1">PS1</h2>
-<p>Đây chính là biến quyết định cái gì sẽ hiện lên ở command prompt, và là biến có nhiều cái để hack nhất trong các loại PSx</p>
-<p><img src="/images/UnixCommandPrompt/PS1-1.png"></p>
-<p>Đầu tiên chúng ta sẽ nói về PS1 Giả sử chúng ta muốn command prompt hiện lên Username, Hostname và full-path đến directory hiện tại, đơn giản chúng ta chỉ cần</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>PS1 PS1.sh </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">export </span><span class="nv">PS1</span><span class="o">=</span><span class="s2">&quot;\u@\h \w&gt; &quot;</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Ở đây à Username, là Hostname và là full path của current dir. Như vậy chúng ta sẽ có 1 cái prompt như dưới đây</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>PS1 PS1.sh </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>doxuanhuy@xxx ~/cur-project/android-globalit&gt;
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Quite easy phải không :D Hay hơn chút nữa, bạn muốn hiện thêm current time, lên prompt, rất đơn giản:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>PS1 PS1.sh </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">export </span><span class="nv">PS1</span><span class="o">=</span><span class="s2">&quot;\$(date +%k:%M:%S) \w&gt; &quot;</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Ở đây (date +%k:%M:%S) là để format date và biến nó thành variable thông qua $</p>
-<p>Và kết quả là</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>PS1 PS1.sh </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>12:23:59 ~/cur-project/android-globalit&gt;
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Ngoài ra còn rất nhiều cái bạn có thể cho vào command prompt để biến nó thêm phần phong phú như:</p>
+		<h2 id="mở-đầu">1. Mở đầu</h2>
+<p>Nhân tiện trả lời thắc mắc của bạn kiennt về <em>shared lock</em> và <em>exclusive lock</em> được nhắc đến trong bài viết <a href="http://ktmt.github.io/blog/2013/05/07/storageenginemysql/">Giới Thiệu Một Số Storage Engine Của Mysql</a>, mình viết bài này để giải thích khái niệm và ý nghĩa của exclusive lock, shared lock, MVCC cũng như làm rõ một số điểm chưa rõ ràng trong bài viết trên.</p>
+<h2 id="cơ-chế-và-ý-nghĩa-của-lock-và-mvcc">2. Cơ chế và ý nghĩa của Lock và MVCC</h2>
+<h3 id="khái-niệm-và-ý-nghĩa-của-lock">2.1 Khái niệm và ý nghĩa của lock</h3>
+<p><a href="http://en.wikipedia.org/wiki/Lock_%28computer_science%29">Lock</a> (khóa) là <em>cơ chế đồng bộ</em> và <em>giới hạn truy cập</em> đến <em>tài nguyên đươc chia sẻ</em> trong một môi trường có <em>nhiều luồng xử lý cùng truy cập</em>.</p>
+<p>Nói một cách hình tượng, lock giống một cái cờ tuyên bố chủ quyền đối với tài nguyên máy tính. Mỗi luồng xử lý (thread) khi truy cập tài nguyên dùng chung nào đó sẽ phải “dựng cờ lên” để báo cho các luồng xử lý khác biết tài nguyên đó đang được xử dụng và “hạ cờ xuống” khi hoàn thành xử lý trên tài nguyên đó. Các luồng xử lý khác bằng việc quan sát trạng thái của cờ này mà sẽ chiếm tài nguyên cho xử lý của mình, hay chờ đợi cho đến khi luồng xử lý khác kết thúc. Có thể nói lock là một phương tiện khẳng định quyền sở hữu đối với 1 loại tài nguyên. Nhờ cơ chế lock này mà tại mỗi thời điểm chỉ có duy nhất 1 luồng xử lý truy cập tài nguyên dùng chung..</p>
+<p><em>Shared lock</em>, hay còn gọi là read-only lock (khóa chỉ đọc) là lock mà một luồng xử lý phải chiếm hữu khi muốn đọc từ một vùng nhớ được chia sẻ.</p>
+<p><em>Exclusive lock</em>, hay còn gọi là read-write lock (khóa đọc ghi) là lock mà một luồng xử lý phải chiếm hữu khi muốn cập nhật một vùng nhớ được chia sẻ.</p>
+<h3 id="tại-sao-phải-cần-lock">2.2 Tại sao phải cần lock</h3>
+<h4 id="a.-tác-dụng-của-exclusive-lock">a. Tác dụng của exclusive lock</h4>
+<p>Xét bài toán ta có 2 luồng xử lý A, B cùng thao tác trên 2 biến a, b. Giá trị hiện tại của các biến</p>
 <ul>
-<li>!: The history number of the command</li>
-<li>$kernel_version: The output of the uname -r command from $kernel_version variable</li>
-<li>$?: Status of the last command</li>
+<li>a = 0</li>
+<li>b = 0</li>
 </ul>
-<p>Hacking thêm chút nữa, bạn có thể thay đổi màu của từng phần trên command prompt thông qua 3 metacharacter sau:</p>
+<p>Nhiệm vụ của 2 luồng xử lý:</p>
 <ul>
-<li>[ - Indicates the beginning of color prompt ( giống như cái “^” của regex vậy)</li>
-<li>x;ym - Indicates color code. Use the color code values mentioned below ( bạn đặt x;ym ở trước node nào thì node đó sẽ được colorize theo màu đó)</li>
-<li>[m - indicates the end of color prompt (giống như cái “$” của regex)</li>
+<li>Luồng xử lý A đọc giá trị 2 biến, tăng giá trị của a lên 1, và cập nhật giá trị cả 2 biến vào bộ nhớ.</li>
+<li>Luồng xử lý B đọc giá trị 2 biến, tăng giá trị của b lên 1, và cập nhật giá trị cả 2 biến vào bộ nhớ.</li>
 </ul>
-<p>Một ví dụ đơn giản:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>PS1 PS1.sh </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">export </span><span class="nv">PS1</span><span class="o">=</span><span class="s2">&quot;\e[0;34m\u@\h \w&gt; \e[m&quot;</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Đoạn code trên có nghĩa là gì:</p>
-<p><img src="/images/UnixCommandPrompt/PS1-2.png"></p>
-<p>Hacking thêm một chút nữa, bạn hiện là một developer đang sử dụng git với rất nhiều repo, rất nhiều branch. Mỗi lần vào một repo nào đấy bạn lại phải {git branch} để xem bạn đang ở branch nào, bất tiện vô cùng. Bạn muốn prompt của bạn sẽ hiện branch name mỗi khi bạn vào folder của một repo nào đấy? Thật đơn giản, với backquote để execute bash command và sự trợ giúp của sed, bạn làm điều đó thật đơn giản:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>PS1 PS1.sh </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">export </span><span class="nv">PS1</span><span class="o">=</span><span class="s1">&#39;\e[0;36m\u⌘ \e[0;35m\W \e[0;33m`git branch 2&gt; /dev/null | grep -e ^* | sed -E  s/^\*\ \(.+\)$/\(\1\)\ /`\e[m\]&#39;</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Trông có vẻ đáng sợ, nhưng thực ra lại rất đơn giản :D, Chúng ta sẽ đi từng phần nhé:</p>
+<p>Giả sử A thực hiện trước, đọc giá trị của a và b (a=0, b=0) và tăng a lên 1. Lúc này giá trị của a đang là 1, của b là 0. Tuy nhiên, chính tại thời điểm này, hệ điều hành quyết định dừng A, và thực hiện B. B đọc giá trị 2 biến a và b và tăng b lên 1 rồi cập nhật cả 2 biến vào bộ nhớ. Do A chưa cập nhật giá trị 2 biến, giá trị của a lúc này vẫn là 0, của b là 1 (a=0,b=1 do A chưa hoàn thành). Vì vậy, tại thời điểm B kết thúc a = 0, b = 1. Đến đây hệ điều hành thực hiện chạy A ở bước cuối cùng, cập nhật giá trị 2 biến (a = 1, b = 0) vào bộ nhớ, ghi đè giá trị b = 1 được cập nhật bởi B. Kết quả cuối cùng (a = 1, b = 0) sai so với kết quả mong đợi (a = 1, b = 1).</p>
+<pre><code>    Luồng A            |  Luồng B
+    -------------------|-------------------------
+    Đọc a, b (a=0, b=0)|    
+    a = 1, b = 0       |
+                       |  Đọc a, b (a=0, b=0)
+                       |  a = 0, b = 1
+                       |  Ghi a, b (a = 0, b = 1)
+    Ghi a, b (a=1, b=0)|
+
+
+Trạng thái cuối cùng (a=1, b=0)
+Kết quả mong chờ: (a=1, b=1)</code></pre>
+<p>Để giải quyết bài toán này, người ta dùng một exclusive lock. Luồng A, B muốn cập nhật giá trị a, b phải trước tiên chiếm lock, rồi mới thực hiện xử lý của mình. Các bước thực hiện giờ sẽ như sau:</p>
 <ul>
-<li>[ : start của command prompt</li>
-<li>[0;36m : bạn tô màu phần user ( bởi 0;36m (màu xanh dương) và thêm vào đằng sau cái kí tự ⌘ (cho cool thôi :D)</li>
-<li>[0;35m: bạn tô màu phần directory hiện tại () bởi 0;35m (màu hồng)</li>
-<li>[0;33m : tô màu <strong>toàn bộ phần đằng sau</strong> bởi màu 0;33m (màu vàng)</li>
-<li>git branch 2&gt; /dev/null | grep -e ^* | sed -E s/^&#92;* (.+)$/(&#92;) /: nguyên văn đoạn này sẽ như sau: đầu tiên bạn dùng “git branch” để lấy branch hiện tại. Trong trường hợp không ở trong git repo nào thì sẽ có lỗi ra stderr, bạn redirect cái lỗi này vào dev/null thông qua “2&gt; /dev/null” để nó không hiện ra prompt (2 là stderr). Sau đấy bạn tìm line nào có * ở đầu (current git branch) thông qua việc pipe vào grep. Tìm được line đó rồi thì bạn sẽ tách phần đằng sau dấu * ra thông qua sed , và output phần đó ra ngoài với format (branch) thông qua $/(). Tất cả đoạn code này được để vào backquote để được execute trực tiếp mỗi khi PS1 được gọi. Và kết quả thật bất ngờ:</li>
+<li>Chiếm lock. Nếu như chiếm được lock thì tiến hành xử lý tiếp theo. Nếu không, chờ đến khi chiếm được lock</li>
+<li>Đọc a, b</li>
+<li>Cập nhật a (hoặc b)</li>
+<li>Ghi a, b</li>
+<li>Thôi chiếm lock</li>
 </ul>
-<p><img src="/images/UnixCommandPrompt/PS1-3.png"></p>
-<p>Looks so cool!! Ngoài ra bạn còn có rất nhiều thứ có thể hacking với PS1 như:</p>
-<ul>
-<li>the number of jobs currently managed by the shell</li>
-<li># the command number of this command</li>
-<li>the basename of the shell’s terminal device name ….. mà bạn có thể tham khảo ở đây: http://www.thegeekstuff.com/2008/09/bash-shell-ps1-10-examples-to-make-your-linux-prompt-like-angelina-jolie/</li>
-</ul>
-<h2 id="ending">Ending</h2>
-<p>Như vậy với PS[1-4], bạn đã có thể customize command prompt của bạn trở nên đẹp đẽ hơn, cool hơn và useful hơn. Trong các bài viết sắp tới mình sẽ nói về việc sử dụng các công cụ rất mạnh của unix family os như grep, sed, wc để giúp cho công việc development của bạn trở nên thú vị hơn :D. Happy hacking!</p>
-		
-		
-	</div>
+<p>Quy trình bây giờ tăng 2 bước (chiếm lock hoặc chờ đến khi nào chiếm được lock và nhả lock). Các bước chạy ở trên giờ sẽ như sau: A chiếm lock thành công (do chưa có luồn nào chiếm lock) và tiến hành đọc và cập nhật a (a=1, b=0). Tại thời điểm A bị dùng, B được chạy và thử chiếm lock nhưng do A đang nắm giữ lock nên B sẽ <em>phải</em> chờ. Lúc này A thực hiện nốt bước cuối cùng ghi giá trị vào bộ nhớ (a=1, b=0) và nhả lock. B lúc này thấy lock bị nhả và nắm giữ lock, đọc giá trị từ bộ nhớ (a=1, b=0!!), cập nhật b (a=1, b=1) và ghi dữ liệu vào bộ nhớ (a=1, b=1) đồng thời nhả lock. Kết quả cuối cùng như mong đợi (a=1, b=1) Luồng A | Luồng B ——————–|——————————– Chiếm lock | Đọc a, b |<br /> a = 1, b = 0 | | Chiếm lock (không thành công) Ghi a, b (a=1, b=0) | Nhả lock | | Chiếm lock (thành công) | Đọc a, b (a=1, b=0) | a = 1, b = 1 | Ghi a, b (a = 1, b = 1) | Nhả lock</p>
+<pre><code>Trạng thái cuối cùng (a=1, b=1)
+Kết quả mong chờ: (a=1, b=1)!!!!</code></pre>
+<p>Ta có thể thấy nhờ có lock, mà tại mỗi thời điểm chỉ có 1 luồng xử lý truy cập a, b. Các luồng khác khi không chiếm được lock sẽ phải chờ đến lượt.</p>
+<p><em>Kết luận</em>: exclusive lock được sử dụng để đồng bộ 2 xử lý ghi đồng thời.</p>
+<h4 id="b.-tác-dụng-của-shared-lock">b. Tác dụng của shared lock</h4>
+<p>Để hiểu ý nghĩa shared lock, ta xét bài toán tương tự như ở trên. Lần này, thay vì 2 luồng cùng cập nhật vùng nhớ chung, 1 luồng sẽ đọc, còn một luồng sẽ cập nhật. Giả sử A đọc và B cập nhật, và giá trị ban đầu là a=0, b=0.</p>
+<p>A tiến hành đọc a (a=0) và bị hệ điều hành <em>cho nghỉ</em> để B thực hiện. B đọc a, b (a=0, b=0) và thực hiện cập nhật b (a=0, b=1) và ghi kết quả lên bộ nhớ. A đọc nốt giá trị còn lại b (b=1).</p>
+<p>Kết quả cuối cùng đối với A rõ ràng không như mong đợi (Mong chờ: a=0, b=0 nhưng nhận về a=0, b=1).</p>
+<pre><code>    Luồng A     | Luồng B
+    ------------|-------------------------
+    Đọc a (a=0) |
+                | Đọc a, b (a=0, b=0)
+                | a = 0, b = 1
+                | Ghi a, b (a = 0, b = 1)
+    Đọc b (b=0) |
 
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-04-25T00:00:00+09:00" data-updated="true" itemprop="datePublished">Apr 25<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/programming-bit-twiddling/'>programming, bit twiddling</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/04/25/dem-bit/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/04/25/dem-bit/" itemprop="url">Đếm Bit</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h2 id="mở-đầu">Mở đầu</h2>
-<p>Bạn đang say sưa hacking code và bắt gặp một hàm với những con số bí ẩn như ở dưới đây:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>fbc.c </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">fbc</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">data</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">&amp;</span> <span class="mh">0x55555555</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">data</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x55555555</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">&amp;</span> <span class="mh">0x33333333</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">data</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x33333333</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">&amp;</span> <span class="mh">0x0F0F0F0F</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">data</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x0F0F0F0F</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">&amp;</span> <span class="mh">0x00FF00FF</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">data</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x00FF00FF</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">&amp;</span> <span class="mh">0x0000FFFF</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">data</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x0000FFFF</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">data</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Chắc hẳn bạn sẽ không khỏi hét lên: “what the fuck! Không hiểu gì hết” khi nhìn đoạn code này. Bạn hoàn toàn không hiểu mục đích của nó. Tên hàm không cho bạn một thông tin nào hữu ích. Những con số bí ẩn cùng phép toán &gt;&gt;, &amp;, + làm bạn rối.</p>
-<p>Nếu tôi nói với bạn fcb có nghĩa là “fast bit count” và hàm trên trả về số bit 1 của 1 số 32 bit (unsigned int trong C), tôi cá chắc chắn bạn sẽ không khỏi hoài nghi. Vậy chúng ta hãy thử biên dịch chương trình và test thử hàm này. Tôi viết chương trình như dưới đây để test hàm fbc.</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>test.c </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;assert.h&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">int</span> <span class="nf">fbc</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">data</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">&amp;</span> <span class="mh">0x55555555</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">data</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x55555555</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">&amp;</span> <span class="mh">0x33333333</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">data</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x33333333</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">&amp;</span> <span class="mh">0x0F0F0F0F</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">data</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x0F0F0F0F</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">&amp;</span> <span class="mh">0x00FF00FF</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">data</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x00FF00FF</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">&amp;</span> <span class="mh">0x0000FFFF</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">data</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x0000FFFF</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">data</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>        <span class="kt">int</span> <span class="n">ans</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">ans</span> <span class="o">=</span> <span class="n">fbc</span><span class="p">(</span><span class="mi">5</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">assert</span><span class="p">(</span><span class="n">ans</span> <span class="o">==</span> <span class="mi">2</span><span class="p">);</span>  <span class="c1">// 5 = 101b</span>
-</span><span class='line'>        <span class="n">ans</span> <span class="o">=</span> <span class="n">fbc</span><span class="p">(</span><span class="mi">198123</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">assert</span><span class="p">(</span><span class="n">ans</span> <span class="o">==</span> <span class="mi">10</span><span class="p">);</span> <span class="c1">// 198123 = 110000010111101011b</span>
-</span><span class='line'>        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Kết quả chạy:</p>
-<div>
-<pre><code class='bash'>$ gcc -o test test.c
-$ ./test
-$ echo $?
-0</code></pre>
-</div>
-<p>Chương trình chạy bình thường, cho kết quả bằng 0 chứng tỏ hàm fbc trả về giá trị như ta mong muốn.</p>
-<p><strong>Bạn sẽ thắc mắc</strong>: Tại sao hàm này lại có thể đếm được số bit 1? Chúng ta hãy cùng tìm hiểu cơ chế đếm của hàm này.</p>
-<h2 id="cơ-chế">Cơ chế</h2>
-<p>Để có thể hiểu tại sao hàm này trả về số bit 1, ta hãy thử xem các con số 0x55555555, 0x33333333, 0x0F0F0F0F, 0x00FF00FF và 0x0000FFFF có ý nghĩa gì.</p>
-<p>Bằng cách ấn máy tính, đổi từ hệ 16 sang hệ 2, ta có giá trị nhị phân của các số trên như bảng dưới đây:</p>
-<pre><code>0x55555555      01010101010101010101010101010101   
-0x33333333      00110011001100110011001100110011     
-0x0F0F0F0F      00001111000011110000111100001111    
-0x00FF00FF      00000000111111110000000011111111   
-0x0000FFFF      00000000000000001111111111111111   </code></pre>
-<p>Ta nhận thấy các con số trên không hoàn toàn bí ẩn mà nó hoàn toàn có quy luật. Từ trên xuống dưới, các bit 1 xen kẽ nhau theo chu kỳ 1, 2, 4, 8, 16.</p>
-<p>Ta thử quay lại hàm <strong>fbc</strong> và xem cách con số này được sử dụng. Vì số 0x55555555 lên đến 32 bit nên rất khó theo dõi (nhiều 0 với 1 quá @.@), ta sẽ thử xét trường hợp số 8 bit với bit pattern không đổi (tức là số 0xFF). Dòng 1 của hàm fbc sẽ như dưới đây:</p>
-<pre><code>    data = (data &amp; 0x55) + ((data &gt;&gt; 1) &amp; 0x55);</code></pre>
-<p>Giả sử data = 10110011b, ta sẽ có: data = 10110011 &amp; 01010101 + ((10110011 &gt;&gt; 1 &amp; 01010101)</p>
-<p><strong>“Dễ dàng”</strong> nhận thấy chuỗi bit của 0xFF có các bit 1 ở vị trí chẵn (0, 2, 4…) do vậy bằng cách &amp; data với 0xFF, ta đã loại trừ các bit 1 ở vị trí lẻ (1,3,5…). Do vậy kết quả của data &amp; 0x55 sẽ cho ra các bit 1 ở vị trí chẵn. Bằng cách dịch 1 bit của data, ta chuyển các bit từ vị trí lẻ sang vị trí chẵn, và lại &amp; với 0xFF, do đó đại lượng sau dấu cộng sẽ có các bit 1 ở vị trí chẵn. Kết quả của phép cộng sẽ cho ra số lượng bit ở vị trí lẻ và vị trí chẵn</p>
-<p>Lần tính 1 data &amp; 01010101 00 01 00 01<br /> (data &gt;&gt; 1)&amp; 01010101 01 01 00 01<br /> 01 10 00 10</p>
-<p>Do kết quả tối đa của phép + này là 2, khả năng kết quả phép cộng “tràn sang” vùng bit bên cạnh là không có. Sau lần tính thứ nhất, ta có kết quả của số bit 1 của cặp đôi bit cạnh nhau.</p>
-<p>Tất nhiên ở đây ta vẫn chua có kết quả số bit. Tuy nhiên ta sẽ áp dụng phương pháp tương tự cho cụm 4 bit.</p>
-<p>Nhìn dòng thứ 2 đoạn code bạn sẽ thấy: …1100110011b: 2 bit đan xen! Phép dịch bit bây giờ là &gt;&gt; 2.</p>
-<p>Lần tính 2 data &amp; 00110011 00 10 00 10<br /> (data &gt;&gt; 2)&amp; 00110011 00 01 00 00<br /> 00 11 00 10</p>
-<p>Như vậy ta có 4 bit đằng sau có tổng số bit là 2, 4 bit đâu có tổng số bit là 11 (3 trong hệ thập phân)!!!</p>
-<p>Áp dụng cách tính tương tự, ta có kết quả như ở dưới.</p>
-<p>Lần tính 3 data &amp; 00001111 00 00 00 10<br /> (data &gt;&gt; 4)&amp; 00001111 00 00 00 11<br /> 00 00 01 01</p>
-<p>Kết quả là 5, chính là số bit của data ban đầu!!</p>
-<p>Để tính số bit của 1 số 32 bit, ta chỉ việc tăng số bit của các “magic number” lên. Đấy là lý do ta có các số 0x55555555, 0x33333333, …</p>
-<p>Đến đây chắc hẳn bạn đã hiểu tại sao hàm <strong>fbc</strong> trả về số bit 1.</p>
-<h2 id="tổng-kết">Tổng kết</h2>
-<p>Hy vọng với giải thích trên, bạn đã hiểu ý nghĩa sâu sắc đằng sau hàm fbc. Bạn sẽ vẫn hét “What the fuck!!!” nhưng lần này cho sự tuyệt vời không những cho sự ngắn gọn, tinh tế của đoạn code.</p>
-<h2 id="tham-khảo">Tham khảo</h2>
+Kết quả cuối cùng (a=0, b=1)
+Kết quả mong chờ: (a=0, b=0)</code></pre>
+<p>Để giải quyết bài toán này, ta dùng shared-lock. Luồng A muốn đọc sẽ cần phải chiếm shared-lock. Luồng B muốn ghi sẽ phải nhìn xem shared-lock có bị chiếm hay không. Nếu shared-lock đang bị chiếm. B phải đợi cho đến khi tất cả shared-lock được giải phóng mới tiến hành cập nhật. Luồng chạy sau bây giờ sẽ như sau:</p>
+<p>A chiếm shared-lock và tiến hành đọc a (a=0). A được <em>cho nghỉ</em> và B được <em>đưa vào sân</em>. Do A đang chiếm shared lock nên B không được quyền cập nhật và được <em>cho nghỉ</em>. A thực hiện nốt việc đọc b (b=0) và nhả shared-lock. B không thấy shared-lock và tiến hành cập nhật b (b=1) như bình thường. Luồng A | Luồng B ——————|—————————– Chiếm shared-lock | Đọc a (a=0) | | Nhìn thấy shared-lock. Nghỉ Đọc b (b=0) | Nhả shared-lock | | Chiếm exclusive lock | Đọc a, b (a=0, b=0) | a = 0, b = 1 | Ghi a, b (a = 0, b = 1) | Nhả exclusive lock.</p>
+<pre><code>Kết quả cuối cùng (a=0, b=0)
+Kết quả mong chờ: (a=0, b=0)</code></pre>
+<p><em>Kết luận</em>: shared-lock được sử dụng để đồng bộ 2 xử lý đọc ghi đồng thời.</p>
+<h4 id="c.-tại-sao-cần-chiếm-shared-lock-khi-đọc-dữ-liệu">c. Tại sao cần chiếm shared lock khi đọc dữ liệu</h4>
+<p>Đến đây ta có thể dễ dàng trả lời câu hỏi thứ nhất của kiennt! Khi tiến hành đọc dữ liệu, nếu không chiếm shared-lock, dữ liệu đó có thể bị cập nhật bởi 1 thread khác, dẫn tới giá trị đọc được bị thay đổi một phần, không bảo đảm tính toàn vẹn.</p>
+<p>Tuy vậy có một điểm trong bài viết cần được làm rõ như sau: Trong câu nói “MyISAM lock toàn bộ table. User (MySQL server) chiếm shared-lock khi đọc và chiếm exclusive-lock khi ghi. Tuy vậy, việc đọc ghi có thể diễn ra đồng thời!”, thì câu nói: “Tuy vậy, việc đọc ghi có thể diễn ra đồng thời!” là không đúng.</p>
+<p>Nói một cách chính xác hơn: việc <em>đọc và cập nhật (SELECT và UPDATE)</em> không được tiến hành đồng thời (Do tại thời điểm chiếm exclusive lock, không shared-lock nào được phép tồn tại). Tuy nhiên, việc <em>ghi mới</em> dữ liệu có thể được tiến hành mà không gây ảnh hưởng gì đến tính toàn vẹn của dữ liệu được đọc (vì chúng khác nhau!). Nói cách khác việc <em>đọc và ghi mới (SELECT và INSERT)</em> có thể được tiến hành đồng thời, và thực tế đây cũng là một tính năng của MyISAM.</p>
+<h3 id="mvcc-multiversion-concurrency-control">2.2 MVCC (Multiversion concurrency control)</h3>
+<p>MVCC được đặt ra để giải quyết vấn đề đọc và ghi đồng thời. Rõ ràng ở giải pháp shared-lock trình bày ở trên, việc A phải chiếm shared lock là rất mất thời gian; B phải chờ đợi A hoàn thành xử lý đọc mới được cập nhật cũng hoàn toàn không hiệu quả. MVCC giải quyết sự không hiệu quả này bằng nhận xét: <em>Thao tác đọc không cập nhật dữ liệu</em> vì vậy nếu ta duy trì 2 version của dữ liệu (1 cũ - 1 mới) và chỉ tiến hành ghi đè dữ liệu mới vào cũ khi A hoàn thành việc đọc, thì ta không cần shared-lock. B sẽ cập nhật và <em>version mới</em> thay vì phải chờ A hoàn thành việc đọc.</p>
+<p>MVCC lưu timestamp và transaction ID để duy trì tính tính nhất quán của dữ liệu.</p>
+<p>Để hiểu cách MVCC hoạt động, ta xét ví dụ sau (Copy từ Wikipedia :D) Thời gian | Object 1 | Object 2 —————-|—————|———— 0 | Foo | Bar 1 | Hello (T1) |</p>
+<p>Tại thời điểm 0, Object 1 có giá trị Foo, Object 2 có giá trị Bar. Tại thời điểm 1, thread T1 cập nhật giá trị Object 1 thành Hello. Như vậy trước khi T1 commit dữ liệu, bất cứ xử lý đọc nào cũng cho kết quả Object 1 và 2 tại thời điểm 0 (Foo-Bar). Khi T1 commit dữ liệu, xử lý đọc sẽ trả về giá trị Hello-Bar.</p>
+<p>Giả sử tại thời điểm T1 chưa commit, T2 lại cập nhật Object 2 như sau: Thời gian | Object 1 | Object 2 —————-|—————|———— 0 | Foo | Bar 1 | Hello (T1) | 2 | | World (T2)</p>
+<p>Lúc này, mọi thao tác đọc sẽ vẫn trả về Foo-Bar. Khi T1 commit, dữ liệu đọc tiếp theo sẽ là Hello-Bar. Và khi T2 commit, dữ liệu đọc sẽ là Hello-World. Nói cách khác, tại mỗi thời điểm ta nhìn thấy 1 phiên bản dữ liệu, các cập nhật bởi thread khác sẽ được lưu tại một version khác.</p>
+<p>Chính nhờ cách quản lý nhiều version dữ liệu này, mà việc đọc không cần lock shared-lock vẫn đảm bảo được tính toàn vẹn của dữ liệu được đọc.</p>
+<h2 id="tổng-kết">3. Tổng kết</h2>
+<p>Bài viết đã giải thích phần nào hiểu hơn ý nghĩa của exclusive lock và shared-lock cũng như tác dụng và sự cần thiết của chúng. Đồng thời, bài viết cũng làm rõ những điểm được nói đến trong viết trong bài <a href="http://ktmt.github.io/blog/2013/05/07/storageenginemysql/">Giới Thiệu Một Số Storage Engine Của Mysql</a> cũng như giải đáp những thắc mắc của bạn kiennt.</p>
+<h2 id="tham-khảo">4. Tham khảo:</h2>
 <ol type="1">
-<li><a href="http://graphics.stanford.edu/~seander/bithacks.html">bithacks</a></li>
-<li><a href="http://www.drpaulcarter.com/pcasm/">assembly book</a></li>
-<li><a href="http://download.savannah.gnu.org/releases/pgubook/ProgrammingGroundUp-1-0-booksize.pdf">Programming groundup</a></li>
+<li><a href="http://en.wikipedia.org/wiki/Multiversion_concurrency_control">MVCC</a></li>
+<li><a href="http://en.wikipedia.org/wiki/Lock_%28computer_science%29">Lock</a></li>
+<li><a href="http://stackoverflow.com/questions/11837428/whats-the-difference-between-an-exclusive-lock-and-a-shared-lock">Exclusive lock &amp; shared lock</a></li>
+<li><a href="http://www.amazon.com/High-Performance-MySQL-Optimization-Replication/dp/1449314287">High performance MySQL</a></li>
 </ol>
 		
 		
@@ -662,41 +214,738 @@ $ echo $?
   
 
 
-<time datetime="2013-04-24T23:33:00+09:00" data-updated="true" itemprop="datePublished">Apr 24<span>th</span>, 2013</time></div>
+<time datetime="2013-05-12T00:15:00+09:00" data-updated="true" itemprop="datePublished">May 12<span>th</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/motivation/'>motivation</a>
+	<a class='category' href='/blog/categories/javascript/'>javascript</a>, <a class='category' href='/blog/categories/programming/'>programming</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/04/24/happy-programmer/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/05/12/closure-va-scope-cua-javascript/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/04/24/happy-programmer/" itemprop="url">Happy Programmer</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/05/12/closure-va-scope-cua-javascript/" itemprop="url">Closure và Scope Trong Javascript</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<p>Happy programmer là gì nhỉ, chắc ai đọc xong title của bài post này cũng không hiểu ý mình định nói đến là gì :D. Đầu tiên với cá nhân mình thì happy programmer là những programmer(lập trình viên), có khả năng kiếm được tiền và sống tốt bằng việc lập trình, họ training liên tục để trở thành better programmer, và họ hạnh phúc với cuộc sống như vậy. Nếu bạn đã và đang là một programmer, có nhiều lý do để bạn nên happy với việc đấy. Lý do là:</p>
+		<h1 id="scope-và-closure-là-gì">Scope và closure là gì?</h1>
+<p>Scope và closure là 2 khái niệm cơ bản mà một programmer nên biết, vì hiểu rõ 2 khái niệm này vừa giúp cho programmer tránh được một số lỗi hay gặp, vừa giúp thiết kế chương trình tốt hơn. Đầu tiên chúng ta sẽ remind lại 2 khái niệm này một cách ngắn gọn. Đầu tiên là khái niệm về scope, khái niệm này quá cơ bản chắc hẳn mọi người đều biết, nhưng thôi mình cứ quote lại từ wikipedia đề phòng có người quên: &gt; [Scope refers to where variables and functions are accessible, and in what context it is being executed]</p>
+<p>=&gt; Dịch ra đại thể là scope là nơi mà <em>biến</em> hoặc <em>hàm</em> có thể truy cập vào và sử dụng/ tham chiếu được qua tên trực tiếp. Và ở ngoài scope đó thì <em>biến</em> hoặc <em>hàm</em> đó sẽ không thể <strong>nhìn</strong> được một cách trực tiếp nữa. (hơi khó hình dung nhỉ). Để phân loại scope thì có rất nhiều cách tùy thuộc vào từng góc nhìn , nhưng mình sẽ không đi sâu vào vấn đề này. Mỗi ngôn ngữ lại có đặc trưng về scope khác nhau. Trong bài viết này chúng ta sẽ chỉ tập trung vào javascript.</p>
+<p>Khái niệm tiếp theo là về closure, khái niệm này thì không phải ai cũng biết, vì không phải ai cũng cần đến và từng động đến. Một số ngôn ngữ mainstream như C++ , java cũng không hỗ trợ closure, càng làm ít người để ý đến nó (java 8 expected sẽ cho closure vào). Hãy xem wiki nói về closure thế nào:</p>
+<blockquote>
+<p>[a closure (also lexical closure or function closure) is a function or reference to a function together with a <strong>referencing environment</strong>]</p>
+</blockquote>
+<p>=&gt; Dịch ra đại thể là closure là một hàm hoặc một tham chiếu (hay còn gọi là một cái <strong>bao đóng</strong>) đi kèm với cái môi trường mà nó tham chiếu đến (khá là xoắn). Cái cần nhấn mạnh ở đây là cái <strong>referencing environment</strong> (môi trường tham chiếu) mà các bạn sẽ hiểu hơn ở các ví dụ dưới đây.</p>
+<h1 id="scope-và-closure-trong-javascript">Scope và closure trong javascript</h1>
+<p>Javascript là một ngôn ngữ phổ biến hiện nay. Người biết về js thì nhiều, nhưng người hiểu rõ một số corner của js thì chắc không nhiều đến thế :D. Một trong các corner đấy chính là <strong>scope và closure</strong>. Js là một ngôn ngữ khá đặc biệt, đặc biệt ở chỗ js mang hơi hướng của lập trình hàm (functional programming), khi mà <strong>function ở js cũng là một first-class object</strong>, tức là function có thể được tạo mới (construct new) tại run-time, được lưu dưới dạng một cấu trúc dữ liệu (data structure), được truyền qua parameter, được dùng như một giá trị trả về (return value). Chính vì đặc điểm đấy khiến cho scope và closure của js không giống như các ngôn ngữ phổ biến khác.</p>
+<p>Đầu tiên chúng ta sẽ nói về scope</p>
+<h2 id="scope">1. <strong><em><u>Scope</u></em></strong></h2>
+<p>Như chúng ta vừa nói ở trên, scope là khái niệm qui định “visibility” và “lifetime” của variable. Thông thường, ví dụ như C thì scope sẽ là <strong>block scope</strong>, tức là những biến <strong>tạo ra</strong> trong block sẽ chỉ được nhìn thấy trong block đấy thôi, và khi ra ngoài block đấy thì những variable nằm trong block sẽ được giải phóng ( như trong C là các biến tạo ra trong stack sẽ được free khi ra khỏi block), và không nhìn thấy được nữa.</p>
+<p>Tuy nhiên rất buồn là javascript của chúng ta lại không có cái scope dễ hiểu đến thế, mà nó lại là <strong>function block</strong>.Function block ở đây là gì: tức là những gì bạn tạo ra trong một function sẽ available ở trong function đó. Vì javascript cũng là block syntax, nên sẽ hơi dễ confusing, chúng ta sẽ dùng ví dụ dễ hiểu này:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>function.js </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">scope</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="kc">true</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">test</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="nx">alert</span><span class="p">(</span><span class="nx">test</span><span class="p">);</span> <span class="err">#</span><span class="o">=&gt;</span> <span class="mi">1</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="nx">scope</span><span class="p">();</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Nói đến đây chắc chắn có bạn sẽ nghĩ đến điều gì xảy ra khi chúng ta có <strong>nested function</strong>. Let’s try</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>function.js </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">outer</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">outer_var</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+</span><span class='line'>  <span class="kd">function</span> <span class="nx">inner</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">alert</span><span class="p">(</span><span class="nx">outer_var</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="nx">inner</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="nx">outer</span><span class="p">();</span> <span class="err">#</span><span class="o">=&gt;</span> <span class="mi">2</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Từ ví dụ trên ta có thể dễ dàng thấy là inner function có thể access được outer function variable. Từ ví dụ này chúng ta có thể thấy là <strong>inner function có thể inherit biến của outer function</strong>, hay nói cách khác, inner function <strong>chứa(contain)</strong> scope của outer function. Chính nhờ điều đặc biệt này mà chúng ta có cái gọi là <strong>Closure</strong> mà mình sắp sửa nói đến ngay dưới đây. Một điều chú ý là đối với nhiều ngôn ngữ thì các bạn hay được khuyên là declare biến muộn nhất có thể để tránh overhead, tuy nhiên với javascript là ngôn ngữ với <strong>function scope</strong> thì best practice lại là <strong>declare biến sớm nhất có thể </strong> để tránh nguy cơ xảy ra một số lỗi không mong muốn.</p>
+<h2 id="closure">2. <strong><em><u>Closure</u></em></strong></h2>
+<p>Quote lại cái định nghĩa cho đỡ quên:</p>
+<blockquote>
+<p>A closure is an expression (typically a function) that can have free variables <strong>together with an environment that binds those variables (that “closes” the expression).</strong></p>
+</blockquote>
+<p>Chắc có bạn sẽ thắc mắc, <strong>environment</strong> ở đây là gì. Để hình dung một cách dễ hiểu, thì environment ở đây trong phần lớn các trường hợp chính là cái outer function mà chung ta vừa thử ở ví dụ về scope ở trên. Một đặc điểm rất hay của closure là <strong>closure sẽ giữ tham chiếu đến các biến nằm bên trong nó, hoặc được gọi đến bên trong nó</strong>. Điều này dẫn đến việc gì? Chắc sẽ có bạn nghĩ đến một trường hợp rất đặc biệt là khi bạn muốn context của một function được giữ lại sau khi hàm đó đã được execute xong :D. Hãy bắt đầu bằng một ví dụ:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>closure.js </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">outside</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">function</span> <span class="nx">inside</span><span class="p">(</span><span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nx">x</span> <span class="o">+</span> <span class="nx">y</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="k">return</span> <span class="nx">inside</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="nx">fn_inside</span> <span class="o">=</span> <span class="nx">outside</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+</span><span class='line'><span class="nx">result</span> <span class="o">=</span> <span class="nx">fn_inside</span><span class="p">(</span><span class="mi">5</span><span class="p">);</span> <span class="c1">// #=&gt; 8</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">result1</span> <span class="o">=</span> <span class="nx">outside</span><span class="p">(</span><span class="mi">3</span><span class="p">)(</span><span class="mi">5</span><span class="p">);</span> <span class="c1">// #=&gt; 8</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Bạn có nhận thấy điều gì đặc biệt ở trên? Điều đặc biệt nằm ở hàm <strong>fn_inside</strong> : hàm fn_inside được tạo ra bởi kết quả trả về của hàm outside() với parameter là 3, và bạn có thể nhận thấy hàm fn_inside vẫn giữ tham chiếu đến cái parameter 3 đó <strong>ngay cả khi hàm outside() đã được execute xong</strong>. Chắc các bạn sẽ thấy mâu thuẫn với cái lý thuyết về function scope chúng ta đã nói đến ở trên, khi mà <em>mọi thứ được tạo ra trong function của js chỉ nhìn thấy và sử dụng được ở trong đó, và sẽ được giải phóng hoặc không nhìn thấy khi ra ngoài function đó</em>. Thực tế là không hề mâu thuẫn chút nào cả, chính vì cái gọi là closure của js :D. Nói một cách cụ thể hơn: <strong>fn_inside khi được tạo ra đã đồng thời cũng tạo ra một cái closure (bao đóng), trong cái bao đó, giá trị 3 được truyền vào, và cái bao của fn_inside sẽ vẫn giữ cái giá trị 3 đó cho dù outside() function có execute xong</strong>. Các bạn cứ hình dung trực quan closure như một cái bao chứa rất nhiều thứ trong nó là sẽ thấy dễ hiểu hơn:</p>
+<p><img src="/images/closurejs/closure.png"></p>
+<p>Như vậy chúng ta có thể tóm gọn lại đoạn code ở trên như sau:</p>
+<ol type="1">
+<li>Khi outside() được gọi, outside trả về một function</li>
+<li>function được outside trả lại (fn_inside) đó đóng lại cái context hiện tại và cái context đó <strong>chứa biến x tại thời điểm outside() được gọi</strong></li>
+<li>Khi fn_inside được gọi, nó vẫn nhớ x có giá trị là 3</li>
+<li>Khi invoke fn_inside(5) thì nó sẽ lấy giá trị biến y=5 + giá trị biến x=3 và kết quả sẽ là 8</li>
+</ol>
+<p>Như vậy chúng ta có thể rút ra một đặc điểm của closure là: &gt; <strong><em>A closure must preserve the arguments and variables in all scopes it references</em></strong></p>
 <ul>
-<li><p>Lý do đầu tiên là không happy thì bạn sẽ không làm được gì cả, đơn giản là vậy thôi. Bạn làm công việc gì cũng vậy, nếu bạn cảm thấy không thoải mái với nó thì tốt nhất là không nên làm, mỗi người chỉ có một cuộc sống, đừng phí thời gian làm những gì bạn không thích.</p></li>
-<li><p>Lý do thứ hai, bạn có biết là programmer là một trong số hiếm các ngành bạn được <strong>làm đúng cái bạn được học ra</strong>, và có thể <strong>kiếm tiền đủ sống</strong> với nó (Định nghĩa đủ sống của mình là đủ ăn no, tiêu không phải dè sẻn, đủ để thi thoảng đi du lịch, để thi thoàng mua sắm, tính theo tiền Việt với mình cứ lương tầm 1k2 trở lên mình gọi là đủ sống). Tất nhiên để có cái đủ sống đó thì bạn không thể là một average programmer, ít ra bạn phải là một người có kĩ năng tương xứng.</p></li>
-<li><p>Lý do thứ ba, với mình là một người không thích cuộc sống nhàm chán, thì cái nghề lập trình là cái nghề mà mỗi ngày đều có cái để mình suy nghĩ, để giải quyết. Niềm vui lớn nhất của mình là có vấn đề, giải quyết, và đem solution đi khoe với thằng đồng nghiệp, rồi nó tròn mắt ra thán phục, kể cũng sướng.</p></li>
+<li><p>Một câu hỏi được đặt ra là: Khi nào cái biến x được giải phóng?? Câu trả lời là khi mà cái context mà biến x được reference đến ( ở đây là fn_inside ) không còn accessible được nữa ( refer đến scope của js, chúng ta có thể hiểu là khi mà function chứa fn_inside được execute xong và không còn bất kì tham chiếu nào đến fn_inside nữa ).</p></li>
+<li><p>Một câu hỏi khác được đặt ra là với multi-nested function thì điều gì sẽ xảy ra?? Let’s give a try:</p></li>
 </ul>
-<p>Với từng đấy lý do thì chắc các bạn có thể thấy là, trở thành một happy programmer là một điều nên làm, đúng không :D. Chắc nhiều bạn thắc mắc mình có chỗ đứng thế nào mà lại khuyên bảo các bạn. Mình không kiếm nhiều tiền, và cũng không nổi tiếng, do đấy mình không thể khuyên bảo bất kì ai.Mình chỉ muốn chia sẻ là mình đang cực kì happy với việc mỗi ngày được code cái gì đó useful, tìm hiểu thêm được về công nghệ mới, bàn luận về thuật toán với mấy thằng bạn :D</p>
-<p>Hơi lạc đề một chút, thực trạng IT ở Việt Nam đang làm chúng ta không có nhiều happy programmer, hay đúng hơn là chỉ có một số ít programmer cảm thấy happy với công việc, mức lương và luôn cố gắng để hoàn thiện kĩ năng bản thân. IT Việt Nam hiện nay theo mình đang chia làm 2 mảng chính Start-up và Outsource. Ở bên Start-up với lực lượng chính là các venture (và một số các ông lớn như VNG) có vẻ xuất hiện nhiều happy programmer hơn, mình chỉ biết sơ sơ về mảng này thông qua một vài người bạn, nên không dám nhận xét nhiều. Còn ở bên mảng Outsource, cái mảng mà đang chiếm phần lớn tỉ trọng trong mảng IT VN, thì thực trạng tỉ lệ công việc nhàm chán cao, không yêu cầu kĩ năng, cộng với tầm nhìn công nghệ hạn hẹp của các ông chủ thì đang có thực trạng là các lập trình viên thường chăm chăm nhảy lên project manager. Việc đấy không có gì là sai cả, hoàn toàn đúng là khác, chỗ nào lương cao hơn, ta nhảy lên chỗ đó, là mình mình cũng làm thế. Cái sai ở đây là cái sai của những người lãnh đạo, mình nghĩ họ là những người không có tầm nhìn (đặc biệt là tầm nhìn về mặt công nghệ), họ có thể kiếm được tiền, rất nhiều tiền (có thể hàng chục tỉ, hàng trăm tỉ) nhưng cái đó chắc không còn lâu nữa, khi mà cái thị trường lao động rẻ màu mỡ VN không còn là duy nhất, và không còn chỗ để khai thác. Chính vì vậy nếu bạn là một người làm outsource, mà không cố để trở thành một happy programmer ngay khi còn có thể, thì không lâu nữa chắc mình sẽ gặp lại bạn ở đầu dốc Bưởi :D. Mình sẽ nói về outsource Việt Nam trong một bài khác.</p>
-<p>Quay lại vấn đề chính, hiện tại cá nhân mình thấy mình đang là một happy programmer :D. Tuy nhiên việc duy trì cái sự happy đấy đòi hỏi mình phải làm theo một số rule và duy trì một nhịp sống để luôn keep high motivation. Dưới đây là những cái mình đã và đang thực hiện hàng ngày,đó cũng là những rule chung mà nếu ai có điều kiện cũng nên thử làm, mình nghĩ nó sẽ ít nhiều có ích cho các bạn :</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>multinested.js </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">A</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">function</span> <span class="nx">B</span><span class="p">(</span><span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kd">function</span> <span class="nx">C</span><span class="p">(</span><span class="nx">z</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">alert</span><span class="p">(</span><span class="nx">x</span> <span class="o">+</span> <span class="nx">y</span> <span class="o">+</span> <span class="nx">z</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="nx">C</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="nx">B</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="nx">A</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span> <span class="err">#</span><span class="o">=&gt;</span> <span class="mi">6</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Ở đoạn code trên thì điều gì đã xảy ra?</p>
+<ol type="1">
+<li>B tạo ra một cái closure chữa context của A, do đó B có thể access vào A’s variable, ở đây là x</li>
+<li>C tạo ra một cái closure chứa context của B</li>
+<li>Vì B chứa context của A nên C cũng sẽ chứa context của A, tức là C cũng access được vào biến x của A, và cả biến y của B.</li>
+</ol>
+<p>Do đó kết quả sẽ là 1+2+3=6, khá là obvious nhỉ. Đoạn code ở trên giúp chúng ta có thêm một khái niệm mới gọi là <strong><em>scope chaining</em></strong>. Tại sao gọi là chaining, vì khi context được include từ outer function vào inner function, thì chúng ta sẽ hiểu một cách đơn giản là context của inner function và context của outer function được nối với nhau, một cách có chiều (<strong>directed</strong>). Và độ ưu tiên khi access biến là từ trong ra ngoài.</p>
+<p><img src="/images/closurejs/closure2.png"></p>
+<p>Do cái scope chaining là directed nên ở phía ngược lại, A lại không thể access được C, vì C nằm trong context của B, và chỉ visible <strong>inside B</strong>, hay nói cách khác là C sẽ là private của B, và không nhìn được từ A.</p>
 <ul>
-<li><p>Stay healthy: Một trong những đặc điểm chung của nerdy là sinh hoạt cực kì thiếu điều độ. Có một thời gian dài mình toàn ngủ lúc 4h, dậy lúc 12h, cho đến gần đây mình mới nhận thấy là sinh hoạt điều độ (ngủ lúc 12h, dậy 8h30, ngồi đọc sách, code một tí, ăn cơm, lên trường, tối về đúng giờ, ăn cơm đúng giờ, code một tí, đi ngủ) đem lại cho mình khả năng tập trung tốt hơn hẳn, và cũng đớ hẳn một số cảm giác khó chịu trước hay gặp như đầy bụng, buồn ngủ…</p></li>
-<li><p>Embrace the uncomfortable: sẵn sàng làm những việc không thoải mái cũng là những việc nên tập. Một ví dụ đơn giản nhất là làm unit-test. Đợt mới làm việc mình cực ghét unit-test (cũng một phần tại chỗ mình làm unit-test thiếu chuyên nghiệp quá). Kết quả thì là code bug , và khi code có thay đổi lớn về kiến trúc, không có unit-test thì chắc bạn chỉ có khóc, bạn sẽ không biết đoạn nào chạy đoạn nào không. Do đấy việc cố làm những gì mình cảm thấy không thoải mái vừa là một cách rèn luyện mình, mình tin là khi làm rồi bạn sẽ không còn cảm thấy việc gì là uncomfortable nữa.</p></li>
-<li><p>Learn a new programming language: Nhiều bạn chắc sẽ tự nghĩ, ngôn ngữ lập trình thì mình biết cả thùng, từ c, cpp, java, perl, python… Bạn nào nghĩ thế chắc nên đọc lại http://norvig.com/21-days.html của peter norvig. Học một ngôn ngữ mới, mình định nghĩa hiểu về ngôn ngũ đấy khi bạn có thể viết được một cái gì đấy useful bằng ngôn ngữ đó, một cái web crawler, một con chat-bot, một cái web,…, bạn hiểu ngôn ngữ đấy về mặt bản chất (vd như js thì ít ra phải hiểu prototype programming, module pattern, hay ruby thì hiểu metaprogramming, ruby vm,… python thì chí ít cũng nắm được cái decorator nó là cái gì, hay là new-style class với old-style class khác nhau thế nào). Học ngôn ngữ mới giúp bạn có cái nhìn rộng hơn, làm đầu óc bạn flexible hơn. Cá nhân mình thì thấy khi đã hiểu kĩ imperative programming thì bạn nên đọc thêm về declarative programming( ví dụ như haskell hay scala(functional programming) hay prolog(logic programming))</p></li>
-<li><p>Automate: automate là kĩ năng không thể thiếu của bất kì programmer nào. Bản chất của programmer là phải lazy and dumb. Lý do tại sao thì bạn tham khảo tại http://www.codinghorror.com/blog/2005/08/how-to-be-lazy-dumb-and-successful.html. Automate là bước đầu hiện thực hóa của lazy. Bạn phải gõ đi gõ lại một thứ, phải click đi click lại một thứ mà bạn vẫn miệt mài ngồi làm thì chắc bạn nên bỏ nghề đi thôi :D. Hãy viết tool automate bất cứ cái gì có thể.</p></li>
-<li><p>Learn more mathematic: Cái này thì không áp dụng với tất cả mọi người. Có 2 type of computer programmer: computer scientist và computer engineer. Computer scientist sẽ làm những công việc có hàm lượng “science” cao hơn một chút, như physic engine, compiler optimizer hay data mining, hoặc pattern recognition.. Còn computer engineer sẽ làm thiên về technical, họ sẽ có rất nhiều trick để làm chương trình chạy nhanh hơn, có rất nhiều kĩ năng để làm một hệ thống robust. Đi theo hướng nào là tùy career path của từng người. Cá nhân mình thì mình thích có tí gì đó thiên về khoa học, do đấy những kĩ năng về probabilistic, matrix algebra, linear algebra là phải có. Và toán là một trong những kĩ năng không thể nhồi ngay được, nên bắt buộc bạn phải học mỗi ngày, hay mỗi tuần một chút một. Nếu bạn không có chút interest nào với toán thì bạn có thể thay toán bằng algorithm, thi thoảng lên topcoder hay project euler ngồi làm cũng giúp bạn có kĩ năng tốt hơn để giải quyết công việc hàng ngày :).</p></li>
-<li><p>Focus on security: Rất nhiều app developer thiếu những kĩ năng về security cơ bản, đặc biệt là web app với những xss hay sql injection, cho đến khi bị tấn công thì mới ngớ người ra. Ngay cả developer ở những tập đoàn lớn như facebook hay twitter cũng đã từng mắc những lỗi cơ bản liên quan đến oauth (đặc biệt là twitter).Do đó việc tìm hiểu về những lỗ hổng cơ bản là cần thiết với tất cả các programmer.</p></li>
-<li><p>Complete a personal project: side project là một trong những yếu tố rất quan trọng giúp bạn keep high motivation cho việc phát triển career path để thành một programmer đúng nghĩa. Với side project, bạn có thể làm gì bạn thích, design những gì bạn muốn, up lên github, khoe hàng trên ycombinator, và tự hào nhìn số starred của repo trên github (cá nhân mình thì chưa làm được cái đoạn từ khoe hàng trên ycombinator), nhưng mình vẫn cố gằng nghĩ ra, và hoàn thành các side project, chỉ vì đơn giản là nó giúp mình happy và highly motivated với việc là một programmer đúng nghĩa</p></li>
-<li><p>Get your community: Ở VN hiện tại có một điều mình rất bức xúc là thiếu cộng đồng làm công nghệ. Thiếu cộng đồng thì bạn làm gì đi nữa, có side project khủng bố thế nào đi nữa thì cũng chả khác gì bạn đang masturbate cả :D. Mô hình meetup hay conference giúp bạn có thể giao lưu với những người cùng sở thích, biết bạn đang đứng ở đâu, và làm thể nào để phát triển bản thân. Bạn sẽ có những lời khuyên tốt nhất và chân thành nhất. Chính vì vậy đừng ngần ngại, hãy tìm những người bạn cùng sở thích lập trình, lập thành các group, cùng giải quyết vấn đề, bạn sẽ học được nhiều điều hơn bạn nghĩ :D</p></li>
+<li>Lại có một bạn nghĩ là khi outer function có biến tên là x, mà ta cũng truyền 1 biến tên là x vào inner function, tức là khi có name-conflict thì chuyện gì sẽ xảy ra. Let’s take an example</li>
 </ul>
-<h2 id="the-end">The end</h2>
-<p>Trên đây là những điều mình vẫn đang làm hàng ngày, và những điều đấy giúp mình luôn tin là mình đang đi đúng con đường mình đã chọn. Bạn hãy thử làm xem bạn có trở nên happy hơn với việc là một programmer không, nếu không thì mình nghĩ là bạn nên đổi nghề… :D. Chúc các bạn thành công.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>nameconflict.js </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">outside</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
+</span><span class='line'>  <span class="kd">function</span> <span class="nx">inside</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nx">x</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="k">return</span> <span class="nx">inside</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="nx">result</span> <span class="o">=</span> <span class="nx">outside</span><span class="p">()(</span><span class="mi">20</span><span class="p">);</span> <span class="err">#</span><span class="o">=&gt;</span> <span class="mi">20</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Bạn có thể thấy kết quả trả về biến x được trực tiếp truyền vào inner function thay vì biến x của outer function. Sử dụng khái niệm scope chaining ở trên thì chúng ta có thể thấy độ ưu tiên của context inside là cao hon context outside khi intepreter tìm giá trị của x, nên giá trị của x ở inside (ở đây là 20) sẽ được sử dụng.</p>
+<p>Hy vọng là với 3 ví dụ trên các bạn đã có cái nhìn rõ ràng hơn về closure.</p>
+<h2 id="closure-pitfalls">3. <strong><em><u>Closure pitfalls</u></em></strong></h2>
+<p>Closure là một khái niệm khá dễ nhầm lẫn và khó nắm rõ với những người người ít quan tâm đến javascript. Một trong những ví dụ hay được dùng để minh họa cái sự dễ nhầm này được gọi là <strong>The Infamous Loop Problem</strong>. Ví dụ này được minh họa bằng đoạn code dưới đây:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>closurepitfall.js </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">add_the_handlers</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">nodes</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">i</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">for</span> <span class="p">(</span><span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">nodes</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">nodes</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">onclick</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">alert</span><span class="p">(</span><span class="nx">i</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">};</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'><span class="nx">nodes</span> <span class="o">=</span> <span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s2">&quot;click&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="nx">add_the_handlers</span><span class="p">(</span><span class="nx">nodes</span><span class="p">);</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Đoan code ở trên làm một việc là tìm tất cả các node có id là “click”, add vào node đó một cái sự kiện là khi click vào node đó sẽ alert lên thứ tự của node đó. Giả sử bạn có một file html như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>closurepitfall.html </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='html'><span class='line'><span class="nt">&lt;li</span> <span class="na">id=</span><span class="s">&quot;click&quot;</span><span class="nt">&gt;</span>link 1 <span class="nt">&lt;/li&gt;</span>
+</span><span class='line'><span class="nt">&lt;li</span> <span class="na">id=</span><span class="s">&quot;click&quot;</span><span class="nt">&gt;</span>link 2 <span class="nt">&lt;/li&gt;</span>
+</span><span class='line'><span class="nt">&lt;li</span> <span class="na">id=</span><span class="s">&quot;click&quot;</span><span class="nt">&gt;</span>link 3 <span class="nt">&lt;/li&gt;</span>
+</span><span class='line'><span class="nt">&lt;li</span> <span class="na">id=</span><span class="s">&quot;click&quot;</span><span class="nt">&gt;</span>link 4 <span class="nt">&lt;/li&gt;</span>
+</span><span class='line'><span class="nt">&lt;li</span> <span class="na">id=</span><span class="s">&quot;click&quot;</span><span class="nt">&gt;</span>link 5 <span class="nt">&lt;/li&gt;</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Bạn hy vọng là khi click vào link 1 sẽ alert 1, click vào link 2 sẽ alert ra 2…. đúng không. Tuy nhiên thực tế là <strong>bạn click vào link nào nó cũng alert ra 5 cả</strong>. Kì lạ nhỉ? Để giải thích cho hiện tượng này thì chúng ta hãy xem lại khái niệm về closure nào. Biến i được sử dụng trong anonymous function được gán cho onclick, được <strong>kế thừa từ context của add_the_handlers function</strong>. Tại thời điểm mà bạn gọi onclick, for loop đã được execute xong, và biến i <strong>của context của add_the_handlers</strong> lúc này có giá trị là 5. Do đó bạn có click vào link nào thì giá trị được alert ra cũng là 5 cả. Điểm chú ý của việc này chính là do bạn đang nhầm lẫn, hay chính xác là có sự khác biệt giữa <strong>scope/context của for-loop</strong> với <strong>scope/context của outer function là add_the_handlers </strong>.</p>
+<p>Để giải quyết vấn đề này thì bạn có thể làm như dưới đây:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>pitfall.js </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">add_the_handlers</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">nodes</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">helper</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">i</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">alert</span><span class="p">(</span><span class="nx">i</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">};</span>
+</span><span class='line'>  <span class="p">};</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">i</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">for</span> <span class="p">(</span><span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">nodes</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">modes</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">onclick</span> <span class="o">=</span> <span class="nx">helper</span><span class="p">(</span><span class="nx">i</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Point của cách làm này chính là việc truyền được giá trị của (i) tại thời điểm hiện tại vào closure của function được bind (gán) vào onclick. Giúp cho hàm helper() luôn tham chiếu đến giá trị i đúng. Một best practice để tránh những sai lầm như thế này là &gt; Avoid creating functions within a loop. It can be wasteful computationally,and it can cause confusion (tránh tạo mới function trong vòng loop, vì nó vừa làm tốn tài nguyên cpu, vừa dễ gây nhầm lẫn)</p>
+<h1 id="kết-luận">Kết luận</h1>
+<p>Như vậy qua bài viết này chúng ta đã nắm được khái niệm về function scope và closure trong javascript, và một số best practices trong việc sử dụng closure và scope. Closure trong javascript hay sử dụng để tạo ra một cái bao mà các thứ trong đấy không được nhìn thấy bởi bên ngoài nhưng vẫn truy cập được từ bên trong, và thường được áp dụng cho một số design pattern trong js (tiêu biểu nhất là module pattern).Chi tiết hơn các bạn có thể tham khảo ở các tài liệu sau:</p>
+<ul>
+<li><a href="http://www.amazon.com/JavaScript-Good-Parts-Douglas-Crockford/dp/0596517742/ref=sr_1_1?ie=UTF8&amp;qid=1368334060&amp;sr=8-1&amp;keywords=javascript+the+good+part">Javascript the good part (by Douglas Crockford)</a></li>
+<li><a href="http://www.ecma-international.org/publications/standards/Ecma-262.htm">Ecma-262 standard</a></li>
+<li><a href="http://robertnyman.com/2008/10/09/explaining-javascript-scope-and-closures/" class="uri">http://robertnyman.com/2008/10/09/explaining-javascript-scope-and-closures/</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Functions_and_function_scope" class="uri">https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Functions_and_function_scope</a></li>
+</ul>
+		
+		
+	</div>
+
+</article>
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-05-09T15:31:00+09:00" data-updated="true" itemprop="datePublished">May 9<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/05/09/y-nghia-cua-tu-khoa-volatile-trong-c/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/05/09/y-nghia-cua-tu-khoa-volatile-trong-c/" itemprop="url">Ý Nghĩa Của Từ Khóa Volatile Trong C</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1 id="mở-đầu">Mở đầu</h1>
+<p>Trong lập trình nhúng (embedded system), ta rất thường hay gặp khai báo biến với từ khóa volatile. Việc khai báo biến volatile là rất cần thiết để tránh những lỗi sai khó phát hiện do tính năng optimization của compiler. Trong bài viết này, ta sẽ tìm hiểu ý nghĩa của từ khóa này, cách sử dụng nó và giải thích tại sao nó quan trọng trong một số trường hợp lập trình với hệ thống nhúng và lập trình ứng dụng đa luồng.</p>
+<h1 id="tại-sao-cần-phải-có-biến-volatile">Tại sao cần phải có biến volatile</h1>
+<p>Cách khai báo biến với từ khóa volatile:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class=''><span class='line'>volatile int foo;//both this way...
+</span><span class='line'>int volatile foo;//... and this way is OK! Define a volatile integer variable
+</span><span class='line'>
+</span><span class='line'>volatile uint8_t *pReg;//both this way...
+</span><span class='line'>uint8_t volatile *pReg;//... and this way is OK! Define a pointer to a volatile unsigned 8-bit integer</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Một biến cần được khai báo dưới dạng biến volatile khi nào? Khi mà giá trị của nó có thể thay đổi một cách không báo trước. Trong thực tế, có 3 loại biến mà giá trị có thể bị thay đổi như vậy:</p>
+<ul>
+<li>Memory-mapped peripheral registers (thanh ghi ngoại vi có ánh xạ đến ô nhớ)</li>
+<li>Biến toàn cục được truy xuất từ các tiến trình con xử lý ngắt (interrupt service routine)</li>
+<li>Biến toàn cục được truy xuất từ nhiều tác vụ trong một ứng dụng đa luồng.</li>
+</ul>
+<h2 id="thanh-ghi-ngoại-vi">Thanh ghi ngoại vi</h2>
+<p>Trong các hệ thống nhúng thường có các thiết bị ngoại vi (ví dụ như cổng vào ra đa chức năng GPIO, cổng UART, cổng SPI, …), và các thiết bị ngoại vi này chứa các thanh ghi mà giá trị của nó có thể thay đổi ngoài ý muốn của dòng chương trình (program flow). Ví dụ một thanh ghi trạng thái pStatReg, ta cần phải thực hiện polling thanh ghi trạng thái này đến khi nó khác 0 (Đoạn code minh họa với Keil ARM compiler, trên vi điều khiển ARM LPC2368)</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>mappedIOi_nonvolatile.c</span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='c'><span class='line'><span class="kt">unsigned</span> <span class="kt">long</span> <span class="o">*</span> <span class="n">pStatReg</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="o">*</span><span class="p">)</span> <span class="mh">0xE002C004</span><span class="p">;</span>
+</span><span class='line'><span class="c1">//Wait for the status register to become non-zero</span>
+</span><span class='line'><span class="k">while</span><span class="p">(</span><span class="o">*</span><span class="n">pStatReg</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Đoạn code này có gì không ổn? Nó sẽ chạy sai khi ta bật chức năng tối ưu (optimization) của compiler. Quan sát mã assembly mà compiler xuất ra của đoạn code trên như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>mappedIO_nonvolatile.s</span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='s'><span class='line'>        LDR      r0<span class="p">,</span><span class="o">|</span>L2.564<span class="o">|</span>
+</span><span class='line'>        SUB      sp<span class="p">,</span>sp<span class="p">,</span><span class="c1">#0x10</span>
+</span><span class='line'>        LDR      r0<span class="p">,[</span>r0<span class="p">,</span><span class="c1">#0]</span>
+</span><span class='line'><span class="o">|</span>L2.22<span class="o">|</span>
+</span><span class='line'>        CMP      r0<span class="p">,</span><span class="c1">#0</span>
+</span><span class='line'>        BEQ      <span class="o">|</span>L2.22<span class="o">|</span>
+</span><span class='line'>        LDR      r1<span class="p">,</span><span class="o">|</span>L2.564<span class="o">|</span>
+</span><span class='line'><span class="kc">...</span>
+</span><span class='line'><span class="o">|</span>L2.564<span class="o">|</span>
+</span><span class='line'>        DCD      <span class="mh">0xe002c004</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Trước khi vào label |L2.22|, tương ứng với vòng lặp while, thanh ghi r0 được ghi vào giá trị được lưu trong ô nhớ 0xE002C004. Khi vào vòng lặp while, compiler thực hiện ngay việc so sánh giá trị của thanh ghi r0 với 0. Tại sao lại như vậy? Vì compiler nhận thấy biến pStatReg là một biến normal, giá trị của nó được hiểu là không thể thay đổi một cách bất thường. Do vậy, khi bật tối ưu, compiler sẽ chỉ thực hiện so sánh giá trị của r0 mà không load lại giá trị này từ ô nhớ 0xE002C004, vì theo flow của chương trình thì biến pStatReg không bị thay đổi ở bất cứ đâu. Do đó, vòng lặp while sẽ chạy vô tận, hoặc không chạy gì cả (tùy theo giá trị ban đầu mà pStatReg trỏ đến).</p>
+<p>Điều gì sẽ xảy ra nếu ta đổi biến pStatReg sang volatile?</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>mappedIO_volatile.c</span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='c'><span class='line'><span class="k">volatile</span> <span class="kt">unsigned</span> <span class="kt">long</span> <span class="o">*</span> <span class="n">pStatReg</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="o">*</span><span class="p">)</span> <span class="mh">0xE002C004</span><span class="p">;</span>
+</span><span class='line'><span class="c1">//Wait for the status register to become non-zero</span>
+</span><span class='line'><span class="k">while</span><span class="p">(</span><span class="o">*</span><span class="n">pStatReg</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Mã assembly mà compiler xuất ra sẽ như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>mappedIO_volatile.s</span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='s'><span class='line'>    SUB      sp<span class="p">,</span>sp<span class="p">,</span><span class="c1">#0x10</span>
+</span><span class='line'>        LDR      r0<span class="p">,</span><span class="o">|</span>L3.544<span class="o">|</span>
+</span><span class='line'><span class="o">|</span>L3.4<span class="o">|</span>
+</span><span class='line'>        LDR      r1<span class="p">,[</span>r0<span class="p">,</span><span class="c1">#0]</span>
+</span><span class='line'>        CMP      r1<span class="p">,</span><span class="c1">#0</span>
+</span><span class='line'>        BEQ      <span class="o">|</span>L3.4<span class="o">|</span>
+</span><span class='line'>        LDR      r1<span class="p">,</span><span class="o">|</span>L3.544<span class="o">|</span>
+</span><span class='line'><span class="kc">...</span>
+</span><span class='line'><span class="o">|</span>L3.544<span class="o">|</span>
+</span><span class='line'>        DCD      <span class="mh">0xe002c004</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Điều gì khác biệt ở đây? Đầu tiên, ở dòng LDR trước label |L3.4|, compiler đã đặt địa chỉ 0xE002C004 vào thanh ghi r0. Ở dòng LDR đầu tiên ngay sau label |L3.4|, ta thấy compiler đã LOAD LẠI GIÁ TRỊ của ô nhớ 0xE002C004 vào ô nhớ r1! Sau đó nó mới thực hiện so sánh giá trị của ô nhớ r1 này với 0.</p>
+<p>Lý do là gì? Vì ta đã đặt biến pStatReg là biến volatile, để báo hiệu là biến này có thể thay đổi một cách bất thường, ngoài flow của chương trình. Do vậy nên, để “đề phòng”, compiler lúc nào cũng phải load lại giá trị mới của ô nhớ 0xE002C004, để đảm bảo mình có giá trị mới nhất!</p>
+<p>Đến đây, bạn có thể hỏi là “giá trị bị thay đổi một cách bất thường” là như thế nào? Hiện tượng này đặc biệt hay xảy ra khi lập trình nhúng. Trong hệ thống nhúng, một thanh ghi có thể bị thay đổi giá trị do những điều kiện bên ngoài. Ví dụ như mức điện áp không vượt quá ngưỡng, làm cho giá trị 0 thành 1, 1 thành 0. Hoặc, khi cổng UART nhận được đầy buffer thì thanh ghi BUFFER_READY tự động chuyển 0 thành 1… Bằng cách sử dụng biến volatile, chương trình C được compiler biên dịch sẽ đảm bảo luôn luôn đọc lại giá trị của thanh ghi, tránh mọi assumption của compiler.</p>
+<h2 id="tiến-trình-con-xử-lý-ngắt-interrupt-service-routine">Tiến trình con xử lý ngắt (Interrupt Service Routine)</h2>
+<p>Ngắt là một khái niệm quan trọng trong hệ thống nhúng. Có nhiều loại ngắt khác nhau như ngắt vào ra (I/O), ngắt SPI, ngắt UART… Mỗi khi xảy ra ngắt, stack pointer sẽ nhảy đến chương trình con xử lý ngắt (ISR). Thường thì các chương trình con xử lý ngắt này sẽ thay đổi giá trị của biến toàn cục và trong chương trình chính sẽ đọc những giá trị này để xử lý.</p>
+<p>Để dễ hiểu, lấy ví dụ ngắt cổng serial (UART) kiểm tra các kí tự nhận được xem có phải là 0xFF không. Nếu là kí tự 0xFF, ISR sẽ set một biến cờ toàn cục. Nếu không có volatile, code như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>isr.c </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='c'><span class='line'><span class="kt">int</span> <span class="n">etx_rcvd</span> <span class="o">=</span> <span class="n">FALSE</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="nf">main</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="p">...</span>
+</span><span class='line'>  <span class="k">while</span><span class="p">(</span><span class="o">!</span><span class="n">ext_rcvd</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="c1">//Wait...</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="p">...</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">interrupt</span> <span class="kt">void</span> <span class="nf">rx_isr</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="p">...</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="mh">0xFF</span> <span class="o">==</span> <span class="n">rx_char</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="p">...</span>
+</span><span class='line'>      <span class="n">etx_rcvd</span> <span class="o">=</span> <span class="n">TRUE</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="p">...</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Ta để ý trong main(): compiler không thể biết được là biến ext_rcvd có thể bị thay đổi trong ISR. Compiler dò đoạn code, thấy rằng biểu thức !ext_rcvd luôn đúng, vì thế không thể thoát được vòng lặp while. Nếu compiler được bật optimization lên, tất cả đoạn code sau vòng lặp while sẽ bị loại bỏ. Nếu không có warning cẩn thận, chương trình của ta có thể bị lỗi mà phát hiện rất khó.</p>
+<p>Giải pháp là đặt biến ext_rcvd là biến volatile. compiler sẽ biết đó là biến có thể bị thay đổi theo một cách nào đó ngoài ý muốn (ở đây là do ISR). Compiler sẽ bị buộc phải check giá trị của biến ext_rcvd.</p>
+<h2 id="ứng-dụng-đa-luồng">Ứng dụng đa luồng</h2>
+<p>Trong các ứng dụng đa luồng, thường xảy ra trường hợp các tác vụ trao đổi thông tin với nhau thông qua một biến toàn cục. Như vậy, một tác vụ thay đổi giá trị của biến toàn cục cũng sẽ giống như trường hợp ISR ở trên. Nếu compiler mà bật tính năng optimization thì sẽ xảy ra vấn đề.</p>
+<p>Ví dụ đoạn code</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>multithreaded.c </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='c'><span class='line'><span class="kt">int</span> <span class="n">cntr</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="nf">task1</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="n">cntr</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="k">while</span><span class="p">(</span><span class="n">cntr</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="c1">//code follows...</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="nf">task2</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="c1">//...code...</span>
+</span><span class='line'>  <span class="n">cntr</span> <span class="o">++</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+</span><span class='line'>  <span class="c1">//...code...</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Cách khắc phục vấn như cũ: đặt biến cntr thành biến volatile !</p>
 		
 		
 	</div>
@@ -714,7 +963,7 @@ $ echo $?
     <div class="center"><a href="/blog/archives">Blog Archives</a></div>
 </nav></div>
 			</div>
-			<footer id="footer" class="inner">Copyright &copy; 2014
+			<footer id="footer" class="inner">Copyright &copy; 2015
 
     kỹ thuật máy tính
 

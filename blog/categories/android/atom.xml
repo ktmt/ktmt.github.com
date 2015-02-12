@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: android | Blog kỹ thuật máy tính]]></title>
+  <link href="http://git@github.com.github.com/blog/categories/android/atom.xml" rel="self"/>
+  <link href="http://git@github.com.github.com/"/>
+  <updated>2015-02-13T00:23:54+09:00</updated>
+  <id>http://git@github.com.github.com/</id>
+  <author>
+    <name><![CDATA[kỹ thuật máy tính]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Android NDK và OpenSSL(Phần 2)]]></title>
+    <link href="http://git@github.com.github.com/blog/2014/09/27/android-ndk-va-openssl-phan-2/"/>
+    <updated>2014-09-27T17:31:00+09:00</updated>
+    <id>http://git@github.com.github.com/blog/2014/09/27/android-ndk-va-openssl-phan-2</id>
+    <content type="html"><![CDATA[<p>Ở <a href="">bài viết lần trước</a>, tôi đã nói về “hoàn cảnh” tại sao tôi lại cần sử dụng openssl trên android native, đồng thời cũng đã giới thiệu qua về cách sử dụng ndk. Ở bài viết lần này tôi sẽ nói nốt phần còn lại về cách sử dụng openssl trên android ndk. Thông qua bài viết các bạn đồng thời có thể nắm được thêm về cách sử dụng openssl nói chung, cũng như các tiện ích mà openssl mang lại.</p>
+<h1 id="giới-thiệu-về-openssl">Giới thiệu về openssl</h1>
+<p>OpenSSL là một bộ thư viện/tiện ích dùng trong mã hoá (cryptography) viết bằng C, open source, và được sử dụng rất rộng rãi trên rất nhiều các phần mềm. OpenSSL cung cấp hầu hết các thuật toán mã hoá nổi tiếng như AES, RSA cũng như các thuật toán hash quan trọng như MD5, SHA1.</p>
+<p>Như cái tên của nó, OpenSSL được sinh ra chủ yếu để hỗ trợ cho việc truyên tin qua internet một cách bảo mật thông qua SSL (Secure Socket Layer) và TLS (Transport Layer Security), mà ví dụ rõ ràng nhất là việc sử dụng trên các browser hay là các web server để dành cho các kết nối https.</p>
+<p>Tuy nhiên OpenSSL vẫn được sử dụng rộng rãi trong nhiều hoàn cảnh khác nhau, ví dụ như khi bạn chỉ cần tính giá trị SHA1 hash, hay là muốn sử dụng một số thuật toán mã hoá đối xứng như là AES hay DES cho các ứng dụng yêu cầu về tốc độ và thực hiện đơn giản.</p>
+<p>Trong thực tế OpenSSL được sử dụng rất nhiều, ví dụ như trong git, để tính giá trị HMAC khi nhận message thông qua imap, git sẽ sử dụng openssl trong trường hợp máy client có cài đặt sẵn bộ thư viện openssl:</p>
+<p><a href="https://github.com/git/git/blob/97b8860c071898d9e162678ea1035a8ced2f8b1f/imap-send.c#L861" class="uri">https://github.com/git/git/blob/97b8860c071898d9e162678ea1035a8ced2f8b1f/imap-send.c#L861</a></p>
+<p>Như vậy chúng ta có thể hình dung openssl là bộ thư viện (có thể gọi là qui chuẩn) dành để làm các công việc liên quan đến mã hoá.</p>
+<h1 id="cài-đặt-và-sử-dụng-openssl-trên-android-native">Cài đặt và sử dụng openssl trên android native</h1>
+<p>OpenSSL là một bộ thư viện viết bằng C, còn android bản chất là hệ điều hành linux. Do đó việc cài đặt OpenSSL trên Android các bạn có thể hình dung tương tự như cài đặt một thư viện trên linux, cũng có make, có build, có copy file thư viện vào các đường dẫn cần thiết.</p>
+<p>OpenSSL là một thư viện đồ sộ và khá phức tạp để build. Tuy nhiên rất may mắn là những người phát triển OpenSSL đã bỏ thời gian ra làm cho chúng ta một bản hướng dẫn cực kì đầy đủ để build từ source code và sử dụng trên android. Các bạn có thể tham khảo ở đường dẫn dưới đây:</p>
+<p><a href="http://wiki.openssl.org/index.php/Android" class="uri">http://wiki.openssl.org/index.php/Android</a></p>
+<p>Làm theo hướng dẫn trên sẽ giúp các bạn tạo ra được 2 file (libcrypto.so libssl.so) hoặc (libcrypto.a libssl.a) tuỳ theo setting lúc build. File .so và file .a là các file thư viện động và tĩnh, mà các hàm trong các thư viện đó có thể được gọi trực tiếp từ C code. Cả .so và .a file đều có thể được gọi dễ dàng chỉ bằng việc thay đổi ndk make file. Do bản chất của ndk như đã trình bày ở <a href="http://ktmt.github.io/blog/2014/08/23/android-ndk-va-openssl/">phần 1</a>, từ android OS muốn gọi được logic từ C code phải thông qua JNI interface, chúng ta có thể hình dung được qui trình để sử dụng openssl trên ndk theo từng bước như sau:</p>
+<ul>
+<li><ol type="1">
+<li>Code Logic sử dụng openssl trên C, sử dụng JNI để “public” các hàm cần thiết sử dụng openssl ra ngoài.</li>
+</ol></li>
+<li><ol start="2" type="1">
+<li>Sử dụng file code ở trên, build ra các file thư viện native để có thể gọi được từ java code.</li>
+</ol></li>
+<li><ol start="3" type="1">
+<li>Gọi logic sử dụng openssl từ java code.</li>
+</ol></li>
+</ul>
+<p>Ở dưới đây chúng ta sẽ lần lượt đi từng bước ở trên. Đầu tiên sẽ là việc quan trọng nhất là sử dụng openssl trên C ra sao.</p>
+<h1 id="sử-dụng-openssl">Sử dụng openssl</h1>
+<p>OpenSSL thường được sử dụng dưới dạng “utility” trên unix system, tức là bạn sẽ gọi thông qua command line, ví dụ như sau:</p>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">openssl</span> sha1 -out digest.txt file.txt</code></pre>
+<p>Dòng lệnh trên ở trên console sẽ được sử dụng để tính hash của nội dung file digest.txt theo thuật toán SHA1, và ghi nội dung của hash vào file file.txt.</p>
+<p>Tuy nhiên bài toán của chúng ta ở đây là cần sử dụng openssl trong “code” chứ không phải thông qua command line. Việc sử dụng openssl trong code phức tạp hơn khá nhiều so với command line. Lý do là các thuật toán mã hoá đều khá phức tạp, và để sử dụng trong code thì đòi hỏi hiểu biết về thuật toán mã hoá đang sử dụng sâu hơn. Trong bài toán như tôi đã trình bày trong phần 1, chúng ta sẽ implement một thuật toán mã hoá đối xứng thông qua openssl. Do đó trước khi bắt tay vào coding, chúng ta hãy tìm hiểu sơ qua về thuật toán mã hoá đối xứng.</p>
+<h2 id="sơ-qua-về-thuật-toán-mã-hoá-đối-xứng">Sơ qua về thuật toán mã hoá đối xứng</h2>
+<p>Ở phần 1 đã nói sơ qua về thế nào là mã hoá đối xứng. Một cách đơn giản, thuật toán mã hoá đối xứng là khi <strong>bên gửi và bên nhân sẽ dùng cùng một key, cùng một initialize vector</strong></p>
+<p>{% img /images/symmetric_crypto.png %}</p>
+<p>Thuật toán mã hoá đối xứng chia làm 2 loại chính: <strong>block cipher</strong> và <strong>stream cipher</strong>.</p>
+<ul>
+<li><strong>Block cipher</strong> là chia dữ liệu ra thành nhiều block nhỏ, mỗi block có độ dài cố định (128bit, 256bit..) N, sau đó từng block sẽ được mã hoá riêng biệt. Nếu dữ liệu có độ dài không chia hết cho N, thì đoạn dữ liệu thừa ra sẽ được thêm vào một chuỗi ngẫu nhiên để cho bằng độ dài của N rồi cũng được tiến hành mã hoá.</li>
+<li><strong>Stream cipher</strong> thì đơn giản hơn, đầu tiên một khoá (keystream)sẽ được tạo ra ngẫu nhiên. Sau đó dữ liệu sẽ đơn giản là được XOR với khoá đó để cho ra chuỗi mã hoá.</li>
+</ul>
+<p>Stream cipher thì sẽ có tốc độ nhanh hơn rất nhiều so với Block cipher, tuy nhiên vì chỉ đơn giản thực hiện phép XOR sẽ làm Stream cipher có một số thuộc tính làm nó trở nên kém an toàn hơn so với Block cipher. Do đó trong bài toán lần này chúng ta sẽ sử dụng Block cipher.</p>
+<p>Block cipher có khá nhiều “mode”. Mỗi “mode” có thể hiểu là các cách thức tiến hành mã hoá khác nhau. Cơ bản thì sẽ có 4 loại mode dưới đây:</p>
+<ul>
+<li><strong><em>ECB (Electronic Code Book)</em></strong>: Ở mode này, 1 block của dữ liệu ban đầu (plaintext) sẽ được mã hoá thành 1 block của dữ liệu sau mã hoá (ciphertext). Mode này không tốt ở điểm dễ bị tấn công bởi dictionary attack, và là mode kém an toàn nhất</li>
+<li><strong><em>CBC (Cipher Block Chaining)</em></strong> Mode này giải quyết điểm yếu dictionary attack của mode ECB thông qua việc tiến hành XOR ciphertext của block phía trước với plaintext của block tiếp theo. Việc này được tiến hành liên tiếp cho đến khi ra kết quả cuối cùng. Từ đặc điểm là việc mã hoá được tiến hành liên tiếp, chúng ta có thể thấy cần một chuỗi ngẫu nhiên để tiến hành XOR với <em>block đầu tiên</em>. Chuỗi đó được gọi là <em>initialization vector (IV)</em>.</li>
+<li>CFB (Cipher Feedback) và OFB (Output Feedback) : 2 mode này dùng để biến từ block cipher thành stream cipher, do đó thường ít được sử dụng trong thực tế.</li>
+</ul>
+<p>Ở bài toán của chúng ta, có thể thấy rằng CBC mode là lựa chọn tốt nhất. Việc tiếp theo là lựa chọn thuật toán mã hoá.</p>
+<p>Có thể kể ra một vài thuật toán mã hoá đối xứng, sử dụng BlockCipher tiêu biểu gồm có : <strong><em>AES, BlowFish, DES, TripleDES</em></strong>. Trong đó AES (Advanced Encryption Standard) là thuật toán được tạo ra gần đây, có thể sử dụng key và độ dài block lên tới 256 bit. AES được chính phủ Mĩ sử dụng làm tiêu chuẩn mã hoá, và là một thuật toán mã hoá đã được nghiên cứu rất kỹ lưỡng trong vòng 5 năm. Do vậy mà so với các thuật toán còn lại như Blowfish hay DES, AES đảm bảo được độ an toàn cao hơn. Trong lần này chúng ta sẽ sử dụng AES 256 bit, trên CBC mode.</p>
+<h2 id="openssl-thông-qua-evp-interface">Openssl thông qua EVP interface</h2>
+<p>Như chúng ta đã thấy ở trên, mỗi loại thuật toán mã hoá, mỗi mode đều có những con đường (routines) khác nhau để thực hiện. Do đó nếu mỗi con đường đó được thực hiện với những interface khác nhau sẽ rất khó nhớ và khó để thực hiện. Rât may mắn, OpenSSL cung cấp sẵn cho chúng ta một interface <strong>thống nhất</strong> cho một loạt các thuật toán mã hoá khác nhau, gọi là EVP. Thông qua EVP thì qui trình mã hoá trở nên rất đơn giản thông qua việc gọi lần lượt các hàm của EVP. Để tiến hành mã hoá</p>
+<pre class="sourceCode c"><code class="sourceCode c">EVP_CIPHER_CTX_new  <span class="co">//tạo EVP context</span>
+EVP_EncryptInit_ex  <span class="co">//Khởi tạo việc mã hoá</span>
+EVP_EncryptUpdate   <span class="co">//Tiến hành mã hoá</span>
+EVP_EncryptFinal_ex <span class="co">//Trong trường hợp có sử dụng padding, tức là thêm dữ liệu vào cuối plaintext cho đủ chiều dài chia hết cho độ dài block, thì bước này dùng để mã hoá &quot;nốt&quot; đoạn dữ liệu được padding đó. Bước này được dùng để kết thúc quá trình mã hoá</span></code></pre>
+<p>Để tiến hành giải mã chúng ta cũng dùng các hàm gần tương tự, chỉ thay Encrypt bằng Decrypt</p>
+<pre class="sourceCode c"><code class="sourceCode c">EVP_CIPHER_CTX_new
+EVP_DecryptInit_ex
+EVP_DecryptUpdate
+EVP_DecryptFinal_ex </code></pre>
+<h2 id="coding">Coding</h2>
+<p>Sử dụng những kiến thức đã được nói ở phần trên, chúng ta đã có thể tiến hành coding. Một đoạn sample code sử dụng openssl để mã hoá đối xứng theo AES 256bit được mô tả như dưới đây. Chúng ta sẽ đặt tên file dưới đây là security.c:</p>
+<pre class="sourceCode c"><code class="sourceCode c"><span class="ot">#include &lt;stdio.h&gt;</span>
+<span class="ot">#include &lt;string.h&gt;</span>
+<span class="ot">#include &lt;stdlib.h&gt;</span>
+<span class="ot">#include &lt;openssl/des.h&gt;</span>
+<span class="ot">#include &lt;openssl/rand.h&gt;</span>
+<span class="ot">#include &lt;openssl/evp.h&gt;</span>
+<span class="ot">#include &lt;openssl/aes.h&gt;</span>
+<span class="ot">#include &lt;openssl/err.h&gt;</span>
+<span class="ot">#include &lt;openssl/bio.h&gt;</span>
+<span class="ot">#include &lt;openssl/buffer.h&gt;</span>
+<span class="ot">#include &lt;openssl/sha.h&gt;</span>
+<span class="ot">#include &lt;jni.h&gt;</span>
+<span class="ot">#include &lt;android/log.h&gt;</span>
+
+<span class="ot">#define BUFSIZE 64</span>
+<span class="dt">void</span> handleErrors() {
+  <span class="kw">return</span>;
+}
+
+<span class="dt">int</span> encrypt(<span class="dt">unsigned</span> <span class="dt">char</span> *plaintext, <span class="dt">int</span> plaintext_len, <span class="dt">unsigned</span> <span class="dt">char</span> *key,
+  <span class="dt">unsigned</span> <span class="dt">char</span> *iv, <span class="dt">unsigned</span> <span class="dt">char</span> *ciphertext)
+{
+  EVP_CIPHER_CTX *ctx;
+
+  <span class="dt">int</span> len;
+
+  <span class="dt">int</span> ciphertext_len;
+
+  <span class="kw">if</span>(!(ctx = EVP_CIPHER_CTX_new())) handleErrors();
+  <span class="kw">if</span>(<span class="dv">1</span> != EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
+    handleErrors();
+
+  <span class="kw">if</span>(<span class="dv">1</span> != EVP_EncryptUpdate(ctx, ciphertext, &amp;len, plaintext, plaintext_len))
+    handleErrors();
+  ciphertext_len = len;
+
+  <span class="kw">if</span>(<span class="dv">1</span> != EVP_EncryptFinal_ex(ctx, ciphertext + len, &amp;len)) handleErrors();
+  ciphertext_len += len;
+
+  <span class="co">/* Clean up */</span>
+  EVP_CIPHER_CTX_free(ctx);
+
+  <span class="kw">return</span> ciphertext_len;
+}
+
+<span class="dt">int</span> decrypt(<span class="dt">unsigned</span> <span class="dt">char</span> *ciphertext, <span class="dt">int</span> ciphertext_len, <span class="dt">unsigned</span> <span class="dt">char</span> *key,
+  <span class="dt">unsigned</span> <span class="dt">char</span> *iv, <span class="dt">unsigned</span> <span class="dt">char</span> *plaintext)
+{
+  EVP_CIPHER_CTX *ctx;
+
+  <span class="dt">int</span> len;
+
+  <span class="dt">int</span> plaintext_len;
+
+  <span class="kw">if</span>(!(ctx = EVP_CIPHER_CTX_new())) handleErrors();
+
+  <span class="kw">if</span>(<span class="dv">1</span> != EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
+    handleErrors();
+
+  <span class="kw">if</span>(<span class="dv">1</span> != EVP_DecryptUpdate(ctx, plaintext, &amp;len, ciphertext, ciphertext_len))
+    handleErrors();
+  plaintext_len = len;
+
+  <span class="kw">if</span>(<span class="dv">1</span> != EVP_DecryptFinal_ex(ctx, plaintext + len, &amp;len)) handleErrors();
+  plaintext_len += len;
+
+  <span class="co">/* Clean up */</span>
+  EVP_CIPHER_CTX_free(ctx);
+
+  <span class="kw">return</span> plaintext_len;
+}
+
+<span class="dt">char</span> *base64(<span class="dt">const</span> <span class="dt">unsigned</span> <span class="dt">char</span> *input, <span class="dt">int</span> length)
+{
+  BIO *bmem, *b64;
+  BUF_MEM *bptr;
+
+  b64 = BIO_new(BIO_f_base64());
+  bmem = BIO_new(BIO_s_mem());
+  b64 = BIO_push(b64, bmem);
+  BIO_write(b64, input, length);
+  BIO_flush(b64);
+  BIO_get_mem_ptr(b64, &amp;bptr);
+
+  <span class="dt">char</span> *buff = (<span class="dt">char</span> *)malloc(bptr-&gt;length);
+  memcpy(buff, bptr-&gt;data, bptr-&gt;length<span class="dv">-1</span>);
+  buff[bptr-&gt;length<span class="dv">-1</span>] = <span class="dv">0</span>;
+
+  BIO_free_all(b64);
+
+  <span class="kw">return</span> buff;
+}
+
+jstring Java_jp_co_common_android_libs_CryptUtils_stringFromJNI(JNIEnv* env, jobject thiz, jstring uuid) {
+    <span class="dt">char</span> *plaintext = (*env)-&gt;GetStringUTFChars(env, uuid, <span class="dv">0</span>);
+
+    <span class="dt">unsigned</span> <span class="dt">char</span> ciphertext[<span class="dv">1024</span>];
+    <span class="dt">unsigned</span> <span class="dt">char</span> *key = <span class="st">&quot;11111111111111111111111111111111&quot;</span>;
+    <span class="dt">unsigned</span> <span class="dt">char</span> *iv = <span class="st">&quot;2222222222222222&quot;</span>;
+
+    <span class="dt">int</span> ciphertext_len = encrypt(plaintext, strlen(plaintext), key, iv, ciphertext);
+    __android_log_print(ANDROID_LOG_INFO, <span class="st">&quot;kimisaki&quot;</span>, <span class="st">&quot;ndk: %s&quot;</span>, base64(ciphertext, ciphertext_len));
+    (*env)-&gt;ReleaseStringUTFChars(env, uuid, plaintext);
+    <span class="kw">return</span> (*env)-&gt;NewStringUTF(env, base64(ciphertext, ciphertext_len));
+}</code></pre>
+<p>Ngoài việc sử dụng các kiến thức đã nói ở trên, chúng ta có thể chú ý thấy một số điểm đặc biệt ở đoạn code trên:</p>
+<ul>
+<li>Chúng ta phải include đầy đủ các file header cần thiết của openssl như <openssl/evp.h>..</li>
+<li>Có thể để ý thấy việc sử dụng Base64 để encode dữ liệu trả về phía android. Lý do là sau khi mã hoá thì plaintext ban đầu sẽ trở thành 1 chuỗi bit vô nghĩa, và việc encode thành Base64 sẽ giúp dữ liệu dễ để truyền qua lại hơn, và cũng dễ debug hơn. Cách sử dụng base64 qua BIO interface các bạn có thể tìm hiểu thông qua trang chủ của openssl.</li>
+<li>Việc chọn <strong>độ dài cho key và IV là vô cùng quan trọng</strong>. Chọn sai độ dài cho key và IV sẽ dẫn đến các kết quả mã hoá không lường trước được và sẽ gây ra việc giải mã ra kết quả sai. Với AES 256 thì key sẽ có độ dài là 32 bytes, còn iv phải có độ dài là 16 bytes.</li>
+</ul>
+<h1 id="kết-hợp-với-android">Kết hợp với android</h1>
+<p>Như vậy là chúng ta đã tiến hành xong công đoạn coding. Công đoạn tiếp theo không kém phần quan trọng là việc phải build được đoạn code đó thành thư viện native để sử dụng trên android OS. Để làm được việc đó chúng ta cần làm:</p>
+<ul>
+<li>Tổ chức cấu trúc folder sao cho hợp lý.</li>
+<li>Viết make file</li>
+<li>Build</li>
+</ul>
+<p>Cấu trúc folder theo như bài viết lần đầu, chúng ta sẽ tạo 1 folder jni ở project$ROOT. Trong đó sẽ được sắp xếp như sau</p>
+<p>{% img /images/openssl_folder_structure.png %}</p>
+<p>Chúng ta có thể thấy điểm đặc biêt ở đây là thư mục libprebuilt sẽ chứa các file .so của openssl được build <strong>cho từng platform</strong> khác nhau. Hiện tại android có thể chạy trên ARM(armeabi), Intel(x86) và MIPS. Do việc build ra thư viện .so từng platform khác nhau có thể gặp khá nhiều khó khăn nên chúng ta có thể làm theo 1 cách đơn giản hơn, đó là kiếm các file .so “có sẵn” của từng platform và copy vào đây, thay vì phải build tử source. Các file này có thể kiếm được dễ dàng từ bản phân phối của các image của android OS.</p>
+<p>Một điểm nữa cần lưu ý là chúng ta cần copy các file header cần sử dụng của openssl vào trong thư mục dự án thì mới include được.</p>
+<p>2 file make để build native source sẽ có nội dung như sau</p>
+<ul>
+<li>Android.mk ``` AL_PATH := $(call my-dir)</li>
+</ul>
+<h1 id="prebuilt-libssl">Prebuilt libssl</h1>
+<p>include <span class="math">\((CLEAR_VARS) LOCAL_MODULE := ssl LOCAL_SRC_FILES := libprebuilt/\)</span>(TARGET_ARCH_ABI)/libssl.so include $(PREBUILT_SHARED_LIBRARY)</p>
+<h1 id="prebuilt-libcrypto">Prebuilt libcrypto</h1>
+<p>include <span class="math">\((CLEAR_VARS) LOCAL_MODULE := crypto LOCAL_SRC_FILES := libprebuilt/\)</span>(TARGET_ARCH_ABI)/libcrypto.so include $(PREBUILT_SHARED_LIBRARY)</p>
+<p>include $(CLEAR_VARS)</p>
+<pre><code>
+- Application.mk</code></pre>
+<p>APP_ABI := all</p>
+<pre><code>
+Chúng ta có thể chú ý thấy điểm đặc biệt ở Android.mk.
+Trong make file này chúng ta sẽ thấy việc chỉ định các biến build PREBUILT_SHARED_LIBRARY, LOCAL_SRC_FILE, LOCAL_MODULE để hệ thống build của ndk có thể nhận đưọc sự tồn tại của các file .so và copy vào các folder cần thiết để gọi được sau trên java code.
+
+Để tiến hành build thì chúng ta chỉ cần vào thư mục dự án và gõ
+</code></pre>
+<p>ndk-build ```</p>
+<p>Sau khi tiến hành build thì trong thư mục /libs sẽ có các thư mục tương ứng với các platform được tạo ra, và các file .so cần thiết sẽ được copy vào trong đó. File security.c ở trên sẽ được build thành các file security.so tương ứng.</p>
+<p>Tiếp theo chỉ còn là vấn đè sử dụng các file .so trên java code:</p>
+<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">public</span> <span class="kw">class</span> Foo {
+   <span class="kw">public</span> <span class="kw">native</span> <span class="dt">static</span> String <span class="fu">stringFromJNI</span>(String input);
+
+   <span class="dt">static</span> {
+       System.<span class="fu">loadLibrary</span>(<span class="st">&quot;ssl&quot;</span>);
+       System.<span class="fu">loadLibrary</span>(<span class="st">&quot;crypto&quot;</span>);
+       System.<span class="fu">loadLibrary</span>(<span class="st">&quot;security&quot;</span>);
+   }
+}</code></pre>
+<p>Chỉ với các chỉ định như trên thì chúng ta đã có thể sử dụng được hàm stringFromJNI được code trong security.c. Khi truyền vào 1 chuỗi bất kỳ, thì chúng ta sẽ nhận được kết quả mã hoá của chuỗi đó theo AES 256bit, với key và iv được qui định trong security.c. Vậy là bài toán của chúng ta đã được giải quyết :D.</p>
+<h1 id="kết-luận">Kết luận</h1>
+<p>Qua hai bài viết tương đối đầy đủ, hy vong các bạn đã nắm được:</p>
+<ul>
+<li>Cách cài đặt, sử dụng và bản chất của android ndk</li>
+<li>Sơ qua về mã hoá đối xứng</li>
+<li>Sơ qua về OpenSSL, cách sử dụng trực tiếp trên C code và cách để intergrate với android ndk</li>
+</ul>
+<p>Tham khảo:</p>
+<ul>
+<li><a href="http://www.amazon.com/Network-Security-OpenSSL-Cryptography-Communications-ebook/dp/B0028N4W3I/ref=sr_1_2?ie=UTF8&amp;qid=1412616205&amp;sr=8-2&amp;keywords=openssl" class="uri">http://www.amazon.com/Network-Security-OpenSSL-Cryptography-Communications-ebook/dp/B0028N4W3I/ref=sr_1_2?ie=UTF8&amp;qid=1412616205&amp;sr=8-2&amp;keywords=openssl</a></li>
+</ul>]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[android ndk và openssl (phần 1)]]></title>
+    <link href="http://git@github.com.github.com/blog/2014/08/23/android-ndk-va-openssl/"/>
+    <updated>2014-08-23T21:35:00+09:00</updated>
+    <id>http://git@github.com.github.com/blog/2014/08/23/android-ndk-va-openssl</id>
+    <content type="html"><![CDATA[<h1 id="mở-đầu">1. Mở đầu</h1>
+<p>Gần đây ở công ty tôi có được giao một task khá hay. Công ty tôi có một game viết trên nền tảng android. Game đó viết bằng anđroid, tuy nhiên lại chủ yếu dùng web view để hiển thị. Mặc dù vậy, một số logic như là set session cho user, authenticate cho user thì lại nằm trên android.</p>
+<p>Chắc các bạn cũng đã biết, android app được viết bằng java, dịch ra file dex, sau đó được phân phối trên google playstore dưới dạng file apk. Do đó, android app có một điểm yếu cố hữu mà mọi java app đều mắc phải, đó là bảo mật. Điểm yếu bảo mật ở đây là gì? Đó là việc mà mọi java app đều có thể được phân tích ngược (reverse engineer) rất dễ dàng. Việc này bắt nguồn từ bản chất java được dịch ra bytecode ở dạng khá “gần” với ngôn ngữ lập trình thông thường, và bytecode chứa đầy đủ các thông tin cần thiết để bạn có thể dịch lại nguyên vẹn lại chương trình gốc.</p>
+<p>Vậy cái điểm yếu bảo mật này liên quan đến cái app tôi đang phụ trách thế nào? Như tôi vừa nói ở trên, trong cái game mà tôi đang phụ trách, logic authenticate cho user sẽ nằm trên phía android. Điều này có nghĩa là trên android app sẽ phụ trách:</p>
+<ul>
+<li>Mã hoá uuid của người dùng, gửi lên server</li>
+<li>Server sẽ nhận uuid đó, và gửi session key về cho user để user set vào cookie.</li>
+</ul>
+<p>Chắc hẳn sẽ có bạn thắc mắc là qui trình xác thực này quá đơn giản. Đúng vậy, quy trình này quá đơn giản, dẫn đến là việc chỉ cần user A (người xấu) biết uuid của user B (người bị hại) thì A sẽ giả mạo được bất cứ hành động của B như là gửi đồ từ B cho A.</p>
+<p>Vậy tại sao không làm một qui trình xác thực tốt hơn, như dùng thêm một token giống như onetime password mà chỉ user đó mới biết được, hay là làm cách nào để “giấu” uuid đi để cho user khác không biết. Đúng là nên như thế! Tuy nhiên vì một số lý do “lịch sử” của legacy code, mà chúng ta không thể thay đổi qui trình xác thực một cách dễ dàng như thế được.</p>
+<p>Như vậy thì với flow code hiện tại thì với điểm yếu của android tôi đã nói ở trên thì một người có chút kiến thức lập trình có thể dễ dàng dịch ngược đoạn logic dùng để xác thực mà tôi đã nói ở trên. Mà trong đó có việc <code>mã hoá uuid người dùng</code> mà khi bạn nhìn được logic code thì mã hoá cũng bằng thừa. Lý do tại sao lại bằng thừa vì code hiện tại đang sử dụng “Symmetric Cryptography Algorithm”. Symmetric ở đây có nghĩa là thuật toán mã hoá đối xứng, mà điển hình gồm có những thuật toán như blowfish, AES, DES.</p>
+<p>Nói một cách đơn giản thì các loại thuật toán symmetric thì <strong>bên gửi và bên nhận sẽ dùng cùng một key, cùng một intitialize vector</strong> (Các khái niệm này tôi sẽ trình bày kĩ hơn ở phần sau) , do đó chỉ cần dịch ngược được code thì user A (người xấu) sẽ có được key và initialize vector để tạo ra một request hợp lệ sử dụng uuid của user B.</p>
+<p>Vậy thì chúng ta phải giải quyết vấn đề này thế nào? Sau một hồi thảo luận với công ty thì tôi nghĩ ra một giải pháp “chữa cháy” tạm thời, đấy là chuyển logic vào native code sử dụng ndk và C, mục đích để đạt được là:</p>
+<blockquote>
+<p>“Giấu” đi logic mã hoá uuid người dùng, giấu cả các tham số ban đầu như key và initialize vector. Do đó mà user A sẽ không biết làm cách nào để tạo ra một request hợp lệ với uuid của user B.</p>
+</blockquote>
+<p>Cách giải quyết này tại sao tôi nói là tạm thời, bởi vì user A nếu có thêm một chút hiểu biết về ndk thì sẽ biết được interface cung cấp ở ndk code sẽ được public ra ngoài, do đó thì vẫn có thể tận dụng được điểm này để tạo ra một request hợp lệ. Tuy nhiên do không nghĩ ra giải pháp khác nên tạm thời dùng cách này sẽ hạn chế được các hacker “gà mờ”.</p>
+<p>Vậy để đi theo hướng đi này chúng ta cần phải tìm hiểu về 2 thứ đó là : <strong>Android NDK</strong> và cách để sử dụng các thuật toán mã hoá trên ndk (ở đây là sử dụng ngôn ngữ C), đó là <strong>openssl</strong>. Phần giới thiệu hơi dài dòng, nhưng đến đây các bạn đã nắm được tại sao tiêu đề bài viết lại là Android NDK và open SSL.</p>
+<p>Dưới đây chúng ta sẽ đi lần lượt về 2 vấn đề cần giải quyết : Android NDK và OpenSSL</p>
+<h1 id="android-ndk">2. Android NDK</h1>
+<p>Android NDK là một kit phát triển giúp bạn có thể phát triển các phần mềm android mà dựa một phần trên các đoạn code viết trên C hoặc C++. Bạn sẽ cần đến NDK trong các sản phầm cần đến hiệu năng cao, mà khi đó các đoạn code được build ra binary sẽ phát huy hiệu năng tối đa. Các logic code được thực hiện trên ndk ở dứoi đây tôi sẽ gọi chung là native code.</p>
+<p>Về cơ chế hoạt động của ndk, bạn có thể hiểu một cách đơn giản như trong hình vẽ dưới đây, app của bạn sẽ tiến hành giao tiếp với native code thông qua một interface gọi là JNI.</p>
+<p>Một cách đơn giản, JNI là một bộ giao thức giao tiếp chuẩn của java, giúp cho java code có thể <strong>nói chuyện</strong> được với C/C++ code, có thể <strong>truyền</strong> dữ liệu giữa 2 bên.</p>
+<p>{% img /images/ndk-1.png %}</p>
+<p>Để tham khảo thêm về android ndk, các bạn có thể vào trang chủ của android tại <a href="https://developer.android.com/tools/sdk/ndk/index.html">Trang chủ của android</a>. Dưới đây tôi sẽ tóm tắt các bước cần thiết để sử dụng được ndk.</p>
+<h2 id="cài-đặt">Cài đặt</h2>
+<p>Cách cài đặt android ndk khá giống với sdk, tức là chỉ đơn thuần là bạn tải bộ ndk về, đặt vào đâu đó. Trong bộ NDK đó sẽ chứa đầy đủ các tool để có thể build được ndk native code từ C/C++ source (bao gồm build script và các file header cần thiết). Quá trình cài đặt có thể hiểu tóm gọn qua đoạn script dưới đây (chạy trên môi trường unix):</p>
+<pre><code>wget http://dl.google.com/android/ndk/android-ndk64-r10-darwin-x86.tar.bz2
+tar yxvf android-ndk64-r10-darwin-x86.tar.bz2
+mv android-ndk64-r10-darwin-x86 ~/
+echo &quot;export PATH=$PATH:/~/android-ndk64-r10-darwin-x86&quot; &gt;&gt; ~/.bash_profile
+echo &quot;export ANDROID_NDK_ROOT=/Users/huydo/android-ndk64-r10-darwin-x86&quot; &gt;&gt; ~/.bash_profile
+source ~/.bash_profile</code></pre>
+<p>Sau khi chạy đoạn script trên thì android ndk đã được thêm vào path của hệ thống, giúp chúng ta có thể gõ các lệnh như <code>ndk-build</code> từ bất kì đâu</p>
+<h2 id="sử-dụng">Sử dụng</h2>
+<p>Trong bộ ndk bạn down về có chứa sẵn khá nhiều ví dụ về cách sử dụng ndk, từ đơn giản (như hello world) cho đến các ví dụ phức tạp hơn như xử lý ảnh (mà phải thao tác gửi dữ liệu giữa android app và ndk app khá phức tạp). Các bạn có thể tham khảo các ví dụ đó để có cái nhìn thực tế về ndk program. Dưới đây tôi sẽ trình bày ngắn gọn về quá trình sử dụng của tôi.</p>
+<p>Như ở hình ở trên thì các bạn thấy là android app và native code sẽ “nói chuyện” với nhau thông qua một “ngôn ngữ” chung gọi là jni. Như vậy sẽ có 2 khả năng xảy ra, dẫn đến 2 ngữ cảnh để sử dụng ndk:</p>
+<ul>
+<li><ol type="1">
+<li>Viết một số logic code quan trọng ở phía native code, và các logic còn lại để ở phía android app như bình thường. Các giao tiếp sẽ được gọi từ phía java thông qua jni. Cách tiếp cận này thuận lợi ở chỗ là chúng ta tận dùng được mọi điểm mạnh của android frame work, và chỉ các logic nào thật cần thiết mới đưa vào native code.</li>
+</ol></li>
+<li><ol start="2" type="1">
+<li>Viết “native activity”, tức là logic của activity như hiển thị, life cycle, gọi các activity khác.. sẽ được code toàn bộ ở trên phía native. Cách này thực tế khá ít sử dụng, thường sử dụng trong trường hợp mà dữ liệu quá khó để truyền đi truyền lại giữa bên java và native, thì việc code luôn cả activity trên native cũng là một lựa chọn cần thiết.</li>
+</ol></li>
+</ul>
+<p>Ở bài viết này tôi sẽ đi theo hướng tiếp cận 1, để giải quyết bài toán theo hướng:</p>
+<blockquote>
+<p>Đưa logic mã hoá uuid người dùng vào một file C, build ra binary và gọi logic đó trên phía java thông qua JNI.</p>
+</blockquote>
+<h2 id="coding-và-build">Coding và build</h2>
+<p>Để đi theo hướng tiếp cận 1 như đã nói ở trên, chúng ta có thể dễ dàng hình dung công việc phải làm:</p>
+<ul>
+<li>Step 1: Viết logic code mã hoá trên C, nhận đầu vào là 1 chuỗi mô tả uuid của người dùng, đầu ra là chuỗi đó dã được mã hoá.</li>
+<li>Step 2: Build đoạn code đó thành một file thư viện động (.so file) và “Nhúng” file thư viện động đó vào trong android project</li>
+<li>Step 3: Viết logic code gọi native code trên java.</li>
+</ul>
+<h3 id="step-1-cấu-trúc-của-một-file-native-code-viết-trên-c">Step 1: Cấu trúc của một file native code viết trên C</h3>
+<p>Thông thường, chúng ta sẽ tạo một folder tên là jni và đặt toàn bộ các đoạn code, header, các thư viện liên quan vào trong đó.</p>
+<p>{% img /images/jni-2.png %}</p>
+<p>File native code viết trên C khá đơn giản, chỉ cần tóm gọn lại trong 2 bước:</p>
+<ul>
+<li>include thư viện <jni.h></li>
+<li>Viết các hàm dựa trên convention của jni để tạo ra các “interface”, và phía java sẽ gọi được các “interface” này một cách khá dễ dàng</li>
+</ul>
+<p>Một ví dụ hết sức về native code như dưới đây:</p>
+<p>{% codeblock hello_jni.c %} #innclude <string.h> #include <jni.h></p>
+<p>jstring Java_com_example_hellojni_HelloJni_stringFromJNI( JNIEnv* env, jobject thiz ) { return (*env)-&gt;NewStringUTF(env, “Hello from JNI !”); } {% endcodeblock %}</p>
+<p>Các bạn để ý tên hàm của native code sẽ dễ dàng nhận thấy convention như trong hình dưới đây:</p>
+<p>{% img /images/jni-1.png %}</p>
+<p>Nhờ có convention đó mà các bạn sẽ thấy việc gọi logic của hàm đó trên phía java sẽ dễ dàng hơn bao giờ hết.</p>
+<p>Ngoài ra các bạn có thể để ý một số điểm đặc biệt ở một đoạn native code như dưới đấy:</p>
+<ul>
+<li>Giá trị trả về ở đây là jstring, đó là một kiểu dữ liệu đặc biệt của jni, mà khi phía java gọi, thư viện jni sẽ thực hiện chuyển đổi (marshalling) giá trị này về kiểu String của java.</li>
+<li>Biến JNIEvn* env, bạn có thể hình dung đây là một con trỏ trỏ đến VirtualMachine (Dalvik) của android, nhờ có env này mà chúng ta có thể thao tác ngược từ phía native, để có thể sử dụng được các logic phía android. Như trong đoạn code trên thì chúng ta có thể thấy nhờ có env mà chúng ta có thể tạo được một unicode string từ trong C code.</li>
+</ul>
+<h3 id="step-2-build-đoạn-code-đó-thành-.so-file">Step 2: Build đoạn code đó thành .so file</h3>
+<p>Để build được file native C mà chúng ta vừa viết ở trên, chúng ta cần làm 2 việc:</p>
+<ul>
+<li>Tạo 2 file Android.mk và Application.mk trong thư mục jni mà chúng ta đã nhắc đến ở trên</li>
+<li>Android.mk có nhiệm vụ “miêu tả” module với hệ thống build. Trong file này chúng ta sẽ viết là module chúng ta có những file gì, path ở đâu, sử dụng những thư viện khác nào (dependency). Trong một app có thể có nhiều file Android.mk khi mà chúng ta có nhiều module.</li>
+<li>Application.mk sẽ có nhiệm vụ “miêu tả” app của chúng ta với hệ thống build. Thông thường trong file này chúng ta sẽ mô tả những modules mà app sẽ dùng, cũng như là mô tả về CPU architecture mà app sẽ hỗ trợ (mà điển hình gồm có ARM, x86 và MIPS)</li>
+<li>Build sử dụng ndk-build hết sức đơn giản chỉ bằng việc gõ lệnh <code>ndk-build</code> ở trong folder hiện tại.</li>
+</ul>
+<p>{% img /images/ndk-2.png %}</p>
+<p>Sau khi sử dụng lệnh ndk-build để build thì kết quả build là các file .so sẽ được copy vào thư mục <strong>libs</strong> ở root folder theo như hình trên đây. Các bạn có thể thấy là tương ứng với mỗi kiến trúc CPU sẽ có một folder được tạo ra, trong mỗi folder đó lại có các file .so khác nhau chỉ dùng với duy nhất một kiến trúc nhất định.</p>
+<h3 id="step-3-viết-logic-code-gọi-native-code-trên-java">Step 3: Viết logic code gọi native code trên java</h3>
+<p>Đã build xong thư viện tĩnh, chúng ta chỉ còn một công đoạn cuối cùng là sử dụng đoạn logic ở trên trong android code. Theo như ở trên đã nói, interface của jni code sẽ được sử dụng dựa theo convention mà gồm có: package name, class name và cfunction name. Điều đó có nghĩa là: đoạn code java trong android của bạn sẽ phải có package name, class name và function name y hệt như interface của jni, thì bạn mới sử dụng được logic đó.</p>
+<p>Vậy thì theo như ví dụ của chúng ta ở đây thì chúng ta cần phải làm 3 việc:</p>
+<ul>
+<li>package name của đoạn code phải là com/example/hellojni</li>
+<li>Class name phải là HelloJni</li>
+<li>Bạn phải định nghĩa một hàm tên là stringFromJNI để gọi được logic từ native code.</li>
+</ul>
+<p>{% codeblock HelloJni.java %} package com.example.hellojni;</p>
+<p>import android.app.Activity; import android.widget.TextView; import android.os.Bundle;</p>
+<p>public class HelloJni extends Activity { <span class="citation" data-cites="Override">@Override</span> public void onCreate(Bundle savedInstanceState) { super.onCreate(savedInstanceState);</p>
+<pre><code>    TextView  tv = new TextView(this);
+    tv.setText( stringFromJNI() );
+    setContentView(tv);
+}
+
+public native String  stringFromJNI();
+
+static {
+    System.loadLibrary(&quot;hello-jni&quot;);
+}</code></pre>
+<p>} {% endcodeblock %}</p>
+<p>Từ đoạn code trên chắc các bạn đã hình dung ra cách để gọi native code thế nào dựa vào hàm <code>System.loadLibrary(&quot;hello-jni&quot;)</code> và việc định nghĩa hàm thông qua directive <code>native</code></p>
+<p>Như vậy chúng ta đã tìm hiểu rất sơ qua về ndk. Trong phần tiếp theo, tôi sẽ đi vào phần chính mà tôi muốn nói đến, đó là giới thiệu về openssl và sử dụng openssl trên android ndk.</p>]]></content>
+  </entry>
+  
+</feed>

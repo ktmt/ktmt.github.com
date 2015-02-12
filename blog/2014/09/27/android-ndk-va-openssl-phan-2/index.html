@@ -1,0 +1,689 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Android NDK và OpenSSL(Phần 2) - Blog kỹ thuật máy tính</title>
+	<meta name="author" content="kỹ thuật máy tính">
+
+	
+	<meta name="description" content="Android NDK và OpenSSL(Phần 2) Ở bài viết lần trước, tôi đã nói về “hoàn cảnh” tại sao tôi lại cần sử dụng openssl trên android native, đồng thời &hellip;">
+	
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="Blog kỹ thuật máy tính" type="application/atom+xml">
+	
+	<link rel="canonical" href="http://git@github.com.github.com/blog/2014/09/27/android-ndk-va-openssl-phan-2/">
+	<link href="/favicon.png" rel="shortcut icon">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+    });
+  </script>
+	<link href='http://fonts.googleapis.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+	
+</head>
+
+
+<body>
+	<div class="container">
+		<div class="left-col">
+			<div class="intrude-less">
+			<header id="header" class="inner"><div class="profilepic">
+	<script src="/javascripts/md5.js"></script>
+	<img src='/images/logo.jpg' alt='Profile Picture' style='width: 160px;' />
+</div>
+<h1><a href="/">Blog kỹ thuật máy tính</a></h1>
+<p class="subtitle">kỹ thuật máy tính</p>
+<nav id="main-nav"><ul class="main">
+	<li><a href="/">Blog</a></li>
+	<li><a href="/blog/archives">Archives</a></li>
+</ul>
+</nav>
+<nav id="sub-nav">
+	<div class="social">
+		
+		<a class="facebook" href="http://www.facebook.com/pages/ktmtgithubio/486208978117754" title="Facebook">Facebook</a>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		<a class="rss" href="/atom.xml" title="RSS">RSS</a>
+		
+	</div>
+</nav>
+
+</header>
+			</div>
+		</div>
+		<div class="mid-col">
+			
+				
+			
+			<div class="mid-col-container">
+				<div id="content" class="inner"><article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+	<h1 class="title" itemprop="name">Android NDK và OpenSSL(Phần 2)</h1>
+	<div class="entry-content" itemprop="articleBody"><p>Ở <a href="">bài viết lần trước</a>, tôi đã nói về “hoàn cảnh” tại sao tôi lại cần sử dụng openssl trên android native, đồng thời cũng đã giới thiệu qua về cách sử dụng ndk. Ở bài viết lần này tôi sẽ nói nốt phần còn lại về cách sử dụng openssl trên android ndk. Thông qua bài viết các bạn đồng thời có thể nắm được thêm về cách sử dụng openssl nói chung, cũng như các tiện ích mà openssl mang lại.</p>
+<h1 id="giới-thiệu-về-openssl">Giới thiệu về openssl</h1>
+<p>OpenSSL là một bộ thư viện/tiện ích dùng trong mã hoá (cryptography) viết bằng C, open source, và được sử dụng rất rộng rãi trên rất nhiều các phần mềm. OpenSSL cung cấp hầu hết các thuật toán mã hoá nổi tiếng như AES, RSA cũng như các thuật toán hash quan trọng như MD5, SHA1.</p>
+<p>Như cái tên của nó, OpenSSL được sinh ra chủ yếu để hỗ trợ cho việc truyên tin qua internet một cách bảo mật thông qua SSL (Secure Socket Layer) và TLS (Transport Layer Security), mà ví dụ rõ ràng nhất là việc sử dụng trên các browser hay là các web server để dành cho các kết nối https.</p>
+<p>Tuy nhiên OpenSSL vẫn được sử dụng rộng rãi trong nhiều hoàn cảnh khác nhau, ví dụ như khi bạn chỉ cần tính giá trị SHA1 hash, hay là muốn sử dụng một số thuật toán mã hoá đối xứng như là AES hay DES cho các ứng dụng yêu cầu về tốc độ và thực hiện đơn giản.</p>
+<p>Trong thực tế OpenSSL được sử dụng rất nhiều, ví dụ như trong git, để tính giá trị HMAC khi nhận message thông qua imap, git sẽ sử dụng openssl trong trường hợp máy client có cài đặt sẵn bộ thư viện openssl:</p>
+<p><a href="https://github.com/git/git/blob/97b8860c071898d9e162678ea1035a8ced2f8b1f/imap-send.c#L861" class="uri">https://github.com/git/git/blob/97b8860c071898d9e162678ea1035a8ced2f8b1f/imap-send.c#L861</a></p>
+<p>Như vậy chúng ta có thể hình dung openssl là bộ thư viện (có thể gọi là qui chuẩn) dành để làm các công việc liên quan đến mã hoá.</p>
+<h1 id="cài-đặt-và-sử-dụng-openssl-trên-android-native">Cài đặt và sử dụng openssl trên android native</h1>
+<p>OpenSSL là một bộ thư viện viết bằng C, còn android bản chất là hệ điều hành linux. Do đó việc cài đặt OpenSSL trên Android các bạn có thể hình dung tương tự như cài đặt một thư viện trên linux, cũng có make, có build, có copy file thư viện vào các đường dẫn cần thiết.</p>
+<p>OpenSSL là một thư viện đồ sộ và khá phức tạp để build. Tuy nhiên rất may mắn là những người phát triển OpenSSL đã bỏ thời gian ra làm cho chúng ta một bản hướng dẫn cực kì đầy đủ để build từ source code và sử dụng trên android. Các bạn có thể tham khảo ở đường dẫn dưới đây:</p>
+<p><a href="http://wiki.openssl.org/index.php/Android" class="uri">http://wiki.openssl.org/index.php/Android</a></p>
+<p>Làm theo hướng dẫn trên sẽ giúp các bạn tạo ra được 2 file (libcrypto.so libssl.so) hoặc (libcrypto.a libssl.a) tuỳ theo setting lúc build. File .so và file .a là các file thư viện động và tĩnh, mà các hàm trong các thư viện đó có thể được gọi trực tiếp từ C code. Cả .so và .a file đều có thể được gọi dễ dàng chỉ bằng việc thay đổi ndk make file. Do bản chất của ndk như đã trình bày ở <a href="http://ktmt.github.io/blog/2014/08/23/android-ndk-va-openssl/">phần 1</a>, từ android OS muốn gọi được logic từ C code phải thông qua JNI interface, chúng ta có thể hình dung được qui trình để sử dụng openssl trên ndk theo từng bước như sau:</p>
+<ul>
+<li><ol type="1">
+<li>Code Logic sử dụng openssl trên C, sử dụng JNI để “public” các hàm cần thiết sử dụng openssl ra ngoài.</li>
+</ol></li>
+<li><ol start="2" type="1">
+<li>Sử dụng file code ở trên, build ra các file thư viện native để có thể gọi được từ java code.</li>
+</ol></li>
+<li><ol start="3" type="1">
+<li>Gọi logic sử dụng openssl từ java code.</li>
+</ol></li>
+</ul>
+<p>Ở dưới đây chúng ta sẽ lần lượt đi từng bước ở trên. Đầu tiên sẽ là việc quan trọng nhất là sử dụng openssl trên C ra sao.</p>
+<h1 id="sử-dụng-openssl">Sử dụng openssl</h1>
+<p>OpenSSL thường được sử dụng dưới dạng “utility” trên unix system, tức là bạn sẽ gọi thông qua command line, ví dụ như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='bash'><span class='line'>openssl sha1 -out digest.txt file.txt
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Dòng lệnh trên ở trên console sẽ được sử dụng để tính hash của nội dung file digest.txt theo thuật toán SHA1, và ghi nội dung của hash vào file file.txt.</p>
+<p>Tuy nhiên bài toán của chúng ta ở đây là cần sử dụng openssl trong “code” chứ không phải thông qua command line. Việc sử dụng openssl trong code phức tạp hơn khá nhiều so với command line. Lý do là các thuật toán mã hoá đều khá phức tạp, và để sử dụng trong code thì đòi hỏi hiểu biết về thuật toán mã hoá đang sử dụng sâu hơn. Trong bài toán như tôi đã trình bày trong phần 1, chúng ta sẽ implement một thuật toán mã hoá đối xứng thông qua openssl. Do đó trước khi bắt tay vào coding, chúng ta hãy tìm hiểu sơ qua về thuật toán mã hoá đối xứng.</p>
+<h2 id="sơ-qua-về-thuật-toán-mã-hoá-đối-xứng">Sơ qua về thuật toán mã hoá đối xứng</h2>
+<p>Ở phần 1 đã nói sơ qua về thế nào là mã hoá đối xứng. Một cách đơn giản, thuật toán mã hoá đối xứng là khi <strong>bên gửi và bên nhân sẽ dùng cùng một key, cùng một initialize vector</strong></p>
+<p><img src="/images/symmetric_crypto.png"></p>
+<p>Thuật toán mã hoá đối xứng chia làm 2 loại chính: <strong>block cipher</strong> và <strong>stream cipher</strong>.</p>
+<ul>
+<li><strong>Block cipher</strong> là chia dữ liệu ra thành nhiều block nhỏ, mỗi block có độ dài cố định (128bit, 256bit..) N, sau đó từng block sẽ được mã hoá riêng biệt. Nếu dữ liệu có độ dài không chia hết cho N, thì đoạn dữ liệu thừa ra sẽ được thêm vào một chuỗi ngẫu nhiên để cho bằng độ dài của N rồi cũng được tiến hành mã hoá.</li>
+<li><strong>Stream cipher</strong> thì đơn giản hơn, đầu tiên một khoá (keystream)sẽ được tạo ra ngẫu nhiên. Sau đó dữ liệu sẽ đơn giản là được XOR với khoá đó để cho ra chuỗi mã hoá.</li>
+</ul>
+<p>Stream cipher thì sẽ có tốc độ nhanh hơn rất nhiều so với Block cipher, tuy nhiên vì chỉ đơn giản thực hiện phép XOR sẽ làm Stream cipher có một số thuộc tính làm nó trở nên kém an toàn hơn so với Block cipher. Do đó trong bài toán lần này chúng ta sẽ sử dụng Block cipher.</p>
+<p>Block cipher có khá nhiều “mode”. Mỗi “mode” có thể hiểu là các cách thức tiến hành mã hoá khác nhau. Cơ bản thì sẽ có 4 loại mode dưới đây:</p>
+<ul>
+<li><strong><em>ECB (Electronic Code Book)</em></strong>: Ở mode này, 1 block của dữ liệu ban đầu (plaintext) sẽ được mã hoá thành 1 block của dữ liệu sau mã hoá (ciphertext). Mode này không tốt ở điểm dễ bị tấn công bởi dictionary attack, và là mode kém an toàn nhất</li>
+<li><strong><em>CBC (Cipher Block Chaining)</em></strong> Mode này giải quyết điểm yếu dictionary attack của mode ECB thông qua việc tiến hành XOR ciphertext của block phía trước với plaintext của block tiếp theo. Việc này được tiến hành liên tiếp cho đến khi ra kết quả cuối cùng. Từ đặc điểm là việc mã hoá được tiến hành liên tiếp, chúng ta có thể thấy cần một chuỗi ngẫu nhiên để tiến hành XOR với <em>block đầu tiên</em>. Chuỗi đó được gọi là <em>initialization vector (IV)</em>.</li>
+<li>CFB (Cipher Feedback) và OFB (Output Feedback) : 2 mode này dùng để biến từ block cipher thành stream cipher, do đó thường ít được sử dụng trong thực tế.</li>
+</ul>
+<p>Ở bài toán của chúng ta, có thể thấy rằng CBC mode là lựa chọn tốt nhất. Việc tiếp theo là lựa chọn thuật toán mã hoá.</p>
+<p>Có thể kể ra một vài thuật toán mã hoá đối xứng, sử dụng BlockCipher tiêu biểu gồm có : <strong><em>AES, BlowFish, DES, TripleDES</em></strong>. Trong đó AES (Advanced Encryption Standard) là thuật toán được tạo ra gần đây, có thể sử dụng key và độ dài block lên tới 256 bit. AES được chính phủ Mĩ sử dụng làm tiêu chuẩn mã hoá, và là một thuật toán mã hoá đã được nghiên cứu rất kỹ lưỡng trong vòng 5 năm. Do vậy mà so với các thuật toán còn lại như Blowfish hay DES, AES đảm bảo được độ an toàn cao hơn. Trong lần này chúng ta sẽ sử dụng AES 256 bit, trên CBC mode.</p>
+<h2 id="openssl-thông-qua-evp-interface">Openssl thông qua EVP interface</h2>
+<p>Như chúng ta đã thấy ở trên, mỗi loại thuật toán mã hoá, mỗi mode đều có những con đường (routines) khác nhau để thực hiện. Do đó nếu mỗi con đường đó được thực hiện với những interface khác nhau sẽ rất khó nhớ và khó để thực hiện. Rât may mắn, OpenSSL cung cấp sẵn cho chúng ta một interface <strong>thống nhất</strong> cho một loạt các thuật toán mã hoá khác nhau, gọi là EVP. Thông qua EVP thì qui trình mã hoá trở nên rất đơn giản thông qua việc gọi lần lượt các hàm của EVP. Để tiến hành mã hoá</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='c'><span class='line'><span class="n">EVP_CIPHER_CTX_new</span>  <span class="c1">//tạo EVP context</span>
+</span><span class='line'><span class="n">EVP_EncryptInit_ex</span>  <span class="c1">//Khởi tạo việc mã hoá</span>
+</span><span class='line'><span class="n">EVP_EncryptUpdate</span>   <span class="c1">//Tiến hành mã hoá</span>
+</span><span class='line'><span class="n">EVP_EncryptFinal_ex</span> <span class="c1">//Trong trường hợp có sử dụng padding, tức là thêm dữ liệu vào cuối plaintext cho đủ chiều dài chia hết cho độ dài block, thì bước này dùng để mã hoá &quot;nốt&quot; đoạn dữ liệu được padding đó. Bước này được dùng để kết thúc quá trình mã hoá</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Để tiến hành giải mã chúng ta cũng dùng các hàm gần tương tự, chỉ thay Encrypt bằng Decrypt</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='c'><span class='line'><span class="n">EVP_CIPHER_CTX_new</span>
+</span><span class='line'><span class="n">EVP_DecryptInit_ex</span>
+</span><span class='line'><span class="n">EVP_DecryptUpdate</span>
+</span><span class='line'><span class="n">EVP_DecryptFinal_ex</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<h2 id="coding">Coding</h2>
+<p>Sử dụng những kiến thức đã được nói ở phần trên, chúng ta đã có thể tiến hành coding. Một đoạn sample code sử dụng openssl để mã hoá đối xứng theo AES 256bit được mô tả như dưới đây. Chúng ta sẽ đặt tên file dưới đây là security.c:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;string.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;openssl/des.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;openssl/rand.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;openssl/evp.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;openssl/aes.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;openssl/err.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;openssl/bio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;openssl/buffer.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;openssl/sha.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;jni.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;android/log.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#define BUFSIZE 64</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">handleErrors</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">encrypt</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">plaintext</span><span class="p">,</span> <span class="kt">int</span> <span class="n">plaintext_len</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">key</span><span class="p">,</span>
+</span><span class='line'>  <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">iv</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">ciphertext</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="n">EVP_CIPHER_CTX</span> <span class="o">*</span><span class="n">ctx</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">len</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">ciphertext_len</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">ctx</span> <span class="o">=</span> <span class="n">EVP_CIPHER_CTX_new</span><span class="p">()))</span> <span class="n">handleErrors</span><span class="p">();</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="mi">1</span> <span class="o">!=</span> <span class="n">EVP_EncryptInit_ex</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">EVP_aes_256_cbc</span><span class="p">(),</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">iv</span><span class="p">))</span>
+</span><span class='line'>    <span class="n">handleErrors</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="mi">1</span> <span class="o">!=</span> <span class="n">EVP_EncryptUpdate</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">ciphertext</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">len</span><span class="p">,</span> <span class="n">plaintext</span><span class="p">,</span> <span class="n">plaintext_len</span><span class="p">))</span>
+</span><span class='line'>    <span class="n">handleErrors</span><span class="p">();</span>
+</span><span class='line'>  <span class="n">ciphertext_len</span> <span class="o">=</span> <span class="n">len</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="mi">1</span> <span class="o">!=</span> <span class="n">EVP_EncryptFinal_ex</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">ciphertext</span> <span class="o">+</span> <span class="n">len</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">len</span><span class="p">))</span> <span class="n">handleErrors</span><span class="p">();</span>
+</span><span class='line'>  <span class="n">ciphertext_len</span> <span class="o">+=</span> <span class="n">len</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="cm">/* Clean up */</span>
+</span><span class='line'>  <span class="n">EVP_CIPHER_CTX_free</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="n">ciphertext_len</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">decrypt</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">ciphertext</span><span class="p">,</span> <span class="kt">int</span> <span class="n">ciphertext_len</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">key</span><span class="p">,</span>
+</span><span class='line'>  <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">iv</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">plaintext</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="n">EVP_CIPHER_CTX</span> <span class="o">*</span><span class="n">ctx</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">len</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">plaintext_len</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">ctx</span> <span class="o">=</span> <span class="n">EVP_CIPHER_CTX_new</span><span class="p">()))</span> <span class="n">handleErrors</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="mi">1</span> <span class="o">!=</span> <span class="n">EVP_DecryptInit_ex</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">EVP_aes_256_cbc</span><span class="p">(),</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">iv</span><span class="p">))</span>
+</span><span class='line'>    <span class="n">handleErrors</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="mi">1</span> <span class="o">!=</span> <span class="n">EVP_DecryptUpdate</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">plaintext</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">len</span><span class="p">,</span> <span class="n">ciphertext</span><span class="p">,</span> <span class="n">ciphertext_len</span><span class="p">))</span>
+</span><span class='line'>    <span class="n">handleErrors</span><span class="p">();</span>
+</span><span class='line'>  <span class="n">plaintext_len</span> <span class="o">=</span> <span class="n">len</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="mi">1</span> <span class="o">!=</span> <span class="n">EVP_DecryptFinal_ex</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">plaintext</span> <span class="o">+</span> <span class="n">len</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">len</span><span class="p">))</span> <span class="n">handleErrors</span><span class="p">();</span>
+</span><span class='line'>  <span class="n">plaintext_len</span> <span class="o">+=</span> <span class="n">len</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="cm">/* Clean up */</span>
+</span><span class='line'>  <span class="n">EVP_CIPHER_CTX_free</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="n">plaintext_len</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">char</span> <span class="o">*</span><span class="nf">base64</span><span class="p">(</span><span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">input</span><span class="p">,</span> <span class="kt">int</span> <span class="n">length</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="n">BIO</span> <span class="o">*</span><span class="n">bmem</span><span class="p">,</span> <span class="o">*</span><span class="n">b64</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">BUF_MEM</span> <span class="o">*</span><span class="n">bptr</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">b64</span> <span class="o">=</span> <span class="n">BIO_new</span><span class="p">(</span><span class="n">BIO_f_base64</span><span class="p">());</span>
+</span><span class='line'>  <span class="n">bmem</span> <span class="o">=</span> <span class="n">BIO_new</span><span class="p">(</span><span class="n">BIO_s_mem</span><span class="p">());</span>
+</span><span class='line'>  <span class="n">b64</span> <span class="o">=</span> <span class="n">BIO_push</span><span class="p">(</span><span class="n">b64</span><span class="p">,</span> <span class="n">bmem</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">BIO_write</span><span class="p">(</span><span class="n">b64</span><span class="p">,</span> <span class="n">input</span><span class="p">,</span> <span class="n">length</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">BIO_flush</span><span class="p">(</span><span class="n">b64</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">BIO_get_mem_ptr</span><span class="p">(</span><span class="n">b64</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">bptr</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kt">char</span> <span class="o">*</span><span class="n">buff</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="n">bptr</span><span class="o">-&gt;</span><span class="n">length</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">memcpy</span><span class="p">(</span><span class="n">buff</span><span class="p">,</span> <span class="n">bptr</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">,</span> <span class="n">bptr</span><span class="o">-&gt;</span><span class="n">length</span><span class="o">-</span><span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">buff</span><span class="p">[</span><span class="n">bptr</span><span class="o">-&gt;</span><span class="n">length</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">BIO_free_all</span><span class="p">(</span><span class="n">b64</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="n">buff</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">jstring</span> <span class="nf">Java_jp_co_common_android_libs_CryptUtils_stringFromJNI</span><span class="p">(</span><span class="n">JNIEnv</span><span class="o">*</span> <span class="n">env</span><span class="p">,</span> <span class="n">jobject</span> <span class="n">thiz</span><span class="p">,</span> <span class="n">jstring</span> <span class="n">uuid</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="o">*</span><span class="n">plaintext</span> <span class="o">=</span> <span class="p">(</span><span class="o">*</span><span class="n">env</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">GetStringUTFChars</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">uuid</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">ciphertext</span><span class="p">[</span><span class="mi">1024</span><span class="p">];</span>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">key</span> <span class="o">=</span> <span class="s">&quot;11111111111111111111111111111111&quot;</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">iv</span> <span class="o">=</span> <span class="s">&quot;2222222222222222&quot;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">ciphertext_len</span> <span class="o">=</span> <span class="n">encrypt</span><span class="p">(</span><span class="n">plaintext</span><span class="p">,</span> <span class="n">strlen</span><span class="p">(</span><span class="n">plaintext</span><span class="p">),</span> <span class="n">key</span><span class="p">,</span> <span class="n">iv</span><span class="p">,</span> <span class="n">ciphertext</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">__android_log_print</span><span class="p">(</span><span class="n">ANDROID_LOG_INFO</span><span class="p">,</span> <span class="s">&quot;kimisaki&quot;</span><span class="p">,</span> <span class="s">&quot;ndk: %s&quot;</span><span class="p">,</span> <span class="n">base64</span><span class="p">(</span><span class="n">ciphertext</span><span class="p">,</span> <span class="n">ciphertext_len</span><span class="p">));</span>
+</span><span class='line'>    <span class="p">(</span><span class="o">*</span><span class="n">env</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">ReleaseStringUTFChars</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">uuid</span><span class="p">,</span> <span class="n">plaintext</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="p">(</span><span class="o">*</span><span class="n">env</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">NewStringUTF</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">base64</span><span class="p">(</span><span class="n">ciphertext</span><span class="p">,</span> <span class="n">ciphertext_len</span><span class="p">));</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Ngoài việc sử dụng các kiến thức đã nói ở trên, chúng ta có thể chú ý thấy một số điểm đặc biệt ở đoạn code trên:</p>
+<ul>
+<li>Chúng ta phải include đầy đủ các file header cần thiết của openssl như <openssl/evp.h>..</li>
+<li>Có thể để ý thấy việc sử dụng Base64 để encode dữ liệu trả về phía android. Lý do là sau khi mã hoá thì plaintext ban đầu sẽ trở thành 1 chuỗi bit vô nghĩa, và việc encode thành Base64 sẽ giúp dữ liệu dễ để truyền qua lại hơn, và cũng dễ debug hơn. Cách sử dụng base64 qua BIO interface các bạn có thể tìm hiểu thông qua trang chủ của openssl.</li>
+<li>Việc chọn <strong>độ dài cho key và IV là vô cùng quan trọng</strong>. Chọn sai độ dài cho key và IV sẽ dẫn đến các kết quả mã hoá không lường trước được và sẽ gây ra việc giải mã ra kết quả sai. Với AES 256 thì key sẽ có độ dài là 32 bytes, còn iv phải có độ dài là 16 bytes.</li>
+</ul>
+<h1 id="kết-hợp-với-android">Kết hợp với android</h1>
+<p>Như vậy là chúng ta đã tiến hành xong công đoạn coding. Công đoạn tiếp theo không kém phần quan trọng là việc phải build được đoạn code đó thành thư viện native để sử dụng trên android OS. Để làm được việc đó chúng ta cần làm:</p>
+<ul>
+<li>Tổ chức cấu trúc folder sao cho hợp lý.</li>
+<li>Viết make file</li>
+<li>Build</li>
+</ul>
+<p>Cấu trúc folder theo như bài viết lần đầu, chúng ta sẽ tạo 1 folder jni ở project$ROOT. Trong đó sẽ được sắp xếp như sau</p>
+<p><img src="/images/openssl_folder_structure.png"></p>
+<p>Chúng ta có thể thấy điểm đặc biêt ở đây là thư mục libprebuilt sẽ chứa các file .so của openssl được build <strong>cho từng platform</strong> khác nhau. Hiện tại android có thể chạy trên ARM(armeabi), Intel(x86) và MIPS. Do việc build ra thư viện .so từng platform khác nhau có thể gặp khá nhiều khó khăn nên chúng ta có thể làm theo 1 cách đơn giản hơn, đó là kiếm các file .so “có sẵn” của từng platform và copy vào đây, thay vì phải build tử source. Các file này có thể kiếm được dễ dàng từ bản phân phối của các image của android OS.</p>
+<p>Một điểm nữa cần lưu ý là chúng ta cần copy các file header cần sử dụng của openssl vào trong thư mục dự án thì mới include được.</p>
+<p>2 file make để build native source sẽ có nội dung như sau</p>
+<ul>
+<li>Android.mk
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='c'><span class='line'><span class="n">AL_PATH</span> <span class="o">:=</span> <span class="err">$</span><span class="p">(</span><span class="n">call</span> <span class="n">my</span><span class="o">-</span><span class="n">dir</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp"># Prebuilt libssl</span>
+</span><span class='line'><span class="n">include</span> <span class="err">$</span><span class="p">(</span><span class="n">CLEAR_VARS</span><span class="p">)</span>
+</span><span class='line'><span class="n">LOCAL_MODULE</span> <span class="o">:=</span> <span class="n">ssl</span>
+</span><span class='line'><span class="n">LOCAL_SRC_FILES</span> <span class="o">:=</span> <span class="n">libprebuilt</span><span class="o">/</span><span class="err">$</span><span class="p">(</span><span class="n">TARGET_ARCH_ABI</span><span class="p">)</span><span class="o">/</span><span class="n">libssl</span><span class="p">.</span><span class="n">so</span>
+</span><span class='line'><span class="n">include</span> <span class="err">$</span><span class="p">(</span><span class="n">PREBUILT_SHARED_LIBRARY</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp"># Prebuilt libcrypto</span>
+</span><span class='line'><span class="n">include</span> <span class="err">$</span><span class="p">(</span><span class="n">CLEAR_VARS</span><span class="p">)</span>
+</span><span class='line'><span class="n">LOCAL_MODULE</span> <span class="o">:=</span> <span class="n">crypto</span>
+</span><span class='line'><span class="n">LOCAL_SRC_FILES</span> <span class="o">:=</span> <span class="n">libprebuilt</span><span class="o">/</span><span class="err">$</span><span class="p">(</span><span class="n">TARGET_ARCH_ABI</span><span class="p">)</span><span class="o">/</span><span class="n">libcrypto</span><span class="p">.</span><span class="n">so</span>
+</span><span class='line'><span class="n">include</span> <span class="err">$</span><span class="p">(</span><span class="n">PREBUILT_SHARED_LIBRARY</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">include</span> <span class="err">$</span><span class="p">(</span><span class="n">CLEAR_VARS</span><span class="p">)</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div></li>
+<li>Application.mk
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='c'><span class='line'><span class="n">APP_ABI</span> <span class="o">:=</span> <span class="n">all</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div></li>
+</ul>
+<p>Chúng ta có thể chú ý thấy điểm đặc biệt ở Android.mk. Trong make file này chúng ta sẽ thấy việc chỉ định các biến build PREBUILT_SHARED_LIBRARY, LOCAL_SRC_FILE, LOCAL_MODULE để hệ thống build của ndk có thể nhận đưọc sự tồn tại của các file .so và copy vào các folder cần thiết để gọi được sau trên java code.</p>
+<p>Để tiến hành build thì chúng ta chỉ cần vào thư mục dự án và gõ</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='c'><span class='line'><span class="n">ndk</span><span class="o">-</span><span class="n">build</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Sau khi tiến hành build thì trong thư mục /libs sẽ có các thư mục tương ứng với các platform được tạo ra, và các file .so cần thiết sẽ được copy vào trong đó. File security.c ở trên sẽ được build thành các file security.so tương ứng.</p>
+<p>Tiếp theo chỉ còn là vấn đè sử dụng các file .so trên java code:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Foo</span> <span class="o">{</span>
+</span><span class='line'>   <span class="kd">public</span> <span class="kd">native</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">stringFromJNI</span><span class="o">(</span><span class="n">String</span> <span class="n">input</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>   <span class="kd">static</span> <span class="o">{</span>
+</span><span class='line'>       <span class="n">System</span><span class="o">.</span><span class="na">loadLibrary</span><span class="o">(</span><span class="s">&quot;ssl&quot;</span><span class="o">);</span>
+</span><span class='line'>       <span class="n">System</span><span class="o">.</span><span class="na">loadLibrary</span><span class="o">(</span><span class="s">&quot;crypto&quot;</span><span class="o">);</span>
+</span><span class='line'>       <span class="n">System</span><span class="o">.</span><span class="na">loadLibrary</span><span class="o">(</span><span class="s">&quot;security&quot;</span><span class="o">);</span>
+</span><span class='line'>   <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Chỉ với các chỉ định như trên thì chúng ta đã có thể sử dụng được hàm stringFromJNI được code trong security.c. Khi truyền vào 1 chuỗi bất kỳ, thì chúng ta sẽ nhận được kết quả mã hoá của chuỗi đó theo AES 256bit, với key và iv được qui định trong security.c. Vậy là bài toán của chúng ta đã được giải quyết :D.</p>
+<h1 id="kết-luận">Kết luận</h1>
+<p>Qua hai bài viết tương đối đầy đủ, hy vong các bạn đã nắm được:</p>
+<ul>
+<li>Cách cài đặt, sử dụng và bản chất của android ndk</li>
+<li>Sơ qua về mã hoá đối xứng</li>
+<li>Sơ qua về OpenSSL, cách sử dụng trực tiếp trên C code và cách để intergrate với android ndk</li>
+</ul>
+<p>Tham khảo:</p>
+<ul>
+<li><a href="http://www.amazon.com/Network-Security-OpenSSL-Cryptography-Communications-ebook/dp/B0028N4W3I/ref=sr_1_2?ie=UTF8&amp;qid=1412616205&amp;sr=8-2&amp;keywords=openssl" class="uri">http://www.amazon.com/Network-Security-OpenSSL-Cryptography-Communications-ebook/dp/B0028N4W3I/ref=sr_1_2?ie=UTF8&amp;qid=1412616205&amp;sr=8-2&amp;keywords=openssl</a></li>
+</ul></div>
+
+</article>
+
+	<div class="share">
+	<div class="addthis_toolbox addthis_default_style ">
+	
+	<a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+	
+	
+	<a class="addthis_button_tweet"></a>
+	
+	
+	<a class="addthis_counter addthis_pill_style"></a>
+	</div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+
+
+
+<section id="comment">
+    <h1 class="title">Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+</section>
+</div>
+			</div>
+			<footer id="footer" class="inner">Copyright &copy; 2015
+
+    kỹ thuật máy tính
+
+
+</footer>
+			<script src="/javascripts/slash.js"></script>
+<script src="/javascripts/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+	$('.fancybox').fancybox();
+})(jQuery);
+</script> <!-- Delete or comment this line to disable Fancybox -->
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'ktmt';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://git@github.com.github.com/blog/2014/09/27/android-ndk-va-openssl-phan-2/';
+        var disqus_url = 'http://git@github.com.github.com/blog/2014/09/27/android-ndk-va-openssl-phan-2/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-41828637-2', 'ktmt.github.io');
+  ga('send', 'pageview');
+
+</script>	
+
+
+		</div>
+	</div>
+</body>
+</html>

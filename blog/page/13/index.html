@@ -7,7 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jul 7th, 2013 git Comments Githook và Server Hook (Tiếp) Ở bài viết trước, tôi đã giới thiệu về githook, client hook và các user case hay sử dụng &hellip;">
+	<meta name="description" content="Aug 2nd, 2013 sercurity,, server Comments Các Lỗi Bảo Mật Khi Xây Dựng Server Login Bằng Facebook Cho Mobile App Mở đầu
+Facebook là mạng xã hội phổ &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -37,7 +38,7 @@
 	<div class="container">
 		<div class="left-col">
 			<div class="intrude-less">
-			<header id="header" class="inner"><div class="profilepic">	
+			<header id="header" class="inner"><div class="profilepic">
 	<script src="/javascripts/md5.js"></script>
 	<img src='/images/logo.jpg' alt='Profile Picture' style='width: 160px;' />
 </div>
@@ -66,9 +67,9 @@
 	</div>
 </nav>
 
-</header>				
+</header>
 			</div>
-		</div>	
+		</div>
 		<div class="mid-col">
 			
 				
@@ -92,364 +93,111 @@
   
 
 
-<time datetime="2013-07-07T22:54:00+09:00" data-updated="true" itemprop="datePublished">Jul 7<span>th</span>, 2013</time></div>
+<time datetime="2013-08-02T23:30:00+09:00" data-updated="true" itemprop="datePublished">Aug 2<span>nd</span>, 2013</time></div>
 		<div class="tags">
 
 
-	<a class='category' href='/blog/categories/git/'>git</a>
+	<a class='category' href='/blog/categories/sercurity/'>sercurity,</a>, <a class='category' href='/blog/categories/server/'>server</a>
 
 
 </div>
 		
-			<span class="comments"><a href="/blog/2013/07/07/git-server-hook-dot-markdown/#disqus_thread">Comments</a></span>
+			<span class="comments"><a href="/blog/2013/08/02/cac-loi-bao-mat-can-tranh-khi-xay-dung-server-ho-tro-login-bang-facebook-cho-mobile-app/#disqus_thread">Comments</a></span>
 		
 	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/07/git-server-hook-dot-markdown/" itemprop="url">Githook và Server Hook (Tiếp)</a></h1>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/08/02/cac-loi-bao-mat-can-tranh-khi-xay-dung-server-ho-tro-login-bang-facebook-cho-mobile-app/" itemprop="url">Các Lỗi Bảo Mật Khi Xây Dựng Server Login Bằng Facebook Cho Mobile App</a></h1>
 	<div class="entry-content" itemprop="articleBody">
-		<p>Ở bài viết <a href="/blog/2013/06/25/using-githook-to-automatically-test-your-app/">trước</a>, tôi đã giới thiệu về githook, client hook và các user case hay sử dụng với client hook. Bài viết này, tôi sẽ giới thiệu thêm về server hook và các ứng dụng của chúng trong thực tế</p>
-<h1 id="server-side-hooks">Server-side hooks</h1>
-<p>Bên cạnh việc sử dụng các client-side hooks, bạn có thể sử dụng một vài server-side hook như là một hệ thống admin để áp đặt một cơ chế quán lý cho project của bạn. Những script này sẽ được chạy trước và sau khi commit được đẩy lên server. Những pre-hooks có thể trả về giá trị khác 0 ở bất cứ thời điểm nào để loại bỏ một push từ client, cũng như để in ra một error message cho client</p>
-<h2 id="pre-receive-và-post-receive">pre-receive và post-receive</h2>
-<p>Script đầu tiên được chạy khi server nhận được một push từ client đó là <code>pre-receive</code>. Script này nhận một list các tham chiếu sẽ được push từ stdin. Nếu nó trả về giá trị khác 0, không có tham chiếu nào được chấp nhận. Bạn có thể sử dụng hook này để làm những việc như đảm bảo không có bất cứ tham chiếu nào là <code>non-fast-forwards</code>.</p>
-<p><code>post-receive</code> hook chạy sau khi toàn bộ quá trình được hoàn tất và có thể sử dụng để update các service khác hoặc để notify uer. Nó nhận cùng dữ liệu từ stdin như <code>pre-receive</code> hook. Ví dụ bao gồm gửi email chó một list các developer liên quan, notify CI server, hoặc update ticket tracking system. Bạn thậm chí có thể parse commit message để kiểm tra xem có bất cứ ticket nào cần open, modified hoặc update hay không. <code>post-receive</code> không thể làm ngừng lại quá trình push, nhưng client sẽ không đóng kết nối tới server cho đên khi <code>post-receive</code> kết thúc. Ví thế hãy cẩn thận khi bạn muốn làm những việc tốn thời gian. Cách tốt nhất là hãy sử dụng các background process để xử lý các tác vụ tốn thời gian.</p>
-<h2 id="update">update</h2>
-<p>Update script là tương tự với <code>pre-receive</code> script, ngoại trừ việc nó chỉ chạy một làn cho mỗi branch mà pusher muốn update. Nếu pusher muốn update nhiều branch, <code>pre-receive</code> chỉ chạy duy nhất một lần, nhưng update sẽ chạy một lần cho mỗi branch mà chúng được push. Thay vì đọc dữ liệu từ stdin, script này sẽ nhận 3 tham số đầu vào: tên của branch, SHA-1 trỏ đến commit trước khi được push, và SHA-1 user đang muốn push. Nếu update script trả về kết quả khác 0, chỉ branch ứng với script này bị reject, các branch khác vẫn được update bình thường</p>
-<h1 id="ví-dụ">Ví dụ</h1>
-<p>Trong ví dụ này, chúng ta sẽ bắt buộc mỗi commit message phải có phần mở đầu của message tuân theo một định dạng. Cụ thể mỗi mesage phải có dạng “ref:1234” bởi vì mỗi một commit sẽ ứng với một ticket trong hệ thống.</p>
-<p>Để làm việc này, sẻver sẽ phải kiểm tra tất cả các commit được push để xem string trong commit message có đúng format hay không. Nếu commit message là không đúng format, trả về giá trị khác 0 và reject push.</p>
-<p>Chúng ta sẽ viết một update hook để làm việc này. Chú ý rắng, update hook nhận 3 giá trị đầu vào: tên của branch được update, SHA-1 của commit trước khi được push, và SHA-1 của commit sau khi được push. Các đoạn code dưới đây được minh hoạ bằng ruby, bạn có thể sử dụng ngôn ngữ lập trình khác nếu muốn</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>update </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1">#!/usr/bin/env ruby</span>
-</span><span class='line'>
-</span><span class='line'><span class="vg">$refname</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span>
-</span><span class='line'><span class="vg">$oldrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span>
-</span><span class='line'><span class="vg">$newrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Để lấy các commit từ <code>$oldrev</code> tới <code>$newrev</code>, chúng ta sử dụng lệnh <code>git rev-lít</code>. Lệnh này sẽ trả về danh sách các SHA-1 cho các commit nằm giữa 2 commit mà chúng ta truyền vào</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'> 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>git rev-list 538c33..d14fc7
-</span><span class='line'>d14fc7c847ab946ec39590d87783c69b031bdfb7
-</span><span class='line'>9f585da4401b0a3999e84113824d15245c13f0be
-</span><span class='line'>234071a1be950e2a8d078e6141f5cd20c1e61ad3
-</span><span class='line'>dfa04c9ef3d5197182f13fb5b9b1fb7717d2222a
-</span><span class='line'>17716ec0f1ff5c77eff40b7fe912f9f6cfd0e475
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Sau đó, chúng ta sử dụng lệnh <code>git cat-file</code> đẻ duyệt qua từng commit và lấy nội dụng của commit message.</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'> 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>git cat-file commit ca82a6
-</span><span class='line'>tree cfda3bf379e4f8dba8717dee55aab78aef7f4daf
-</span><span class='line'>parent 085bb3bcb608e1e8451d4b2432f8ecbe6306e7e7
-</span><span class='line'>author kiennt &lt;kiennt@gmail.com&gt; 1205815931 -0700
-</span><span class='line'>committer kiennt &lt;schacon@gmail.com&gt; 1240030591 -0700
-</span><span class='line'>
-</span><span class='line'>Add new post about githook
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Cách đơn giản để lấy commit message từ một commit là khi có SHA-1 , chúng ta xác định dòng blank đầu tiên và lấy tất cả phần đằng sau nó. Chúng ta có thể sử dụng <code>sed</code> để làm điều này</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'> 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>git cat-file commit ca82a6 | sed <span class="s1">&#39;1,/^$/d&#39;</span>
-</span><span class='line'>Add new post about githook
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Sau đây là toàn bộ đoạn code ruby để hoàn thành tác vụ trên</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'><figcaption>
-<span>update </span>
-</figcaption>
- 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1">#!/usr/bin/env ruby</span>
-</span><span class='line'>
-</span><span class='line'><span class="vg">$refname</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span>
-</span><span class='line'><span class="vg">$oldrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span>
-</span><span class='line'><span class="vg">$newrev</span>  <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span>
-</span><span class='line'><span class="vg">$regex</span> <span class="o">=</span> <span class="sr">/\[ref: (\d+)\]/</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1"># enforced custom commit message format</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">check_message_format</span>
-</span><span class='line'>  <span class="n">missed_revs</span> <span class="o">=</span> <span class="sb">`git rev-list </span><span class="si">#{</span><span class="vg">$oldrev</span><span class="si">}</span><span class="sb">..</span><span class="si">#{</span><span class="vg">$newrev</span><span class="si">}</span><span class="sb">`</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">missed_revs</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">rev</span><span class="o">|</span>
-</span><span class='line'>    <span class="n">message</span> <span class="o">=</span> <span class="sb">`git cat-file commit </span><span class="si">#{</span><span class="n">rev</span><span class="si">}</span><span class="sb"> | sed &#39;1,/^$/d&#39;`</span>
-</span><span class='line'>    <span class="k">if</span> <span class="o">!</span><span class="vg">$regex</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
-</span><span class='line'>      <span class="nb">puts</span> <span class="s2">&quot;[POLICY] Your message is not formatted correctly&quot;</span>
-</span><span class='line'>      <span class="nb">exit</span> <span class="mi">1</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'><span class="n">check_message_format</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<h1 id="kết-luận">Kết luận</h1>
-<p>Qua 2 bài viết về githook, bạn đã nắm được phần nào các hooks trong git, và các ứng dụng liên quan đến chúng. Giờ bạn có thể sử dụng githook để tạo nên workflow phù hợp nhất với git cho project của mình</p>
-<h1 id="tham-khảo">Tham khảo</h1>
-<p><a href="http://git-scm.com/book/en/Customizing-Git-Git-Hooks">Githook documentation</a> <a href="http://git-scm.com/book/en/Customizing-Git-An-Example-Git-Enforced-Policy">Customizing Git</a></p>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-07-06T16:44:00+09:00" data-updated="true" itemprop="datePublished">Jul 6<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/ios/'>iOS</a>, <a class='category' href='/blog/categories/iphone/'>iPhone</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/07/06/tu-tao-uitableviewcell/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/06/tu-tao-uitableviewcell/" itemprop="url">Tự tạo UITableViewCell</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<p>UITableView là 1 trong những control được sử dụng nhiều nhất trong các ứng dụng iOS. Tuy nhiên, các kiểu cơ bản của UITableViewCell có rất nhiều hạn chế cho người sử dụng bởi vì sự đơn giản của nó. Trong bài viết này, tôi sẽ hướng dẫn các bạn tạo ra tuỳ chỉnh 1 UITableViewCell của riêng mình.</p>
-<p>Trong bài viết này, chúng ta sẽ tạo ra 1 Table View Cell đơn giản chứa 1 tiêu đề, 1 button và 1 switcher. Bạn hoàn toàn có thể thay thế các thành phần này theo mục đích riêng của mình.</p>
-<p>Trước hết, hãy tạo 1 class mới kế thừa từ UITableViewCell, tạm gọi là CustomTableCell. Tiếp theo, tạo 1 file xib mới đặt tên trùng với 2 file class đã tạo: New -&gt; File -&gt; User Interface -&gt; View</p>
-<p><img src="/images/CustomCell/new_xib.png"></p>
-<p>Trên file xib, hãy xoá đi View hiện tại và kéo vào 1 UITableViewCell từ panel bên phải vào:</p>
-<p><img src="/images/CustomCell/pull_xib.png"></p>
-<p>Sau đó, hãy kéo các thành phần bạn muốn vào trong view này, trong ví dụ này là 1 UILabel, 1 UIButton, 1 Switch.</p>
-<p>Tiếp theo chúng ta phải khai báo class cho file xib này. Bấm vào View và chuyển sang tab Identity inspector của panel bên phải, mục Custom Class đặt tên là CustomTableCell (tên của class chúng ta vừa kế thừa từ UITableViewCell):</p>
-<p><img src="/images/CustomCell/class_name.png"></p>
-<p>Mỗi UITableViewCell đều có 1 định danh để có thể sử dụng lại trong 1 TableView. Chúng ta có thể set trường này trong tab Attributes inspector của panel bên phải trong mục Identifier. Đặt 1 id bất kỳ cho trường này, trong ví dụ là “CustomIdentifier”:</p>
-<p><img src="/images/CustomCell/name_iden.png"></p>
-<p>Vẫn ở tab Identity Inspector này, bấm vào File’s Owner ở panel bên trái, mục custom class đặt tên là UIViewController. Điều này có thể hiểu nôm na là chúng ta sẽ khởi tạo CustomTableCell từ 1 UIViewController:</p>
-<p><img src="/images/CustomCell/owner_name.png"></p>
-<p>Bước tiếp theo là kéo Outlet cho các thành phần của View. Bấm vào File’s Owner rồi chuyển sang tab Connections inspector của pannel bên phải, kéo Outlet View vào Custom Table Cell ở panel bên trái. Điều này giúp kết nối file xib của bạn với class định nghĩa trong file h, m</p>
-<p><img src="/images/CustomCell/outlet_view.png"> Để sử dụng được label, button và switch trên table cell, chúng ta phải khai báo Outlet trong file .h bằng đoạn code:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'> 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="n">nonatomic</span><span class="p">,</span> <span class="n">unsafe_unretained</span><span class="p">)</span> <span class="kt">IBOutlet</span> <span class="n">UILabel</span> <span class="o">*</span><span class="n">nameLabel</span><span class="p">;</span>
-</span><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="n">nonatomic</span><span class="p">,</span> <span class="n">unsafe_unretained</span><span class="p">)</span> <span class="kt">IBOutlet</span> <span class="n">UISwitch</span> <span class="o">*</span><span class="n">switcher</span><span class="p">;</span>
-</span><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="n">nonatomic</span><span class="p">,</span> <span class="n">unsafe_unretained</span><span class="p">)</span> <span class="kt">IBOutlet</span> <span class="n">UIButton</span> <span class="o">*</span><span class="n">aButton</span><span class="p">;</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Sau đó, chuyển sang file xib, bấm vào Custom Table Cell ở panel bên trái, bấm vào Connections Inspector tab ở panel bên phải rồi kéo outlet vào các thành phần của view:</p>
-<p><img src="/images/CustomCell/outlet_component.png"></p>
-<p>Vậy là đã xong các bước cài đặt cho Custom Table Cell. Tiếp đến là sử dụng TableCell này như thế nào. Hãy cùng so sánh 2 đoạn code của hàm -(UITableViewCell <em>)tableView:(UITableView </em>)tableView_ cellForRowAtIndexPath:(NSIndexPath *)indexPath:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'> 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">static</span> <span class="n">NSString</span> <span class="o">*</span><span class="n">identifier</span> <span class="o">=</span> <span class="s">@&quot;NormalCell&quot;</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">UITableViewCell</span> <span class="o">*</span><span class="n">cell</span> <span class="o">=</span> <span class="p">[</span><span class="n">tableView</span> <span class="nl">dequeueReusableCellWithIdentifier:</span><span class="n">identifier</span><span class="p">];</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">cell</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="n">cell</span> <span class="o">=</span> <span class="p">[[</span><span class="n">UITableViewCell</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithStyle:</span><span class="n">UITableViewCellStyleDefault</span> <span class="nl">reuseIdentifier:</span><span class="n">identifier</span><span class="p">];</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">cell</span><span class="p">;</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'> 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">static</span> <span class="n">NSString</span> <span class="o">*</span><span class="n">identifier</span> <span class="o">=</span> <span class="s">@&quot;CustomIdentifier&quot;</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">CustomTableCell</span> <span class="o">*</span><span class="n">cell</span> <span class="o">=</span> <span class="p">[</span><span class="n">tableView</span> <span class="nl">dequeueReusableCellWithIdentifier:</span><span class="n">identifier</span><span class="p">];</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">cell</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="n">UIViewController</span> <span class="o">*</span><span class="n">tempVC</span> <span class="o">=</span> <span class="p">[[</span><span class="n">UIViewController</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithNibName:</span><span class="s">@&quot;CustomTableCell&quot;</span> <span class="nl">bundle:</span><span class="nb">nil</span><span class="p">];</span>
-</span><span class='line'>        <span class="n">cell</span> <span class="o">=</span> <span class="p">(</span><span class="n">CustomTableCell</span> <span class="o">*</span><span class="p">)</span><span class="n">tempVC</span><span class="p">.</span><span class="n">view</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="k">return</span> <span class="n">cell</span><span class="p">;</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Đoạn code đầu tiên là cách khởi tạo UITableViewCell bình thường. Cách thứ 2 là khởi tạo CustomTableCell. Hãy chú ý là identifier được sử dụng chính là identifier chúng ta đã đặt trong file xib, và biến này phải được để là static. Tại vì sao lại để là static thì tôi sẽ đề cập trong 1 bài viết khác.</p>
-<p>Sau khi khởi tạo Cell xong, chúng ta có thể tuỳ chỉnh nó, như trong ví dụ:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class='code'> 
-<div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="c1">// Set up cell</span>
-</span><span class='line'>    <span class="n">cell</span><span class="p">.</span><span class="n">nameLabel</span><span class="p">.</span><span class="n">text</span> <span class="o">=</span> <span class="p">[</span><span class="n">NSString</span> <span class="nl">stringWithFormat:</span><span class="s">@&quot;Cell %d&quot;</span><span class="p">,</span> <span class="n">indexPath</span><span class="p">.</span><span class="n">row</span><span class="p">];</span>
-</span><span class='line'>    <span class="n">cell</span><span class="p">.</span><span class="n">switcher</span><span class="p">.</span><span class="n">on</span> <span class="o">=</span> <span class="n">indexPath</span><span class="p">.</span><span class="n">row</span> <span class="o">%</span> <span class="mi">2</span><span class="p">;</span>
-</span></code></pre></td></tr></table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Vậy là xong. Hãy viết nốt đoạn code cho TableView và đây là kết quả cuối cùng:</p>
-<p><img src="/images/CustomCell/final.png" width="320" height="480"></p>
-<p>Toàn bộ code của ví dụ bạn có thể download ở đây https://github.com/toandk/Custom-UITableViewCell</p>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-07-04T06:20:00+09:00" data-updated="true" itemprop="datePublished">Jul 4<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/database/'>Database</a>, <a class='category' href='/blog/categories/oracle/'>Oracle</a>, <a class='category' href='/blog/categories/plsql/'>PLSQL</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/07/04/gioi-thieu-mot-so-object-cua-oracle-2/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/04/gioi-thieu-mot-so-object-cua-oracle-2/" itemprop="url">Giới Thiệu Một Số Object Của Oracle - Phần 2</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h2 id="tổng-quan-về-oracle-và-những-điểm-mạnh">Tổng quan về Oracle và những điểm mạnh</h2>
-<p>Như đã giới thiệu với độc giả từ bài viết trước. Oracle là hệ cơ sở dữ liệu có nhiều object tiện dụng được chuẩn bị sẵn, và những hỗ trợ mạnh mẽ từ các công cụ trên top của tầng RDBMS.</p>
-<p>Bài viết lần này sẽ giới thiệu tiếp về những object còn lại, và về chính ngôn ngữ của Oracle DB : PL/SQL</p>
-<h2 id="materialized-view-log">MATERIALIZED VIEW LOG</h2>
-<p>MATERIALIZED VIEW LOG là object bắt buộc phải có nếu bạn lựa chọn chiến lược FAST REFRESH của object MATERIALIZED VIEW trong bài trước. Chúng ta sẽ nhắc lại 1 chút về chiến lược REFRESH của object MATERIALZED VIEW.</p>
-<p>MATERIALIZED VIEW có 3 kiểu REFRESH sau:</p>
+		<h1 id="mở-đầu">Mở đầu</h1>
+<p>Facebook là mạng xã hội phổ biến nhất hiện nay. Nếu bạn đọc blog này mà không có tài khoản Facebook, tôi nghi ngờ bạn đến từ Vegeta. Chức năng “Login bằng tài khoản Facebook” là môt trong những chức năng giúp cho người dùng đăng ký vào hệ thống ứng dụng của bạn một cách nhanh chóng. Phần lớn các app mobile đếu support chức năng này.</p>
+<p>Việc cài đặt hỗ trợ chức năng login bằng Facebook trên server tuy khá đơn giản, nhưng rất dễ xảy ra lỗi bảo mật, nếu bạn không chú ý. Bài viết này trình bày một vài lỗi cơ bản hay gặp khi cài đặt trên server cho ứng dụng trên mobile</p>
+<h1 id="luồng-thực-hiện-để-login-bằng-facebook-trên-mobile">Luồng thực hiện để login bằng facebook trên mobile</h1>
+<p>Các bước được thực hiện khi người dùng bấm vào nút “login bằng facebook” trên một ứng dụng mobile. Để phần trình bày bên dưới rõ ràng, tôi sẽ gọi ứng dụng mobile là A, và server của ứng dụng này là server A, ứng dụng trên FB cho app A là FBA</p>
 <ul>
-<li>COMPLETE: REFRESH mới hoàn toàn, Oracle sẽ query lại và tính toán lại, Nếu Table chứa lượng data lớn và việc tính toán mất nhiều thời gian thì mỗi lần COMPLETE REFRESH sẽ tốn nhiều thời gian,</li>
-<li>FAST: REFRESH những phần mới từ lần gần đây nhất. thời gian cho mỗi lần FAST REFRESH sẽ được rút ngắn tối thiểu.</li>
-<li>FORCE: là default của REFRESH. Oracle sẽ cố FAST REFRESH, và nếu không được thì sẽ COMPLETE REFRESH</li>
+<li>Ứng dụng mobile A sẽ chuyển sang gọi ứng dụng Facebook để yêu cầu người dùng các quyền để truy cập vào tải khoản của người dùng trên FB</li>
+<li>Sau khi người dùng cho phép ứng dụng mobile A truy cập vào FB, ứng dụng mobile A sẽ gửi request lên FB server để lấy access token</li>
+<li>Server FB trả về access token cho ứng dụng mobile A</li>
 </ul>
-<p>Bạn có thể hình dung mỗi lần Oracle tính toán và ra kết quả cho MATERIALZED VIEW, bạn sẽ có 1 snapshot. Đến lần sau khi FAST REFRESH bạn sẽ update laị kết quả từ last snapshot lần trước. Tất nhiên cái giá phải trả cho việc có được thời gian REFRESH ngắn là sẽ mất thêm dung lượng đĩa cứng để lưu các snapshot ! Tuy nhiên để application chạy được smoothly hết mức có thể thì tốc độ luôn là ưu tiên hàng đầu :D</p>
-<p>Vậy snapshot (hay là change log) của MATERIALZED VIEW là gì ? Chúng ta đang nói đến object đề cập ở bên trên: MATERIALIZED VIEW LOG</p>
-<p>Cần lưu ý là COMPLETE hay FAST là phương pháp REFRESH (how). Còn thời điểm REFRESH (when) sẽ định nghĩa khi nào thì MATERIALZIED VIEW được REFRESH. Có 2 mode cơ bản là manually (ON DEMAND) và automatically (ON COMMIT, DBMS_JOB). ON DEMAND là khi nào bạn (user) ra lệnh REFRESH, ON COMMIT là khi nào MATERIALZED bị thay đổi (COMMIT), còn DBMS_JOB là cho REFRESH thành 1 job được đặt lịch sẵn (giống như cron của Unix system :D)</p>
-<p>MATERIALIZED còn có nhiều điểm cần lưu ý khi áp dụng cụ thể. Bài viết chỉ trình bày những khái niệm cơ bản nhất. Bạn có thể xem thêm các restriction và cách create cụ thể tại <a href="http://docs.oracle.com/cd/E11882_01/server.112/e10706/repmview.htm">Oracle Doc</a></p>
-<h2 id="trigger">TRIGGER</h2>
-<p>Nếu bạn đã biết TRIGGER trong MySQL thì sẽ không thấy lạ lẫm với obejct này. TRIGGER về cơ bản là để định nghĩa các action tự động khi có 1 event xảy ra.</p>
-<p>Ví dụ: Khi bạn có table Users và 2 table Students, Teachers. Bạn muốn khi 1 User mới được INSERT vào table Users, có thể phán đoán dựa theo conđition để cùng insert vào table Students hoặc Teachers</p>
+<p>Sau khi có được access token, ứng dụng mobile có thể làm theo 2 cách</p>
+<ul>
+<li><p><strong>Cách 1</strong>: ứng dụng mobile A sử dụng access token để truy cập vào FB API, lấy thông tin của user từ FB như user id, username, email. Và gửi những thông tin này lên cho server A. Dựa vào trường user id hoặc email, server A sẽ tạo mới tài khoản cho user, hoặc merge với một tài khoản có sẵn ở trong server, rồi trả về thông tin tài khoản cho user.</p></li>
+<li><p><strong>Cách 2</strong>: ứng dụng mobile A gửi ngay access token nhận được từ FB lên cho server A. Server A sử dụng access token truy cập vào FB API và check user trình bày ở cách 1.</p></li>
+</ul>
+<p>Cách 1 có ưu điểm hơn so với cách 2 ở chỗ, việc request vào FB API được thực hiện ở phía client do đó server sẽ giảm được tải đi một phần. Cả server và client đều có khả năng lấy được thông tin user trên FB bằng access token, vậy thì sử dụng client để lấy thông tin, server có thể sử dụng tài nguyên để làm việc khác. Hơn nữa nếu để server lấy thông tin user, thời gian để lấy thông tin sẽ phụ thuộc vào tốc độ mạng giữa server A và FB server.</p>
+<p>Mọi lý do đều dẫn đến cách 1 là tốt hơn so với cách 2 về mặt hiệu năng.</p>
+<p>Tuy nhiên, nếu xét về khía cạnh bảo mât, cách 1 lại cưc kỳ nguy hiểm. Vì sao vậy</p>
+<p>Hãy xét một trường hợp thế này:</p>
+<ul>
+<li>User B sử dụng app A và dùng chức năng login bằng FB để đăng nhập. App A cài đặt theo cách 1. Sau khi có access token, app A lấy được FB user id của B là id_B, và email là email_B. App A gửi những thông tin này lên cho server A. Server A nhận thấy hệ thống chưa có user nào có FB ID là id_B, nên tạo mới một account cho B, và trả về thông tin của B.</li>
+<li>Lần tiếp theo user B sử dụng app A để đăng nhập bằng FB, server A sẽ không tạo mới account, mà trả về luôn thông tin của account đã tạo ra ở trên</li>
+<li>Hacker C, bằng cách nào đó biết được URL endpoint của server A phục vụ cho việc đăng nhập bằng FB. Hacker C, truyền lên một thông tin giả với trường FB ID là id_B. Lúc này server B, chỉ kiểm tra FB ID của request là id_B, nên sẽ vẫn coi đây là request của user B và trả về thông tin của tài khoản user B.</li>
+</ul>
+<p>Vậy là C có thể chiếm bất cứ tài khoản FB nào mà C biết FB id (có tới 1 tỉ tải khoản FB đó, nên C hẳn sẽ có rất nhiều thứ để chiếm đây)</p>
+<p>Với cách implement bằng cách 1, server sẽ không thể phân biệt được request nào là request thật của user. Để chắc chắn server khi nhận được access token, phải request tới FB API để kiểm tra xem access token truyền lên có phải là của user mà app A truyền lên hay không. Nói cách khác server vẫn cần request tới FB API. Như vậy việc client gửi request tới FB API để lấy thông tin là cũng không cần thiết.</p>
+<h1 id="liệu-server-sử-dụng-access-token-để-lấy-thông-tin-của-user-trên-fb-đã-là-đủ">Liệu server sử dụng access token để lấy thông tin của user trên FB đã là đủ?</h1>
+<p>Hãy nói tiếp về cách implement thứ 2. Khi server A nhận access token từ app A. Server gửi request tới FB API để lấy thông tin của user như FB ID và email. Sau đó tạo mới hoặc merge với một tài khoản đã có trong hệ thống (trùng FB ID hoặc là trùng email).</p>
+<p>Nhưng như thế đã là đủ?</p>
+<p>Ta lại xét tiếp một tình huống như sau:</p>
+<ul>
+<li>Hacker C tạo ra một FB app mới là FBA’ và bằng cách nào đó lấy được access token của user B khi B sử dụng FBA’.</li>
+<li>Hacker C gửi request tới server A sử dụng access token FBA’.</li>
+<li>Server A dùng FBA’ để lấy thông tin, và nhận thấy thông tin đó là của user B, nên server A trả về thông tin của tài khoản B</li>
+</ul>
+<p>Như vây, hacker C lại chiếm được tài khoản của user B trên hệ thống A bằng cách dùng một access token trên một FB app khác của user B</p>
+<p>Để bảo mật, cách duy nhất là khi server A nhận được access token, server A cần gửi request tới FB API để check xem access token này là từ FB Application nào.</p>
+<h1 id="tổng-kết">Tổng kết</h1>
+<p>Bài viết trình bày 2 lỗi bảo mật hay gặp khi cài đặt hệ thống login bằng facebook trên server cho ứng dụng mobile. Lỗi thứ nhất là sử dụng client để lấy access token, mà không kiểm tra độ chính xác của access token. Lỗi thứ hai là chỉ kiểm tra độ chính xác của access token bằng cách thông tin user, mà không kiểm tra thông tin của app từ access token.</p>
+<p>Nếu bạn đã có một hệ thống login bằng FB, hãy check lại nó. Nếu bạn chưa từng cài đặt hệ thống này thì chúc mừng bạn, bạn đã được cảnh báo !!!</p>
+		
+		
+	</div>
+
+</article>
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-28T23:45:00+09:00" data-updated="true" itemprop="datePublished">Jul 28<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/php/'>PHP</a>, <a class='category' href='/blog/categories/reflection/'>Reflection</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/07/28/reflection-and-reverse-engineer-in-php/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/07/28/reflection-and-reverse-engineer-in-php/" itemprop="url">Reflection and Reverse Engineer in PHP</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h2 id="giới-thiệu-reflection-class-trong-php">Giới thiệu Reflection class trong PHP</h2>
+<p>Kể từ PHP 5 trở đi, Programmer PHP đã có bộ API Reflection rất hữu dụng để reverse-engineer các class, interfaces, function hay các extension. Bài viết này sẽ giới thiệu tính năng, ý nghĩa và ứng dụng của Reflection trong PHP.</p>
+<h2 id="thế-nào-là-dynamically-typed-language">Thế nào là dynamically-typed language ?</h2>
+<p>Cũng giống như Python hay Ruby, PHP là 1 dynamically-typed language.</p>
+<p>Chúng ta hãy cùng xem xét 2 class sau:</p>
 <div class="bogus-wrapper">
 <notextile>
-<figure class='code'><figcaption>
-<span>materialized_view.sql </span>
+<figure class="code">
+<figcaption>
+<span>Author.php </span>
 </figcaption>
- 
 <div class="highlight">
-<table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -472,63 +220,537 @@
 <span class='line-number'>21</span>
 <span class='line-number'>22</span>
 <span class='line-number'>23</span>
-</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="k">CREATE</span> <span class="k">OR</span> <span class="k">REPLACE</span> <span class="k">TRIGGER</span> <span class="n">teacher_trigger</span>
-</span><span class='line'>   <span class="k">BEFORE</span> <span class="k">INSERT</span>
-</span><span class='line'>   <span class="k">ON</span> <span class="n">USERS</span>
-</span><span class='line'>   <span class="k">FOR</span> <span class="k">EACH</span> <span class="k">ROW</span>
-</span><span class='line'>   <span class="k">WHEN</span> <span class="p">(</span><span class="k">NEW</span><span class="p">.</span><span class="n">FIELD1</span><span class="o">=</span> <span class="s1">&#39;TEACHER_CONDITION&#39;</span><span class="p">)</span> <span class="c1">-- Or any other condition</span>
-</span><span class='line'><span class="k">BEGIN</span>
+<span class='line-number'>24</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Author</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">private</span> <span class="nv">$name</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">private</span> <span class="nv">$birth</span><span class="p">;</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">TEACHERS</span> <span class="p">(</span><span class="n">col1</span><span class="p">,</span> <span class="n">col2</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col1</span><span class="p">,</span> <span class="p">:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col2</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nv">$birth</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">name</span> <span class="o">=</span> <span class="nv">$name</span><span class="p">;</span>
+</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">birth</span> <span class="o">=</span> <span class="nv">$birth</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'><span class="k">END</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">function</span> <span class="nf">getName</span><span class="p">()</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">name</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'><span class="k">CREATE</span> <span class="k">OR</span> <span class="k">REPLACE</span> <span class="k">TRIGGER</span> <span class="n">student_trigger</span>
-</span><span class='line'>   <span class="k">AFTER</span> <span class="k">INSERT</span>
-</span><span class='line'>   <span class="k">ON</span> <span class="n">USERS</span>
-</span><span class='line'>   <span class="k">FOR</span> <span class="k">EACH</span> <span class="k">ROW</span>
-</span><span class='line'>   <span class="k">WHEN</span> <span class="p">(</span><span class="k">NEW</span><span class="p">.</span><span class="n">FIELD1</span><span class="o">=</span> <span class="s1">&#39;STUDENT_CONDITION&#39;</span><span class="p">)</span> <span class="c1">-- Or any other condition</span>
-</span><span class='line'><span class="k">BEGIN</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">function</span> <span class="nf">getBirth</span><span class="p">()</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">birth</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">STUDENTS</span> <span class="p">(</span><span class="n">col1</span><span class="p">,</span> <span class="n">col2</span><span class="p">,</span> <span class="n">col3</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col1</span><span class="p">,</span> <span class="p">:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col2</span><span class="p">,</span> <span class="p">:</span><span class="k">NEW</span><span class="p">.</span><span class="n">col3</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">END</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">/</span>
-</span></code></pre></td></tr></table>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre>
+</td>
+</tr>
+</table>
 </div>
 </figure>
 </notextile>
 </div>
-<p>Bạn có thể thấy ở đoạn code trên, TRIGGER có thể được fire BEFORE hoặc AFTER event mà bạn định nghĩa. Event trong trường hợp này là INSERT vào table USERS, thuộc loại DML statements (INSERT, UPDATE, DELETE trong các table…). TRIGGER còn có thể fire on DDL statements (CREATE hoặc ALTER table …) và Database events (logon. logoff, startup, shutdown ..)</p>
-<h2 id="plsql-procedural-languagestructured-query-language-và-package-object">PL/SQL (Procedural Language/Structured Query Language) và PACKAGE Object</h2>
-<p>PL/SQL Là 1 procedutal programming language, trong khi SQL chỉ là declarative language. Điều đó có nghĩa bạn có thể viết PL/SQL giống như các ngôn ngữ phổ biến khác. PL/SQL cũng có variable, có try catch exception, có if-statement, loop, function, regex, convert, file reader … đẩy đủ các builtin function mà Oracle đã chuẩn bị sẵn. PL/SQL còn nắm lợi thế là thao tác trực tiếp với cursor, table, view, materialized view… các object của Database, remote action qua DB_LINK …</p>
-<p>Như vậy với năng lực của 1 ngôn ngữ hoàn chỉnh, cộng với khả năng tương tác với DB giống như SQL, PL/SQL được dùng để đóng gói xử lý trên DB server.</p>
-<p>Bạn có thể developer web application = Java, Ruby, PHP v.v… chỉ gọi đến DB thông qua các PACKAGE object. Mỗi PACKAGE (viết bằng PL/SQL) là 1 “gói” được viết như 1 module xử lỹ nội bộ trong Oracle DB. Ưu điểm của phương pháp này là tốc độ xử lý sẽ được cải thiện, và communication giữa Application server vs DB server (chỉ là truyền parameter cho PACKAGE và nhận lại result từ PACKAGE) được giảm thiểu.</p>
-<p>VD: với xử lý như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>Book.php </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Book</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">private</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">setAuthor</span><span class="p">(</span><span class="nv">$author</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">getAuthor</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>2 class rất đơn giản phải không :) Book hoàn toàn có thể được setAuthor() là 1 string hay là 1 instance của class Author.</p>
+<p>Không khó để hình dung ra kết quả của đoạn code dưới đây.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>sample.php </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="nv">$book1</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
+</span><span class='line'><span class="nv">$book1</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="s2">&quot;Nam Cao&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="nb">var_dump</span><span class="p">(</span><span class="nv">$book1</span><span class="o">-&gt;</span><span class="na">getAuthor</span><span class="p">());</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$book2</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
+</span><span class='line'><span class="nv">$book2</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">(</span><span class="s2">&quot;Nam Cao&quot;</span><span class="p">,</span><span class="s2">&quot;29-10-1915&quot;</span><span class="p">));</span>
+</span><span class='line'><span class="nb">var_dump</span><span class="p">(</span><span class="nv">$book1</span><span class="o">-&gt;</span><span class="na">getAuthor</span><span class="p">());</span>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Nếu chỉ dừng ở đây thì tôi với bạn chẳng có gì để nói với nhau :D Nhưng bạn hãy thử để ý, 1 instance của 1 class Book khi gọi đến hàm <code>setAuthor</code> hoàn toàn không có 1 khái niệm nào về <code>$author</code> cả. Nói cách khác, $author có thể là bất cứ 1 object nào. Điều gì sẽ xảy ra khi tôi modify class Book 1 chút như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>Book.php </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Book</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">private</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">setAuthor</span><span class="p">(</span><span class="nv">$author</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>      <span class="nb">var_dump</span><span class="p">(</span><span class="nv">$author</span><span class="o">-&gt;</span><span class="na">getName</span><span class="p">());</span> <span class="c1">// Attention here! Now we try to call getName() of variable $author</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">getAuthor</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Bạn thử chạy lại đoạn code sample.php bên trên, bạn sẽ thấy $book1 trả về Fatal Error nhưng $book2 sẽ chạy qua bình thường!</p>
+<p>Vào thời điểm runtime $book2, PHP sẽ “inspect” object $author truyền vào cho <code>setAuthor()</code> và tự hiểu $author là 1 instance của class Author và có 1 method là <code>getName()</code>.</p>
+<h2 id="reverse-engineer-example">Reverse engineer example</h2>
+<p>Vậy PHP nói riêng và các dynamically-typed language nói chung làm thế nào để nhận biết được type của object truyền vào function hay class ?</p>
+<p>Câu trả lời là reflection class! Bạn đã nhận ra PHP dùng reflection như thế nào qua ví dụ bên trên, bạn thậm chí có thể tự sử dụng reflection class.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>Book.php </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Book</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">private</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">setAuthor</span><span class="p">(</span><span class="nv">$author</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>      <span class="nb">var_dump</span><span class="p">(</span><span class="nv">$author</span><span class="o">-&gt;</span><span class="na">getName</span><span class="p">());</span> <span class="c1">// original name</span>
+</span><span class='line'>      <span class="nv">$reflector</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ReflectionClass</span><span class="p">(</span><span class="nv">$author</span><span class="p">);</span> <span class="c1">// Here we start to inspect $author</span>
+</span><span class='line'>      <span class="nv">$authorName</span> <span class="o">=</span> <span class="nv">$reflector</span><span class="o">-&gt;</span><span class="na">getProperty</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">);</span> <span class="c1">// Get local variable &#39;name&#39;</span>
+</span><span class='line'>      <span class="nv">$authorName</span><span class="o">-&gt;</span><span class="na">setAccessible</span><span class="p">(</span><span class="k">true</span><span class="p">);</span> <span class="c1">// since &#39;name&#39; is a private local variable of class Author, we need access here to modify </span>
+</span><span class='line'>      <span class="nv">$authorName</span><span class="o">-&gt;</span><span class="na">setValue</span><span class="p">(</span><span class="nv">$author</span><span class="p">,</span><span class="s1">&#39;Ngo Tat To&#39;</span><span class="p">);</span> <span class="c1">// now hack the &#39;name&#39; of $author :))</span>
+</span><span class='line'>      <span class="nb">var_dump</span><span class="p">(</span><span class="nv">$author</span><span class="o">-&gt;</span><span class="na">getName</span><span class="p">());</span> <span class="c1">// Guess what will be output here :D </span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">getAuthor</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Bạn thử đoán xem đoạn var_dump sau sẽ ra kết quả gì :D</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>Book.php </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="nv">$book2</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
+</span><span class='line'><span class="nv">$book2</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">(</span><span class="s2">&quot;Nam Cao&quot;</span><span class="p">,</span><span class="s2">&quot;29-10-1915&quot;</span><span class="p">));</span>
+</span><span class='line'><span class="nb">var_dump</span><span class="p">(</span><span class="nv">$book1</span><span class="o">-&gt;</span><span class="na">getAuthor</span><span class="p">());</span> <span class="c1">// Suprisingly, &#39;Ngo Tat To&#39;, not &#39;Nam Cao&#39; here </span>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<h2 id="reflection-class-dùng-để-làm-gì">Reflection class dùng để làm gì ?</h2>
+<p>Đến đây có lẽ bạn đọc đã hình dung ra phần nào cách thức hoạt động của reflection class, các ngôn ngữ dynamically-typed “hiểu” các object như thế nào. Reflection thực tế tồn tại trong PHPUnit hay các mocking framework, các code analysis framwworks hay metaprogramming.</p>
+<p>Reflection class trong PHP là 1 tool mạnh mẽ cung cấp cho programmer chính những sức mạnh mà ngôn ngữ sở hữu. Tuy nhiên reflection class không hề được khuyến khích dùng rộng rãi, vì với bản chất là tool của quá trình reverse engineering, nó hoàn toàn có thể làm design của hệ thống trở nên mess up và khó kiểm soát.</p>
+<p>Reflection chỉ nên dùng khi nào thực sự cần thiết, ứng dụng nhìn thấy rõ nhất là khi bạn phải “đối đầu” với 1 project mà document ko đầy đủ hay không được upadte thường xuyên. <a href="https://github.com/cakephp/api_generator">Cake Api Generator</a> là ví dụ điển hình nhất.</p>
+<h2 id="summary">Summary</h2>
 <ul>
-<li>PHP validate 1 string ADD_ME và nhận 1 string UserId từ user input (trong request gửi đến web server)</li>
-<li>Nếu ADD_ME không tồn tại trong table USERS, insert 1 record mới vào table USERS</li>
-<li>Nếu ADD_ME = “teacher”, kiểm tra xem trong table TEACHERS có tồn tại UserID không</li>
-<li>Nếu trong table TEACHERS không có UserID, INSERT 1 record vào table TEACHERS</li>
-<li>Nếu ADD_ME = “student”, kiểm tra xem trong table STUDENTS có tồn tại UserID không</li>
-<li>Nếu trong table STUDENTS không có UserID, INSERT 1 record vào table STUDENTS … (Lặp lại n lần với n table khác nhau)</li>
+<li><strong>Dynamically-typed language</strong>: Là ngôn ngữ có thể tự hiểu được object tại thời điểm runtime, không cần tại compile time. PHP, Ruby, Python là dynamically-typed language. Ngược lại C hay Java là statically typed language.</li>
+<li><strong>Reflection Class</strong> Là 1 bộ API được PHP cung cấp để sử dụng kỹ thuật reverse engineer, hữu dụng khi tạo document tự động.</li>
 </ul>
-<p>Như vậy trong các bước kể trên, ngoại trừ bước đầu tiên, tất cả các bước còn lại đều phải init connection từ Application server đến DB server. (Không quan tâm bạn dùng DAO hay ORM hay execute query thẳng trên DB)</p>
-<p>Tôi có thể design lại xử lý trên như sau:</p>
-<ul>
-<li>PHP validate 1 string ADD_ME và nhận 1 string UserId từ user input (trong request gửi đến web server)</li>
-<li>PHP truyền parameter ADD_ME và UserId cho PACKAGE “EVALUATE_USER” của Oracle</li>
-<li>“EVALUATE_USER” does all the stuff :D</li>
-<li>“EVALUATE_USER” trả kết quả về cho PHP : 0: kết thúc không có lỗi, 1: Kết thúc với lỗi ở TABLE USERS, 2: Kết thúc với lỗi ở TABLE TEACHER, …..</li>
-</ul>
-<p>Như vậy connection từ Application server sang DB server chỉ phát sinh ở bước 2 và bước 4. Tôi dám cá là hệ thống sẽ speedup với 1 tốc độ không nhỏ :D</p>
-<h2 id="kết-luận">Kết luận</h2>
-<ul>
-<li>MATERIALIZED VIEW LOG : là snapshot, là object bắt buộc phải có khi dùng MATERIALZED VIEW với chiến lược FAST REFRESH .</li>
-<li>TRIGGER: Là object định nghĩa sẽ fire event nào khi các action nào được thực hiện trong database.</li>
-<li>PL/SQL: Là extend của SQL, produceral programming language của Oracle, cho phép thao tác trực tiếp với các object của Database trên Database server với đầy đủ năng lực xử lý như 1 ngôn ngữ hoàn chỉnh</li>
-</ul>
+		
+		
+	</div>
+
+</article>
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-24T10:05:00+09:00" data-updated="true" itemprop="datePublished">Jul 24<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/sysadmin/'>sysadmin</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/07/24/install-memcached-with-sasl/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/07/24/install-memcached-with-sasl/" itemprop="url">Cài đặt Memcached Với Sasl</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1 id="giới-thiệu">Giới thiệu</h1>
+<p>Memcached là cơ sở dữ liệu được lưu trong memory. Thông thường chúng ta sử dụng memcached trong mạng nội bộ, hoặc sử dụng private IP để kết nối tới memcached, tuy nhiên trong một số trường hợp, IP của memcached server cần public ra ngoài (ví dụ toàn bộ các server đều đặt trên AWS). Trong trường hợp này, chúng ta cần bảo mật kết nối của memcached server.</p>
+<p>Từ phiên bản 1.4.3, memcached đã support sử dụng <a href="http://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer">SASL</a></p>
+<p>Bài viết này sẽ giới thiệu với các bạn cách cài đặt memcached với SASL cũng như giới thiệu cơ chế, cách làm việc của SASL</p>
+<h1 id="cách-cài-đặt-sasl-với-memcached">Cách cài đặt SASL với memcached</h1>
+<p>Đầu tiên bạn cần cài đặt phiên bản mới nhất của memcached. Bạn sẽ cần một số gói và thư viện khác để support SASL.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>install.sh </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> sudo apt-get install libsasl2-2 sasl2-bin libsasl2-2 libsasl2-dev libsasl2-modules
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Đừng quên, để cài đặt memcached, bạn cùng sẽ cần cài <code>libevent</code></p>
+<p>Cài đặt memcached</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>install.sh </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> wget http://memcached.googlecode.com/files/memcached-1.4.3.tar.gz
+</span><span class='line'><span class="nv">$&gt;</span> tar xvf memcached-1.4.3.tar.gz
+</span><span class='line'><span class="nv">$&gt;</span> <span class="nb">cd </span>memcached-1.4.3
+</span><span class='line'><span class="nv">$&gt;</span> ./configure --enable-sasl
+</span><span class='line'><span class="nv">$&gt;</span> sed -i <span class="s1">&#39;s/-Werror//g&#39;</span> Makefile
+</span><span class='line'><span class="nv">$&gt;</span> make
+</span><span class='line'><span class="nv">$&gt;</span> sudo make install
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Cài đặt libmemcached</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>install.sh </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> wget https://launchpad.net/libmemcached/1.0/1.0.17/+download/libmemcached-1.0.17.tar.gz
+</span><span class='line'><span class="nv">$&gt;</span> tar xvf libmemcached-1.0.17.tar.gz
+</span><span class='line'><span class="nv">$&gt;</span> <span class="nb">cd </span>libmemcached-1.0.17
+</span><span class='line'><span class="nv">$&gt;</span> ./configure
+</span><span class='line'><span class="nv">$&gt;</span> make
+</span><span class='line'><span class="nv">$&gt;</span> sudo make install
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<h1 id="set-up-sasl-với-memcached">Set up SASL với memcached</h1>
+<p>Điều đầu tiên bạn cần đảm bảo đó là set biến môi trường <code>SASL_CONF_PATH</code> khi bạn chay memcached. Trong ví dụ này <code>SASL_CONF_PATH</code> sẽ được trỏ tới <code>/home/kiennt/sasl</code></p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>install.sh </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> <span class="nb">export </span><span class="nv">SASL_CONF_PATH</span><span class="o">=</span>/home/kiennt/sasl
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Sau đó bạn cần set up file memcached.conf trong SASL (tên của file sẽ là tên của ứng dụng SASL - cụ thể ở đây là memcached)</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class=''><span class='line'>mech_list: plain
+</span><span class='line'>log_level: 5
+</span><span class='line'>sasldb_path: /home/kiennt/sasl/sasldb2</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Tiếp theo, bạn cần tạo một file database (được trỏ tới từ bước trước) trong file <code>memcached.conf</code></p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>install.sh </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> sudo saslpasswd2 -c -a memcached -f /home/kiennt/sasl/sasldb2 &lt;username&gt;
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Chú ý rằng cờ -a xác định tên của ứng dụng <code>memcached</code> - chính là tên của config file bạn đã xác định ở trên <code>memcached.conf</code>. Khi bạn chạy <code>saslpasswd2</code>, bạn sẽ được hỏi password và password verify cation.</p>
+<h1 id="chạy-memcached-với-sasl">Chạy memcached với SASL</h1>
+<p>Để chạy memcached với SASL, bạn cần sử dụng cờ <code>-S</code> để bật cơ chế security của mecached lên</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>install.sh </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> <span class="nb">export </span><span class="nv">SASL_CONF_PATH</span><span class="o">=</span>/home/kiennt/sasl
+</span><span class='line'><span class="nv">$&gt;</span> /usr/local/bin/memcached -S -vvv
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<h1 id="tổng-kết">Tổng kết</h1>
+<p>Bài viết này giới thiệu với các cài đặt và chạy memcached với SASL. Giờ bạn có thể tập trung vào việc code ứng dụng của bạn rồi.</p>
 		
 		
 	</div>
@@ -546,7 +768,7 @@
     <div class="center"><a href="/blog/archives">Blog Archives</a></div>
 </nav></div>
 			</div>
-			<footer id="footer" class="inner">Copyright &copy; 2014
+			<footer id="footer" class="inner">Copyright &copy; 2015
 
     kỹ thuật máy tính
 
