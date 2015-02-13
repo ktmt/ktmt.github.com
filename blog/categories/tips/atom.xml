@@ -4,7 +4,7 @@
   <title><![CDATA[Category: tips | Blog kỹ thuật máy tính]]></title>
   <link href="http://git@github.com.github.com/blog/categories/tips/atom.xml" rel="self"/>
   <link href="http://git@github.com.github.com/"/>
-  <updated>2015-02-13T00:35:54+09:00</updated>
+  <updated>2015-02-14T00:25:55+09:00</updated>
   <id>http://git@github.com.github.com/</id>
   <author>
     <name><![CDATA[kỹ thuật máy tính]]></name>
@@ -21,121 +21,57 @@
     <content type="html"><![CDATA[<h1 id="https-trên-rails">HTTPS trên rails</h1>
 <p>Là RoR developer, khi phải làm việc với một số thông tin quan trọng như: thông tin cá nhân user, thông tin về thanh toán trực tuyến thì thường bạn phải dùng kết nối có bảo mật (secure connection), và điển hình ở đây là sử dụng HTTPS. Để setup HTTPS trên rails, thì trước hết mình phải nhắc lại là các web server phổ biến trên rails như là webrick, unicorn hay thin đều không hỗ trợ HTTPS từ đầu. Để sử dụng SSL thì có 2 cách:</p>
 <ol type="1">
-<li><p>Add thêm plugin: ví dụ như với webrick thì bạn sử dụng “webrick/https”, nhưng cách này có một bất lợi là bạn phải setting từ đầu, và server đó sẽ luôn và chỉ phục vụ các request ssl: <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>webrickssl.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'> <span class="k">module</span> <span class="nn">Rails</span> <span class="k">class</span> <span class="nc">Server</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="o">::</span><span class="ss">Rack</span><span class="p">:</span><span class="ss">:Server</span> <span class="k">def</span> <span class="nf">default_options</span> <span class="k">super</span><span class="o">.</span><span class="n">merge</span><span class="p">({</span> <span class="ss">:Port</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">3000</span><span class="p">,</span> <span class="ss">:environment</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="p">(</span><span class="no">ENV</span><span class="o">[</span><span class="err">‘</span><span class="no">RAILS_ENV</span><span class="err">’</span><span class="o">]</span> <span class="o">||</span> <span class="err">“</span><span class="n">development</span><span class="err">”</span><span class="p">)</span><span class="o">.</span><span class="n">dup</span><span class="p">,</span> <span class="ss">:daemonize</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="kp">false</span><span class="p">,</span> <span class="ss">:debugger</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="kp">false</span><span class="p">,</span> <span class="ss">:pid</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="err">“</span><span class="n">tmp</span><span class="o">/</span><span class="n">pids</span><span class="o">/</span><span class="n">server</span><span class="o">.</span><span class="n">pid</span><span class="err">”</span><span class="p">),</span> <span class="ss">:config</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="err">“</span><span class="n">config</span><span class="o">.</span><span class="n">ru</span><span class="err">”</span><span class="p">),</span> <span class="ss">:SSLEnable</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="kp">true</span><span class="p">,</span> <span class="ss">:SSLVerifyClient</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="ss">OpenSSL</span><span class="p">:</span><span class="ss">:SSL</span><span class="o">::</span><span class="no">VERIFY_NONE</span><span class="p">,</span> <span class="ss">:SSLPrivateKey</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="ss">OpenSSL</span><span class="p">:</span><span class="ss">:PKey</span><span class="o">::</span><span class="no">RSA</span><span class="o">.</span><span class="n">new</span><span class="p">(</span> <span class="no">IO</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="err">“</span><span class="n">vendor</span><span class="o">/</span><span class="n">ssl</span><span class="o">/</span><span class="n">gs</span><span class="o">.</span><span class="n">key</span><span class="err">”</span><span class="p">))),</span> <span class="ss">:SSLCertificate</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="ss">OpenSSL</span><span class="p">:</span><span class="ss">:X509</span><span class="o">::</span><span class="no">Certificate</span><span class="o">.</span><span class="n">new</span><span class="p">(</span> <span class="no">IO</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="err">“</span><span class="n">vendor</span><span class="o">/</span><span class="n">ssl</span><span class="o">/</span><span class="n">gs</span><span class="o">.</span><span class="n">crt</span><span class="err">”</span><span class="p">))),</span> <span class="ss">:SSLCertName</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="o">[[</span><span class="err">“</span><span class="no">CN</span><span class="err">”</span><span class="p">,</span> <span class="ss">WEBrick</span><span class="p">:</span><span class="ss">:Utils</span><span class="o">::</span><span class="n">getservername</span><span class="o">]]</span> <span class="p">})</span> <span class="k">end</span> <span class="k">end</span> <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div> Để switch được giữa ssl và non-ssl thì thường bạn sẽ phải chạy song song 2 bản webrick, một bản hỗ trợ ssl và một bản không</p></li>
+<li><p>Add thêm plugin: ví dụ như với webrick thì bạn sử dụng “webrick/https”, nhưng cách này có một bất lợi là bạn phải setting từ đầu, và server đó sẽ luôn và chỉ phục vụ các request ssl: {%codeblock webrickssl.rb %} module Rails class Server &lt; ::Rack::Server def default_options super.merge({ :Port =&gt; 3000, :environment =&gt; (ENV[‘RAILS_ENV’] || “development”).dup, :daemonize =&gt; false, :debugger =&gt; false, :pid =&gt; File.expand_path(“tmp/pids/server.pid”), :config =&gt; File.expand_path(“config.ru”), :SSLEnable =&gt; true, :SSLVerifyClient =&gt; OpenSSL::SSL::VERIFY_NONE, :SSLPrivateKey =&gt; OpenSSL::PKey::RSA.new( IO.read(File.expand_path(“vendor/ssl/gs.key”))), :SSLCertificate =&gt; OpenSSL::X509::Certificate.new( IO.read(File.expand_path(“vendor/ssl/gs.crt”))), :SSLCertName =&gt; [[“CN”, WEBrick::Utils::getservername]] }) end end end {% endcodeblock %} Để switch được giữa ssl và non-ssl thì thường bạn sẽ phải chạy song song 2 bản webrick, một bản hỗ trợ ssl và một bản không</p></li>
 <li><p>Bạn sử dụng <strong>Nginx</strong> như một ssl proxy, sau khi xử lý ssl request thì Nginx sẽ forward lại request cho rails-server. Ở bài viết này mình sẽ nói về thiết lập môi trường ssl ở dưới môi trường development sử dụng <strong>Pow</strong> và <strong>Nginx</strong></p></li>
 </ol>
 <h1 id="pow-nginx">Pow + Nginx</h1>
-<p>Tại sao lại sử dụng Pow? Pow là một rails-server rất hay được sử dụng trong công đoạn <strong>development</strong>. Lý do vì: dễ cài đặt, không phải config, và pow cho mỗi webapp của chúng ta một cái domain đẹp đẽ trên local. Để cài đặt pow thì vô cùng đơn giản: <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'> <span class="nv">$curl</span> get.pow.cx | sh
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-<p>Pow không đi kèm một bộ tool dòng lệnh tốt lắm (command line tool), tuy nhiên rất may đã có người làm hộ chúng ta 1 cái gem tên là <strong>powder</strong>, có nó thì chúng ta sẽ sử dụng pow dễ dàng hơn: <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'> <span class="nv">$sudo</span> gem install powder
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-<p>Sau khi install xong powder, chúng ta đi đến folder chứa rails app và chỉ cần [powder link appname] là đã xong phần cài đặt <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'> <span class="nb">cd</span> ~/yourapp <span class="nv">$powder</span> link app-name
-</span></code></pre></td></tr></table></div></figure></notextile></div> Sau khi làm thao tác này thì một symlink với tên là app-name sẽ được tạo ra ở trong thư mục <strong>~/.pow</strong> Kết thúc thao tác này, powder đã tự động được khởi động, và chúng ta chỉ cần truy cập vào url [app-name.dev] là đã sử dụng được như bình thường :)</p>
-<p>OK vậy là xong pow, giờ đến lượt nginx, để cài đặt nginx thì khá đơn giản trên mac, mình sử dụng brew: <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>install.sh</span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'> brew install nginx
-</span></code></pre></td></tr></table></div></figure></notextile></div> Thường thì nginx sau khi được cài đặt xong sẽ nằm ở :[/usr/local/etc/nginx]</p>
-<p>Bạn đang muốn sử dụng HTTPS, nên công đoạn tiếp theo sẽ là setup để nginx nhận request HTTPS và forward lại cho pow. Đầu tiên là phải generate ra một cặp <strong>private key</strong> và <strong>certificate sign</strong>, tại sao lại cần cặp này thì các bạn có thể tự tìm hiểu về giao thức HTTPS. <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>install.sh</span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'> <span class="nv">$openssl</span> req -new -nodes -keyout server.key -out server.csr <span class="nv">$openssl</span> x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-<p>Sau khi có cặp key và sign, rồi bạn copy cặp đó vào thư mục [/usr/local/etc/nginx/ssl] cho dễ config. Tiếp đến bạn mở config của nginx ra và config lại như dưới đây <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>nginx </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>worker_processes 1;&lt;/p>
-</span><span class='line'>&lt;p>events { worker_connections 1024; }&lt;/p>
-</span><span class='line'>&lt;p>http { include mime.types; default_type application/octet-stream;&lt;/p>
-</span><span class='line'>&lt;pre>&lt;code>  sendfile        on;
-</span><span class='line'>  keepalive_timeout  65;
-</span><span class='line'>
-</span><span class='line'>  server {
-</span><span class='line'>    ### server port and name ###
-</span><span class='line'>    listen          443 ssl;
-</span><span class='line'>    server_name     app-name.dev;
-</span><span class='line'>
-</span><span class='line'>    ### SSL log files ###
-</span><span class='line'>    access_log      logs/ssl-access.log;
-</span><span class='line'>    error_log       logs/ssl-error.log;
-</span><span class='line'>
-</span><span class='line'>    ### SSL cert files ###
-</span><span class='line'>    ssl_certificate      ssl/app-name.crt;
-</span><span class='line'>    ssl_certificate_key  ssl/app-name.key;
-</span><span class='line'>    ### Add SSL specific settings here ###
-</span><span class='line'>    keepalive_timeout    60;
-</span><span class='line'>    ### We want full access to SSL via backend ###
-</span><span class='line'>    location / {
-</span><span class='line'>      proxy_pass  http://app-name.dev/;
-</span><span class='line'>      ### force timeouts if one of backend is died ##
-</span><span class='line'>      proxy_next_upstream error timeout invalid_header http_500 http_502 http_503;
-</span><span class='line'>
-</span><span class='line'>      ### Set headers ####
-</span><span class='line'>      proxy_set_header Host $host;
-</span><span class='line'>      proxy_set_header X-Real-IP $remote_addr;
-</span><span class='line'>      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-</span><span class='line'>
-</span><span class='line'>      ### Most PHP, Python, Rails, Java App can use this header ###
-</span><span class='line'>      proxy_set_header X-Forwarded-Proto https;
-</span><span class='line'>      ### By default we don&#39;t want to redirect it ####
-</span><span class='line'>      proxy_redirect     off;
-</span><span class='line'>    }
-</span><span class='line'> }&lt;/code>&lt;/pre>
-</span><span class='line'>&lt;p>}</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-<p>Công việc cuối cùng chỉ là chạy nginx, bạn khởi động nginx với option -t để test config file có đúng và không có warning nào không: <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>runnginx.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'> <span class="nv">$ </span>sudo nginx -t nginx: the configuration file /usr/local/etc/nginx/nginx.conf syntax is ok nginx: configuration file /usr/local/etc/nginx/nginx.conf <span class="nb">test </span>is successful
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>Tại sao lại sử dụng Pow? Pow là một rails-server rất hay được sử dụng trong công đoạn <strong>development</strong>. Lý do vì: dễ cài đặt, không phải config, và pow cho mỗi webapp của chúng ta một cái domain đẹp đẽ trên local. Để cài đặt pow thì vô cùng đơn giản: {% codeblock install.sh %} $curl get.pow.cx | sh {% endcodeblock %}</p>
+<p>Pow không đi kèm một bộ tool dòng lệnh tốt lắm (command line tool), tuy nhiên rất may đã có người làm hộ chúng ta 1 cái gem tên là <strong>powder</strong>, có nó thì chúng ta sẽ sử dụng pow dễ dàng hơn: {% codeblock install.sh %} $sudo gem install powder {% endcodeblock %}</p>
+<p>Sau khi install xong powder, chúng ta đi đến folder chứa rails app và chỉ cần [powder link appname] là đã xong phần cài đặt {% codeblock install.sh %} cd ~/yourapp $powder link app-name {% endcodeblock %} Sau khi làm thao tác này thì một symlink với tên là app-name sẽ được tạo ra ở trong thư mục <strong>~/.pow</strong> Kết thúc thao tác này, powder đã tự động được khởi động, và chúng ta chỉ cần truy cập vào url [app-name.dev] là đã sử dụng được như bình thường :)</p>
+<p>OK vậy là xong pow, giờ đến lượt nginx, để cài đặt nginx thì khá đơn giản trên mac, mình sử dụng brew: {% codeblock install.sh%} brew install nginx {% endcodeblock%} Thường thì nginx sau khi được cài đặt xong sẽ nằm ở :[/usr/local/etc/nginx]</p>
+<p>Bạn đang muốn sử dụng HTTPS, nên công đoạn tiếp theo sẽ là setup để nginx nhận request HTTPS và forward lại cho pow. Đầu tiên là phải generate ra một cặp <strong>private key</strong> và <strong>certificate sign</strong>, tại sao lại cần cặp này thì các bạn có thể tự tìm hiểu về giao thức HTTPS. {% codeblock install.sh%} $openssl req -new -nodes -keyout server.key -out server.csr $openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt {% endcodeblock%}</p>
+<p>Sau khi có cặp key và sign, rồi bạn copy cặp đó vào thư mục [/usr/local/etc/nginx/ssl] cho dễ config. Tiếp đến bạn mở config của nginx ra và config lại như dưới đây {% codeblock nginx %} worker_processes 1;</p>
+<p>events { worker_connections 1024; }</p>
+<p>http { include mime.types; default_type application/octet-stream;</p>
+<pre><code>  sendfile        on;
+  keepalive_timeout  65;
+
+  server {
+    ### server port and name ###
+    listen          443 ssl;
+    server_name     app-name.dev;
+
+    ### SSL log files ###
+    access_log      logs/ssl-access.log;
+    error_log       logs/ssl-error.log;
+
+    ### SSL cert files ###
+    ssl_certificate      ssl/app-name.crt;
+    ssl_certificate_key  ssl/app-name.key;
+    ### Add SSL specific settings here ###
+    keepalive_timeout    60;
+    ### We want full access to SSL via backend ###
+    location / {
+      proxy_pass  http://app-name.dev/;
+      ### force timeouts if one of backend is died ##
+      proxy_next_upstream error timeout invalid_header http_500 http_502 http_503;
+
+      ### Set headers ####
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+      ### Most PHP, Python, Rails, Java App can use this header ###
+      proxy_set_header X-Forwarded-Proto https;
+      ### By default we don&#39;t want to redirect it ####
+      proxy_redirect     off;
+    }
+ }</code></pre>
+<p>} {% endcodeblock %}</p>
+<p>Công việc cuối cùng chỉ là chạy nginx, bạn khởi động nginx với option -t để test config file có đúng và không có warning nào không: {% codeblock runnginx.sh %} $ sudo nginx -t nginx: the configuration file /usr/local/etc/nginx/nginx.conf syntax is ok nginx: configuration file /usr/local/etc/nginx/nginx.conf test is successful {% endcodeblock %}</p>
 <p>Như vậy là mọi thứ đã OK, giờ chỉ việc dev thôi :D</p>
-<p>Để switch một cách đơn giản nhất giữa HTTPS và HTTP thì mình tạo 2 hàm sau trong application_controller: <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>switch.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'> <span class="k">def</span> <span class="nf">redirect_to_https</span> <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">protocol</span> <span class="o">==</span> <span class="err">‘</span><span class="ss">http</span><span class="p">:</span><span class="sr">//</span><span class="err">’</span> <span class="n">redirect_to</span> <span class="ss">action</span><span class="p">:</span> <span class="n">action_name</span><span class="p">,</span> <span class="ss">params</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">query_parameters</span><span class="p">,</span> <span class="ss">protocol</span><span class="p">:</span> <span class="err">‘</span><span class="ss">https</span><span class="p">:</span><span class="sr">//</span><span class="err">’</span> <span class="k">end</span> <span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
-</span><span class='line'><span class="sr">&lt;p&gt;def redirect_to_http if request.protocol == ‘https:/</span><span class="o">/</span><span class="err">’</span> <span class="n">redirect_to</span> <span class="ss">action</span><span class="p">:</span> <span class="n">action_name</span><span class="p">,</span> <span class="ss">params</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">query_parameters</span><span class="p">,</span> <span class="ss">protocol</span><span class="p">:</span> <span class="err">‘</span><span class="ss">http</span><span class="p">:</span><span class="sr">//</span><span class="err">’</span> <span class="k">end</span> <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div> Và với nhứng method nào cần sử dụng https thì mình chỉ cần gọi đến hàm redirect_to_https là ok :D.</p>
+<p>Để switch một cách đơn giản nhất giữa HTTPS và HTTP thì mình tạo 2 hàm sau trong application_controller: {% codeblock switch.rb %} def redirect_to_https if request.protocol == ‘http://’ redirect_to action: action_name, params: request.query_parameters, protocol: ‘https://’ end end</p>
+<p>def redirect_to_http if request.protocol == ‘https://’ redirect_to action: action_name, params: request.query_parameters, protocol: ‘http://’ end end {% endcodeblock %} Và với nhứng method nào cần sử dụng https thì mình chỉ cần gọi đến hàm redirect_to_https là ok :D.</p>
 <p>Các bạn có thể thấy bộ đôi pow và nginx rất dễ sử dụng đúng không. Gần đây mình có gặp phải một problem với bộ đôi này là mình sử dụng oauth2 để login với google account. Và google api <strong>không chấp nhận callback uri có domain có đuôi là .dev nhưng lại chấp nhận domain là localhost</strong>. Khi cài đặt powder thì default cái 127.0.0.1 sẽ không được trỏ đến app-name.dev của bạn, để làm việc này thì bạn chỉ cần vào ~/.pow, tạo một symlink với tên là <strong>default</strong> trỏ đến rails app của bạn là OK :D.</p>]]></content>
   </entry>
   
@@ -144,24 +80,12 @@
     <link href="http://git@github.com.github.com/blog/2013/05/03/error-when-install-therubyracer/"/>
     <updated>2013-05-03T06:43:00+09:00</updated>
     <id>http://git@github.com.github.com/blog/2013/05/03/error-when-install-therubyracer</id>
-    <content type="html"><![CDATA[<p>Là ruby dev chắc bạn biết đến gem therubyracer (là gem dùng làm javascript interpreter trên ruby thông qua v8, gem này thường dùng làm javascript headless test hay để sử dụng một số module của nodejs trên ruby) Tuy nhiên khi cài đặt gem này trên mac os (kể cả từ 10.6 đến 10.8) thì rất hay bị gặp lỗi: <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>error error.sh</span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'> <span class="nv">$ </span>gem install therubyracer Building native extensions. This could take a <span class="k">while</span>… ERROR: Error installing therubyracer: ERROR: Failed to build gem native extension.&lt;/p&gt;
-</span><span class='line'>&lt;pre&gt;&lt;code&gt;    /Users/david/.rvm/rubies/ruby-1.9.3-p194/bin/ruby extconf.rb&lt;/code&gt;&lt;/pre&gt;
-</span><span class='line'>&lt;p&gt;checking <span class="k">for </span>main<span class="o">()</span> in -lobjc… yes *** extconf.rb failed *** Could not create Makefile due to some reason, probably lack of necessary libraries and/or headers. Check the mkmf.log file <span class="k">for </span>more details. You may need configuration options.&lt;/p&gt;
-</span><span class='line'>&lt;p&gt;Provided configuration options: –with-opt-dir –with-opt-include –without-opt-include<span class="o">=</span>&lt;span <span class="nv">class</span><span class="o">=</span><span class="s2">&quot;math&quot;</span>&gt;<span class="se">\(</span><span class="o">{</span>opt-dir<span class="o">}</span>/include  --with-opt-lib  --without-opt-lib<span class="o">=</span><span class="se">\)</span>&lt;/span&gt;<span class="o">{</span>opt-dir<span class="o">}</span>/lib –with-make-prog –without-make-prog –srcdir<span class="o">=</span>. –curdir –ruby<span class="o">=</span>/Users/david/.rvm/rubies/ruby-1.9.3-p194/bin/ruby –with-objclib –without-objclib extconf.rb:15:in &lt;code&gt;&amp;lt;main&amp;gt;<span class="err">&#39;</span>: undefined method&lt;/code&gt;include_path’ <span class="k">for </span>Libv8:Module <span class="o">(</span>NoMethodError<span class="o">)</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-<p>Bị lỗi này hình như là do version của v8 đang cài trong máy bị conflict với version v8 therubyracer reference đến, để fix thì có 2 cách: Cách đầu tiên là uninstall bản gem libv8 đang có trong máy đi, rồi install lại therubyracer <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>fix1 fix1.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'> <span class="nv">$ </span>gem uninstall libv8 <span class="nv">$ </span>gem install therubyracer
-</span></code></pre></td></tr></table></div></figure></notextile></div> Khi install therubyracer thì gem sẽ tự động install lại bản v8 thích hợp vào đúng chỗ.</p>
-<p>Hoặc bạn có thể dùng cách thứ 2 là update lại bản libv8 mới nhất, rồi tiến hành cài đặt như bình thường <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>fix1 fix1.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'> <span class="nv">$ </span>gem update libv8 <span class="nv">$ </span>gem install therubyracer
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>]]></content>
+    <content type="html"><![CDATA[<p>Là ruby dev chắc bạn biết đến gem therubyracer (là gem dùng làm javascript interpreter trên ruby thông qua v8, gem này thường dùng làm javascript headless test hay để sử dụng một số module của nodejs trên ruby) Tuy nhiên khi cài đặt gem này trên mac os (kể cả từ 10.6 đến 10.8) thì rất hay bị gặp lỗi: {% codeblock error error.sh%} $ gem install therubyracer Building native extensions. This could take a while… ERROR: Error installing therubyracer: ERROR: Failed to build gem native extension.</p>
+<pre><code>    /Users/david/.rvm/rubies/ruby-1.9.3-p194/bin/ruby extconf.rb</code></pre>
+<p>checking for main() in -lobjc… yes *** extconf.rb failed *** Could not create Makefile due to some reason, probably lack of necessary libraries and/or headers. Check the mkmf.log file for more details. You may need configuration options.</p>
+<p>Provided configuration options: –with-opt-dir –with-opt-include –without-opt-include=<span class="math">\({opt-dir}/include  --with-opt-lib  --without-opt-lib=\)</span>{opt-dir}/lib –with-make-prog –without-make-prog –srcdir=. –curdir –ruby=/Users/david/.rvm/rubies/ruby-1.9.3-p194/bin/ruby –with-objclib –without-objclib extconf.rb:15:in <code>&lt;main&gt;': undefined method</code>include_path’ for Libv8:Module (NoMethodError) {% endcodeblock %}</p>
+<p>Bị lỗi này hình như là do version của v8 đang cài trong máy bị conflict với version v8 therubyracer reference đến, để fix thì có 2 cách: Cách đầu tiên là uninstall bản gem libv8 đang có trong máy đi, rồi install lại therubyracer {% codeblock fix1 fix1.sh %} $ gem uninstall libv8 $ gem install therubyracer {% endcodeblock %} Khi install therubyracer thì gem sẽ tự động install lại bản v8 thích hợp vào đúng chỗ.</p>
+<p>Hoặc bạn có thể dùng cách thứ 2 là update lại bản libv8 mới nhất, rồi tiến hành cài đặt như bình thường {% codeblock fix1 fix1.sh %} $ gem update libv8 $ gem install therubyracer {% endcodeblock %}</p>]]></content>
   </entry>
   
   <entry>
@@ -173,7 +97,7 @@
 <p>Hẳn là một github user, hẳn bạn biết github hỗ trợ cho user tạo một static blog trên domain của github (xxx.github.io). Để tạo blog cá nhân thì bạn có thể tham khảo chi tiết ở <a href="http://pages.github.com/">đây</a>. Hiện tại thì để tạo github page thì đã có giao diện rất dễ sử dụng nên mình sẽ không nói thêm ở đây. Về mặt bản chất thì github page chỉ là một <strong>repo</strong> trên github, trong đấy có chứa các static file, và được trỏ đến domain xxx.github.io.</p>
 <h3 id="jekyll-và-github-page">2. Jekyll và github page</h3>
 <p>Khi bạn push bất kì thứ gì lên repo của github page, github sẽ chạy site generator sử dụng jekyll. Tại sao phải sử dụng site generator? Vì github không chỉ hỗ trợ html mà còn hộ trợ markdown, một markup language khá đơn giản và dễ sử dụng ( bạn có thể tham khảo thêm ở <a href="http://en.wikipedia.org/wiki/Markdown">đây</a>. Vậy bạn có thể đoán ra jekyll là gì: jekyll là một sản phẩm của Tom Preston-Werner, ceo của github. Jekyll sẽ nhận input là một template directory, chạy qua một cái converter engine để convert từ (Textile | Markdown | Liquid) sang html, tạo ra một static website. Như vậy bạn đã có thể hình dung ra cách để tạo ra một github page:</p>
-<p><img src="/images/OctopressGuide/octopress1.png"></p>
+<p>{% img /images/OctopressGuide/octopress1.png %}</p>
 <h3 id="sử-dụng-octopress-để-gen-blog-trên-github-page">3. Sử dụng octopress để gen blog trên github page</h3>
 <p>Octopress là một framework design cho jekyll. Gọi là framework nghe hơi lớn, nhưng nói một cách ngắn gọn, octopress là một bộ template/tools/ plugin giúp cho việc generate static site đơn giản hơn. Những tính năng chính của octopress bao gồm:</p>
 <ul>
@@ -184,65 +108,35 @@
 </ul>
 <p>Nói lý thuyết nhiều quá, giờ vào cụ thể về cách cài đặt và sử dụng:</p>
 <p>Prerequisite: máy bạn phải install git và ruby, cách install các bạn có thể google :D Sau đấy bạn clone octopress về máy, install bundler rồi install các dependencies như sau:</p>
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>install install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'> git clone git://github.com/imathis/octopress.git octopress <span class="nb">cd </span>octopress gem install bundler bundle install
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>{% codeblock install install.sh %} git clone git://github.com/imathis/octopress.git octopress cd octopress gem install bundler bundle install {% endcodeblock%}</p>
 <p>Ok, như vậy bạn đã có một môi trường đẹp đẽ để chuẩn bị viết blog rồi. Về mặt trình tự thì để có 1 blog trên github page bạn sẽ phải: Viết blog (dùng markdown/..) =&gt; generate qua jekyll =&gt; deploy lên github page</p>
-<p><img src="/images/OctopressGuide/octopress2.png"></p>
+<p>{% img /images/OctopressGuide/octopress2.png %}</p>
 <p>Octopress đã chuẩn bị sẵn cho bạn một Rakefile (bạn có thể tìm hiểu về rake ở <a href="http://rake.rubyforge.org/doc/rakefile_rdoc.html">đây</a> .Trong đấy có rất nhiều task octopress đã chuẩn bị sẵn cho bạn để giúp cho việc cài theme, deploy lên github page trở nên đơn giản hơn bao giờ hết.</p>
-<p>Đầu tiên bạn sử dụng<br /><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>theme theme.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'> rake install
-</span></code></pre></td></tr></table></div></figure></notextile></div> để instal theme.</p>
-<p>Sau khi đã install xong theme, chúng ta sẽ viết blog. Bước đầu tiên là setup repository để cho việc deploy lên github pages thuận tiện hơn: <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>theme theme.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'> rake setup_github_pages
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>Đầu tiên bạn sử dụng<br />{% codeblock theme theme.sh %} rake install {% endcodeblock%} để instal theme.</p>
+<p>Sau khi đã install xong theme, chúng ta sẽ viết blog. Bước đầu tiên là setup repository để cho việc deploy lên github pages thuận tiện hơn: {% codeblock theme theme.sh %} rake setup_github_pages {% endcodeblock%}</p>
 <p>Khi làm bước này thì octopress sẽ prompt ra một cái để hỏi về repo của github pages của bạn (repo của cái xxx.github.io mà mình đã nói ở trên)</p>
-<p><img src="/images/OctopressGuide/octopress3.png"></p>
+<p>{% img /images/OctopressGuide/octopress3.png %}</p>
 <p>Như hướng dẫn đã ghi, bạn sẽ phải điền repo của bạn với format git@github:your_username/your_username.github.com Ví dụ như trong trường hợp blog ktmt thì sẽ là git@github:ktmt/ktmt.github.com.git Bạn điền vào, press OK, như vậy là đã xong bước setup. Sau bước này thì thì octopress sẽ tạo ra một cái git repo trong octopress/_deploy/.git/ link đến git@github:ktmt/ktmt.github.com.git. Như vậy bạn có thể hình dung là sau này khi deploy thì octopress sẽ gen ra file vào trong _deploy và git push lên git@github:ktmt/ktmt.github.com.git .<br />Một chú ý nữa là sau bước này octopress sẽ:</p>
 <ul>
 <li>Đổi tên remote branch hiện tại của bạn từ ‘origin’ sang ‘octopress’</li>
 <li>Add git@github:your_username/your_username.github.com vào remote branch và đổi thành ‘origin’</li>
 </ul>
-<p><img src="/images/OctopressGuide/octopress4.png"></p>
+<p>{% img /images/OctopressGuide/octopress4.png %}</p>
 <p>Note là octopress branch của mình đang không phải là git://github.com/imathis/octopress.git như các bạn mà đang là https://github.com/ktmt/ktmtblog-octopress.git. Thực ra cái ktmtblog-octopress chỉ là một bản được fork về của octopress, và được tạo nên để giữ các bài viết trên github của bọn mình thôi.</p>
-<p>Vậy là setup xong, tiếp theo là việc quan trọng nhất, viết blog. Để viết blog thì đầu tiên bạn sẽ phải generate ra file markdown thông qua <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>theme theme.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'> rake new_post<span class="o">[</span>“post_title”<span class="o">]</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>Vậy là setup xong, tiếp theo là việc quan trọng nhất, viết blog. Để viết blog thì đầu tiên bạn sẽ phải generate ra file markdown thông qua {% codeblock theme theme.sh %} rake new_post[“post_title”] {% endcodeblock%}</p>
 <p>Kết quả là một file markdown đã được tạo ra ở thư mục _source/_post</p>
-<p><img src="/images/OctopressGuide/octopress5.png"></p>
-<p>Sau khi đã hoàn thành việc viết blog, việc tiếp theo bạn phải làm là generate cái file markdown đó + đống template thành static page thông qua jekyll. Octopress đã chuẩn bị sẵn cho bạn một rake task là generate, nên việc bạn phải làm chỉ là <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>theme theme.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'> rake generate
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>{% img /images/OctopressGuide/octopress5.png %}</p>
+<p>Sau khi đã hoàn thành việc viết blog, việc tiếp theo bạn phải làm là generate cái file markdown đó + đống template thành static page thông qua jekyll. Octopress đã chuẩn bị sẵn cho bạn một rake task là generate, nên việc bạn phải làm chỉ là {% codeblock theme theme.sh %} rake generate {% endcodeblock%}</p>
 <p>Kết quả là</p>
-<p><img src="/images/OctopressGuide/octopress6.png"></p>
-<p>Để preview thành quả của mình, octopress cung cấp cho bạn cả httpserver để preview, bạn gõ <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>theme theme.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'> rake preview
-</span></code></pre></td></tr></table></div></figure></notextile></div> Và truy cập vào localhost:4000 thông qua browser là đã có thể preview thành quả của mình rồi.</p>
-<p>Cuối cùng, bạn sẽ deploy lên github page thông qua <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>theme theme.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'> rake deploy
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-<p>Và như thế là bạn đã deploy thành công blog của bạn lên github page (với điều kiện là bạn không viết sai syntax markdown :D). Chú ý là khi bạn rake deploy thì octopress sẽ copy đè “toàn bộ” cái repo your_username/your_username.github.com của bạn thay bằng cái thư mục _deploy của nó, <strong>kể cả commit tree</strong>. Vậy nên để lưu giữ các bài viết của cá nhân thì các bạn nên làm như mình là: fork octopress về thành một repo cá nhân, và mỗi lần viết xong thì bạn push ngược lại vào <strong>octopress repo</strong> đó. Lưu ý là octopress repo nhé: <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>theme theme.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'> git push octopress master
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-<p>Cá nhân mình thì mình viết thêm 1 cái task vào Rakefile để cho đỡ bị nhầm lẫn repo: <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>rake Rakefile.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'> <span class="n">desc</span> <span class="err">“</span><span class="n">push</span> <span class="n">to</span> <span class="n">octopress</span> <span class="n">also</span><span class="err">”</span> <span class="n">task</span> <span class="ss">:push_octopress</span> <span class="k">do</span> <span class="nb">puts</span> <span class="err">“</span><span class="n">pushing</span> <span class="n">to</span> <span class="n">octopress</span> <span class="n">repo</span><span class="err">”</span> <span class="nb">system</span> <span class="err">“</span><span class="n">git</span> <span class="n">checkout</span> <span class="n">master</span><span class="err">”</span> <span class="nb">system</span> <span class="err">“</span><span class="n">git</span> <span class="n">pull</span> <span class="n">octopress</span> <span class="n">master</span><span class="err">”</span> <span class="nb">system</span> <span class="err">“</span><span class="n">git</span> <span class="n">add</span> <span class="o">.</span><span class="err">”</span> <span class="nb">system</span> <span class="err">“</span><span class="n">git</span> <span class="n">commit</span> <span class="o">-</span><span class="n">m</span> <span class="err">¥”</span><span class="no">Octopress</span> <span class="n">push</span> <span class="kp">new</span> <span class="n">post</span><span class="err">¥“”</span> <span class="nb">system</span> <span class="err">“</span><span class="n">git</span> <span class="n">push</span> <span class="n">octopress</span> <span class="n">master</span><span class="err">”</span> <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-<p>Và như vậy sau mỗi lần deploy bạn chỉ cần <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>theme theme.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'> rake push_octopress
-</span></code></pre></td></tr></table></div></figure></notextile></div> Là đã synchronize thành công.</p>
+<p>{% img /images/OctopressGuide/octopress6.png %}</p>
+<p>Để preview thành quả của mình, octopress cung cấp cho bạn cả httpserver để preview, bạn gõ {% codeblock theme theme.sh %} rake preview {% endcodeblock%} Và truy cập vào localhost:4000 thông qua browser là đã có thể preview thành quả của mình rồi.</p>
+<p>Cuối cùng, bạn sẽ deploy lên github page thông qua {% codeblock theme theme.sh %} rake deploy {% endcodeblock%}</p>
+<p>Và như thế là bạn đã deploy thành công blog của bạn lên github page (với điều kiện là bạn không viết sai syntax markdown :D). Chú ý là khi bạn rake deploy thì octopress sẽ copy đè “toàn bộ” cái repo your_username/your_username.github.com của bạn thay bằng cái thư mục _deploy của nó, <strong>kể cả commit tree</strong>. Vậy nên để lưu giữ các bài viết của cá nhân thì các bạn nên làm như mình là: fork octopress về thành một repo cá nhân, và mỗi lần viết xong thì bạn push ngược lại vào <strong>octopress repo</strong> đó. Lưu ý là octopress repo nhé: {% codeblock theme theme.sh %} git push octopress master {% endcodeblock%}</p>
+<p>Cá nhân mình thì mình viết thêm 1 cái task vào Rakefile để cho đỡ bị nhầm lẫn repo: {% codeblock rake Rakefile.rb %} desc “push to octopress also” task :push_octopress do puts “pushing to octopress repo” system “git checkout master” system “git pull octopress master” system “git add .” system “git commit -m ¥”Octopress push new post¥“” system “git push octopress master” end {% endcodeblock%}</p>
+<p>Và như vậy sau mỗi lần deploy bạn chỉ cần {% codeblock theme theme.sh %} rake push_octopress {% endcodeblock%} Là đã synchronize thành công.</p>
 <h3 id="kết-luận">Kết luận:</h3>
 <p>Như vậy sau lần đầu setting có vẻ loằng ngoằng, từ bây giờ khi muốn viet blog bạn chỉ cần:</p>
-<p><img src="/images/OctopressGuide/octopress7.png"></p>
+<p>{% img /images/OctopressGuide/octopress7.png %}</p>
 <p>Rất đơn giản đúng không :D. Happy blogging.</p>]]></content>
   </entry>
   

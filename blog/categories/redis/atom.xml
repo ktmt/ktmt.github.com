@@ -4,7 +4,7 @@
   <title><![CDATA[Category: redis | Blog kỹ thuật máy tính]]></title>
   <link href="http://git@github.com.github.com/blog/categories/redis/atom.xml" rel="self"/>
   <link href="http://git@github.com.github.com/"/>
-  <updated>2015-02-13T00:35:54+09:00</updated>
+  <updated>2015-02-14T00:25:55+09:00</updated>
   <id>http://git@github.com.github.com/</id>
   <author>
     <name><![CDATA[kỹ thuật máy tính]]></name>
@@ -21,100 +21,55 @@
     <content type="html"><![CDATA[<h2 id="mở-đầu">Mở đầu</h2>
 <p>Chắc hẳn các bạn đã biết về các dịch vụ rút gọn url, điển hình là bit.ly. Mục đích của dịch vụ này là nhằm thu gọn là những url rất dài để tiết kiệm chữ (cho những dịch vụ giới hạn về số kí tự như twitter chẳng hạn) và để cho url nhìn gọn hơn. Cơ chế của một dịch vụ rút gọn url khá đơn giản, vậy tại sao không tự làm một dịch vụ cho chính mình. Bài này mình sẽ hướng dẫn cách làm một url shorten service đơn giản dựa trên sinatra và redis.</p>
 <h2 id="cài-đặt">Cài đặt</h2>
-<p>Để cài đặt sinatra thì bạn phải có ruby đã cài sẵn trên máy, việc cài đặt sinatra khá đơn giản thông qua <strong>gem</strong>: <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>sinatra_install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'> gem install sinatra
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-<p>Tiếp đến là redis, để cài đặt redis thì tùy thuộc vào hệ điều hành, trên mac-osx các bạn có thể cài đặt rất dễ dàng thông qua <strong>brew</strong>: <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>redis_install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'> brew install redis
-</span></code></pre></td></tr></table></div></figure></notextile></div> Trên linux hoặc windows các bạn có thể google để tìm ra hướng dẫn cài tương ứng. Các bạn khởi động redis thông qua, khi khởi động redis mà không set option với config gì cả thì redis sẽ chạy trên localhost và port là 6789: <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>redis_install.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'> redis-server
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>Để cài đặt sinatra thì bạn phải có ruby đã cài sẵn trên máy, việc cài đặt sinatra khá đơn giản thông qua <strong>gem</strong>: {% codeblock sinatra_install.sh %} gem install sinatra {% endcodeblock %}</p>
+<p>Tiếp đến là redis, để cài đặt redis thì tùy thuộc vào hệ điều hành, trên mac-osx các bạn có thể cài đặt rất dễ dàng thông qua <strong>brew</strong>: {% codeblock redis_install.sh %} brew install redis {% endcodeblock %} Trên linux hoặc windows các bạn có thể google để tìm ra hướng dẫn cài tương ứng. Các bạn khởi động redis thông qua, khi khởi động redis mà không set option với config gì cả thì redis sẽ chạy trên localhost và port là 6789: {% codeblock redis_install.sh %} redis-server {% endcodeblock %}</p>
 <h2 id="giới-thiệu-qua-về-sinatra-và-redis">Giới thiệu qua về sinatra và redis</h2>
 <p>Sinatra là một mini webframework based trên Rack(Rack là web server interface rút gọn nhất có thể rất nổi tiếng trên ruby). Sinatra cung cấp cho bạn một DSL(Domain specific language) để có thể build một web app một cách dễ dàng nhất. Các bạn có thể tìm hiểu về sinatra ở <a href="http://www.sinatrarb.com/intro.html">trang chủ của sinatra</a>.</p>
 <p>Redis là hệ thống lưu trữ key-value với rất nhiều tính năng và được sử dụng rộng rãi. KTMT blog đã có <a href="http://ktmt.github.io/blog/2013/07/02/tim-hieu-redis/">một bài viết về redis</a> cách đây không lâu, các bạn có thể tham khảo lại. Về cách sử dụng redis, các bạn có thể tham khảo tại <a href="http://redis.io/documentation">trang chủ redis</a></p>
 <h2 id="thiết-kế-chương-trình">Thiết kế chương trình</h2>
 <p>Cơ chế của một dịch vụ thu gọn hết sức đơn giản, được thể hiện ở diagram dưới đây:</p>
-<p><img src="/images/urlshorten/url-shorten-flow.png"></p>
+<p>{% img /images/urlshorten/url-shorten-flow.png %}</p>
 <p>Chắc bạn nào đã dùng bit.ly sẽ tưởng tượng ra usage flow một dịch vụ rút gọn url nên có. Cơ chế chúng ta dùng ở bài viết này như sau: đầu tiên user sẽ gửi url cần rút gọn thông qua form input. Web server nhận được request này sẽ hash url lại thành một chuỗi ngắn hơn, thông thường từ 5~10 kí tự, webserver sẽ lưu lại cặp <hash, origin url> vào redis, và trả lại chuỗi hash đó được ghép vào url của dịch vụ : http://your-service.com/hash.</p>
 <p>Khi user click vào http://your-service.com/hash, đầu tiên server sẽ dùng chuỗi hash tìm original url trên redis, sau đó sẽ trả về response 301 (redirect) với location mới là original url, nhờ vậy mà user sẽ được redirect đến original url.</p>
 <p>Như vậy là đã định hình ý tưởng nên làm gì, chúng ta sẽ bắt tay vào code</p>
 <h2 id="coding">Coding</h2>
 <ol type="1">
-<li>Tạo khung Đầu tiên là sườn của một Sinatra app, có get, post. Chúng ta tạo folder cho app của chúng ta và tạo 1 file là app.rb chính là sinatra app: <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>make.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'> mkdir url_shorten &amp;amp;&amp;amp; <span class="nb">cd </span>url_shorten touch app.rb &amp;amp;&amp;amp; vim app.rb
-</span></code></pre></td></tr></table></div></figure></notextile></div></li>
+<li>Tạo khung Đầu tiên là sườn của một Sinatra app, có get, post. Chúng ta tạo folder cho app của chúng ta và tạo 1 file là app.rb chính là sinatra app: {% codeblock make.sh %} mkdir url_shorten &amp;&amp; cd url_shorten touch app.rb &amp;&amp; vim app.rb {% endcodeblock %}</li>
 </ol>
-<p>Sau đó chúng ta sẽ tạo cái khung cho sinatra app như dưới đây: <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>url_shorten.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'> <span class="nb">require</span> <span class="err">‘</span><span class="n">sinatra</span><span class="o">/</span><span class="n">base</span><span class="err">’</span> <span class="nb">require</span> <span class="err">‘</span><span class="n">redis</span><span class="err">’</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
-</span><span class='line'><span class="sr">&lt;p&gt;class UrlShort &amp;lt; Sinatra::Base set :public_dir, File.dirname(&lt;strong&gt;FILE&lt;/s</span><span class="n">trong</span><span class="o">&gt;</span><span class="p">)</span> <span class="o">+</span> <span class="err">‘</span><span class="o">/</span><span class="n">static</span><span class="err">’</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
-</span><span class='line'><span class="sr">&lt;p&gt;get ‘/</span><span class="err">’</span> <span class="k">do</span> <span class="n">erb</span> <span class="ss">:index</span> <span class="k">end</span> <span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
-</span><span class='line'><span class="sr">&lt;p&gt;UrlShort.run! </span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>Sau đó chúng ta sẽ tạo cái khung cho sinatra app như dưới đây: {% codeblock url_shorten.rb %} require ‘sinatra/base’ require ‘redis’</p>
+<p>class UrlShort &lt; Sinatra::Base set :public_dir, File.dirname(<strong>FILE</strong>) + ‘/static’</p>
+<p>get ‘/’ do erb :index end end</p>
+<p>UrlShort.run! {% endcodeblock %}</p>
 <p>Sinatra có syntax dạng DSL: get ‘some info’ do ‘something’ để represent cho ‘get’ request rất dễ hiểu. Đoạn code trên có nghĩa là khi request đến ‘/’ (root) thì sẽ render file index nằm trong views. Như vậy chúng ta đã có cái khung đơn giản nhất của một web service, nhận request, trả về view. (erb là template engine có sẵn của ruby, nó sẽ render file có đuôi erb ra html)</p>
-<p>Tiếp đến chúng ta sẽ thực hiện xử lý hash url. Về mặt lý thuyết thì gọi là hash không đúng lắm vì hash phải là nhận đầu vào X và trả lại Y là kết quả của việc hash X, bài toán của chúng ta ở đây chỉ đơn thuần là generate ra một chuỗi random để represent cho một cái url, như vậy bài toán của chúng ta sẽ là một hàm random_hash(N) nhận đầu vào N là độ dài của chuỗi input và đầu ra là một chuỗi random (cả chữ cả số) có độ dài N, ví dụ như sau: <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>hash.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'> <span class="n">rand_hash</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span> <span class="c1">#=&amp;gt; “s4xA6” </span>
-</span></code></pre></td></tr></table></div></figure></notextile></div> Để giải quyết bài toán này thì có khá nhiều hướng đi:</p>
+<p>Tiếp đến chúng ta sẽ thực hiện xử lý hash url. Về mặt lý thuyết thì gọi là hash không đúng lắm vì hash phải là nhận đầu vào X và trả lại Y là kết quả của việc hash X, bài toán của chúng ta ở đây chỉ đơn thuần là generate ra một chuỗi random để represent cho một cái url, như vậy bài toán của chúng ta sẽ là một hàm random_hash(N) nhận đầu vào N là độ dài của chuỗi input và đầu ra là một chuỗi random (cả chữ cả số) có độ dài N, ví dụ như sau: {% codeblock hash.rb %} rand_hash(5) #=&gt; “s4xA6” {% endcodeblock %} Để giải quyết bài toán này thì có khá nhiều hướng đi:</p>
 <ol type="1">
 <li>Loop từ 1 đến 5 rồi với mỗi lần loop bạn random ra một số hoặc chữ cái.</li>
 <li>Tạo ra 1 array có độ dài 64 gồm từ [0..9] [a..z] và [A..Z] và random ra 5 vị trí trong đó (việc này có thể thực hiện rất dễ dàng thông qua Array#sample của ruby).</li>
 <li>Sử dụng base64. base64 có một đặc điểm là sẽ biến 1 số M thành 1 chuỗi cả chữ cả số có độ dài max là log(64)(M). Do đó để tạo ra một chuỗi random có length N thì chúng ta chỉ cần random một số M nằm trong khoảng 64^(N-1) đến 64^(N) và chuyển nó về base 64.</li>
 <li>Sử dụng một số kĩ thuật generate 64bit (mà đã được giới thiệu ở <a href="http://ktmt.github.io/blog/2013/06/09/xay-dung-he-thong-sinh-64bit-unique-id/">bài viết về generate 64bit uid</a> trên KTMT gần đây.</li>
 </ol>
-<p>Ở bài viết này chúng ta sẽ sử dụng kĩ thuật số (3). Chúng ta đưa hàm generate hash vào trong helper của sinatra thông qua hàm helpers như sau: <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>hash.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'> <span class="k">class</span> <span class="nc">UrlShort</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="ss">Sinatra</span><span class="p">:</span><span class="ss">:Base</span> <span class="o">.</span><span class="n">.</span> <span class="n">helpers</span> <span class="k">do</span> <span class="k">def</span> <span class="nf">rand_hash</span><span class="p">(</span><span class="n">length</span><span class="p">)</span> <span class="n">gap</span> <span class="o">=</span> <span class="mi">64</span><span class="o">&lt;</span><span class="n">strong</span><span class="o">&gt;</span><span class="p">(</span><span class="n">length</span><span class="p">)</span> <span class="o">-</span> <span class="mi">64</span><span class="o">&lt;</span><span class="sr">/strong&gt;(length-1) (rand(gap) + 64**(length-1)).to_s(64) end end … </span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>Ở bài viết này chúng ta sẽ sử dụng kĩ thuật số (3). Chúng ta đưa hàm generate hash vào trong helper của sinatra thông qua hàm helpers như sau: {% codeblock hash.rb %} class UrlShort &lt; Sinatra::Base .. helpers do def rand_hash(length) gap = 64<strong>(length) - 64</strong>(length-1) (rand(gap) + 64**(length-1)).to_s(64) end end … {% endcodeblock %}</p>
 <p>Tiếp theo chúng ta sẽ làm nhiệm vụ gắn hash thu được với url thành một cặp key-value và ghi vào redis. Để làm nhiệm vụ này thì đầu tiên chúng ta cần khởi tạo redis, mình khởi tạo redis bằng cách overwrite constructor của app và đưa redis instance vào thành 1 instance property. Ngoài ra, chúng ta cũng không muốn 1 url mà mỗi lần request lại tạo một hash khác nhau , rất tốn tài nguyên, do đó mỗi lần gen hash mình sẽ lưu duplicate thành 2 cặp key-value. Một cặp chứa url làm key và hash làm value, và một cặp chứ hash làm key và url là value, điều này đảm bảo mối liên hệ giữa url/hash là 1/1.</p>
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>implement.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'> <span class="n">post</span> <span class="err">‘</span><span class="o">/</span><span class="err">’</span> <span class="k">do</span> <span class="o">&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="s2">&quot;citation&quot;</span> <span class="n">data</span><span class="o">-</span><span class="n">cites</span><span class="o">=</span><span class="s2">&quot;error&quot;</span><span class="o">&gt;</span><span class="vi">@error</span><span class="o">&lt;</span><span class="sr">/span&gt; = nil &lt;span class=&quot;citation&quot; data-cites=&quot;error&quot;&gt;@error&lt;/s</span><span class="n">pan</span><span class="o">&gt;</span> <span class="o">=</span> <span class="err">‘</span><span class="n">please</span> <span class="n">enter</span> <span class="n">url</span><span class="err">’</span> <span class="k">if</span> <span class="no">URI</span><span class="o">.</span><span class="n">regexp</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">params</span><span class="o">[</span><span class="ss">:url</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">nil?</span> <span class="o">&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="s2">&quot;citation&quot;</span> <span class="n">data</span><span class="o">-</span><span class="n">cites</span><span class="o">=</span><span class="s2">&quot;success&quot;</span><span class="o">&gt;</span><span class="vi">@success</span><span class="o">&lt;</span><span class="sr">/span&gt; = false&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="k">unless</span> <span class="o">&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="s2">&quot;citation&quot;</span> <span class="n">data</span><span class="o">-</span><span class="n">cites</span><span class="o">=</span><span class="s2">&quot;error&quot;</span><span class="o">&gt;</span><span class="vi">@error</span><span class="o">&lt;</span><span class="sr">/span&gt; if params[:url] and not params[:url].empty? &lt;span class=&quot;citation&quot; data-cites=&quot;url&quot;&gt;@url&lt;/s</span><span class="n">pan</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">params</span><span class="o">[</span><span class="ss">:url</span><span class="o">]</span> <span class="o">&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="s2">&quot;citation&quot;</span> <span class="n">data</span><span class="o">-</span><span class="n">cites</span><span class="o">=</span><span class="s2">&quot;hash&quot;</span><span class="o">&gt;</span><span class="vi">@hash</span><span class="o">&lt;</span><span class="sr">/span&gt; = rand_hash(5) exist = &lt;span class=&quot;citation&quot; data-cites=&quot;redis.setnx&quot;&gt;@redis.setnx&lt;/s</span><span class="n">pan</span><span class="o">&gt;</span> <span class="err">“</span><span class="ss">url</span><span class="p">:</span><span class="c1">#{&lt;span class=&quot;citation&quot; data-cites=&quot;url&quot;&gt;@url&lt;/span&gt;}”, &lt;span class=&quot;citation&quot; data-cites=&quot;hash&quot;&gt;@hash&lt;/span&gt; if exist #key not set &lt;span class=&quot;citation&quot; data-cites=&quot;redis.setnx&quot;&gt;@redis.setnx&lt;/span&gt; “hash:#{&lt;span class=&quot;citation&quot; data-cites=&quot;hash&quot;&gt;@hash&lt;/span&gt;}”, &lt;span class=&quot;citation&quot; data-cites=&quot;url&quot;&gt;@url&lt;/span&gt; else &lt;span class=&quot;citation&quot; data-cites=&quot;hash&quot;&gt;@hash&lt;/span&gt; = &lt;span class=&quot;citation&quot; data-cites=&quot;redis.get&quot;&gt;@redis.get&lt;/span&gt; “url:#{&lt;span class=&quot;citation&quot; data-cites=&quot;url&quot;&gt;@url&lt;/span&gt;}” end &lt;span class=&quot;citation&quot; data-cites=&quot;success&quot;&gt;@success&lt;/span&gt; = true end end&lt;/p&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="n">erb</span> <span class="ss">:index</span> <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-Như vậy chúng ta đã có <span class="citation" data-cites="hash">@hash</span> để trả về cho user, chúng ta sẽ ghep hash vào trong views để hiển thị cho user (views/index.rb) <div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>index.erb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='erb'><span class='line'><span class="x">&lt;form id=&quot;form&quot; method=&quot;post&quot;&gt;</span>
-</span><span class='line'><span class="x">&lt;input type=&quot;text&quot; value=&quot;&quot; name=&quot;url&quot; id=&quot;url&quot;/&gt; &lt;input type=&quot;submit&quot; value=&quot;shorten&quot; id=&quot;submit&quot; class=&quot;submit&quot;/&gt;</span>
-</span><span class='line'><span class="x">&lt;/form&gt;</span>
-</span><span class='line'><span class="x">&lt;hr/&gt;</span>
-</span><span class='line'><span class="x">&lt;div class=&quot;mes&quot;&gt;</span>
-</span><span class='line'><span class="x">Result</span>
-</span><span class='line'><span class="x">&lt;/div&gt;</span>
-</span><span class='line'><span class="x">&amp;lt;% if &lt;span class=&quot;citation&quot; data-cites=&quot;error&quot;&gt;@error&lt;/span&gt; %&amp;gt;</span>
-</span><span class='line'><span class="x">&lt;div id=&quot;error&quot;&gt;</span>
-</span><span class='line'><span class="x">&lt;pre&gt;&lt;code&gt;&amp;lt;%= @error %&amp;gt;&lt;/code&gt;&lt;/pre&gt;</span>
-</span><span class='line'><span class="x">&lt;/div&gt;</span>
-</span><span class='line'><span class="x">&lt;p&gt;&amp;lt;% else %&amp;gt; &amp;lt;% if &lt;span class=&quot;citation&quot; data-cites=&quot;success&quot;&gt;@success&lt;/span&gt; %&amp;gt; &lt;a id=&quot;result&quot; href=&#39;</span><span class="cp">&lt;%=</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">escape_html</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="si">}#{</span><span class="vi">@hash</span><span class="si">}</span><span class="s2">&quot;</span> <span class="cp">%&gt;</span><span class="x">‘&amp;gt;&amp;lt;%= “#{escape_html(url)}#{&lt;span class=&quot;citation&quot; data-cites=&quot;hash&quot;&gt;@hash&lt;/span&gt;}” %&amp;gt;&lt;/a&gt; &lt;input data-clipboard-text=&#39;</span><span class="cp">&lt;%=</span><span class="s2">&quot;</span><span class="si">#{</span><span class="n">escape_html</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="si">}#{</span><span class="vi">@hash</span><span class="si">}</span><span class="s2">&quot;</span> <span class="cp">%&gt;</span><span class="x">’ type=“button” id=“yank” class=“submit” value=“yank”/&amp;gt; &amp;lt;% end %&amp;gt;&lt;br /&gt;&amp;lt;% end %&amp;gt; </span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>{% codeblock implement.rb %} post ‘/’ do <span class="citation" data-cites="error">@error</span> = nil <span class="citation" data-cites="error">@error</span> = ‘please enter url’ if URI.regexp.match(params[:url]).nil? <span class="citation" data-cites="success">@success</span> = false</p>
+<p>unless <span class="citation" data-cites="error">@error</span> if params[:url] and not params[:url].empty? <span class="citation" data-cites="url">@url</span> = params[:url] <span class="citation" data-cites="hash">@hash</span> = rand_hash(5) exist = <span class="citation" data-cites="redis.setnx">@redis.setnx</span> “url:#{<span class="citation" data-cites="url">@url</span>}”, <span class="citation" data-cites="hash">@hash</span> if exist #key not set <span class="citation" data-cites="redis.setnx">@redis.setnx</span> “hash:#{<span class="citation" data-cites="hash">@hash</span>}”, <span class="citation" data-cites="url">@url</span> else <span class="citation" data-cites="hash">@hash</span> = <span class="citation" data-cites="redis.get">@redis.get</span> “url:#{<span class="citation" data-cites="url">@url</span>}” end <span class="citation" data-cites="success">@success</span> = true end end</p>
+<p>erb :index end {% endcodeblock %}</p>
+Như vậy chúng ta đã có <span class="citation" data-cites="hash">@hash</span> để trả về cho user, chúng ta sẽ ghep hash vào trong views để hiển thị cho user (views/index.rb) {% codeblock index.erb %}
+<form id="form" method="post">
+<input type="text" value="" name="url" id="url"/> <input type="submit" value="shorten" id="submit" class="submit"/>
+</form>
+<hr/>
+<div class="mes">
+Result
+</div>
+&lt;% if <span class="citation" data-cites="error">@error</span> %&gt;
+<div id="error">
+<pre><code>&lt;%= @error %&gt;</code></pre>
+</div>
+<p>&lt;% else %&gt; &lt;% if <span class="citation" data-cites="success">@success</span> %&gt; <a id="result" href='<%= "#{escape_html(url)}#{@hash}" %>‘&gt;&lt;%= “#{escape_html(url)}#{<span class="citation" data-cites="hash">@hash</span>}” %&gt;</a> <input data-clipboard-text='<%="#{escape_html(url)}#{@hash}" %>’ type=“button” id=“yank” class=“submit” value=“yank”/&gt; &lt;% end %&gt;<br />&lt;% end %&gt; {% endcodeblock %}</p>
 <p>Phần việc còn lại chúng ta phải giải quyết là khi user click vào link. Link của chúng ta có dạng là www.my-application.com/#{hash}, với sinatra để lọc phần hash hết sức đon giản vì sinatra đã tự động lọc hộ chúng ta và đưa vào biến global params, do đó chúng ta chỉ cần lấy hash từ params, tìm trong redis, và redirect user là ok:</p>
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>redirect.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'> <span class="n">get</span> <span class="err">‘</span><span class="o">/</span><span class="ss">:hash</span><span class="err">’</span> <span class="k">do</span> <span class="n">url</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="s2">&quot;citation&quot;</span> <span class="n">data</span><span class="o">-</span><span class="n">cites</span><span class="o">=</span><span class="s2">&quot;redis.get&quot;</span><span class="o">&gt;</span><span class="vi">@redis</span><span class="o">.</span><span class="n">get</span><span class="o">&lt;</span><span class="sr">/span&gt; “hash:</span><span class="si">#{</span><span class="n">params</span><span class="o">[</span><span class="ss">:hash</span><span class="o">]</span><span class="si">}</span><span class="sr">” redirect url end </span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>{% codeblock redirect.rb %} get ‘/:hash’ do url = <span class="citation" data-cites="redis.get">@redis.get</span> “hash:#{params[:hash]}” redirect url end {% endcodeblock %}</p>
 <p>Như vậy chúng ta đã có một flow hoàn chỉnh rồi, thêm tí css và sử dụng <a href="https://github.com/zeroclipboard/ZeroClipboard">ZeroClipboard</a> để có nút yank để copy url vào clipboard, chúng ta đã có một dịch vụ rút gọn url cho riêng mình!</p>
-<p><img src="/images/urlshorten/background.png"></p>
+<p>{% img /images/urlshorten/background.png %}</p>
 <p>Toàn bộ source code cho tutorial này mình đang để ở đây, mọi người có thể sử dụng tùy ý :). <a href="https://github.com/ktmt/link_shorttener" class="uri">https://github.com/ktmt/link_shorttener</a></p>]]></content>
   </entry>
   
