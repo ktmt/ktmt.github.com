@@ -7,8 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jun 14th, 2013 design, java,, pattern, programming, Comments Design Pattern: Áp Dụng Builder Pattern Trong Test (Java) Giới thiệu
-Builder Pattern là &hellip;">
+	<meta name="description" content="Jun 16th, 2013 Database, Oracle, PLSQL Comments Giới Thiệu Một Số Object Của Oracle - Phần 1 Tổng quan về Oracle và những điểm mạnh
+Oracle là hệ có &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,217 @@ Builder Pattern là &hellip;">
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-06-16T21:16:00+09:00" data-updated="true" itemprop="datePublished">Jun 16<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/database/'>Database</a>, <a class='category' href='/blog/categories/oracle/'>Oracle</a>, <a class='category' href='/blog/categories/plsql/'>PLSQL</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/06/16/gioi-thieu-mot-so-object-cua-oracle/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/06/16/gioi-thieu-mot-so-object-cua-oracle/" itemprop="url">Giới Thiệu Một Số Object Của Oracle - Phần 1</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h2 id="tổng-quan-về-oracle-và-những-điểm-mạnh">Tổng quan về Oracle và những điểm mạnh</h2>
+<p>Oracle là hệ có sở dữ liệu hay dùng trong business application, gồm phiên bản free (standard edition) và phiên bản trả phí (enterprise edition). Với một set rất nhiều feature được develop trong thời gian dài, những object tiện dụng được chuẩn bị sẵn, hay quan trọng hơn hết là các tool tương thích trên top của tầng RDBMS (như RAC hay Datawarehouse), Oracle tỏ ra có ưu thế vượt trội so với các hệ cơ sở dữ liệu quan hệ open source.</p>
+<p>Bài viết này sẽ mang đến cho độc giả những khái niệm đầu tiên về các object hay được sử dụng và những feature nổi bật của oracle</p>
+<h2 id="view">VIEW</h2>
+<p>VIEW là 1 object cũng available trên MySQL, tuy nhiên trước khi đi vào một số object phía sau, mình sẽ nói lại một chút về object này.</p>
+<p>Needs của VIEW phát sinh khi bạn có 1 complex query. Thay vì gửi complex query về DB mỗi lần, bạn có thể create sẵn 1 VIEW mang nội dung của complex query, và mỗi lần gọi từ tầng application chỉ cần SELECT * FROM VIEW</p>
+<p>Như vậy syntax của VIEW đơn giản như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>view.sql </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sql'><span class='line'><span class="k">CREATE</span> <span class="k">VIEW</span> <span class="n">demo_view</span> <span class="k">AS</span>
+</span><span class='line'>  <span class="c1">-- select ... (complex query)</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<ul>
+<li><p>Một điểm cần lưu ý là, sau khi VIEW được tạo ra thì database không mất bất cứ dung lượng nào ngoại trừ 1 cái dictionary entry để định nghĩa bản thân VIEW. Nói cách khác, VIEW chỉ là định nghĩa, mỗi lần bạn gọi VIEW thì Oracle sẽ đi thực hiện nội dung cái VIEW và trả lại cho bạn kết quả.</p></li>
+<li><p>VIEW cũng thường được dùng để hide table columns. Nói đơn giản, bạn muốn user A chỉ nhìn thấy 1 số chứ ko không tất cả column của table T, bạn có thể create VIEW V chỉ bao gồm những column của table T mà bạn muốn cho user A access, và đơn giản give access control của V cho A</p></li>
+<li><p>Cuối cùng: Predicate pushing, là 1 behaviour của Oracle View thường sẽ đem lại good performance những cũng gây hậu quả ngược trong không ít trường hợp.</p></li>
+</ul>
+<p>Giả sử bạn có 2 view như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>view.sql </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sql'><span class='line'><span class="k">CREATE</span> <span class="k">VIEW</span> <span class="n">V1</span> <span class="k">AS</span>
+</span><span class='line'>  <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">GOTHAM_CITIZENS</span><span class="p">;</span>
+</span><span class='line'><span class="k">CREATE</span> <span class="k">VIEW</span> <span class="n">V2</span> <span class="k">AS</span>
+</span><span class='line'>  <span class="n">SELECR</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">V1</span>
+</span><span class='line'>  <span class="k">WHERE</span>
+</span><span class='line'>    <span class="n">NAME</span> <span class="o">=</span> <span class="s1">&#39;Batman&#39;</span><span class="p">;</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Giả sử query gọi từ tầng Application là</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>query.sql </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sql'><span class='line'><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">V2</span>
+</span><span class='line'><span class="k">WHERE</span>
+</span><span class='line'>  <span class="n">ABILITY</span> <span class="o">=</span> <span class="s1">&#39;can fly&#39;</span><span class="p">;</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Ở đây predicate là những điều kiện đằng sau WHERE, cụ thể là NAME = ‘Batman’ và ABILITY = ‘can fly’. Trong trường hợp này Oracle sẽ cố biến VIEW V1 thành như sau</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>query.sql </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sql'><span class='line'><span class="k">CREATE</span> <span class="k">VIEW</span> <span class="n">V1</span> <span class="k">AS</span>
+</span><span class='line'>  <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">GOTHAM_CITIZENS</span>
+</span><span class='line'>  <span class="k">WHERE</span>
+</span><span class='line'>    <span class="n">NAME</span> <span class="o">=</span> <span class="s1">&#39;Batman&#39;</span>
+</span><span class='line'>  <span class="k">AND</span>
+</span><span class='line'>    <span class="n">ABILITY</span> <span class="o">=</span> <span class="s1">&#39;can fly&#39;</span><span class="p">;</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Nói cách khác, Oracle sẽ cố push các predicates xuống tầng cuối cùng! Bạn có thể có 10 hay 100 predicates trải từ V1 đến V100 (stack views), tất cả sẽ được push xuống tầng tiếp xúc trực tiếp với table! Điềy này có ý nghĩa gì ?</p>
+<p>V1 sẽ có thể dùng index và tăng performance nhanh chóng cho cả stack views.</p>
+<h2 id="materialized-view">MATERIALIZED VIEW</h2>
+<p>MATERIALIZED VIEW là 1 object đặc thù của Oracle. Trên MySQL bạn cũng có thể implement MATERIALIZED VIEW dưới dạng 1 table mới.</p>
+<p>Needs của MATERIALZED VIEW phát sinh khi bạn có 1 complex computation hoặc 1 complex JOIN statement . Dĩ nhiên bạn không muốn mỗi lần query DB, DB engine lại bắt đầu select từ các table và thực hiện lại các thao tác tính toán phức tạp.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>materialized_view.sql </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sql'><span class='line'><span class="k">CREATE</span> <span class="n">MATERIALIZED</span> <span class="k">VIEW</span> <span class="n">demo_materialized_view</span> <span class="k">AS</span>
+</span><span class='line'>  <span class="c1">-- select ... (comlex JOIN or computation)</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<ul>
+<li><p>Khác với VIEW, MATERIALIZED VIEW thực sự chiếm storage của DB. Khi được tạo ra MATERIALZED VIEW sẽ đi tính toán theo công thức được chỉ định sẵn và lưu vào 1 object trong DB. Mỗi lần bạn SELECT FROM MATERIALZED_VIEW thì sẽ nhận được kết quả tính toán của lần gần nhất.</p></li>
+<li><p>Kết quả tính toán sẽ được update trong mỗi lần REFRESH. Giữa 2 lần REFRESH thì kết quả tính toán là không đổi.</p></li>
+<li><p>REFRESH có thể được kích hoạt bẳng COMMIT, bằng TRIGGER hoặc được đặt SCHEDULE.</p></li>
+<li><p>Chiến lược REFRESH của MATERIALZED_VIEW bao gồm COMPLETE (mới hoàn toàn), FAST (chỉ lấy thêm phần khác biệt so với lần trước). FAST REFRESH đòi hỏi phải có 1 object nữa là MATERIALZED VIEW LOG, sẽ được đề cập trong bài tiếp.</p></li>
+<li><p>Khi dữ liệu quá lớn và tính toán quá phức tạp, MATERIALZED VIEW sẽ đưa toàn bộ phần load của complex computation về thời điểm REFRESH và giúp câu query tại các thời điểm khác trả về kết quả tức thì. Nói hình tượng, bạn có thể schedule cho MATERIALZED VIEW được REFRESH vào lúc nửa đêm, khi user của bạn không mấy khi phát sinh request nào đến Application có thể động chạm đến DB, và trong 1 ngày tiếp theo bạn sẽ có kết quả tính toán được query ra trong 1s và đảm bảo là luôn dúng cho đến ngày hôm trước!</p></li>
+</ul>
+<h2 id="kết-luận">Kết luận</h2>
+<ul>
+<li>VIEW: là logical object, không chiếm storage của DB và thường tổng hợp 1 set các SQL query để có thể gọi 1 cách đơn giản từ application.</li>
+<li>Predicates pusing: là behaviour của Oracle khi tạo nhiều VIEW chồng nhau thành cấu trúc stack views. Oracle luôn cố push predicates xuống tầng cuối cùng để index.</li>
+<li>MATERIALZED VIEW: là object chiếm storage trực tiếp của DB, thường tổng hợp 1 set các tính toán hoặc JOIN phức tạp và được REFRESH dựa theo chiến lược được định nghĩa sẵn. Với khả năng index chính các kết quả sau khi tính toán, MATERIALZED VIEW cho kết quả trả lại gần như ngay lập tức đối với những data up-to-date đến 1 thời điểm nhất định.</li>
+</ul>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -638,145 +849,6 @@ Builder Pattern là &hellip;">
 <p>Đoạn code trên được trích từ repository <a href="https://github.com/formspring/flake/blob/master/flake.py">flake</a> Sử dụng <a href="http://www.tornadoweb.org/en/stable/">tornado</a> - Python web framework and asynchronous networking library, ở một thời điểm (độ chính xác tới millisecond), một node có thể handle được nhiều request, mỗi một request sẽ được trả về một số là ID được sinh ra. Số lượng ID được sinh ra bởi một node, tại một thời điểm bị giới hạn bởi 4096, nếu lớn hơn, request sẽ bị báo lỗi</p>
 <h1 id="kết-luận">Kết luận</h1>
 <p>Bài viết trình bày một số phương pháp sinh ID 64 bit, kèm code minh hoạ. Tuỳ vào hệ thống của bạn, bạn có thể sử dụng ID 64 bit cho những mục đích khác nhau. Ví dụ như đánh số tất cả các đối tượng trong database (giống như FB làm với graph API), hoặc sử dụng 64 bit ID như một bước đệm và áp dụng thêm một bước mã hoá để sinh ID cho một loại đối tượng (giống như youtube đánh số các video).</p>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-06-08T23:46:00+09:00" data-updated="true" itemprop="datePublished">Jun 8<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/html5/'>html5</a>, <a class='category' href='/blog/categories/introduction/'>introduction</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/06/08/playing-with-web-audio-api/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/08/playing-with-web-audio-api/" itemprop="url">Playing With Web Audio Api</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h3 id="web-audio-api-là-gì">Web audio api là gì?</h3>
-<p>Web audio api là là javascript API dành cho xử lý (processing) và tái tạo(synthesizing) âm thanh. Mới được ra đời vào thời gian gần đây (first draft vào 2011/05/12), mặc dù chưa được sử dụng nhiều ( do phần nhiều là chưa được support rộng rãi, tình trạng support các bạn có thể xem ở <a href="http://caniuse.com/audio-api">đây</a> ), nhưng cá nhân mình thấy web audio api có tiềm năng ứng dụng không nhỏ, nằm ở các lý do dưới đây:</p>
-<ul>
-<li>Web audio cung cấp api ở tầng cao, giúp cho việc xử lý âm thanh trở nên dễ dàng hơn rất nhiều, đặc biệt bạn không phải quan tâm nhiều đến những công đoạn như xử lý binary data, phân tích FFT, encode/decode, input/output.</li>
-<li>Engine để xử lý âm thanh của web audio api chạy trên một thread riêng biệt, chính vì thế một số xử lý nặng như convolve, filter sẽ không làm ảnh hưởng đến GUI thread, chính vì vậy bạn sẽ đỡ phải quan tâm nhiều đến việc phải xử lý thế nào cho nhẹ, hay cho không block UI.</li>
-<li>Việc xử lý âm thanh (đặc biệt là play vào thời điểm nào- timing control) là rất quan trọng với việc làm game. Xu hướng làm rich game trên browser ngày càng phát triển, khiến cho việc sử dụng và phát triên web audio api là không thể tránh khỏi.</li>
-</ul>
-<p>Để tìm hiểu và sử dụng web audio api thì bài viết này mình sẽ chia làm 2 ý, đầu tiên là kiến thức cơ bản về xử lý âm thanh, và thứ hai là web audio cung cấp những gì, và sử dụng nó ra sao.</p>
-<h3 id="cơ-bản-về-xử-lý-âm-thanh">Cơ bản về xử lý âm thanh</h3>
-<p>Bài viết này sẽ không đi quá sâu về xử lý âm thanh, mình sẽ đi qua một số khái niệm cơ bản để giúp cho việc sử dụng web audio api dễ dàng hơn. Đầu tiên các bạn nên tham khảo trước ở một số tài liệu cơ bản về digital audio processing. Mình có google thì nó ra một cái tài liệu khá dễ hiểu ở <a href="http://smc.dei.unipd.it/education/algo4smc_ch1.pdf">đây</a>. Sau khi đọc tài liệu trên thì mình mong muốn các bạn nắm rõ được các khái niệm</p>
-<ol type="1">
-<li><strong>Khái niệm âm thanh là gì và được biểu diễn thế nào trên máy tính?</strong> Âm thanh là các dao động cơ học được truyền trong không khí, va đập vào màng nhĩ , làm rung màng nhĩ và kích thích não người. Trên máy tính ở dạng raw thì âm thanh thường được biểu diễn dưới dạng đồ thị dạng time-series data, tức là có 1 trục là thời gian , và một trục là độ lớn (amplitude)</li>
-</ol>
-<p><img src="/images/webaudioapi/sound1.png"></p>
-<p>Để biểu diễn được trên máy tính thì sẽ cần làm 2 việc, 1 là sampling (tức là một khoảng thời gian bao nhiêu lại lấy dữ liệu một lần) và 2 là quantitize , tức là với sóng có biên độ là X thì bạn phải biểu diễn X dưới dạng bit để máy tính có thể hiểu được. Như hình vẽ dưới đây thì data được sampling với thời gian là 0.1s và được sử dụng 8bit để quantitize.</p>
-<p><img src="/images/webaudioapi/sound2.png"></p>
-<ol start="2" type="1">
-<li><strong>Khái niệm về tần số (frequency) và biến đổi Fourier(Fourier transform)</strong>. Khái niệm về tần số các bạn có thể tìm hiểu thông qua google. Về Fourier transform, hay viết tắt là FT, thì FT giúp biên dữ liệu time series data nói chung ( ở đây là sound wave ) từ dạng ban đầu là trục độ lớn(x)/trục thời gian(y) trở thành trục độ lớn(x)/trục tần số(y). Việc biến đổi này có ích ở việc là giúp phân tích thành phần của sound wave, giúp cho ta biết trong data đó có những sóng có tần số thế nào, độ lớn ra sao. Điều này sẽ giúp cho việc nhận diện/ biểu diễn sound wave được thực hiện một cách dễ dàng hơn rất nhiều.</li>
-</ol>
-<p><img src="/images/webaudioapi/ft.gif"></p>
-<p>Nắm được các khái niệm trên một cách rõ ràng, chúng ta đã có thể sử dụng web audio api để làm một số việc từ đơn giản đến tương đối phức tạp rồi :).</p>
-<h3 id="cấu-trúc-cơ-bản-của-web-audio-api">Cấu trúc cơ bản của web audio api</h3>
-<p>Web audio api có thiết kế dưới dạng <strong>graph</strong>, được cấu thành bởi các <strong>node</strong> ( kiến trúc này còn được gọi là <strong>modular routing</strong> ). Mỗi node có thể có nhiều inputs và/hoặc nhiều outputs.</p>
-<p><img src="/images/webaudioapi/graph.png"></p>
-<p>Tại sao lại là dưới dạng graph? Vì audio processing thường qua nhiều công đoạn, mỗi công đoạn xử lý lại có thể có nhiều output ( giống như hình trên ), do đó mà việc biểu diễn dưới dạng graph và connection giữa các node giúp cho việc tách các xử lý ra/ tổng hợp kết quả xử lý lại được thực hiện một cách dễ dàng và clean hơn.</p>
-<h3 id="load-audio-file-một-cách-đơn-giản">Load audio file một cách đơn giản</h3>
-<p>Chúng ta sẽ bắt đầu sử dụng web audio api bằng cách load và play một file audio đơn giản:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>loadfile.js </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='js'><span class='line'><span class="nx">context</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">webkitAudioContext</span><span class="p">();</span>
-</span><span class='line'><span class="nx">sourceNode</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">createBufferSource</span><span class="p">();</span>
-</span><span class='line'><span class="nx">sourceNode</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">destination</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">function</span> <span class="nx">loadSound</span><span class="p">(</span><span class="nx">source</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">req</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">XMLHttpRequest</span><span class="p">();</span>
-</span><span class='line'>    <span class="nx">req</span><span class="p">.</span><span class="nx">open</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="nx">source</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
-</span><span class='line'>    <span class="nx">req</span><span class="p">.</span><span class="nx">responseType</span> <span class="o">=</span> <span class="s1">&#39;arraybuffer&#39;</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nx">req</span><span class="p">.</span><span class="nx">onload</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nx">context</span><span class="p">.</span><span class="nx">decodeAudioData</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">response</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">buffer</span><span class="p">){</span>
-</span><span class='line'>        <span class="nx">playSound</span><span class="p">(</span><span class="nx">buffer</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">},</span> <span class="kd">function</span><span class="p">(){});</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="nx">req</span><span class="p">.</span><span class="nx">send</span><span class="p">();</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">function</span> <span class="nx">playSound</span><span class="p">(</span> <span class="nx">buffer</span> <span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="nx">sourceNode</span><span class="p">.</span><span class="nx">buffer</span> <span class="o">=</span> <span class="nx">buffer</span><span class="p">;</span>
-</span><span class='line'>  <span class="nx">sourceNode</span><span class="p">.</span><span class="nx">noteOn</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Các bạn sẽ thấy để thao tác với web audio api thì đầu tiên các bạn sẽ phải tạo ra một object gọi là AudioContext ( trên chrome sẽ gọi là WebkitAudioContext ). Toàn bộ các thao tác như tạo node mới sẽ quay quanh object này</p>
-<p>Sau khi đã có context rồi thì các bước tiếp theo sẽ là :</p>
-<ol type="1">
-<li>Tạo ra sourceNode (sourceNode còn là Node dùng để input data)</li>
-<li>Tạo ra destinationNode (là Node dùng để output data)</li>
-<li>Load data thông qua XHR</li>
-<li>play thông qua hàm noteOn của sourceNode (noteOn(0) tức là play tại thời điểm 0 là thời điểm bắt đầu của audio data)</li>
-</ol>
-<p>Các bạn có thể thấy ở trên một graph đơn giản nhất đã được tạo ra với 2 node là Source và Destination được connect với nhau.</p>
-<h3 id="kết-luận">Kết luận</h3>
-<p>Như vậy các bạn đã có hình dung cơ bản về web audio api.</p>
-<p>Ở bài viết tiếp theo mình sẽ nói về các node xử lý cơ bản như AnalyzerNode, ConvolverNode, OscillatorNode và các ứng dụng của chúng.</p>
-<p>Các bạn có thể xem bài trình bày của mình tại osaka htmlday (bài viết bằng tiếng Nhật :D):</p>
-<script async class="speakerdeck-embed" data-id="8575d620b2e30130eaf25236bfdba4c0" data-ratio="1.33333333333333" src="//speakerdeck.com/assets/embed.js"></script>
 		
 		
 	</div>

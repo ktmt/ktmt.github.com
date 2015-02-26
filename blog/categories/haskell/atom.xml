@@ -4,7 +4,7 @@
   <title><![CDATA[Category: haskell, | Blog kỹ thuật máy tính]]></title>
   <link href="http://git@github.com.github.com/blog/categories/haskell/atom.xml" rel="self"/>
   <link href="http://git@github.com.github.com/"/>
-  <updated>2015-02-14T00:25:55+09:00</updated>
+  <updated>2015-02-27T00:36:11+09:00</updated>
   <id>http://git@github.com.github.com/</id>
   <author>
     <name><![CDATA[kỹ thuật máy tính]]></name>
@@ -12,6 +12,127 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Haskell's laziness]]></title>
+    <link href="http://git@github.com.github.com/blog/2015/02/15/haskells-laziness/"/>
+    <updated>2015-02-15T04:04:00+09:00</updated>
+    <id>http://git@github.com.github.com/blog/2015/02/15/haskells-laziness</id>
+    <content type="html"><![CDATA[<p>Trong bài viết này, tôi sẽ trình bày về một đặc tính của Haskell khá khác biệt so với các ngôn ngữ lập trình khác, đó là laziness (dịch tiếng việt nôm na là “luời biếng”, nhưng tôi xin đuợc giữ nguyên từ gốc tiếng anh).</p>
+<p>Chúng ta hiểu laziness như thế naò? <code>Lazy evaluation</code> nghĩa là, việc evaluate các đối số của hàm sẽ đuợc trì hoãn càng lâu càng tốt, chúng sẽ không đuợc evaluate cho đến khi biểu thức thực sự cần đến gía trị của chúng. Khi một biểu thức đuợc đưa làm đối số cho một hàm, nó chỉ đuợc đóng gọn lại thành một biểu thức chưa đuợc đánh gía (unevaluated expression), mà chưa đuợc tính toán gì cả.</p>
+<p>Chúng ta sẽ sử dụng Lecture 7 của course CIS 194 (<a href="http://www.cis.upenn.edu/~cis194/fall14/lectures/07-laziness.html">Link</a>) để minh họa cho việc tìm hiểu Laziness. Bên cạnh đó, tôi sẽ trình bày qua những syntax cơ bản của Haskell theo bài viết.</p>
+<h1 id="tính-số-fibonacci">Tính số Fibonacci</h1>
+<p>Trong bài tập thứ nhất, chúng ta sẽ viết một hàm <code>fib</code> để tính ra số Fibonacci thứ n</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Exercise 1 </span>
+<span class="ot">fib ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+fib <span class="dv">0</span> <span class="fu">=</span> <span class="dv">0</span>
+fib <span class="dv">1</span> <span class="fu">=</span> <span class="dv">1</span>
+fib n <span class="fu">=</span> fib (n<span class="fu">-</span><span class="dv">1</span>) <span class="fu">+</span> fib (n<span class="fu">-</span><span class="dv">2</span>)</code></pre>
+<p>Bên trên là điển hình của cách viết một hàm (function) trong Haskell. Truớc tiên, chúng ta có tên hàm nằm truớc dấu <code>::</code>, trong truờng hợp này là hàm <code>fib</code>. Tiếp theo, nằm sau dấu <code>::</code>, chúng ta có <code>Integer -&gt; Integer</code>, đây chính là nơi khai báo đối số và giá trị trả về của Haskell. Trong truờng hợp này, hàm <code>fib</code> nhận đối số là Integer (số Fibonacci thứ mấy) và trả về Integer (số Fibonacci cần tìm). Tài liệu sau đây nói một cách khá đầy đủ về syntax viết function, bạn nên đọc thêm: <a href="http://learnyouahaskell.com/syntax-in-functions">Syntax in Functions</a></p>
+<p>Sau dòng khai báo tên hàm và nguyên mẫu hàm là định nghĩa của một loạt pattern matching. Haskell sẽ match từ trên xuống duới, do vậy truớc tiên ta khai báo base case cho số Fibonacci thứ 0 và thứ 1. Các số Fibonacci tiếp theo, vì không match các base pattern nên sẽ sử dụng pattern thứ ba, cộng hai số Fibonacci phía truớc.</p>
+<p>Chúng ta thấy cách khai báo pattern matching khá gần gũi vớí định nghiã dãy Fibonacci chúng ta đã học. Tiếp theo, ta định nghiã một dãy Fibonacci vô hạn như sau:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">fibs1 ::</span> [<span class="dt">Integer</span>]
+fibs1 <span class="fu">=</span> map fib [<span class="dv">0</span><span class="fu">..</span>]</code></pre>
+<p><code>map</code> là một function trong Haskell, nhận vaò hai đối số là một hàm f và một danh sách. Nó sẽ trả về một danh sách mới mà các phần từ là kết qủa trả về tuơng ứng khi áp dụng hàm f với từng phần tử trong danh sách cũ. <code>[0..]</code> là cách viết danh sách tất cả các số nguyên duơng. Như vậy, ta có <code>fibs1</code> là danh sách tất cả các số Fibonacci.</p>
+<p>Hãy khởi động GHCi và check hàm mới này:</p>
+<pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">ghci</span> 
+<span class="kw">Prelude&gt;</span> :l HW07.hs
+[<span class="kw">1</span> of 1] Compiling HW07             ( HW07.hs, interpreted )
+<span class="kw">Ok</span>, modules loaded: HW07.
+<span class="kw">*HW07&gt;</span> fibs1
+[<span class="kw">0</span>,1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,1597,2584,4181,6765,10946,17711,28657,46368,75025,121393,196418,</code></pre>
+<p>Bạn sẽ thấy một vài số Fibonacci đầu tiên hiện ra rất nhanh, nhưng đến một lúc nào đó, sẽ rất lâu để tính đuợc số Fibonacci tiếp theo. Lý do là vì mỗi số Fibonacci bị tính đi tính lại quá nhiều lần!</p>
+<p>Và đây là lúc chúng ta áp dụng Laziness của Haskell.</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Exercise 2 </span>
+<span class="ot">fibs2 ::</span> [<span class="dt">Integer</span>]
+fibs2 <span class="fu">=</span> [<span class="dv">0</span>,<span class="dv">1</span>] <span class="fu">++</span> zipWith (<span class="fu">+</span>) fibs2 (tail fibs2)</code></pre>
+<p>Chúng ta đã biết dãy Fibonacci bắt đầu từ hai số 0, 1, nên ta khởi đầu khai baó dãy bằng 0,1.</p>
+<p>Giả sử ta đã có một dãy Fibonacci vô hạn:</p>
+<pre class="sourceCode bash"><code class="sourceCode bash">[<span class="kw">0</span>, 1, 1, 2, 3, 5, 8, 13, ...]</code></pre>
+<p><code>tail</code> là phép toán bỏ đi phần tử đầu tiên của một dãy:</p>
+<pre class="sourceCode bash"><code class="sourceCode bash">[<span class="kw">1</span>, 1, 2, 3, 5, 8, 13, ...]</code></pre>
+<p><code>zipWith</code> kết hợp 2 dãy trên theo từng cặp phần tử sử dụng một phép toán naò đó (ở đây là phép cộng):</p>
+<pre class="sourceCode bash"><code class="sourceCode bash">[<span class="kw">0</span>, 1, 1, 2, 3, 5, 8, 13, ...]
+<span class="kw">+</span> 
+[<span class="kw">1</span>, 1, 2, 3, 5, 8, 13, ...]
+= 
+[<span class="kw">1</span>, 2, 3, 5, 8, 13, ...]</code></pre>
+<p>Như vậy, dãy vô hạn Fibonacci có thể đuợc tính bằng cách thêm hai phần tử đầu tiên (0, 1) vào kết quả sau khi zip dãy Fibonacci vô hạn với <code>tail</code> của nó!</p>
+<p>Và đây chính là sức mạnh của laziness! <code>fibs2</code> là kết quả trả về mà chúng ta lại có thể để xuất hiện ở bên vế phải! Haskell chỉ evaluate vế phải khi naò thực sự cần thiết, cho nên mỗi khi cần tính một phần tử mới cho dãy <code>fibs2</code>, nó mới quay ra tìm lại những phần tử đằng truớc (đã đuợc tính).</p>
+<p>Bạn hãy thử chạy lại <code>fibs2</code> với GHCi và quan sát, số Fibonacci tuôn ra như thác lũ :) Hãy thử chỉ lấy 100 số Fibonacci ban đầu xem:</p>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">*HW07&gt;</span> take 100 fibs2</code></pre>
+<p>100 số Fibonacci đầu tiên xuất hiện trong chớp mắt!</p>
+<h1 id="streams">Streams</h1>
+<p>Trong phần này, chúng ta định nghĩa kiểu dữ liệu (data type) <code>Stream</code>, gần giống với <code>list</code> nhưng bị ràng buộc là <em>phải vô hạn</em></p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Stream</span> a <span class="fu">=</span> <span class="dt">Cons</span> a (<span class="dt">Stream</span> a)</code></pre>
+<p>Bên trên là cách khai baó một kiểu dữ liệu, bắt đầu bằng từ khoá <code>data</code>. <code>Stream</code> là tên kiểu dữ liệu, tiếp sau đó đến truớc dấu <code>=</code> là <code>type variable</code>, tức là <code>a</code> có thể thay cho <code>Integer</code>, <code>String</code>, … và ta có kiểu dữ liệu <code>Stream Integer</code> hoặc <code>Stream String</code> tuơng ứng. Phiá sau dấu <code>=</code> là constructor của kiểu dữ liệu này: <code>Cons</code>, với 2 đối số thuộc kiểu <code>a</code> và <code>Stream a</code>. Bạn hãy tham khaỏ về cách taọ kiểu dữ liệu tại <a href="http://learnyouahaskell.com/making-our-own-types-and-typeclasses">Link này</a></p>
+<p>Hàm sau convert một stream thành list:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">streamToList ::</span> <span class="dt">Stream</span> a <span class="ot">-&gt;</span> [a]
+streamToList (<span class="dt">Cons</span> x s) <span class="fu">=</span> x <span class="fu">:</span> streamToList s</code></pre>
+<p>Trong exercise 4, chúng ta phải viết một instance của <code>Show</code> cho kiểu dữ liệu Stream. đến đây, chúng ta cần biết thêm về khái niệm <code>Typeclass</code> của Haskell. Typeclass có thể coi là một loại “giao diện”, nó định nghĩa một số loại hành vi, và các kiểu dữ liệu mà có cùng hành vi đó có thể được khai báo là instance của typeclass đó. Lấy ví dụ, <code>Eq</code> typeclass định nghĩa một giao diện cho những thứ có thể so sánh được. Cụ thể các hành vi mà nó định nghĩa như sau:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">Eq</span> a <span class="kw">where</span>
+<span class="ot">    (==) ::</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>  
+<span class="ot">    (/=) ::</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>  
+    x <span class="fu">==</span> y <span class="fu">=</span> not (x <span class="fu">/=</span> y)  
+    x <span class="fu">/=</span> y <span class="fu">=</span> not (x <span class="fu">==</span> y)</code></pre>
+<p>Theo đó, bất cứ type nào muốn được là một instance của <code>Eq</code> typeclass sẽ phải khai báo các hàm <code>(==)</code>, <code>(/=)</code> (trên thực tế, chỉ cần khai báo một hàm, vì hàm còn lại được định nghĩa là phủ định của hàm kia).</p>
+<p>Ví dụ, ta có một type như sau:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Coin</span> <span class="fu">=</span> <span class="dt">Head</span> <span class="fu">|</span> <span class="dt">Tail</span> </code></pre>
+<p>Chúng ta muốn <code>Coin</code> type là một instance của <code>Eq</code> typeclass thì ta làm như sau:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Eq</span> <span class="dt">Coin</span> <span class="kw">where</span> 
+    <span class="dt">Head</span> <span class="fu">==</span> <span class="dt">Head</span> <span class="fu">=</span> <span class="dt">True</span> 
+    <span class="dt">Tail</span> <span class="fu">==</span> <span class="dt">Tail</span> <span class="fu">=</span> <span class="dt">True</span> 
+    _ <span class="fu">==</span> _ <span class="fu">=</span> <span class="dt">False</span> </code></pre>
+<p>Ở đây, chúng ta vẫn dùng pattern matching để định nghĩa hàm (==) với từng trường hợp của 2 đối số.</p>
+<p>Quay trở lại với exercise 4, chúng ta định nghĩa <code>Stream a</code> thành một instance của <code>Show</code> typeclass như sau:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Show</span> a <span class="ot">=&gt;</span> <span class="dt">Show</span> (<span class="dt">Stream</span> a) <span class="kw">where</span> 
+    show s <span class="fu">=</span> show <span class="fu">$</span> take <span class="dv">20</span> (streamToList s)</code></pre>
+<p>Chúng ta thấy sự xuất hiện của kí tự “lạ”: <code>=&gt;</code>. Trong khai báo instance, những gì xuất hiện trước dấu <code>=&gt;</code> là những ràng buộc về type. Ở đây, chúng ta muốn <code>Stream a</code> là instance của <code>Show</code> thì bản thân <code>a</code>, một type variable, cũng phải là một instance của <code>Show</code>. Có như vậy, chúng ta mới định nghĩa được hàm <code>show</code> của <code>Show</code> typeclass cho <code>Stream a</code> dựa trên hàm <code>show</code> cho <code>a</code>.</p>
+<p>Đến kí tự lạ tiếp theo: <code>$</code>. Đây chỉ đơn giản là một chỉ dẫn cho Haskell là tất cả những gì xuất hiện sau <code>$</code> có độ ưu tiên phép toán cao hơn, tức là <code>show $ take 20 (streamToList s)</code> tương đương với <code>show (take 20 (streamToList s))</code>. Nhưng chúng ta không muốn dùng quá nhiều dấu ngoặc, phải không :)</p>
+<p>Trong định nghĩa hàm <code>show</code> cho <code>Stream a</code>, chúng ta không muốn nó in hết ra vô hạn phần tử, mà chỉ muốn in ra 20 phần tử đầu tiên. Do đó chúng chuyển nó thành list bằng hàm <code>streamToList</code>, lấy 20 phần tử đầu tiên bằng <code>take 20</code> và áp dụng hàm <code>show</code> cho <code>List a</code> type (khi <code>a</code> là instance của <code>Show</code> rồi thì <code>[a]</code> cũng là instance của <code>Show</code> )</p>
+<p>Chúng ta phải có một vài <code>Stream</code> để test. Hãy định nghĩa chúng:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">streamRepeat ::</span> a <span class="ot">-&gt;</span> <span class="dt">Stream</span> a 
+streamRepeat x <span class="fu">=</span> <span class="dt">Cons</span> x (streamRepeat x)
+
+<span class="ot">streamMap ::</span> (a<span class="ot">-&gt;</span>b) <span class="ot">-&gt;</span> <span class="dt">Stream</span> a <span class="ot">-&gt;</span> <span class="dt">Stream</span> b
+streamMap f (<span class="dt">Cons</span> x s) <span class="fu">=</span> <span class="dt">Cons</span> (f x) (streamMap f s)
+
+<span class="ot">streamFromSeed ::</span> (a<span class="ot">-&gt;</span>a) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Stream</span> a 
+streamFromSeed f x <span class="fu">=</span> <span class="dt">Cons</span> x (streamMap f (streamFromSeed f x))</code></pre>
+<p><code>streamRepeat</code> tạo ra một stream chứa vô hạn các phần tử giống hệt nhau. <code>streamMap</code> áp dụng một hàm <code>(a-&gt;b)</code> lên tất cả các phần tử của một <code>Stream a</code> để nhận được một Stream mới: <code>Stream b</code>. Cuối cùng <code>streamFromSeed</code> là một cách khác để tạo ra một stream, bằng cách bắt đầu từ một “hạt giống” thuộc type <code>a</code>, cũng chính là phần tử đầu tiên của Stream, rồi liên tục sử dụng một hàm có kiểu <code>a-&gt;a</code> để tạo ra các phẩn tử tiếp theo.</p>
+<p>Tôi sẽ để dành phần này cho độc giả chiêm nghiệm xem tại sao lại viết như vậy.</p>
+<p>Bây giờ, chúng ta hãy cùng test thử những gì chúng ta đã viết trong GHCi</p>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">*HW07&gt;</span> show $ streamFromSeed (<span class="st">&#39;x&#39;</span>:) <span class="st">&quot;o&quot;</span>
+<span class="st">&quot;[</span><span class="dt">\&quot;</span><span class="st">o</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">xo</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">xxo</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">xxxo</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">xxxxo</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">xxxxxo</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">xxxxxxo</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">xxxxxxxo</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">xxxxxxxxo</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">xxxxxxxxxo</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">xxxxxxxxxxo</span>
+<span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">xxxxxxxxxxxo</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">xxxxxxxxxxxxo</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">xxxxxxxxxxxxxo</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">xxxxxxxxxxxxxxo</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">xxxxxxxxxxxxxxxo</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">xxxxxxxxxxxxxxxxo</span><span class="dt">\&quot;</span><span class="st">,</span>
+<span class="dt">\&quot;</span><span class="st">xxxxxxxxxxxxxxxxxo</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">xxxxxxxxxxxxxxxxxxo</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">xxxxxxxxxxxxxxxxxxxo</span><span class="dt">\&quot;</span><span class="st">]&quot;</span>
+<span class="kw">*HW07&gt;</span> show $ streamRepeat <span class="st">&quot;o&quot;</span>
+<span class="st">&quot;[</span><span class="dt">\&quot;</span><span class="st">o</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">o</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">o</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">o</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">o</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">o</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">o</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">o</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">o</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">o</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">o</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">o</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">o</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">o</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">o</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">o</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">o</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">o</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">o</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">o</span><span class="dt">\&quot;</span><span class="st">]&quot;</span>
+<span class="kw">*HW07&gt;</span> show $ streamMap (+ 1) <span class="kw">(streamRepeat</span> 0<span class="kw">)</span>
+<span class="st">&quot;[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]&quot;</span></code></pre>
+<p>Như vậy ta đã có một số hàm để làm việc với <code>Stream</code>, ta sẽ thử định nghĩa dãy số tự nhiên bằng <code>Stream</code> như sau:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">nats ::</span> <span class="dt">Stream</span> <span class="dt">Integer</span>
+nats <span class="fu">=</span> streamFromSeed (<span class="fu">+</span> <span class="dv">1</span>) <span class="dv">0</span> </code></pre>
+<p>Test trong GHCi:</p>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">*HW07&gt;</span> show nats
+<span class="st">&quot;[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]&quot;</span></code></pre>
+<p>Ví dụ tiếp theo: Tính ruler function f(n) = số mũ lớn nhất của 2 là ước số của n. Bình thuờng chúng ta sẽ nghĩ đến việc chia 2 cho đến khi lẻ thì thôi. Nhưng tôi sẽ trình bày một lời giải khác, sử dụng laziness và cấu trúc dữ liệu vô hạn của Haskell.</p>
+<p>Thay vì tính từng f(n) một, chúng ta sẽ xây dựng hẳn cả dãy số <code>ruler</code> f(n) với n bắt đầu từ 1: <code>0,1,0,2,0,1,0,3,0,1,0,2,0,1,0,4...</code>, trong đó phần tử thứ n trong stream là số mũ lớn nhất của 2 là ước số của n.</p>
+<p>Dễ thấy có thể coi dãy trên là trộn xen kẽ của hai dãy, một dãy toàn 0 (vì tuơng ưng với n lẻ nên số mũ lớn nhất của 2 chỉ là 0) và dãy còn lại tuơng ứng với n chẵn. điều kì diệu là dãy thứ hai bao gồm chính các phần tử của dãy <code>ruler</code> nhưng cộng thêm 1 (Bạn thử suy nghĩ xem tại sao). Vì thế mà ta có cách khai báo <code>ruler</code> là một <code>Stream Integer</code> rất đẹp như sau:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">interleaveStreams ::</span> <span class="dt">Stream</span> a <span class="ot">-&gt;</span> <span class="dt">Stream</span> a <span class="ot">-&gt;</span> <span class="dt">Stream</span> a
+interleaveStreams (<span class="dt">Cons</span> x1 s1) <span class="fu">~</span>(<span class="dt">Cons</span> x2 s2) <span class="fu">=</span> <span class="dt">Cons</span> x1 (<span class="dt">Cons</span> x2 (interleaveStreams s1 s2))
+
+<span class="ot">ruler ::</span> <span class="dt">Stream</span> <span class="dt">Integer</span>
+ruler <span class="fu">=</span> interleaveStreams (streamRepeat <span class="dv">0</span>) (streamMap (<span class="fu">+</span> <span class="dv">1</span>) ruler)</code></pre>
+<p>Lại thêm một kí tự lạ: tilde sign <code>~</code>! Tôi đã thêm nó vào truớc đối số thứ hai của <code>interleaveStreams</code>. Kí tự này dùng để báo hiệu compiler đừng evaluate đối số thứ hai này. Nếu không có kí tự <code>~</code>, pattern matching của hàm <code>interleaveStream</code> sẽ phải evaluate đối số thứ hai để đảm bảo nó thuộc type <code>Stream a</code>. đó không phải là điều chúng ta muốn, vì hàm <code>ruler</code> gọi hàm <code>interleaveStream</code> với đối số thứ hai chứa <code>ruler</code>, tức là gọi đệ quy vô hạn lần. Nếu đối số thứ hai của <code>interleaveStream</code> không lazy, hàm này sẽ dừng mãi ở việc evaluate để phục vụ pattern matching.</p>
+<p>Nói nôm na, thêm dấu <code>~</code> truớc một đối số là chúng ta đã bảo với compiler là: “đừng lo, tôi đảm bảo đối số này sẽ có kiểu Stream a, nên đừng evaluate làm gì” :)</p>
+<h1 id="kết-luận">Kết luận</h1>
+<p>Bài viết này đã trình bày một số ví dụ để minh họa lazy evaluation của Haskell. Nó cho phép ta làm việc với những kiểu cấu trúc dữ liệu <em>vô hạn</em>, một pattern khá thuờng gặp trong Haskell. Việc định nghiã một cấu trúc dữ liệu vô hạn thực chất chỉ taọ ra một biểu thức chưa đuợc evaluate, mà ta sử dụng nó để chỉ ra cấu trúc dữ liệu hoàn chỉnh “có thể” phát triển đến như thế naò, và chỉ phần naò cần thiết mới đuợc tính toán.</p>
+<p>Tuy nhiên, chủ đề laziness là một chủ đề khá phức tạp, đặc biệt khi chúng ta muốn đánh giá time và space của program. Có khá nhiều bài viết trên mạng về vấn đề này, một trong số đó bạn có thể tham khảo thêm là:</p>
+<ul>
+<li><a href="https://hackhands.com/lazy-evaluation-works-haskell/">How Lazy Evaluation Works in Haskell</a></li>
+</ul>]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Mở đầu về Haskell]]></title>

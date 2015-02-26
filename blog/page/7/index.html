@@ -7,8 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jan 4th, 2014 Comments Full Text Search, Từ Khái Niệm đến Thực Tiễn (Phần 3) Introduction
-Trong phần 2, chúng ta đã nắm được một kĩ thuật cơ bản và &hellip;">
+	<meta name="description" content="Jan 6th, 2014 Clang, Compiler, Modules, Objective-C, iOS Comments #include, #import, @import (Clang Modules) Mở đầu
+Happy New Year! Chúc mọi người &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,364 @@ Trong phần 2, chúng ta đã nắm được một kĩ thuật cơ bản và &h
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-01-06T04:14:00+09:00" data-updated="true" itemprop="datePublished">Jan 6<span>th</span>, 2014</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/clang/'>Clang</a>, <a class='category' href='/blog/categories/compiler/'>Compiler</a>, <a class='category' href='/blog/categories/modules/'>Modules</a>, <a class='category' href='/blog/categories/objective-c/'>Objective-C</a>, <a class='category' href='/blog/categories/ios/'>iOS</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2014/01/06/clang-modules/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2014/01/06/clang-modules/" itemprop="url">#include, #import, @import (Clang Modules)</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1 id="mở-đầu">Mở đầu</h1>
+<p>Happy New Year! Chúc mọi người năm mới vui vẻ, hạnh phúc.</p>
+<p>Như các bạn cũng biết gần đây XCode5 cùng iOS7 đã được giới thiệu. Đi cùng XCode5 là feature mới “modules” của Clang, một giải pháp nhằm giải quyết một số vấn đề như tăng tốc độ compile source code của ứng dụng. Hôm nay mình sẽ giới thiệu qua về tính năng modules này. Hiện tại thì modules đã có thể sử dụng trong C và Objective-C trên môi trường iOS7 hoặc MacOSX 10.9. Các đoạn code dưới đây tuy mình viết bằng Objective-C nhưng cũng gần như tương tự với C. Để hiểu về modules thì trước tiên mình sẽ giải thích lần lượt về <code>#include</code>, <code>#import</code>, và pre-compiled headers (PCH), sau đó là về modules.</p>
+<h2 id="include">#include</h2>
+<p>Khi chúng ta include 1 file header thì tại giai đoạn preprocessing của quá trình compile, compiler sẽ copy nội dung của file header này và paste vào dòng #include. Và tất nhiên quá trình copy/paste này là đệ quy cho đến khi copy xong tất cả file header mà nó include và các file header khác được include tại các file nó include. (hơi xoắn)</p>
+<p>Ví dụ với chương trình helloworld quen thuộc như dưới đây:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>helloworld.m </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='objc'><span class='line'><span class="cp">#include &lt;Foundation/Foundation.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>     <span class="n">NSLog</span><span class="p">(</span><span class="err">@“</span><span class="n">Hello</span> <span class="n">world</span><span class="err">”</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>     <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Chúng ta có thể chạy preprocessor để xem file sinh ra sau giai đoạn này bằng lệnh <code>clang -E helloworld.m | less</code>.</p>
+<p>Nhìn vào kết quả output chúng ta có thể thấy tới hơn 92000 dòng là của Foundation.h (và của các file header mà Foundation.h include), chỉ 8 dòng cuối là code của chúng ta.</p>
+<p>Với việc sử dụng <code>#include</code> tồn tại vấn đề gọi là recursive include. Ví dụ :</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>FirstFile.h </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='objc'><span class='line'><span class="cp">#include &quot;SecondFile.h&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/* Some code */</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>SecondFile.h </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='objc'><span class='line'><span class="cp">#include &quot;FirstFile.h&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/* Some other code */</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Khi đấy preprocessor sẽ duyệt file FirstFile.h và copy nội dung của SecondFile.h vào FirstFile.h. Khi duyệt file SecondFile.h lại copy/paste nội dung của file FirstFile.h. Vấn đề này được gọi là recursive include.</p>
+<h2 id="import">#import</h2>
+<p>Trong Objective-C để tránh vấn đề recursive include như trên thì chúng ta thường dùng <code>#import</code>. Khi dùng <code>#import</code> thì trước khi include 1 file header, preprocessor sẽ kiểm tra xem file đấy đã được include chưa, nếu đã include rồi thì sẽ không include nữa. Tương tự trong C chúng ta cũng tránh recursive include bằng việc kiểm tra file header đã được include chưa như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class=''><span class='line'>#ifndef MYFILE_H
+</span><span class='line'>#define MYFILE_H
+</span><span class='line'> 
+</span><span class='line'>// Some code
+</span><span class='line'>  
+</span><span class='line'>#endif</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<h2 id="import-1"><span class="citation" data-cites="import">@import</span></h2>
+<p>Tuy nhiên việc sử dụng <code>#import</code> cũng như <code>#include</code> khiến cho preprocessor đối mặt với 1 số vấn đề khác như Fragility và Performance. Để hiểu về vấn đề Header Fragility chúng ta xem qua một ví dụ đơn giản sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>MyFile.h </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='objc'><span class='line'><span class="cp">#define NSURL @“my url&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#import &lt;Foundation/Foundation.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">@interface</span> <span class="nc">MyClass</span> :<span class="nc">NSObject</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">@end</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Khi đó sau quá trình preprocessing thì file header của chúng ta sẽ như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='objc'><span class='line'><span class="cp">#define NSURL @“my url&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// đoạn code được copy từ Foundation.h</span>
+</span><span class='line'><span class="c1">// và tất cả những đoạn có chứa NSURL của Foundation.h đều bị thay bằng “my url”</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">@interface</span> <span class="nc">MyClass</span> :<span class="nc">NSObject</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">@end</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Tất cả những đoạn NSURL của Foundation.h đều bị preprocessor thay thế bằng “my url” do có <code>#define NSURL @“my url”</code> bên trên. Từ đó ta thấy với việc dùng <code>#include</code> hay <code>#import</code> thông thường thì các header của các file khác, hay của thư viện mà chúng ta dùng đều có thể bị ảnh hưởng như việc dùng <code>#define</code> ở trên.</p>
+<p>Về vấn đề performance thì như ở trên ta đã thấy <code>#include</code> và <code>#import</code> sẽ copy/paste toàn bộ file header mà nó include (đệ quy). Như ở ví dụ đầu tiên chúng ta chỉ include mình Foundation.h nhưng sau khi preprocessing thì có tới hơn 92000 dòng là của Foundation.h (và các file header mà Foundation.h include), chỉ 8 dòng cuối là code của chúng ta. Thế nên thời gian compile sẽ trở nên nhiều hơn rất nhiều.</p>
+<h2 id="pre-compiled-headers">Pre-compiled headers</h2>
+<p>Để giải quyết 1 phần vấn đề performance chúng ta có thể dùng precompiled headers (.pch). Nếu các bạn chú ý thì tất cả iOS project khi được XCode tạo ra đều có file PROJECTNAME-Prefix.pch như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>PROJECTNAME-Prefix.pch </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='objc'><span class='line'><span class="cp">#import &lt;Availability.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#ifndef __IPHONE_3_0</span>
+</span><span class='line'><span class="cp">#warning &quot;This project uses features only available in iOS SDK 3.0 and later.&quot;</span>
+</span><span class='line'><span class="cp">#endif</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#ifdef __OBJC__</span>
+</span><span class='line'>    <span class="err">#</span><span class="n">import</span> <span class="o">&lt;</span><span class="n">UIKit</span><span class="o">/</span><span class="n">UIKit</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;</span>
+</span><span class='line'>    <span class="err">#</span><span class="n">import</span> <span class="o">&lt;</span><span class="n">Foundation</span><span class="o">/</span><span class="n">Foundation</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;</span><span class="n">Foundation</span><span class="p">;</span>
+</span><span class='line'><span class="cp">#endif</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Trong file .pch này chúng ta sẽ include những header mà có khả năng được include tại nhiều nơi trong source code của ứng dụng như Foundation.h, UIKit.h… Khi source code của ứng dụng được compile thì file .pch này sẽ được compile đầu tiên, đồng nghĩa với việc tất cả file header được include trong file .pch này sẽ được compile trước và được include vào tất cả source code.</p>
+<p>Bằng viêc caching những file header đã được biên dịch này thì những file này chỉ cần compile 1 lần, những lần sau chỉ cần sử dụng lại nên thời gian compile sẽ được rút gọn.</p>
+<p>Thế nhưng các developer thường không hay quản lý file .pch này, và không phải file header nào cũng được dùng tại nhiều nơi trong source code nên hiệu quả của .pch chưa được cao.</p>
+<h2 id="modules">Modules</h2>
+<p>Vào tháng 11 năm 2012, Doug Gregor (một kỹ sư của Apple) đã giới thiệu tính năng modules nhằm giải quyết vấn đề trên của proprocessor thay cho .pch. Vậy module là gì? Module chính là một package mô tả một library, framework.</p>
+<p>Ví dụ chạy 2 lệnh dưới đây ta sẽ có thể xem được các module trong SDK của iOS7.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class=''><span class='line'>% cd `xcrun --sdk iphoneos --show-sdk-path`
+</span><span class='line'>% find . -name module.map   
+</span><span class='line'>
+</span><span class='line'> ./Developer/Library/Frameworks/XCTest.framework/module.map   
+</span><span class='line'> ./System/Library/Frameworks/AudioToolbox.framework/module.map   
+</span><span class='line'> ./System/Library/Frameworks/AudioUnit.framework/module.map   
+</span><span class='line'> ./System/Library/Frameworks/CoreAudio.framework/module.map     
+</span><span class='line'>    :     
+</span><span class='line'>    :   
+</span><span class='line'> ./usr/include/dispatch/module.map   
+</span><span class='line'> ./usr/include/mach-o/module.map   
+</span><span class='line'> ./usr/include/module.map   
+</span><span class='line'> ./usr/include/objc/module.map</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Với mỗi framework ta thấy có 1 file module.map để mô tả framework đấy.</p>
+<p>Và để sử dụng framework chúng ta có thể thay <code>#import &lt;Frameworkname.h&gt;</code> bằng <code>@import Frameworkname;</code> Ví dụ khi sử dụng framework Foundation ta sẽ dùng <code>@import Foundation;</code> Vậy khi trong một file header gặp đoạn import module thì compiler đã xử lý gì và tại sao lại giải quyết được vấn đề Fragility và Performance của preprocessor?</p>
+<p>Ví dụ khi trong một file header, preprocessor gặp <code>@import Foundation</code> thì sẽ xử lý các bước như sau:</p>
+<ul>
+<li>Tìm file module.map của framework có tên là Foundation</li>
+<li>Dựa vào mô tả về framework trong file module.map này compiler sẽ parse các file headers và sinh ra file module (lưu dưới dạng AST - biểu diễn dưới dạng tree trước khi chuyển sang mã máy)</li>
+<li>Load file module này tại đoạn khai báo import</li>
+<li>Cache file module này để sử dụng lại cho những lần sau</li>
+</ul>
+<p>Thứ nhất thay vì copy nội dung các file header được include rồi mới compile, mà import trưc tiếp file module đã được lưu dưới dạng AST nên các header của framework ko bị ảnh hưởng bởi các đoạn code trước khi import (như #define) -&gt; tránh được vấn đề Fragility.</p>
+<p>Thứ hai là nhờ việc cache những file module này mà compiler không phải biên dịch lần 2 nên sẽ rút gọn thời gian biên dịch.</p>
+<p>Ngoài ra một điều thú vị nữa mà tính năng module mang lại cho lập trình viên đó là chúng ta không phải tự tay link các framework mà chúng ta import. Ví dụ như trước đây nếu trong file tmp.m có <code>#include &lt;Foundation/Foundation.h&gt;</code> thì khi biên dịch chúng ta phải tự link tới Foundation bằng lệnh : <code>clang tmp.m -o tmp -framework Foundation</code></p>
+<p>Thế nhưng khi sử dụng <code>@import</code> thì chúng ta không cần phải tự link tới framework nữa mà chỉ cần:</p>
+<p><code>clang tmp.m -o tmp -fmodules</code></p>
+<p>Với XCode chúng ta sẽ không phải add thêm các framework mà mình muốn dùng trong <code>Link Binary With Libraries</code> như hình dưới đây.</p>
+<p><img src="/images/clang_modules/link_framework.png"></p>
+<p>Đối với những project được tạo từ XCode5 thì tính năng module tự động được enable. Nhưng những project được tạo trước đây các bạn phải tự enable trong phần <code>Build Settings</code> (tức là set flag -fmodules).</p>
+<p><img src="/images/clang_modules/enable_module.png"></p>
+<h1 id="kết-luận">Kết luận</h1>
+<p>Bài viết này mình đã giới thiệu qua tính năng module của Clang trong được giới thiệu từ XCode5. Và đồng thời cũng giải thích qua về <code>#include</code>, <code>#import</code>, pch. Mặc dù tính năng module vẫn đang trong quá trình hoàn thiện nhưng hiện tại chúng ta đã có thể sử dụng với XCode5.</p>
+<p>Các bạn có thể tìm hiểu thêm tại:</p>
+<ul>
+<li><a href="http://clang.llvm.org/docs/Modules.html">clang_modules</a></li>
+<li><a href="http://llvm.org/devmtg/2012-11/Gregor-Modules.pdf">Bài phát biểu của Gregor</a></li>
+</ul>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -308,130 +666,6 @@ Từ ví dụ trên chúng ta thấy rằng độ phức tạp của việc tìm
 <ul>
 <li><a href="http://www.amazon.com/Computer-Architecture-Quantitative-Approach-Edition/dp/0123704901">Computer Architecture A quantitative Approach</a></li>
 </ul>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-11-03T20:21:00+09:00" data-updated="true" itemprop="datePublished">Nov 3<span>rd</span>, 2013</time></div>
-		<div class="tags">
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/11/03/full-text-search/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/11/03/full-text-search/" itemprop="url">Full Text Search, Từ Khái Niệm đến Thực Tiễn (Phần 2)</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h1 id="introduction">Introduction</h1>
-<p>Trong <a href="http://ktmt.github.io/blog/2013/10/27/full-text-search-engine/">phần 1</a>, chúng ta đã tìm hiểu sơ qua về khái niệm Full Text Search, cũng như về Inverted Index. Qua bài viết đầu tiên, các bạn đã nắm được tại sao Inverted Index lại được sử dụng để tăng tốc độ tìm kiếm trong một “Full Text Database”. Đồng thời ở ví dụ của phần một, các bạn cũng đã thấy, để tạo ra Inverted Index thì các bạn phải tách được một string ra thành các <strong>term</strong>, sau đó sẽ index string đó theo term đã tách được. Chính vì thế việc <strong>tách string</strong>, hay còn gọi là <strong>Tokenize</strong> là một bài toán con quan trọng nằm trong bài toán lớn của Full Text Search. Ở bài này, chúng ta sẽ tìm hiểu về 2 kĩ thuật Tokenize cơ bản là:</p>
-<ul>
-<li>N-Gram</li>
-<li>Morphological Analysis</li>
-</ul>
-<h1 id="n-gram">N-gram</h1>
-<p>N-gram là kĩ thuật tokenize một chuỗi thành các chuỗi con, thông qua việc <strong>chia đều</strong> chuỗi đã có thành các chuỗi con đều nhau, có độ dài là N. Về cơ bản thì N thường nằm từ 1~3, với các tên gọi tương ứng là unigram(N==1), bigram(N==2), trigram(N==3). Ví dụ đơn giản là chúng ta có chuỗi “good morning”, được phân tích thành bigram:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class=''><span class='line'>"good morning" =&gt; {"go", "oo", "od", "d ", " m", "mo", "or", "rn", "ni", "in", "ng"}</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Từ ví dụ trên các bạn có thể dễ dàng hình dung về cách thức hoạt động của N-gram. Để implement N-gram, chỉ cần một vài ba dòng code như sau, như ví dụ viết bằng python như sau:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span></span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">split_ngram</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statement</span><span class="p">,</span> <span class="n">ngram</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">statement</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">ngram</span><span class="p">):</span>
-</span><span class='line'>      <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">statement</span><span class="p">)</span> <span class="o">-</span> <span class="n">ngram</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-</span><span class='line'>        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">statement</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="n">ngram</span><span class="p">])</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">result</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<h1 id="morphological-analysis">Morphological Analysis</h1>
-<p>Morphological Analysis, rất may mắn có định nghĩa trên [wikipedia](http://vi.wikipedia.org/wiki/H%C3%ACnh_th%C3%A1i_h%E1%BB%8Dc_(ng%C3%B4n_ng%E1%BB%AF_h%E1%BB%8Dc) bằng tiếng Việt. Định nghĩa khá dài dòng, các bạn có thể xem bằng [Tiếng Anh](http://en.wikipedia.org/wiki/Morphology_(linguistics) Về cơ bản Morphological Analysis (từ bây giờ mình sẽ gọi tắt là MA), là một kĩ thuật phổ biến trong xử lý ngôn ngữ tự nhiên (Natural Language Processing). Morphological chính là “cấu trúc” của từ, như vậy MA sẽ là “phân tích cấu trúc của từ”, hay nói một cách rõ ràng hơn, MA sẽ là kĩ thuật tokenize mà để tách một chuỗi ra thành các từ có ý nghĩa. Ví dụ như cũng cụm từ “good morning” ở trên, chúng ta sẽ phân tích thành:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span></span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='python'><span class='line'><span class="s">&quot;good morning&quot;</span> <span class="o">=&gt;</span> <span class="p">{</span><span class="s">&quot;good&quot;</span><span class="p">,</span> <span class="s">&quot;morning&quot;</span><span class="p">}</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Để có được kết quả phân tích như trên, ngoài việc phải sở hữu một bộ từ điển tốt (để phân biệt được từ nào là có ý nghĩa, và thứ tự các từ thế nào thì có ý nghĩa), MA phải sử dụng các nghiên cứu sâu về xử lý ngôn ngữ tự nhiên, mà mình sẽ không đi sâu ở đây. Thông thường các công ty lớn sở hữu các search engine của riêng họ(như Yahoo, Google, Microsoft..) sẽ có các đội ngũ nghiên cứu để tạo ra nhiều bộ thư viện MA riêng của họ, thích hợp với nhiều ngôn ngữ. Ngoài ra chúng ta cũng có thể sử dụng các bộ thư viện được open source, hoặc sử dụng các package có sẵn trong các bộ full text search engine mà tiêu biểu là lucene.</p>
-<h1 id="mở-rộng">Mở rộng</h1>
-<p>Các bạn đọc đến đây chắc hẳn sẽ có suy nghĩ, để phân tách chuỗi, thì rõ ràng phân tích theo MA là quá hợp lý rồi, tại sao lại cần N-gram làm gì? Như mình đã nói ở trên, để xây dựng MA thì cần một bộ từ điển tốt, để giúp cho máy tính có thể phân biệt được các từ có nghĩa. Như thế nào là một từ điển tốt, thì về cơ bản, từ điển tốt là từ điển chứa càng nhiều từ (terms) càng tốt. Tuy nhiên ngôn ngữ thì mỗi ngôn ngữ lại có đặc trưng riêng, và không ngừng mở rộng, không ngừng thêm các từ mới. Việc chỉ sử dụng MA sẽ gây ra một tác dụng phụ là có rất nhiều từ không/chưa có trong từ điển, dẫn đến không thể index, và do đó sẽ không thể tiến hành tìm kiếm từ đó được.</p>
-<p>Vậy cách giải quyết như thế nào? Cách giải quyết tốt nhất là chúng ta sẽ <strong>kết hợp(hybrid)</strong> cả MA và N-gram. Cách hybrid thế nào thì sẽ tuỳ vào ngôn ngữ/ hoàn cảnh sử dụng, và cả performance cần thiết nữa. Về cơ bản thì những từ nào khó/không có thể phân tích được bằng MA, thì chúng ta sẽ dùng N-gram.</p>
-<h1 id="kết-luận">Kết luận</h1>
-<p>Qua bài viết lần này, các bạn đã hiểu thêm về 2 kĩ thuật tách từ (tokenize) cơ bản là N-gram và MA.</p>
-<p>Sử dụng 2 kĩ thuật này như thế nào để index dữ liệu đầu vào, sẽ được giới thiệu trong các bài viết sắp tới.</p>
 		
 		
 	</div>

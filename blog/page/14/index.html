@@ -7,7 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jul 24th, 2013 iOS Comments Những Lưu ý Khi Dùng UITableView Ở bài viết trước, tôi đã đề cập đến việc custom 1 UITableViewCell. Tuy nhiên, việc sử &hellip;">
+	<meta name="description" content="Jul 24th, 2013 sysadmin Comments Cài đặt Memcached Với Sasl Giới thiệu
+Memcached là cơ sở dữ liệu được lưu trong memory. Thông thường chúng ta sử &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -76,6 +77,244 @@
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-24T10:05:00+09:00" data-updated="true" itemprop="datePublished">Jul 24<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/sysadmin/'>sysadmin</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/07/24/install-memcached-with-sasl/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/07/24/install-memcached-with-sasl/" itemprop="url">Cài đặt Memcached Với Sasl</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1 id="giới-thiệu">Giới thiệu</h1>
+<p>Memcached là cơ sở dữ liệu được lưu trong memory. Thông thường chúng ta sử dụng memcached trong mạng nội bộ, hoặc sử dụng private IP để kết nối tới memcached, tuy nhiên trong một số trường hợp, IP của memcached server cần public ra ngoài (ví dụ toàn bộ các server đều đặt trên AWS). Trong trường hợp này, chúng ta cần bảo mật kết nối của memcached server.</p>
+<p>Từ phiên bản 1.4.3, memcached đã support sử dụng <a href="http://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer">SASL</a></p>
+<p>Bài viết này sẽ giới thiệu với các bạn cách cài đặt memcached với SASL cũng như giới thiệu cơ chế, cách làm việc của SASL</p>
+<h1 id="cách-cài-đặt-sasl-với-memcached">Cách cài đặt SASL với memcached</h1>
+<p>Đầu tiên bạn cần cài đặt phiên bản mới nhất của memcached. Bạn sẽ cần một số gói và thư viện khác để support SASL.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>install.sh </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> sudo apt-get install libsasl2-2 sasl2-bin libsasl2-2 libsasl2-dev libsasl2-modules
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Đừng quên, để cài đặt memcached, bạn cùng sẽ cần cài <code>libevent</code></p>
+<p>Cài đặt memcached</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>install.sh </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> wget http://memcached.googlecode.com/files/memcached-1.4.3.tar.gz
+</span><span class='line'><span class="nv">$&gt;</span> tar xvf memcached-1.4.3.tar.gz
+</span><span class='line'><span class="nv">$&gt;</span> <span class="nb">cd </span>memcached-1.4.3
+</span><span class='line'><span class="nv">$&gt;</span> ./configure --enable-sasl
+</span><span class='line'><span class="nv">$&gt;</span> sed -i <span class="s1">&#39;s/-Werror//g&#39;</span> Makefile
+</span><span class='line'><span class="nv">$&gt;</span> make
+</span><span class='line'><span class="nv">$&gt;</span> sudo make install
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Cài đặt libmemcached</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>install.sh </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> wget https://launchpad.net/libmemcached/1.0/1.0.17/+download/libmemcached-1.0.17.tar.gz
+</span><span class='line'><span class="nv">$&gt;</span> tar xvf libmemcached-1.0.17.tar.gz
+</span><span class='line'><span class="nv">$&gt;</span> <span class="nb">cd </span>libmemcached-1.0.17
+</span><span class='line'><span class="nv">$&gt;</span> ./configure
+</span><span class='line'><span class="nv">$&gt;</span> make
+</span><span class='line'><span class="nv">$&gt;</span> sudo make install
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<h1 id="set-up-sasl-với-memcached">Set up SASL với memcached</h1>
+<p>Điều đầu tiên bạn cần đảm bảo đó là set biến môi trường <code>SASL_CONF_PATH</code> khi bạn chay memcached. Trong ví dụ này <code>SASL_CONF_PATH</code> sẽ được trỏ tới <code>/home/kiennt/sasl</code></p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>install.sh </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> <span class="nb">export </span><span class="nv">SASL_CONF_PATH</span><span class="o">=</span>/home/kiennt/sasl
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Sau đó bạn cần set up file memcached.conf trong SASL (tên của file sẽ là tên của ứng dụng SASL - cụ thể ở đây là memcached)</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class=''><span class='line'>mech_list: plain
+</span><span class='line'>log_level: 5
+</span><span class='line'>sasldb_path: /home/kiennt/sasl/sasldb2</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Tiếp theo, bạn cần tạo một file database (được trỏ tới từ bước trước) trong file <code>memcached.conf</code></p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>install.sh </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> sudo saslpasswd2 -c -a memcached -f /home/kiennt/sasl/sasldb2 &lt;username&gt;
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Chú ý rằng cờ -a xác định tên của ứng dụng <code>memcached</code> - chính là tên của config file bạn đã xác định ở trên <code>memcached.conf</code>. Khi bạn chạy <code>saslpasswd2</code>, bạn sẽ được hỏi password và password verify cation.</p>
+<h1 id="chạy-memcached-với-sasl">Chạy memcached với SASL</h1>
+<p>Để chạy memcached với SASL, bạn cần sử dụng cờ <code>-S</code> để bật cơ chế security của mecached lên</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>install.sh </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> <span class="nb">export </span><span class="nv">SASL_CONF_PATH</span><span class="o">=</span>/home/kiennt/sasl
+</span><span class='line'><span class="nv">$&gt;</span> /usr/local/bin/memcached -S -vvv
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<h1 id="tổng-kết">Tổng kết</h1>
+<p>Bài viết này giới thiệu với các cài đặt và chạy memcached với SASL. Giờ bạn có thể tập trung vào việc code ứng dụng của bạn rồi.</p>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -445,362 +684,6 @@
 <p>Thêm thắt một chút css, chúng ta đã có một game con rắn hoàn chỉnh</p>
 <p><img src="/images/snake/screenshot.png" title="image" alt="images"></p>
 <p>Toàn bộ source code cho ví dụ này mình để ở trên <a href="https://github.com/ktmt/snake-js" class="uri">https://github.com/ktmt/snake-js</a> , các bạn có thể sử dụng tùy thích.</p>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-07-17T22:38:00+09:00" data-updated="true" itemprop="datePublished">Jul 17<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/07/17/apache-avro-an-introduction/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/17/apache-avro-an-introduction/" itemprop="url">Apache Avro: An Introduction</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h2 id="serialization">1. Serialization</h2>
-<p>Trước khi tìm hiểu về Avro, chúng ta cần nắm được serialization là gì. Theo <a href="http://en.wikipedia.org/wiki/Serialization">wiki</a>, Serialization là quá trình chuyển các cấu trúc dữ liệu và các đối tượng thành một định dạng có thể lưu trữ được (vào file, in-memory buffer, hoặc truyền qua network), sau đó có thể phục hồi lại các cấu trúc dữ liệu và đối tượng như ban đầu, trên cùng hoặc khác môi trường.</p>
-<p>Tác dụng của Serialization gồm có: - đồng nhất hóa các đối tượng, để có thể lưu các thuộc tính của nó vào ổ cứng, hoặc cơ sở dữ liệu - dùng cho Remote procedure call (RPC)</p>
-<p>Trong một số ngôn ngữ lập trình như Java, Ruby, Python, PHP, các ngôn ngữ .NET,…, Serialization được hỗ trợ trực tiếp. Bên cạnh đó, còn có những framework riêng cho Serialization, có thể kể đến: <a href="https://developers.google.com/protocol-buffers/">Google’s Protocol Buffers</a>, <a href="http://thrift.apache.org/">Apache Thrift</a>, và Apache Avro.</p>
-<h2 id="tại-sao-dùng-apache-avro">2. Tại sao dùng Apache Avro?</h2>
-<p>Nếu sử dụng các phương pháp serialization của từng ngôn ngữ (ví dụ như với Java, ta cần định nghĩa một class implement <em>Serializable class</em>), ta gặp phải vấn đề mất language portability: dữ liệu được serialize ra sẽ chỉ đọc được bởi ngôn ngữ tạo ra nó mà thôi! Apache Avro đã khắc phục nhược điểm này, vì đây là một hệ thống data serialization không phụ thuộc ngôn ngữ (language-neutral). Bằng cách xây dựng một định dạng dữ liệu có thể được nhiều ngôn ngữ xử lý, Avro đã giúp chia sẻ dataset với nhiều đối tượng sử dụng ngôn ngữ khác nhau hơn.</p>
-<p>Nếu nói về language-neutral, thì Google’s Protocol Buffers và Apache Thrift cũng làm được như vậy. Vậy tại sao lại có thêm Apache Avro?</p>
-<p>Những hệ thống này có đặc điểm chung là data được mô tả bằng <em>schema</em>, không phụ thuộc ngôn ngữ lập trình. Tuy nhiên, Protocol Buffers và Thrift cần phải có compiler riêng biệt để tạo ra các implementation tương ứng với từng ngôn ngữ lập trình. Quá trình này gọi là code generation. Còn đối với Avro, quá trình code generation chỉ là option, nghĩa là ta có thể đọc và ghi dữ liệu luôn theo một <em>schema</em> cho trước, kể cả code của ta chưa từng thấy schema đó bao giờ. Để làm được điều này, schema luôn xuất hiện kèm với data đã được serialized, ở cả lúc đọc và ghi. Cách mã hóa này rất gọn nhẹ, vì giá trị đã encode không cần phải tag cùng với các field identifier như Protocol Buffer.</p>
-<h2 id="avro-data-types-và-schemas">3. Avro Data Types và Schemas</h2>
-<p>Lý thuyết tổng quan về Avro là như vậy, giờ ta hãy chuyển sang thực hành cho dễ hiểu. Chúng ta cùng bắt đầu bằng một ví dụ đơn giản. Định nghĩa một schema trong file <em>Person.avsc</em> như sau:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>Person.json </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='json'><span class='line'><span class="p">{</span> <span class="nt">&quot;namespace&quot;</span><span class="p">:</span> <span class="s2">&quot;edu.rutgers.vietnguyen&quot;</span><span class="p">,</span>
-</span><span class='line'><span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;record&quot;</span><span class="p">,</span>
-</span><span class='line'><span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Person&quot;</span><span class="p">,</span>
-</span><span class='line'><span class="nt">&quot;fields&quot;</span><span class="p">:</span> <span class="p">[</span>
-</span><span class='line'>  <span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">},</span>
-</span><span class='line'>  <span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;age&quot;</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;int&quot;</span><span class="p">},</span>
-</span><span class='line'>  <span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;address&quot;</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">}</span>
-</span><span class='line'><span class="p">]</span> <span class="p">}</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Ta thấy, schema này được định nghĩa bằng JSON:</p>
-<ul>
-<li><p>namespace, cùng với thuộc tính name, tạo ra full name của schema này. - type: ở đây là thuộc loại record.</p></li>
-<li><p>name: tên của schema này.</p></li>
-<li><p>fields: chỉ ra các trường trong record này (gồm có 3 trường name, age, address).</p></li>
-</ul>
-<p>Avro cung cấp một số primitive types như sau: null, boolean, int, long, float, double, byte, và string. Ngoài ra còn có các complex types: record, enum, array, map, union, fixed.</p>
-<p>Ở ví dụ này, để đơn giản, ta chỉ sử dụng 2 type là string và int.</p>
-<p>Có file định nghĩa schema rồi, trong Java, chuyển thành đối tượng Schema như sau:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>schema.java </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='java'><span class='line'>
-</span><span class='line'>  <span class="kd">public</span> <span class="kd">static</span> <span class="n">Schema</span> <span class="nf">makeSchema</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">IOException</span>
-</span><span class='line'>  <span class="o">{</span>    
-</span><span class='line'>      <span class="n">Schema</span><span class="o">.</span><span class="na">Parser</span> <span class="n">parser</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Schema</span><span class="o">.</span><span class="na">Parser</span><span class="o">();</span>
-</span><span class='line'>      <span class="n">Schema</span> <span class="n">schema</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="na">parse</span><span class="o">(</span><span class="k">new</span> <span class="n">File</span><span class="o">(</span><span class="s">&quot;Person.avsc&quot;</span><span class="o">));</span>
-</span><span class='line'>      <span class="k">return</span> <span class="n">schema</span><span class="o">;</span>
-</span><span class='line'>  <span class="o">}</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<h2 id="đọc-và-ghi-dữ-liệu-avro">4. Đọc và ghi dữ liệu Avro</h2>
-<p>Trước tiên, ta xem xét cách đọc và ghi dữ liệu với Java trước:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>readwriteavro.java </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">static</span> <span class="n">GenericData</span><span class="o">.</span><span class="na">Record</span> <span class="nf">makeObject</span><span class="o">(</span><span class="n">Schema</span> <span class="n">schema</span><span class="o">,</span> <span class="n">String</span> <span class="n">name</span><span class="o">,</span> <span class="kt">int</span> <span class="n">age</span><span class="o">,</span> <span class="n">String</span> <span class="n">address</span><span class="o">)</span>
-</span><span class='line'>  <span class="o">{</span>
-</span><span class='line'>      <span class="n">GenericData</span><span class="o">.</span><span class="na">Record</span> <span class="n">record</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GenericData</span><span class="o">.</span><span class="na">Record</span><span class="o">(</span><span class="n">schema</span><span class="o">);</span>
-</span><span class='line'>      <span class="n">record</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&quot;name&quot;</span><span class="o">,</span> <span class="n">name</span><span class="o">);</span>
-</span><span class='line'>      <span class="n">record</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&quot;age&quot;</span><span class="o">,</span> <span class="n">age</span><span class="o">);</span>
-</span><span class='line'>      <span class="n">record</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&quot;address&quot;</span><span class="o">,</span> <span class="n">address</span><span class="o">);</span>
-</span><span class='line'>      <span class="k">return</span><span class="o">(</span><span class="n">record</span><span class="o">);</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'>  
-</span><span class='line'>  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">testWrite</span><span class="o">(</span><span class="n">File</span> <span class="n">file</span><span class="o">,</span> <span class="n">Schema</span> <span class="n">schema</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span>
-</span><span class='line'>  <span class="o">{</span>
-</span><span class='line'>      <span class="n">GenericDatumWriter</span><span class="o">&lt;</span><span class="n">GenericData</span><span class="o">.</span><span class="na">Record</span><span class="o">&gt;</span> <span class="n">datum</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GenericDatumWriter</span><span class="o">&lt;</span><span class="n">GenericData</span><span class="o">.</span><span class="na">Record</span><span class="o">&gt;</span> <span class="o">(</span><span class="n">schema</span><span class="o">);</span>
-</span><span class='line'>      <span class="n">DataFileWriter</span><span class="o">&lt;</span><span class="n">GenericData</span><span class="o">.</span><span class="na">Record</span><span class="o">&gt;</span> <span class="n">writer</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DataFileWriter</span><span class="o">&lt;</span><span class="n">GenericData</span><span class="o">.</span><span class="na">Record</span><span class="o">&gt;(</span><span class="n">datum</span><span class="o">);</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="n">writer</span><span class="o">.</span><span class="na">create</span><span class="o">(</span><span class="n">schema</span><span class="o">,</span> <span class="n">file</span><span class="o">);</span>
-</span><span class='line'>      <span class="n">writer</span><span class="o">.</span><span class="na">append</span><span class="o">(</span><span class="n">makeObject</span><span class="o">(</span><span class="n">schema</span><span class="o">,</span> <span class="s">&quot;Alex&quot;</span><span class="o">,</span> <span class="mi">24</span><span class="o">,</span> <span class="s">&quot;MI&quot;</span><span class="o">));</span>
-</span><span class='line'>      <span class="n">writer</span><span class="o">.</span><span class="na">append</span><span class="o">(</span><span class="n">makeObject</span><span class="o">(</span><span class="n">schema</span><span class="o">,</span> <span class="s">&quot;Betty&quot;</span><span class="o">,</span> <span class="mi">25</span><span class="o">,</span> <span class="s">&quot;NJ&quot;</span><span class="o">));</span>
-</span><span class='line'>      <span class="n">writer</span><span class="o">.</span><span class="na">append</span><span class="o">(</span><span class="n">makeObject</span><span class="o">(</span><span class="n">schema</span><span class="o">,</span> <span class="s">&quot;Carol&quot;</span><span class="o">,</span> <span class="mi">26</span><span class="o">,</span> <span class="s">&quot;WA&quot;</span><span class="o">));</span>
-</span><span class='line'>      <span class="n">writer</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'>  
-</span><span class='line'>  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">testRead</span><span class="o">(</span><span class="n">File</span> <span class="n">file</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span>
-</span><span class='line'>  <span class="o">{</span>
-</span><span class='line'>      <span class="n">GenericDatumReader</span><span class="o">&lt;</span><span class="n">GenericData</span><span class="o">.</span><span class="na">Record</span><span class="o">&gt;</span> <span class="n">datum</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GenericDatumReader</span><span class="o">&lt;</span><span class="n">GenericData</span><span class="o">.</span><span class="na">Record</span><span class="o">&gt;();</span>
-</span><span class='line'>      <span class="n">DataFileReader</span><span class="o">&lt;</span><span class="n">GenericData</span><span class="o">.</span><span class="na">Record</span><span class="o">&gt;</span> <span class="n">reader</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DataFileReader</span><span class="o">&lt;</span><span class="n">GenericData</span><span class="o">.</span><span class="na">Record</span><span class="o">&gt;(</span><span class="n">file</span><span class="o">,</span> <span class="n">datum</span><span class="o">);</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="n">GenericData</span><span class="o">.</span><span class="na">Record</span> <span class="n">record</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GenericData</span><span class="o">.</span><span class="na">Record</span><span class="o">(</span><span class="n">reader</span><span class="o">.</span><span class="na">getSchema</span><span class="o">());</span>
-</span><span class='line'>      <span class="k">while</span><span class="o">(</span><span class="n">reader</span><span class="o">.</span><span class="na">hasNext</span><span class="o">())</span>
-</span><span class='line'>      <span class="o">{</span>
-</span><span class='line'>          <span class="n">reader</span><span class="o">.</span><span class="na">next</span><span class="o">(</span><span class="n">record</span><span class="o">);</span>
-</span><span class='line'>          <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Name: &quot;</span> <span class="o">+</span> <span class="n">record</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">&quot;name&quot;</span><span class="o">)</span> <span class="o">+</span> <span class="s">&quot;. Age: &quot;</span> <span class="o">+</span> <span class="n">record</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">&quot;age&quot;</span><span class="o">)</span> <span class="o">+</span> <span class="s">&quot;. Address: &quot;</span> <span class="o">+</span> <span class="n">record</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">&quot;address&quot;</span><span class="o">)</span> <span class="o">);</span>
-</span><span class='line'>          
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>      <span class="n">reader</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>      <span class="k">try</span>
-</span><span class='line'>      <span class="o">{</span>
-</span><span class='line'>          <span class="n">Schema</span> <span class="n">schema</span> <span class="o">=</span> <span class="n">makeSchema</span><span class="o">();</span>
-</span><span class='line'>          <span class="n">File</span> <span class="n">file</span> <span class="o">=</span> <span class="k">new</span> <span class="n">File</span><span class="o">(</span><span class="s">&quot;test-person.avro&quot;</span><span class="o">);</span>
-</span><span class='line'>          <span class="n">testWrite</span><span class="o">(</span><span class="n">file</span><span class="o">,</span><span class="n">schema</span><span class="o">);</span>
-</span><span class='line'>          <span class="n">testRead</span><span class="o">(</span><span class="n">file</span><span class="o">);</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>      <span class="k">catch</span><span class="o">(</span><span class="n">IOException</span> <span class="n">e</span><span class="o">)</span>
-</span><span class='line'>      <span class="o">{</span>
-</span><span class='line'>          <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="o">}</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Output:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>output </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class=''><span class='line'>Name: Alex. Age: 24. Address: MI
-</span><span class='line'>Name: Betty. Age: 25. Address: NJ
-</span><span class='line'>Name: Carol. Age: 26. Address: WA</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Có vài lưu ý trong đoạn code trên:</p>
-<ul>
-<li><p>Ghi dữ liệu: <em>DatumWriter</em> dùng để chuyển đối tượng Java thành định dạng in-memory serialized. Ta cần có schema truyền vào đối tượng GenericDatumWriter, để biết ghi dữ liệu theo schema nào. Schema này ta có thể đọc ra từ file avsc, như trên đã trình bày. Sau đó, ghi đối tượng đã serialized cùng với schema vào datafile bằng cách sử dụng <em>DatumFileWriter</em>.</p></li>
-<li><p>Đọc dữ liệu: vì đặc điểm của Avro Datafile là nó chứa luôn schema trong metadata của nó, do vậy khi đọc file, không cần chỉ ra schema mà lấy trực tiếp từ file cần đọc: <em>reader.getSchema()</em></p></li>
-</ul>
-<p>Định dạng của Avro Datafile: gồm phần header chứa metada, bao gồm Avro schema và sync marker, tiếp theo là một dãy block chứa các Avro object đã serialize. Các block này được ngăn cách bởi sync marker.</p>
-<h2 id="đa-ngôn-ngữ">5. Đa ngôn ngữ</h2>
-<p>Như trên đã trình bày, Avro datafile là language-neutral, nghĩa là có thể chia sẻ giữa nhiều ngôn ngữ lập trình khác nhau. Ở đây, xin trình bày ví dụ đọc file <em>test-person.avsc</em> ở trên bằng Python:</p>
-<p>(Chú ý: phải install Avro implementation của Python theo hướng dẫn tại <a href="http://avro.apache.org/docs/current/gettingstartedpython.html">Làm quen với Apache Avro (Python)</a>)</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>avroReader.py </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='py'><span class='line'>
-</span><span class='line'><span class="kn">import</span> <span class="nn">avro.schema</span>
-</span><span class='line'><span class="kn">from</span> <span class="nn">avro.datafile</span> <span class="kn">import</span> <span class="n">DataFileReader</span><span class="p">,</span> <span class="n">DataFileWriter</span>
-</span><span class='line'><span class="kn">from</span> <span class="nn">avro.io</span> <span class="kn">import</span> <span class="n">DatumReader</span><span class="p">,</span> <span class="n">DatumWriter</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">reader</span> <span class="o">=</span> <span class="n">DataFileReader</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="s">&quot;test-person.avro&quot;</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">),</span> <span class="n">DatumReader</span><span class="p">())</span>
-</span><span class='line'><span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">:</span>
-</span><span class='line'>    <span class="k">print</span> <span class="n">user</span>
-</span><span class='line'><span class="n">reader</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Chạy file <em>avroReader.py</em>, ta có output:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>output </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class=''><span class='line'>{u'age': 24, u'name': u'Alex', u'address': u'MI'} 
-</span><span class='line'>{u'age': 25, u'name': u'Betty', u'address': u'NJ'} 
-</span><span class='line'>{u'age': 26, u'name': u'Carol', u'address': u'WA'}</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Tương tự, đối với các ngôn ngữ khác (Ruby, PHP, các ngôn ngữ .NET…) , bằng cách sử dụng các Avro implementation tương ứng, việc đọc/ghi Avro datafile cũng dễ dàng tương tự như vậy.</p>
-<h2 id="tóm-tắt">6. Tóm tắt</h2>
-<p>Bài viết đã trình bày những bước căn bản để làm quen với Apache Avro. Trong bài viết tiếp theo, tôi sẽ trình bày cách sử dụng Avro trong hệ thống RPC (Remote Procedure Call) như thế nào.</p>
-<h2 id="tham-khảo">7. Tham khảo</h2>
-<ol type="1">
-<li><a href="http://www.amazon.com/Hadoop-Definitive-Guide-Tom-White/dp/1449311520/ref=sr_1_1?ie=UTF8&amp;qid=1374205297&amp;sr=8-1&amp;keywords=hadoop+guide">Hadoop: The Definitive Guide</a></li>
-<li><a href="http://avro.apache.org/">Avro homepage</a></li>
-<li><a href="http://martin.kleppmann.com/2012/12/05/schema-evolution-in-avro-protocol-buffers-thrift.html">Schema evolution in Avro, Protocol Buffers and Thrift</a></li>
-</ol>
 		
 		
 	</div>

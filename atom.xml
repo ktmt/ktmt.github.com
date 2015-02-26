@@ -4,7 +4,7 @@
   <title><![CDATA[Blog kỹ thuật máy tính]]></title>
   <link href="http://git@github.com.github.com/atom.xml" rel="self"/>
   <link href="http://git@github.com.github.com/"/>
-  <updated>2015-02-14T00:24:48+09:00</updated>
+  <updated>2015-02-27T00:36:11+09:00</updated>
   <id>http://git@github.com.github.com/</id>
   <author>
     <name><![CDATA[kỹ thuật máy tính]]></name>
@@ -12,6 +12,590 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Haskell's laziness]]></title>
+    <link href="http://git@github.com.github.com/blog/2015/02/15/haskells-laziness/"/>
+    <updated>2015-02-15T04:04:00+09:00</updated>
+    <id>http://git@github.com.github.com/blog/2015/02/15/haskells-laziness</id>
+    <content type="html"><![CDATA[<p>Trong bài viết này, tôi sẽ trình bày về một đặc tính của Haskell khá khác biệt so với các ngôn ngữ lập trình khác, đó là laziness (dịch tiếng việt nôm na là “luời biếng”, nhưng tôi xin đuợc giữ nguyên từ gốc tiếng anh).</p>
+<p>Chúng ta hiểu laziness như thế naò? <code>Lazy evaluation</code> nghĩa là, việc evaluate các đối số của hàm sẽ đuợc trì hoãn càng lâu càng tốt, chúng sẽ không đuợc evaluate cho đến khi biểu thức thực sự cần đến gía trị của chúng. Khi một biểu thức đuợc đưa làm đối số cho một hàm, nó chỉ đuợc đóng gọn lại thành một biểu thức chưa đuợc đánh gía (unevaluated expression), mà chưa đuợc tính toán gì cả.</p>
+<p>Chúng ta sẽ sử dụng Lecture 7 của course CIS 194 (<a href="http://www.cis.upenn.edu/~cis194/fall14/lectures/07-laziness.html">Link</a>) để minh họa cho việc tìm hiểu Laziness. Bên cạnh đó, tôi sẽ trình bày qua những syntax cơ bản của Haskell theo bài viết.</p>
+<h1 id="tính-số-fibonacci">Tính số Fibonacci</h1>
+<p>Trong bài tập thứ nhất, chúng ta sẽ viết một hàm <code>fib</code> để tính ra số Fibonacci thứ n</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='haskell'><span class='line'><span class="c1">-- Exercise 1 </span>
+</span><span class='line'><span class="nf">fib</span> <span class="ow">::</span> <span class="kt">Integer</span> <span class="ow">-&gt;</span> <span class="kt">Integer</span>
+</span><span class='line'><span class="nf">fib</span> <span class="mi">0</span> <span class="ow">=</span> <span class="mi">0</span>
+</span><span class='line'><span class="nf">fib</span> <span class="mi">1</span> <span class="ow">=</span> <span class="mi">1</span>
+</span><span class='line'><span class="nf">fib</span> <span class="n">n</span> <span class="ow">=</span> <span class="n">fib</span> <span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">fib</span> <span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Bên trên là điển hình của cách viết một hàm (function) trong Haskell. Truớc tiên, chúng ta có tên hàm nằm truớc dấu <code>::</code>, trong truờng hợp này là hàm <code>fib</code>. Tiếp theo, nằm sau dấu <code>::</code>, chúng ta có <code>Integer -&gt; Integer</code>, đây chính là nơi khai báo đối số và giá trị trả về của Haskell. Trong truờng hợp này, hàm <code>fib</code> nhận đối số là Integer (số Fibonacci thứ mấy) và trả về Integer (số Fibonacci cần tìm). Tài liệu sau đây nói một cách khá đầy đủ về syntax viết function, bạn nên đọc thêm: <a href="http://learnyouahaskell.com/syntax-in-functions">Syntax in Functions</a></p>
+<p>Sau dòng khai báo tên hàm và nguyên mẫu hàm là định nghĩa của một loạt pattern matching. Haskell sẽ match từ trên xuống duới, do vậy truớc tiên ta khai báo base case cho số Fibonacci thứ 0 và thứ 1. Các số Fibonacci tiếp theo, vì không match các base pattern nên sẽ sử dụng pattern thứ ba, cộng hai số Fibonacci phía truớc.</p>
+<p>Chúng ta thấy cách khai báo pattern matching khá gần gũi vớí định nghiã dãy Fibonacci chúng ta đã học. Tiếp theo, ta định nghiã một dãy Fibonacci vô hạn như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='haskell'><span class='line'><span class="nf">fibs1</span> <span class="ow">::</span> <span class="p">[</span><span class="kt">Integer</span><span class="p">]</span>
+</span><span class='line'><span class="nf">fibs1</span> <span class="ow">=</span> <span class="n">map</span> <span class="n">fib</span> <span class="p">[</span><span class="mi">0</span><span class="o">..</span><span class="p">]</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p><code>map</code> là một function trong Haskell, nhận vaò hai đối số là một hàm f và một danh sách. Nó sẽ trả về một danh sách mới mà các phần từ là kết qủa trả về tuơng ứng khi áp dụng hàm f với từng phần tử trong danh sách cũ. <code>[0..]</code> là cách viết danh sách tất cả các số nguyên duơng. Như vậy, ta có <code>fibs1</code> là danh sách tất cả các số Fibonacci.</p>
+Hãy khởi động GHCi và check hàm mới này:
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='bash'><span class='line'><span class="nv">$ </span>ghci
+</span><span class='line'>Prelude&gt; :l HW07.hs
+</span><span class='line'><span class="o">[</span>1 of 1<span class="o">]</span> Compiling HW07             <span class="o">(</span> HW07.hs, interpreted <span class="o">)</span>
+</span><span class='line'>Ok, modules loaded: HW07.
+</span><span class='line'>*HW07&gt; fibs1
+</span><span class='line'><span class="o">[</span>0,1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,1597,2584,4181,6765,10946,17711,28657,46368,75025,121393,196418,
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Bạn sẽ thấy một vài số Fibonacci đầu tiên hiện ra rất nhanh, nhưng đến một lúc nào đó, sẽ rất lâu để tính đuợc số Fibonacci tiếp theo. Lý do là vì mỗi số Fibonacci bị tính đi tính lại quá nhiều lần!</p>
+<p>Và đây là lúc chúng ta áp dụng Laziness của Haskell.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='haskell'><span class='line'><span class="c1">-- Exercise 2 </span>
+</span><span class='line'><span class="nf">fibs2</span> <span class="ow">::</span> <span class="p">[</span><span class="kt">Integer</span><span class="p">]</span>
+</span><span class='line'><span class="nf">fibs2</span> <span class="ow">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">++</span> <span class="n">zipWith</span> <span class="p">(</span><span class="o">+</span><span class="p">)</span> <span class="n">fibs2</span> <span class="p">(</span><span class="n">tail</span> <span class="n">fibs2</span><span class="p">)</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Chúng ta đã biết dãy Fibonacci bắt đầu từ hai số 0, 1, nên ta khởi đầu khai baó dãy bằng 0,1.</p>
+<p>Giả sử ta đã có một dãy Fibonacci vô hạn:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='bash'><span class='line'><span class="o">[</span>0, 1, 1, 2, 3, 5, 8, 13, ...<span class="o">]</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p><code>tail</code> là phép toán bỏ đi phần tử đầu tiên của một dãy:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='bash'><span class='line'><span class="o">[</span>1, 1, 2, 3, 5, 8, 13, ...<span class="o">]</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p><code>zipWith</code> kết hợp 2 dãy trên theo từng cặp phần tử sử dụng một phép toán naò đó (ở đây là phép cộng):</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='bash'><span class='line'><span class="o">[</span>0, 1, 1, 2, 3, 5, 8, 13, ...<span class="o">]</span>
+</span><span class='line'>+
+</span><span class='line'><span class="o">[</span>1, 1, 2, 3, 5, 8, 13, ...<span class="o">]</span>
+</span><span class='line'><span class="o">=</span>
+</span><span class='line'><span class="o">[</span>1, 2, 3, 5, 8, 13, ...<span class="o">]</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Như vậy, dãy vô hạn Fibonacci có thể đuợc tính bằng cách thêm hai phần tử đầu tiên (0, 1) vào kết quả sau khi zip dãy Fibonacci vô hạn với <code>tail</code> của nó!</p>
+<p>Và đây chính là sức mạnh của laziness! <code>fibs2</code> là kết quả trả về mà chúng ta lại có thể để xuất hiện ở bên vế phải! Haskell chỉ evaluate vế phải khi naò thực sự cần thiết, cho nên mỗi khi cần tính một phần tử mới cho dãy <code>fibs2</code>, nó mới quay ra tìm lại những phần tử đằng truớc (đã đuợc tính).</p>
+Bạn hãy thử chạy lại <code>fibs2</code> với GHCi và quan sát, số Fibonacci tuôn ra như thác lũ :) Hãy thử chỉ lấy 100 số Fibonacci ban đầu xem:
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='bash'><span class='line'>*HW07&gt; take 100 fibs2
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>100 số Fibonacci đầu tiên xuất hiện trong chớp mắt!</p>
+<h1 id="streams">Streams</h1>
+<p>Trong phần này, chúng ta định nghĩa kiểu dữ liệu (data type) <code>Stream</code>, gần giống với <code>list</code> nhưng bị ràng buộc là <em>phải vô hạn</em></p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='haskell'><span class='line'><span class="kr">data</span> <span class="kt">Stream</span> <span class="n">a</span> <span class="ow">=</span> <span class="kt">Cons</span> <span class="n">a</span> <span class="p">(</span><span class="kt">Stream</span> <span class="n">a</span><span class="p">)</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Bên trên là cách khai baó một kiểu dữ liệu, bắt đầu bằng từ khoá <code>data</code>. <code>Stream</code> là tên kiểu dữ liệu, tiếp sau đó đến truớc dấu <code>=</code> là <code>type variable</code>, tức là <code>a</code> có thể thay cho <code>Integer</code>, <code>String</code>, … và ta có kiểu dữ liệu <code>Stream Integer</code> hoặc <code>Stream String</code> tuơng ứng. Phiá sau dấu <code>=</code> là constructor của kiểu dữ liệu này: <code>Cons</code>, với 2 đối số thuộc kiểu <code>a</code> và <code>Stream a</code>. Bạn hãy tham khaỏ về cách taọ kiểu dữ liệu tại <a href="http://learnyouahaskell.com/making-our-own-types-and-typeclasses">Link này</a></p>
+<p>Hàm sau convert một stream thành list:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='haskell'><span class='line'><span class="nf">streamToList</span> <span class="ow">::</span> <span class="kt">Stream</span> <span class="n">a</span> <span class="ow">-&gt;</span> <span class="p">[</span><span class="n">a</span><span class="p">]</span>
+</span><span class='line'><span class="nf">streamToList</span> <span class="p">(</span><span class="kt">Cons</span> <span class="n">x</span> <span class="n">s</span><span class="p">)</span> <span class="ow">=</span> <span class="n">x</span> <span class="kt">:</span> <span class="n">streamToList</span> <span class="n">s</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Trong exercise 4, chúng ta phải viết một instance của <code>Show</code> cho kiểu dữ liệu Stream. đến đây, chúng ta cần biết thêm về khái niệm <code>Typeclass</code> của Haskell. Typeclass có thể coi là một loại “giao diện”, nó định nghĩa một số loại hành vi, và các kiểu dữ liệu mà có cùng hành vi đó có thể được khai báo là instance của typeclass đó. Lấy ví dụ, <code>Eq</code> typeclass định nghĩa một giao diện cho những thứ có thể so sánh được. Cụ thể các hành vi mà nó định nghĩa như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='haskell'><span class='line'><span class="kr">class</span> <span class="kt">Eq</span> <span class="n">a</span> <span class="kr">where</span>
+</span><span class='line'>    <span class="p">(</span><span class="o">==</span><span class="p">)</span> <span class="ow">::</span> <span class="n">a</span> <span class="ow">-&gt;</span> <span class="n">a</span> <span class="ow">-&gt;</span> <span class="kt">Bool</span>
+</span><span class='line'>    <span class="p">(</span><span class="o">/=</span><span class="p">)</span> <span class="ow">::</span> <span class="n">a</span> <span class="ow">-&gt;</span> <span class="n">a</span> <span class="ow">-&gt;</span> <span class="kt">Bool</span>
+</span><span class='line'>    <span class="n">x</span> <span class="o">==</span> <span class="n">y</span> <span class="ow">=</span> <span class="n">not</span> <span class="p">(</span><span class="n">x</span> <span class="o">/=</span> <span class="n">y</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">x</span> <span class="o">/=</span> <span class="n">y</span> <span class="ow">=</span> <span class="n">not</span> <span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="n">y</span><span class="p">)</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Theo đó, bất cứ type nào muốn được là một instance của <code>Eq</code> typeclass sẽ phải khai báo các hàm <code>(==)</code>, <code>(/=)</code> (trên thực tế, chỉ cần khai báo một hàm, vì hàm còn lại được định nghĩa là phủ định của hàm kia).</p>
+<p>Ví dụ, ta có một type như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='haskell'><span class='line'><span class="kr">data</span> <span class="kt">Coin</span> <span class="ow">=</span> <span class="kt">Head</span> <span class="o">|</span> <span class="kt">Tail</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Chúng ta muốn <code>Coin</code> type là một instance của <code>Eq</code> typeclass thì ta làm như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='haskell'><span class='line'><span class="kr">instance</span> <span class="kt">Eq</span> <span class="kt">Coin</span> <span class="kr">where</span>
+</span><span class='line'>  <span class="kt">Head</span> <span class="o">==</span> <span class="kt">Head</span> <span class="ow">=</span> <span class="kt">True</span>
+</span><span class='line'>  <span class="kt">Tail</span> <span class="o">==</span> <span class="kt">Tail</span> <span class="ow">=</span> <span class="kt">True</span>
+</span><span class='line'>  <span class="kr">_</span> <span class="o">==</span> <span class="kr">_</span> <span class="ow">=</span> <span class="kt">False</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Ở đây, chúng ta vẫn dùng pattern matching để định nghĩa hàm (==) với từng trường hợp của 2 đối số.</p>
+<p>Quay trở lại với exercise 4, chúng ta định nghĩa <code>Stream a</code> thành một instance của <code>Show</code> typeclass như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='haskell'><span class='line'><span class="kr">instance</span> <span class="kt">Show</span> <span class="n">a</span> <span class="ow">=&gt;</span> <span class="kt">Show</span> <span class="p">(</span><span class="kt">Stream</span> <span class="n">a</span><span class="p">)</span> <span class="kr">where</span>
+</span><span class='line'>    <span class="n">show</span> <span class="n">s</span> <span class="ow">=</span> <span class="n">show</span> <span class="o">$</span> <span class="n">take</span> <span class="mi">20</span> <span class="p">(</span><span class="n">streamToList</span> <span class="n">s</span><span class="p">)</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Chúng ta thấy sự xuất hiện của kí tự “lạ”: <code>=&gt;</code>. Trong khai báo instance, những gì xuất hiện trước dấu <code>=&gt;</code> là những ràng buộc về type. Ở đây, chúng ta muốn <code>Stream a</code> là instance của <code>Show</code> thì bản thân <code>a</code>, một type variable, cũng phải là một instance của <code>Show</code>. Có như vậy, chúng ta mới định nghĩa được hàm <code>show</code> của <code>Show</code> typeclass cho <code>Stream a</code> dựa trên hàm <code>show</code> cho <code>a</code>.</p>
+<p>Đến kí tự lạ tiếp theo: <code>$</code>. Đây chỉ đơn giản là một chỉ dẫn cho Haskell là tất cả những gì xuất hiện sau <code>$</code> có độ ưu tiên phép toán cao hơn, tức là <code>show $ take 20 (streamToList s)</code> tương đương với <code>show (take 20 (streamToList s))</code>. Nhưng chúng ta không muốn dùng quá nhiều dấu ngoặc, phải không :)</p>
+<p>Trong định nghĩa hàm <code>show</code> cho <code>Stream a</code>, chúng ta không muốn nó in hết ra vô hạn phần tử, mà chỉ muốn in ra 20 phần tử đầu tiên. Do đó chúng chuyển nó thành list bằng hàm <code>streamToList</code>, lấy 20 phần tử đầu tiên bằng <code>take 20</code> và áp dụng hàm <code>show</code> cho <code>List a</code> type (khi <code>a</code> là instance của <code>Show</code> rồi thì <code>[a]</code> cũng là instance của <code>Show</code> )</p>
+<p>Chúng ta phải có một vài <code>Stream</code> để test. Hãy định nghĩa chúng:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='haskell'><span class='line'><span class="nf">streamRepeat</span> <span class="ow">::</span> <span class="n">a</span> <span class="ow">-&gt;</span> <span class="kt">Stream</span> <span class="n">a</span>
+</span><span class='line'><span class="nf">streamRepeat</span> <span class="n">x</span> <span class="ow">=</span> <span class="kt">Cons</span> <span class="n">x</span> <span class="p">(</span><span class="n">streamRepeat</span> <span class="n">x</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">streamMap</span> <span class="ow">::</span> <span class="p">(</span><span class="n">a</span><span class="ow">-&gt;</span><span class="n">b</span><span class="p">)</span> <span class="ow">-&gt;</span> <span class="kt">Stream</span> <span class="n">a</span> <span class="ow">-&gt;</span> <span class="kt">Stream</span> <span class="n">b</span>
+</span><span class='line'><span class="nf">streamMap</span> <span class="n">f</span> <span class="p">(</span><span class="kt">Cons</span> <span class="n">x</span> <span class="n">s</span><span class="p">)</span> <span class="ow">=</span> <span class="kt">Cons</span> <span class="p">(</span><span class="n">f</span> <span class="n">x</span><span class="p">)</span> <span class="p">(</span><span class="n">streamMap</span> <span class="n">f</span> <span class="n">s</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">streamFromSeed</span> <span class="ow">::</span> <span class="p">(</span><span class="n">a</span><span class="ow">-&gt;</span><span class="n">a</span><span class="p">)</span> <span class="ow">-&gt;</span> <span class="n">a</span> <span class="ow">-&gt;</span> <span class="kt">Stream</span> <span class="n">a</span>
+</span><span class='line'><span class="nf">streamFromSeed</span> <span class="n">f</span> <span class="n">x</span> <span class="ow">=</span> <span class="kt">Cons</span> <span class="n">x</span> <span class="p">(</span><span class="n">streamMap</span> <span class="n">f</span> <span class="p">(</span><span class="n">streamFromSeed</span> <span class="n">f</span> <span class="n">x</span><span class="p">))</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p><code>streamRepeat</code> tạo ra một stream chứa vô hạn các phần tử giống hệt nhau. <code>streamMap</code> áp dụng một hàm <code>(a-&gt;b)</code> lên tất cả các phần tử của một <code>Stream a</code> để nhận được một Stream mới: <code>Stream b</code>. Cuối cùng <code>streamFromSeed</code> là một cách khác để tạo ra một stream, bằng cách bắt đầu từ một “hạt giống” thuộc type <code>a</code>, cũng chính là phần tử đầu tiên của Stream, rồi liên tục sử dụng một hàm có kiểu <code>a-&gt;a</code> để tạo ra các phẩn tử tiếp theo.</p>
+<p>Tôi sẽ để dành phần này cho độc giả chiêm nghiệm xem tại sao lại viết như vậy.</p>
+<p>Bây giờ, chúng ta hãy cùng test thử những gì chúng ta đã viết trong GHCi</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='bash'><span class='line'>*HW07&gt; show <span class="nv">$ </span>streamFromSeed <span class="o">(</span><span class="s1">&#39;x&#39;</span>:<span class="o">)</span> <span class="s2">&quot;o&quot;</span>
+</span><span class='line'><span class="s2">&quot;[\&quot;o\&quot;,\&quot;xo\&quot;,\&quot;xxo\&quot;,\&quot;xxxo\&quot;,\&quot;xxxxo\&quot;,\&quot;xxxxxo\&quot;,\&quot;xxxxxxo\&quot;,\&quot;xxxxxxxo\&quot;,\&quot;xxxxxxxxo\&quot;,\&quot;xxxxxxxxxo\&quot;,\&quot;xxxxxxxxxxo</span>
+</span><span class='line'><span class="s2">\&quot;,\&quot;xxxxxxxxxxxo\&quot;,\&quot;xxxxxxxxxxxxo\&quot;,\&quot;xxxxxxxxxxxxxo\&quot;,\&quot;xxxxxxxxxxxxxxo\&quot;,\&quot;xxxxxxxxxxxxxxxo\&quot;,\&quot;xxxxxxxxxxxxxxxxo\&quot;,</span>
+</span><span class='line'><span class="s2">\&quot;xxxxxxxxxxxxxxxxxo\&quot;,\&quot;xxxxxxxxxxxxxxxxxxo\&quot;,\&quot;xxxxxxxxxxxxxxxxxxxo\&quot;]&quot;</span>
+</span><span class='line'>*HW07&gt; show <span class="nv">$ </span>streamRepeat <span class="s2">&quot;o&quot;</span>
+</span><span class='line'><span class="s2">&quot;[\&quot;o\&quot;,\&quot;o\&quot;,\&quot;o\&quot;,\&quot;o\&quot;,\&quot;o\&quot;,\&quot;o\&quot;,\&quot;o\&quot;,\&quot;o\&quot;,\&quot;o\&quot;,\&quot;o\&quot;,\&quot;o\&quot;,\&quot;o\&quot;,\&quot;o\&quot;,\&quot;o\&quot;,\&quot;o\&quot;,\&quot;o\&quot;,\&quot;o\&quot;,\&quot;o\&quot;,\&quot;o\&quot;,\&quot;o\&quot;]&quot;</span>
+</span><span class='line'>*HW07&gt; show <span class="nv">$ </span>streamMap <span class="o">(</span>+ 1<span class="o">)</span> <span class="o">(</span>streamRepeat 0<span class="o">)</span>
+</span><span class='line'><span class="s2">&quot;[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]&quot;</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Như vậy ta đã có một số hàm để làm việc với <code>Stream</code>, ta sẽ thử định nghĩa dãy số tự nhiên bằng <code>Stream</code> như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='haskell'><span class='line'><span class="nf">nats</span> <span class="ow">::</span> <span class="kt">Stream</span> <span class="kt">Integer</span>
+</span><span class='line'><span class="nf">nats</span> <span class="ow">=</span> <span class="n">streamFromSeed</span> <span class="p">(</span><span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="mi">0</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+Test trong GHCi:
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='bash'><span class='line'>*HW07&gt; show nats
+</span><span class='line'><span class="s2">&quot;[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]&quot;</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Ví dụ tiếp theo: Tính ruler function f(n) = số mũ lớn nhất của 2 là ước số của n. Bình thuờng chúng ta sẽ nghĩ đến việc chia 2 cho đến khi lẻ thì thôi. Nhưng tôi sẽ trình bày một lời giải khác, sử dụng laziness và cấu trúc dữ liệu vô hạn của Haskell.</p>
+<p>Thay vì tính từng f(n) một, chúng ta sẽ xây dựng hẳn cả dãy số <code>ruler</code> f(n) với n bắt đầu từ 1: <code>0,1,0,2,0,1,0,3,0,1,0,2,0,1,0,4...</code>, trong đó phần tử thứ n trong stream là số mũ lớn nhất của 2 là ước số của n.</p>
+<p>Dễ thấy có thể coi dãy trên là trộn xen kẽ của hai dãy, một dãy toàn 0 (vì tuơng ưng với n lẻ nên số mũ lớn nhất của 2 chỉ là 0) và dãy còn lại tuơng ứng với n chẵn. điều kì diệu là dãy thứ hai bao gồm chính các phần tử của dãy <code>ruler</code> nhưng cộng thêm 1 (Bạn thử suy nghĩ xem tại sao). Vì thế mà ta có cách khai báo <code>ruler</code> là một <code>Stream Integer</code> rất đẹp như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='haskell'><span class='line'><span class="nf">interleaveStreams</span> <span class="ow">::</span> <span class="kt">Stream</span> <span class="n">a</span> <span class="ow">-&gt;</span> <span class="kt">Stream</span> <span class="n">a</span> <span class="ow">-&gt;</span> <span class="kt">Stream</span> <span class="n">a</span>
+</span><span class='line'><span class="nf">interleaveStreams</span> <span class="p">(</span><span class="kt">Cons</span> <span class="n">x1</span> <span class="n">s1</span><span class="p">)</span> <span class="o">~</span><span class="p">(</span><span class="kt">Cons</span> <span class="n">x2</span> <span class="n">s2</span><span class="p">)</span> <span class="ow">=</span> <span class="kt">Cons</span> <span class="n">x1</span> <span class="p">(</span><span class="kt">Cons</span> <span class="n">x2</span> <span class="p">(</span><span class="n">interleaveStreams</span> <span class="n">s1</span> <span class="n">s2</span><span class="p">))</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">ruler</span> <span class="ow">::</span> <span class="kt">Stream</span> <span class="kt">Integer</span>
+</span><span class='line'><span class="nf">ruler</span> <span class="ow">=</span> <span class="n">interleaveStreams</span> <span class="p">(</span><span class="n">streamRepeat</span> <span class="mi">0</span><span class="p">)</span> <span class="p">(</span><span class="n">streamMap</span> <span class="p">(</span><span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="n">ruler</span><span class="p">)</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Lại thêm một kí tự lạ: tilde sign <code>~</code>! Tôi đã thêm nó vào truớc đối số thứ hai của <code>interleaveStreams</code>. Kí tự này dùng để báo hiệu compiler đừng evaluate đối số thứ hai này. Nếu không có kí tự <code>~</code>, pattern matching của hàm <code>interleaveStream</code> sẽ phải evaluate đối số thứ hai để đảm bảo nó thuộc type <code>Stream a</code>. đó không phải là điều chúng ta muốn, vì hàm <code>ruler</code> gọi hàm <code>interleaveStream</code> với đối số thứ hai chứa <code>ruler</code>, tức là gọi đệ quy vô hạn lần. Nếu đối số thứ hai của <code>interleaveStream</code> không lazy, hàm này sẽ dừng mãi ở việc evaluate để phục vụ pattern matching.</p>
+<p>Nói nôm na, thêm dấu <code>~</code> truớc một đối số là chúng ta đã bảo với compiler là: “đừng lo, tôi đảm bảo đối số này sẽ có kiểu Stream a, nên đừng evaluate làm gì” :)</p>
+<h1 id="kết-luận">Kết luận</h1>
+<p>Bài viết này đã trình bày một số ví dụ để minh họa lazy evaluation của Haskell. Nó cho phép ta làm việc với những kiểu cấu trúc dữ liệu <em>vô hạn</em>, một pattern khá thuờng gặp trong Haskell. Việc định nghiã một cấu trúc dữ liệu vô hạn thực chất chỉ taọ ra một biểu thức chưa đuợc evaluate, mà ta sử dụng nó để chỉ ra cấu trúc dữ liệu hoàn chỉnh “có thể” phát triển đến như thế naò, và chỉ phần naò cần thiết mới đuợc tính toán.</p>
+<p>Tuy nhiên, chủ đề laziness là một chủ đề khá phức tạp, đặc biệt khi chúng ta muốn đánh giá time và space của program. Có khá nhiều bài viết trên mạng về vấn đề này, một trong số đó bạn có thể tham khảo thêm là:</p>
+<ul>
+<li><a href="https://hackhands.com/lazy-evaluation-works-haskell/">How Lazy Evaluation Works in Haskell</a></li>
+</ul>]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Cơ bản về hệ thống quảng cáo (phần 2) - Các hình thức quảng cáo trên internet]]></title>
@@ -3772,61 +4356,6 @@ Từ ví dụ trên chúng ta thấy rằng độ phức tạp của việc tìm
 <p>Tham khảo:</p>
 <ul>
 <li><a href="http://gihyo.jp/dev/serial/01/make-findspot">Make Findspot</a></li>
-</ul>]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Trở lại cơ bản - Độ tin cậy]]></title>
-    <link href="http://git@github.com.github.com/blog/2013/12/22/tro-lai-co-ban-1-do-tin-cay/"/>
-    <updated>2013-12-22T20:36:00+09:00</updated>
-    <id>http://git@github.com.github.com/blog/2013/12/22/tro-lai-co-ban-1-do-tin-cay</id>
-    <content type="html"><![CDATA[<h3 id="giới-thiệu">Giới thiệu</h3>
-<p>Các bạn là fan của <a href="http://en.wikipedia.org/wiki/Distributed_computing">tính toán phân tán</a> chắc hẳn đều biết <a href="http://en.wikipedia.org/wiki/Werner_Vogels">Werner Vogels</a> (CTO của amazon) cũng như trang blog <a href="www.allthingsdistributed.com">All Things Distributed</a> của ông. Một trong những loạt bài viết mà cá nhân tôi rất thích là loạt bài viết có tựa đề: Back-to-Basic của Vogels. Trong loạt bài viết này, Vogels giới thiệu những paper nổi tiếng mà những người làm tính toán phân tán cần đọc và tất cả đều hết sức cơ bản.</p>
-<p>Lấy cảm hứng từ trùm bài viết đấy, mình quyết định sẽ viết trùm bài có tựa đề “Trở lại cơ bản” tổng hợp lại những kiến thức cơ bản, trước hết là để cho bản thân và sau đấy để là để chia sẻ cho mọi người (có những thứ bạn nghĩ là cơ bản nhưng không phải ai cũng biết ;) ).</p>
-<p>Bài viết tuần này sẽ nêu khái lược khái niệm độ tin cậy, cách tính độ tin cậy.</p>
-<h3 id="độ-tin-cậy-là-gì">Độ tin cậy là gì?</h3>
-<p>Độ tin cậy có thể hiểu là độ bền của sản phẩm hoặc dịch vụ . Sản phẩm (dịch vụ) của bạn càng bền, chạy càng lâu mà không hỏng hóc gì, thì độ bền của sản phẩm càng cao, và do đó độ tin cậy vào sản phẩm của bạn nói riêng và của người dùng nói chung vào sản phẩm càng cao. Đối với dịch vụ (cloud, website) thì độ tin cậy có thể đo bằng thời gian hệ thống sẵn sàng phục vụ bạn (không bị dừng vì sự cố hay hỏng hóc).</p>
-<p>Với cách hiểu trên, một vấn đề đặt ra là làm thế nào <strong>cân đo đong đếm</strong> độ tin cậy. Ví dụ khi một hãng phần cứng bán cho bạn 1 chiếc ổ cứng và họ bảo đảm với bạn rằng phần cứng của họ có độ tin cậy cao, thì họ dựa vào điều gì để nói như vậy?</p>
-<p>Các hãng bán máy tính đều đưa ra chế độ bảo hành cho sản phẩm của họ, với lời quảng cáo rằng trong thời gian bảo hành họ sẵn sàng thay thế sản phầm của họ nếu sản phẩm của họ bị lỗi. Độ tin cậy như vậy có thể đo bằng thời gian bảo hành. Qua thời gian bảo hành, sản phẩm có thể bị hỏng hóc và hãng sẽ không chịu trách nhiệm cho những hỏng hóc đó. Ví dụ máy tính apple thường có thời gian bảo hành 1 năm.</p>
-<p>Đối với các sản phẩm là dịch vụ trên internet, người ta thường đưa ra các <a href="http://en.wikipedia.org/wiki/Service-level_agreement">Service Level Agreements (SLA)</a> hoặc <strong>Service Level Objectives (SLO)</strong> để quảng cáo cho độ tin cậy của dịch vụ, và họ sẵn sàng bồi thường cho khách hàng nếu sản phẩm của họ không đáp ứng được những “đồng ý” này. Amazon EC2 cam kết trong <a href="http://aws.amazon.com/ec2-sla/">Amazon SLA</a> rằng họ đảm bảo EC2 99.95% có uptime thời gian trong 1 tháng. Nếu họ không đáp ứng điều kiện này, họ sẽ có chính xác bồi thường cho người dùng. Giống như vậy, các công ty dịch vụ cloud khác nhưng rackspace cũng đều có <a href="http://www.rackspace.com/information/legal/cloud/sla">Rackspace SLA</a> của riêng họ. Ngược lại việc hãng cloud như heroku không có một đảm bảo SLA nào ngoài <a href="https://www.heroku.com/policy/promise">Heroku Promise</a>, làm cho độ tin tưởng vào sản phẩm của họ giảm hẳn.</p>
-<h3 id="đo-độ-tin-cậy-thế-nào">Đo độ tin cậy thế nào?</h3>
-<p>Chắc chắn amazon sẽ không ngu gì đưa ra 1 cam kết không tưởng 100% uptime, nhưng họ cũng không thể đưa ra con số quá thấp được vì điều đó sẽ làm giảm khả năng cạnh tranh với các công ty khác. Apple cũng không dại gì đưa ra số năm bảo hành cao hơn vì nó sẽ làm giảm lợi nhuận của họ. Vậy các hãng đưa ra các con số trên như thế nào?</p>
-<p>Mỗi công ty cung câp dịch vụ sẽ có nhiều chỉ số riêng để đánh giá và tính toán trước khi đưa ra con số của dịch vụ của họ, tuy vậy các tính toán đề dựa vào cách tính cơ bản trình bày dưới đây.</p>
-<p>Để tính toán độ tin cậy, ta chia hệ thống làm 2 trạng thái tương ứng như được ghi trong SLA:</p>
-<ul>
-<li>Thời gian phục vụ như cam kết</li>
-<li>Thời gian dừng dịch vụ (do hỏng hóc)</li>
-</ul>
-<p>Hệ thống thay đổi giữa 2 trạng thái này là: hỏng hóc và phục hồi. Để đo được độ tin cậy của hệ thống, ta cần đo được thời gian hệ thống ở 1 trong 2 trạng thái trên. Một hệ thống được xây dựng từ nhiều modules, do vậy độ tin cậy của hệ thống sẽ liên quan đến độ tin cậy của từng module trong hệ thống. Trước hết ta tìm hiểu các chỉ số tương ứng với 2 trạng thái trên.</p>
-<p>Độ tin cậy của 1 thành phần (module) được đo bằng thời gian phục vụ liên tục từ lúc bắt đầu được sử dụng đến lúc hỏng hóc gọi là MTTF (Mean Time to Failure). Nghịch đảo của con số này chính là tỉ lệ hỏng hóc FIT (Failures in time) và thường được đo bằng số hỏng hóc / 1 tỷ giờ vận hành.</p>
-<p>Độ hỏng hóc (hỏng nặng hay nhẹ) được đo bằng MTTR (Mean Time To Repair) hay thời gian từ lúc hệ thống hỏng hóc cho đến lúc được phục hồi.</p>
-<p>Thời gian giữa 2 lần hỏng hóc</p>
-<pre><code>MTBF (Mean Time Between Failures) = MTTF + MTTR</code></pre>
-<p>Tính sẵn sàng của 1 modules (Module availability) được đo bởi thời gian hoạt động cho đến lúc hỏng hóc trên tổng thời gian giữa 2 lần hỏng hóc:</p>
-<pre><code>Module Availability = MTTF / (MTTF + MTTR)</code></pre>
-<p>Từ công thức trên, ta có thể đo được tính sẵn sàng của hệ thống dựa vào tính tin cậy của từng module dùng để xây dựng nên hệ thống.</p>
-<h3 id="áp-dụng">Áp dụng</h3>
-<p>Tính MTTF của 1 hệ thống Giả sử ta có 1 hệ thống được xây dựng bởi</p>
-<ul>
-<li>10 đĩa cứng, mỗi đĩa có MTTF 1000000 giờ</li>
-<li>1 bộ điều khiển <a href="http://en.wikipedia.org/wiki/SCSI">SCSI</a> có MTTF 500000 giờ</li>
-<li>1 bộ nguồn có MTTF 200000 giờ</li>
-<li>1 quạt làm mát có MTTF 200000 giờ</li>
-<li>1 cáp SCSI có MTTF 1000000 giờ.</li>
-</ul>
-<p>Hãy tính MTTF của cả hệ thống.</p>
-<p>Lời giải</p>
-<p>Tỉ lệ hỏng hóc của toàn hệ thống:</p>
-<pre><code>Failure rate = 10 / 1000000 + 1/500000 + 1/200000 + 1/200000 + 1/1000000
-             = (10 + 2 + 5 + 5 + 1) / 1000000 = 23 / 1000000 = 23000 / 1000000000</code></pre>
-<p>hệ thống sẽ có tỉ lệ hỏng hóc 23000FIT. MTTF của hệ thống sẽ bằng nghịch đảo con số trên</p>
-<pre><code>MTTF = 1000000000 / 230000 = 43450 giờ (khoảng 5 năm)</code></pre>
-<p>Từ con số trên, ta có thể thấy mặc dù MTTF của từng module khá lớn, nhưng MTTF của cả hệ thống nói chung chỉ là 5 năm. MTTF của các module trong máy tính cá nhân có lẽ thấp hơn nhiều. Có lẽ vì vậy mà các công ty bán phần cứng không bao giờ đưa ra thời gian bảo hành lâu quá 2, 3 năm! Từ con số này các công ty làm dịch vụ internet cũng phải có cách lập kế hoạch bảo trì thay mới máy chủ để đảm bảo tính tin cậy của dịch vụ của mình. Trong trường hợp công ty mình, tất cả các máy chủ đều được thay mới sau 5 năm (Và giờ bạn đã hiều tại sao phải thay và con số 5 này từ đâu ra :) ).</p>
-<h3 id="kết-luận">Kết luận</h3>
-<p>Qua bài viết này, chúng ta đã có thể lý giải và cân đong đo đếm được độ tin cậy của hệ thống dựa trên các chỉ số MTTF, MTTR, FIT, cũng như lý giải được ý nghĩa của SLA của 1 dịch vụ.</p>
-<h3 id="tham-khảo">Tham khảo</h3>
-<ul>
-<li><a href="http://www.amazon.com/Computer-Architecture-Quantitative-Approach-Edition/dp/0123704901">Computer Architecture A quantitative Approach</a></li>
 </ul>]]></content>
   </entry>
   

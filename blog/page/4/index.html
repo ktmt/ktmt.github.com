@@ -7,7 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Aug 1st, 2014 linux, macosx, programming, python, twitter Comments Tôi đã Xây Dựng Một Phần Mềm Mã Nguồn Mở Như Thế Nào Lưu ý trước khi đọc tiếp: Ở &hellip;">
+	<meta name="description" content="Aug 23rd, 2014 android, openssl Comments Android Ndk và Openssl (Phần 1) 1. Mở đầu
+Gần đây ở công ty tôi có được giao một task khá hay. Công ty tôi &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -76,6 +77,265 @@
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-08-23T21:35:00+09:00" data-updated="true" itemprop="datePublished">Aug 23<span>rd</span>, 2014</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/android/'>android</a>, <a class='category' href='/blog/categories/openssl/'>openssl</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2014/08/23/android-ndk-va-openssl/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2014/08/23/android-ndk-va-openssl/" itemprop="url">Android Ndk và Openssl (Phần 1)</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1 id="mở-đầu">1. Mở đầu</h1>
+<p>Gần đây ở công ty tôi có được giao một task khá hay. Công ty tôi có một game viết trên nền tảng android. Game đó viết bằng anđroid, tuy nhiên lại chủ yếu dùng web view để hiển thị. Mặc dù vậy, một số logic như là set session cho user, authenticate cho user thì lại nằm trên android.</p>
+<p>Chắc các bạn cũng đã biết, android app được viết bằng java, dịch ra file dex, sau đó được phân phối trên google playstore dưới dạng file apk. Do đó, android app có một điểm yếu cố hữu mà mọi java app đều mắc phải, đó là bảo mật. Điểm yếu bảo mật ở đây là gì? Đó là việc mà mọi java app đều có thể được phân tích ngược (reverse engineer) rất dễ dàng. Việc này bắt nguồn từ bản chất java được dịch ra bytecode ở dạng khá “gần” với ngôn ngữ lập trình thông thường, và bytecode chứa đầy đủ các thông tin cần thiết để bạn có thể dịch lại nguyên vẹn lại chương trình gốc.</p>
+<p>Vậy cái điểm yếu bảo mật này liên quan đến cái app tôi đang phụ trách thế nào? Như tôi vừa nói ở trên, trong cái game mà tôi đang phụ trách, logic authenticate cho user sẽ nằm trên phía android. Điều này có nghĩa là trên android app sẽ phụ trách:</p>
+<ul>
+<li>Mã hoá uuid của người dùng, gửi lên server</li>
+<li>Server sẽ nhận uuid đó, và gửi session key về cho user để user set vào cookie.</li>
+</ul>
+<p>Chắc hẳn sẽ có bạn thắc mắc là qui trình xác thực này quá đơn giản. Đúng vậy, quy trình này quá đơn giản, dẫn đến là việc chỉ cần user A (người xấu) biết uuid của user B (người bị hại) thì A sẽ giả mạo được bất cứ hành động của B như là gửi đồ từ B cho A.</p>
+<p>Vậy tại sao không làm một qui trình xác thực tốt hơn, như dùng thêm một token giống như onetime password mà chỉ user đó mới biết được, hay là làm cách nào để “giấu” uuid đi để cho user khác không biết. Đúng là nên như thế! Tuy nhiên vì một số lý do “lịch sử” của legacy code, mà chúng ta không thể thay đổi qui trình xác thực một cách dễ dàng như thế được.</p>
+<p>Như vậy thì với flow code hiện tại thì với điểm yếu của android tôi đã nói ở trên thì một người có chút kiến thức lập trình có thể dễ dàng dịch ngược đoạn logic dùng để xác thực mà tôi đã nói ở trên. Mà trong đó có việc <code>mã hoá uuid người dùng</code> mà khi bạn nhìn được logic code thì mã hoá cũng bằng thừa. Lý do tại sao lại bằng thừa vì code hiện tại đang sử dụng “Symmetric Cryptography Algorithm”. Symmetric ở đây có nghĩa là thuật toán mã hoá đối xứng, mà điển hình gồm có những thuật toán như blowfish, AES, DES.</p>
+<p>Nói một cách đơn giản thì các loại thuật toán symmetric thì <strong>bên gửi và bên nhận sẽ dùng cùng một key, cùng một intitialize vector</strong> (Các khái niệm này tôi sẽ trình bày kĩ hơn ở phần sau) , do đó chỉ cần dịch ngược được code thì user A (người xấu) sẽ có được key và initialize vector để tạo ra một request hợp lệ sử dụng uuid của user B.</p>
+<p>Vậy thì chúng ta phải giải quyết vấn đề này thế nào? Sau một hồi thảo luận với công ty thì tôi nghĩ ra một giải pháp “chữa cháy” tạm thời, đấy là chuyển logic vào native code sử dụng ndk và C, mục đích để đạt được là:</p>
+<blockquote>
+<p>“Giấu” đi logic mã hoá uuid người dùng, giấu cả các tham số ban đầu như key và initialize vector. Do đó mà user A sẽ không biết làm cách nào để tạo ra một request hợp lệ với uuid của user B.</p>
+</blockquote>
+<p>Cách giải quyết này tại sao tôi nói là tạm thời, bởi vì user A nếu có thêm một chút hiểu biết về ndk thì sẽ biết được interface cung cấp ở ndk code sẽ được public ra ngoài, do đó thì vẫn có thể tận dụng được điểm này để tạo ra một request hợp lệ. Tuy nhiên do không nghĩ ra giải pháp khác nên tạm thời dùng cách này sẽ hạn chế được các hacker “gà mờ”.</p>
+<p>Vậy để đi theo hướng đi này chúng ta cần phải tìm hiểu về 2 thứ đó là : <strong>Android NDK</strong> và cách để sử dụng các thuật toán mã hoá trên ndk (ở đây là sử dụng ngôn ngữ C), đó là <strong>openssl</strong>. Phần giới thiệu hơi dài dòng, nhưng đến đây các bạn đã nắm được tại sao tiêu đề bài viết lại là Android NDK và open SSL.</p>
+<p>Dưới đây chúng ta sẽ đi lần lượt về 2 vấn đề cần giải quyết : Android NDK và OpenSSL</p>
+<h1 id="android-ndk">2. Android NDK</h1>
+<p>Android NDK là một kit phát triển giúp bạn có thể phát triển các phần mềm android mà dựa một phần trên các đoạn code viết trên C hoặc C++. Bạn sẽ cần đến NDK trong các sản phầm cần đến hiệu năng cao, mà khi đó các đoạn code được build ra binary sẽ phát huy hiệu năng tối đa. Các logic code được thực hiện trên ndk ở dứoi đây tôi sẽ gọi chung là native code.</p>
+<p>Về cơ chế hoạt động của ndk, bạn có thể hiểu một cách đơn giản như trong hình vẽ dưới đây, app của bạn sẽ tiến hành giao tiếp với native code thông qua một interface gọi là JNI.</p>
+<p>Một cách đơn giản, JNI là một bộ giao thức giao tiếp chuẩn của java, giúp cho java code có thể <strong>nói chuyện</strong> được với C/C++ code, có thể <strong>truyền</strong> dữ liệu giữa 2 bên.</p>
+<p><img src="/images/ndk-1.png"></p>
+<p>Để tham khảo thêm về android ndk, các bạn có thể vào trang chủ của android tại <a href="https://developer.android.com/tools/sdk/ndk/index.html">Trang chủ của android</a>. Dưới đây tôi sẽ tóm tắt các bước cần thiết để sử dụng được ndk.</p>
+<h2 id="cài-đặt">Cài đặt</h2>
+<p>Cách cài đặt android ndk khá giống với sdk, tức là chỉ đơn thuần là bạn tải bộ ndk về, đặt vào đâu đó. Trong bộ NDK đó sẽ chứa đầy đủ các tool để có thể build được ndk native code từ C/C++ source (bao gồm build script và các file header cần thiết). Quá trình cài đặt có thể hiểu tóm gọn qua đoạn script dưới đây (chạy trên môi trường unix):</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class=''><span class='line'>wget http://dl.google.com/android/ndk/android-ndk64-r10-darwin-x86.tar.bz2
+</span><span class='line'>tar yxvf android-ndk64-r10-darwin-x86.tar.bz2
+</span><span class='line'>mv android-ndk64-r10-darwin-x86 ~/
+</span><span class='line'>echo "export PATH=$PATH:/~/android-ndk64-r10-darwin-x86" &gt;&gt; ~/.bash_profile
+</span><span class='line'>echo "export ANDROID_NDK_ROOT=/Users/huydo/android-ndk64-r10-darwin-x86" &gt;&gt; ~/.bash_profile
+</span><span class='line'>source ~/.bash_profile</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Sau khi chạy đoạn script trên thì android ndk đã được thêm vào path của hệ thống, giúp chúng ta có thể gõ các lệnh như <code>ndk-build</code> từ bất kì đâu</p>
+<h2 id="sử-dụng">Sử dụng</h2>
+<p>Trong bộ ndk bạn down về có chứa sẵn khá nhiều ví dụ về cách sử dụng ndk, từ đơn giản (như hello world) cho đến các ví dụ phức tạp hơn như xử lý ảnh (mà phải thao tác gửi dữ liệu giữa android app và ndk app khá phức tạp). Các bạn có thể tham khảo các ví dụ đó để có cái nhìn thực tế về ndk program. Dưới đây tôi sẽ trình bày ngắn gọn về quá trình sử dụng của tôi.</p>
+<p>Như ở hình ở trên thì các bạn thấy là android app và native code sẽ “nói chuyện” với nhau thông qua một “ngôn ngữ” chung gọi là jni. Như vậy sẽ có 2 khả năng xảy ra, dẫn đến 2 ngữ cảnh để sử dụng ndk:</p>
+<ul>
+<li><ol type="1">
+<li>Viết một số logic code quan trọng ở phía native code, và các logic còn lại để ở phía android app như bình thường. Các giao tiếp sẽ được gọi từ phía java thông qua jni. Cách tiếp cận này thuận lợi ở chỗ là chúng ta tận dùng được mọi điểm mạnh của android frame work, và chỉ các logic nào thật cần thiết mới đưa vào native code.</li>
+</ol></li>
+<li><ol start="2" type="1">
+<li>Viết “native activity”, tức là logic của activity như hiển thị, life cycle, gọi các activity khác.. sẽ được code toàn bộ ở trên phía native. Cách này thực tế khá ít sử dụng, thường sử dụng trong trường hợp mà dữ liệu quá khó để truyền đi truyền lại giữa bên java và native, thì việc code luôn cả activity trên native cũng là một lựa chọn cần thiết.</li>
+</ol></li>
+</ul>
+<p>Ở bài viết này tôi sẽ đi theo hướng tiếp cận 1, để giải quyết bài toán theo hướng:</p>
+<blockquote>
+<p>Đưa logic mã hoá uuid người dùng vào một file C, build ra binary và gọi logic đó trên phía java thông qua JNI.</p>
+</blockquote>
+<h2 id="coding-và-build">Coding và build</h2>
+<p>Để đi theo hướng tiếp cận 1 như đã nói ở trên, chúng ta có thể dễ dàng hình dung công việc phải làm:</p>
+<ul>
+<li>Step 1: Viết logic code mã hoá trên C, nhận đầu vào là 1 chuỗi mô tả uuid của người dùng, đầu ra là chuỗi đó dã được mã hoá.</li>
+<li>Step 2: Build đoạn code đó thành một file thư viện động (.so file) và “Nhúng” file thư viện động đó vào trong android project</li>
+<li>Step 3: Viết logic code gọi native code trên java.</li>
+</ul>
+<h3 id="step-1-cấu-trúc-của-một-file-native-code-viết-trên-c">Step 1: Cấu trúc của một file native code viết trên C</h3>
+<p>Thông thường, chúng ta sẽ tạo một folder tên là jni và đặt toàn bộ các đoạn code, header, các thư viện liên quan vào trong đó.</p>
+<p><img src="/images/jni-2.png"></p>
+<p>File native code viết trên C khá đơn giản, chỉ cần tóm gọn lại trong 2 bước:</p>
+<ul>
+<li>include thư viện <jni.h></li>
+<li>Viết các hàm dựa trên convention của jni để tạo ra các “interface”, và phía java sẽ gọi được các “interface” này một cách khá dễ dàng</li>
+</ul>
+<p>Một ví dụ hết sức về native code như dưới đây:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>hello_jni.c </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='c'><span class='line'><span class="cp">#innclude &lt;string.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;jni.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">jstring</span>
+</span><span class='line'><span class="nf">Java_com_example_hellojni_HelloJni_stringFromJNI</span><span class="p">(</span> <span class="n">JNIEnv</span><span class="o">*</span> <span class="n">env</span><span class="p">,</span>
+</span><span class='line'>                                                  <span class="n">jobject</span> <span class="n">thiz</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>   <span class="k">return</span> <span class="p">(</span><span class="o">*</span><span class="n">env</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">NewStringUTF</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="s">&quot;Hello from JNI ! &quot;</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Các bạn để ý tên hàm của native code sẽ dễ dàng nhận thấy convention như trong hình dưới đây:</p>
+<p><img src="/images/jni-1.png"></p>
+<p>Nhờ có convention đó mà các bạn sẽ thấy việc gọi logic của hàm đó trên phía java sẽ dễ dàng hơn bao giờ hết.</p>
+<p>Ngoài ra các bạn có thể để ý một số điểm đặc biệt ở một đoạn native code như dưới đấy:</p>
+<ul>
+<li>Giá trị trả về ở đây là jstring, đó là một kiểu dữ liệu đặc biệt của jni, mà khi phía java gọi, thư viện jni sẽ thực hiện chuyển đổi (marshalling) giá trị này về kiểu String của java.</li>
+<li>Biến JNIEvn* env, bạn có thể hình dung đây là một con trỏ trỏ đến VirtualMachine (Dalvik) của android, nhờ có env này mà chúng ta có thể thao tác ngược từ phía native, để có thể sử dụng được các logic phía android. Như trong đoạn code trên thì chúng ta có thể thấy nhờ có env mà chúng ta có thể tạo được một unicode string từ trong C code.</li>
+</ul>
+<h3 id="step-2-build-đoạn-code-đó-thành-.so-file">Step 2: Build đoạn code đó thành .so file</h3>
+<p>Để build được file native C mà chúng ta vừa viết ở trên, chúng ta cần làm 2 việc:</p>
+<ul>
+<li>Tạo 2 file Android.mk và Application.mk trong thư mục jni mà chúng ta đã nhắc đến ở trên</li>
+<li>Android.mk có nhiệm vụ “miêu tả” module với hệ thống build. Trong file này chúng ta sẽ viết là module chúng ta có những file gì, path ở đâu, sử dụng những thư viện khác nào (dependency). Trong một app có thể có nhiều file Android.mk khi mà chúng ta có nhiều module.</li>
+<li>Application.mk sẽ có nhiệm vụ “miêu tả” app của chúng ta với hệ thống build. Thông thường trong file này chúng ta sẽ mô tả những modules mà app sẽ dùng, cũng như là mô tả về CPU architecture mà app sẽ hỗ trợ (mà điển hình gồm có ARM, x86 và MIPS)</li>
+<li>Build sử dụng ndk-build hết sức đơn giản chỉ bằng việc gõ lệnh <code>ndk-build</code> ở trong folder hiện tại.</li>
+</ul>
+<p><img src="/images/ndk-2.png"></p>
+<p>Sau khi sử dụng lệnh ndk-build để build thì kết quả build là các file .so sẽ được copy vào thư mục <strong>libs</strong> ở root folder theo như hình trên đây. Các bạn có thể thấy là tương ứng với mỗi kiến trúc CPU sẽ có một folder được tạo ra, trong mỗi folder đó lại có các file .so khác nhau chỉ dùng với duy nhất một kiến trúc nhất định.</p>
+<h3 id="step-3-viết-logic-code-gọi-native-code-trên-java">Step 3: Viết logic code gọi native code trên java</h3>
+<p>Đã build xong thư viện tĩnh, chúng ta chỉ còn một công đoạn cuối cùng là sử dụng đoạn logic ở trên trong android code. Theo như ở trên đã nói, interface của jni code sẽ được sử dụng dựa theo convention mà gồm có: package name, class name và cfunction name. Điều đó có nghĩa là: đoạn code java trong android của bạn sẽ phải có package name, class name và function name y hệt như interface của jni, thì bạn mới sử dụng được logic đó.</p>
+<p>Vậy thì theo như ví dụ của chúng ta ở đây thì chúng ta cần phải làm 3 việc:</p>
+<ul>
+<li>package name của đoạn code phải là com/example/hellojni</li>
+<li>Class name phải là HelloJni</li>
+<li>Bạn phải định nghĩa một hàm tên là stringFromJNI để gọi được logic từ native code.</li>
+</ul>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>HelloJni.java </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='java'><span class='line'><span class="kn">package</span> <span class="n">com</span><span class="o">.</span><span class="na">example</span><span class="o">.</span><span class="na">hellojni</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.app.Activity</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.widget.TextView</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.os.Bundle</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">HelloJni</span> <span class="kd">extends</span> <span class="n">Activity</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">{</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">TextView</span>  <span class="n">tv</span> <span class="o">=</span> <span class="k">new</span> <span class="n">TextView</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">tv</span><span class="o">.</span><span class="na">setText</span><span class="o">(</span> <span class="n">stringFromJNI</span><span class="o">()</span> <span class="o">);</span>
+</span><span class='line'>        <span class="n">setContentView</span><span class="o">(</span><span class="n">tv</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">native</span> <span class="n">String</span>  <span class="nf">stringFromJNI</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">static</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">System</span><span class="o">.</span><span class="na">loadLibrary</span><span class="o">(</span><span class="s">&quot;hello-jni&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Từ đoạn code trên chắc các bạn đã hình dung ra cách để gọi native code thế nào dựa vào hàm <code>System.loadLibrary(&quot;hello-jni&quot;)</code> và việc định nghĩa hàm thông qua directive <code>native</code></p>
+<p>Như vậy chúng ta đã tìm hiểu rất sơ qua về ndk. Trong phần tiếp theo, tôi sẽ đi vào phần chính mà tôi muốn nói đến, đó là giới thiệu về openssl và sử dụng openssl trên android ndk.</p>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -493,69 +753,6 @@ Linux 2.6.32-358.11.1.el6.x86_64 (bb2-dn07)     07/20/2014      _x86_64_        
 <li><a href="http://www.amazon.com/Computer-Architecture-Quantitative-Approach-Edition/dp/0123704901">Computer Architecture, A Quantitative Approach</a></li>
 <li><a href="http://nginx.org/en/docs/" class="uri">http://nginx.org/en/docs/</a></li>
 </ol>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-06-24T20:11:00+09:00" data-updated="true" itemprop="datePublished">Jun 24<span>th</span>, 2014</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/thinking/'>thinking</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2014/06/24/doi-dieu-suy-nghi-ve-thiet-ke-phan-mem/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2014/06/24/doi-dieu-suy-nghi-ve-thiet-ke-phan-mem/" itemprop="url">Đôi điều Suy Nghĩ về Thiết Kế Phần Mềm</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<p>Là một lập trình viên, công việc hàng ngày của bạn là viết code. Viết code cũng như xây dựng vậy, bạn phải đắp từng viên gạch để xây nên một ngôi nhà. Một ngôi nhà có chắc chắn và dễ thay đổi hay không không chỉ dựa vào việc bạn có dùng gạch tốt hay không, mà còn phụ thuộc rất lớn vào nhà thiết kế.</p>
-<p>Gần đây tôi có đọc cuốn sách tựa đề <a href="http://www.poodr.com/">‘Practical Object Oriented Design in Ruby’</a> của Sandi Metz, một diễn giả ưa thích của tôi. Cuốn sách dành phần lớn để nói về các kĩ thuật thiết kế phần mềm với đối tượng là ngôn ngữ là Ruby. Tuy nhiên có rất nhiều ý tưởng của tác giả mà không chỉ giới hạn ở Ruby nói chung mà có thể áp dụng cho bất kì ngôn ngữ nào. Trong bài viết này tôi sẽ liệt kê ra một số ý trong cuốn sách mà tôi thấy rất hay và đáng nhớ.</p>
-<h1 id="why">Why</h1>
-<p>Hãy bắt đầu từ việc <strong>tại sao nên dành thời gian cho việc thiết kế phần mềm</strong>:</p>
-<ul>
-<li>Việc nên dành một khoảng thời gian tương đối cho việc thiết kế phần mềm một cách nghiêm chỉnh hay không phụ thuộc vào việc: Logic mà bạn sẽ viết có tầm ảnh hưởng như thế nào đến hiện tại và tương lai. Ảnh hưởng đến hiện tại là nhiều khi một tính năng có ngay lập tức là quan trọng hơn cả. Ảnh hưởng đến tương lai là khi mà tính năng mà bạn code một cách cẩu thả sẽ ảnh hưởng vô cùng lớn đến tốc độ phát triển trong tương lai, gây ra các lỗi nghiêm trọng. Hãy nhìn việc thiết kế nghiêm chỉnh hay không như là một <strong>món nợ kĩ thuật</strong> (technical debt). Bạn thiết kế cẩu thả ở thời điểm hiện tại cũng như là bạn vay mượn thời gian ở tương lai vậy. Nếu khoảng thời gian đó không đến thì sẽ không sao, nhưng nếu đằng nào nó cũng xảy đến thì hãy suy nghĩ thật kĩ, bạn có thể đang làm mất thời gian trong tương lai của mình đó :).</li>
-</ul>
-<h1 id="how">How</h1>
-<p>Vậy việc nên dành thời gian nghiêm chỉnh để thiết kế phần mêm là nên, thì chúng ta <strong>nên thiết kế theo phương pháp thế nào</strong>:</p>
-<ul>
-<li>Từ xưa, việc thiết kế phần mêm thường được thực hiện theo mô hình thác nước (water flow). Mô hình này được tiến hành từ trên cao xuống thấp qua các bước như nhận yêu cầu (requirement), thiết kế kiến trúc (architecture design), thiết kế cơ bản (Basic design).. Tuy nhiên mô hình này đòi hỏi bạn phải nắm rõ 90% yêu cẩu của dự án ngày từ đầu, và việc này gần như là không thể. Do đó gần đây xu hướng là <strong>Agile development</strong>, khi mà việc phát triển chia thành nhiều chặng nhỏ, mỗi chặng sẽ có yêu cầu rõ ràng, và qua mỗi chặng sẽ đánh giá lại tính khả thi của dự án và đưa ra yêu cầu cho chặng tiếp theo. Về cơ bản thì Agile development có tính khả thi hơn cả khi mà không ai có thể đoán trước được sản phẩm đầu ra khi nào sẽ hoàn thành và nên có tính năng ra sao.</li>
-</ul>
-<h1 id="detail">Detail</h1>
-<p>Khi đã quyết được phương pháp thiết kế, việc quan trọng nhất, khó nhất, đó là bắt tay vào làm, bắt tay vào thiết kế chương trình. Để làm được việc này tốt quả thật là rất khó, bởi vì không có một tiêu chuẩn chung nào có thể áp dụng cho mọi yêu cầu, mọi chương trình. Bản thân tôi cũng là một junior software developer, nên tôi luôn gặp khó khăn mỗi khi viết một chương trình từ đầu (from the scratch). Có rất nhiều cách để giảm khó khăn, và tăng khả năng thiết kế của bạn như: nắm vững về các design pattern, nắm vững về domain logic, đọc về kiến trúc của các phần mêm open source nổi tiếng, và sử dụng các “luật” về thiết kế. Ở dưới đây tôi sẽ nói về một số “luật” mà cuốn sách đề cập đến, mà bản thân tôi thấy khá hữu dụng.</p>
-<ul>
-<li><p>Rule 1: Nền tảng cơ bản của việt thiết kế hướng đối tượng, là việc các đối tượng thao tác với nhau qua việc gửi thông điệp (sending message). Do đó mà việc thiết kế một phần mêm sẽ xoay quanh việc bạn thiết kế sao cho các đối tượng <strong>gửi thông điệp cho nhau thông qua một interface dễ hiểu nhất, rõ ràng nhất</strong>. Hãy luôn hình dung bài toán của bạn sẽ được giải quyết thông qua một loạt các đối tượng gửi rất nhiều loại thông điệp cho nhau, bạn sẽ hình dung được kiến trúc tổng thể của chương trình dễ dàng hơn.</p></li>
-<li><p>Rule 2: Single Responsibility: Đây là một luật khá cơ bản trong thiết kế hướng đối tượng. Ai cũng biết về luật này nhưng rất khó để làm theo, nhất là khi khối lượng chương trình tăng lên, và công việc chính của bạn hàng ngày là thêm logic vào một code base đã có. Luật này nói rằng mỗi class chỉ nên đảm trách một vai trò duy nhất. Làm thế nào để đảm bảo tính chất này là một việc khá mơ hồ. Cuốn sách nói rằng với mỗi class, bạn nên có thử <strong>mô tả về nó chỉ trong 1 câu</strong>. Làm được việc này một cách dễ dàng đảm bảo cho việc logic của class đó thống nhất và không bị lai tạp.</p></li>
-<li><p>Rule 3: Giảm sự kết dính của code (<strong>Writing loosely coupled code</strong>). Cá nhân tôi thấy rule này là rule quan trọng bậc nhất trong việc thiết kế phần mềm. Muốn đánh giá một phần mềm được thiết kế tồi hay không, hãy nhìn vào việc các logic có bị kết dính(couple) hay phụ thuộc vào nhau hay không. Vậy các bạn sẽ hỏi “kết dính” cụ thể ở đây có nghĩa là gì? Sự kết dính được hình thành khi logic này “phụ thuộc” vào logic khác. Cụ thể hơn ở khái niệm phụ thuộc, đó là việc mà khi mà một trong <strong>logic của class A lại chứa các logic class B</strong>, hay nói cách khác là khi A “biết” quá nhiều về B thì khi đó A sẽ phụ thuộc vào B. Khái niệm này hay được nhắc đến bằng những cụm từ khác như là logic hiding, tức khi thiết kế một class, bạn phải giấu logic của class đó càng nhiều càng tốt. Đó chính là lý do tại sao các ngôn ngữ như java có những keyword như public, private hay protected. Vậy quay lại từ đầu, để giảm sự kết dính của code thì chúng ta phải làm một việc là thiết kế sao cho các class không phụ thuộc vào nhau, và <strong>“biết”</strong> càng ít về nhau càng tốt. Vì vậy mỗi khi bạn viết một đoạn code nào đó, bạn hãy tự đọc lại và xem đoạn code đó có sử dụng quá nhiều logic của một class hay logic bên ngoài không. Để giải quyết cho việc “writing loosely coupled code” thì có khá nhiều kĩ thuật nổi tiếng như là: Inject Dependencies, Isolate Dependencies, Reversing Dependencies mà nếu có dịp tôi sẽ giới thiệu trong một bài viết khác. Ngoài ra còn có một luật rất hữu dụng để giải quyết vấn đề kết dính của code được gọi là <a href="http://c2.com/cgi/wiki?LawOfDemeter">Law of Demeter</a>, các bạn có thể tham khảo ở đường link tôi vừa gửi.</p></li>
-</ul>
-<h1 id="auto-testing">Auto Testing</h1>
-<p>Bản thân việc testing không nằm trong khâu “thiết kế” phần mềm. Auto testing (hay là unit test) chỉ là một bước để đảm bảo rằng logic hiện tại đang có là đang chạy “gần như là” tốt (nói gần như là do unit test không thể đảm bảo 100% việc “chạy tốt” của tất cả mọi logic. Tuy nhiên chỉ việc đảm bảo “gần như” tốt thôi đã cho thấy tầm quan trọng của testing. Có một việc mà bất kì một nhà phát triển nào khi mới bắt đầu viết test, và ngay cả những người đã quá quen việc kĩ thuật TDD (Test Driven Development) cũng sẽ băn khoăn, đó là việc <strong>nên test cái gì</strong>. Trong cuốn sách Sandi đã chia khá rõ ràng về 2 phần mà bạn nên test đó là:</p>
-<ul>
-<li>Test Incomming Message</li>
-<li>Test Ougoing Message</li>
-</ul>
-<p>Như tôi đã đề cập ở trên, bản chất của việc thiết kế hướng đối tượng xoay quanh việc các class sẽ gửi message cho nhau. Do đó khi test chúng ta cũng nên xoay quanh khái niệm mesage này. Một cách đơn giản, <strong>Incomming Message</strong> tức là các message được “gửi” đến một object X, và test các message đó tương đương với việc bạn sẽ test các interface của object X đó được công khai (public interface) ra ngoài. <strong>Outgoing Message</strong> hơi phức tạp hơn một chút, giả sử bạn có một object X với method Foo, trong Foo sẽ gọi method Bar để thực hiện một logic nào đó. Việc test Foo sẽ gọi Bar đúng N lần, với kết quả nhất định sẽ được gọi là test <strong>Outgoing Message</strong>. Việc chia ra làm 2 loại message cần test sẽ giúp cho bạn nhìn thấy một cách rõ ràng hơn cái gì nên test, và cái gì không nên test.</p>
-<h1 id="conclusion">Conclusion</h1>
-<p>Ở trên tôi đã trình bày về một số suy nghĩ của cá nhân, và các suy nghĩ của Sandi Metz trong cuốn sách về thiết kế phần mềm. Bản thân việc thiết kế được phần mềm tốt là rất khó, mà mỗi một dạng phần mềm, với mỗi một logic domain lại có một cách giải quyết riêng. Không có một cách giải quyết nào chung cho mọi bài toán cả, nhưng có một số qui tắc chung mà bán có thể áp dụng được cho nhiều bài toán khác nhau. Để nắm được các qui tắc đó đòi hỏi bạn không những phải đọc nhiều, làm nhiều, tích luỹ nhiều kinh nghiệm, mà còn dựa trên việc bạn thất bại nhiều nữa. Tạo ra các phần mềm tồi, khó bảo trì cũng là một bước đệm tốt để bạn rút kinh nghiệm cho các lần sau :).</p>
 		
 		
 	</div>

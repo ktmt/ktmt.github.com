@@ -7,8 +7,7 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Sep 10th, 2013 attributes, iOS, objective c, property Comments [iOS Property:attributes] Mở đầu
-Nếu bạn đã từng sử dụng Objective C thì thấy rằng &hellip;">
+	<meta name="description" content="Sep 10th, 2013 Comments Sử Dụng Metaclass Trong Python Bài viết này trình bày về metaclass và một số cách dùng metaclass trong Python. Để hiểu bài &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +76,497 @@ Nếu bạn đã từng sử dụng Objective C thì thấy rằng &hellip;">
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-09-10T16:33:00+09:00" data-updated="true" itemprop="datePublished">Sep 10<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/09/10/su-dung-metaclass-trong-python/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/09/10/su-dung-metaclass-trong-python/" itemprop="url">Sử Dụng Metaclass Trong Python</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<p>Bài viết này trình bày về metaclass và một số cách dùng metaclass trong Python. Để hiểu bài viết này, bạn nên có kiến thức về <code>magic method</code> trong Python. Cụ thể là các hàm <code>__init__</code>, <code>__new__</code>, <code>__call__</code></p>
+<h1 id="metaclass-là-gì">1. Metaclass là gì</h1>
+<p>Trong Python, tất cả mọi thứ đều là object, là instance của một Class nào đó. Để kiểm tra class của một object, chúng ta có thể sử dụng hàm <code>type</code> hoặc thuộc tính <code>__class__</code></p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>test.py </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='py'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">__class__</span>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">type</span> <span class="s">&#39;int&#39;</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">A</span><span class="p">:</span> <span class="k">pass</span>
+</span><span class='line'>    <span class="o">...</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="n">A</span><span class="p">()</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+</span><span class='line'><span class="o">&lt;</span><span class="k">class</span> <span class="err">&#39;</span><span class="nc">__main__</span><span class="o">.</span><span class="n">A</span><span class="s">&#39;&gt;</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Trong ví dụ trên, a là một instance của class A, class của a chính là A. Vậy còn kiểu của A là gì?</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>test.py </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='py'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="nb">type</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">type</span> <span class="s">&#39;type&#39;</span><span class="o">&gt;</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Kiểu của A là <code>type</code>. Bởi vì mặc đinh thì class A tạo bởi hàm <a href="http://docs.python.org/2/library/functions.html#type"><code>type</code></a>, với 3 tham số truyền vào</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>test.py </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='py'><span class='line'><span class="nb">type</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">name</span> <span class="o">-</span> <span class="n">T</span><span class="err">ê</span><span class="n">n</span> <span class="n">c</span><span class="err">ủ</span><span class="n">a</span> <span class="k">class</span> <span class="nc">s</span><span class="err">ẽ</span> <span class="err">đượ</span><span class="n">c</span> <span class="n">t</span><span class="err">ạ</span><span class="n">o</span> <span class="n">ra</span>
+</span><span class='line'>    <span class="n">bases</span> <span class="o">-</span> <span class="n">Tuple</span> <span class="n">danh</span> <span class="n">s</span><span class="err">á</span><span class="n">ch</span> <span class="n">c</span><span class="err">á</span><span class="n">c</span> <span class="n">parent</span> <span class="k">class</span> <span class="nc">c</span><span class="err">ủ</span><span class="n">a</span> <span class="k">class</span> <span class="nc">s</span><span class="err">ẽ</span> <span class="err">đượ</span><span class="n">c</span> <span class="n">t</span><span class="err">ạ</span><span class="n">o</span> <span class="n">ra</span>
+</span><span class='line'>    <span class="nb">dict</span> <span class="o">-</span> <span class="n">Danh</span> <span class="n">s</span><span class="err">á</span><span class="n">ch</span> <span class="n">c</span><span class="err">á</span><span class="n">c</span> <span class="n">thu</span><span class="err">ộ</span><span class="n">c</span> <span class="n">t</span><span class="err">í</span><span class="n">nh</span> <span class="n">c</span><span class="err">ủ</span><span class="n">a</span> <span class="k">class</span> <span class="nc">s</span><span class="err">ẽ</span> <span class="err">đượ</span><span class="n">c</span> <span class="n">t</span><span class="err">ạ</span><span class="n">o</span> <span class="n">ra</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Sử dụng hàm <code>type</code>, chúng ta có thể tạo ra một class mới</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>test.py </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='py'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">Person</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="s">&#39;Person&#39;</span><span class="p">,</span> <span class="p">(),</span> <span class="p">{</span><span class="s">&#39;country&#39;</span><span class="p">:</span> <span class="s">&#39;vietnam&#39;</span><span class="p">}</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">Person</span><span class="o">.</span><span class="n">country</span>
+</span><span class='line'><span class="n">vietnam</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Chúng ta có thể thay đổi quá trình tạo ra class A bằng cách set thuộc tính <code>__metaclass__</code> của A. Thuộc tính <code>__metaclass__</code> là một callable object (một function, hoặc một object) nhận 3 tham số truyền vào như hàm <code>type</code> nói trên.</p>
+<p>Khi định nghĩa một class bằng từ khoá <code>class</code>, nếu <code>__metaclass__</code> được set, metaclass sẽ được gọi sau khi các thuộc tính khác của class đã được set.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>test.py </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">PersonMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">PersonMeta</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">PersonMeta</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">country</span> <span class="o">=</span> <span class="s">&#39;Vietnam&#39;</span>
+</span><span class='line'>    <span class="n">people</span> <span class="o">=</span> <span class="p">[]</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p><code>PersonMeta</code> sẽ được gọi với các tham số (‘Person’, (object), {‘country’: ‘Vietnam’, ‘people’: []}). Bằng cách metaclass được gọi cuối cùng, chúng ta có thể sử dụng metaclass để can thiệp vào qúa trình tạo ra class, cụ thể là các thuộc tính ở mức class của class đó. Có thể coi Metaclass là Class của class. Và class là một instance của Metaclass. Những thuộc tính của ở mức class của một class (các class attribute, các <span class="citation" data-cites="classmethod">@classmethod</span>) chính là các thuộc tính ở mức instance của một Metaclass</p>
+<h1 id="giới-thiệu-một-số-trường-hợp-sử-dụng-metaclass">2. Giới thiệu một số trường hợp sử dụng Metaclass</h1>
+<p>Metaclass là một trong những <code>black magic</code> và rất ít khi được sử dụng trong Python.</p>
+<p>“Metaclasses are deeper magic than 99% of users should ever worry about. If you wonder whether you need them, you don’t (the people who actually need them know with certainty that they need them, and don’t need an explanation about why).” -Python Guru Tim Peters&quot;</p>
+<p>(Tạm dịch: Metaclass sâu sắc hơn 99% những gì mà người dùng nên lo lắng. Nếu bạn phân vân khi nào bạn cần chúng, bạn sẽ không bao giờ cần (những người thực sự cần Metaclass, sẽ biết chính xác trong trường hợp nào họ cần, và không cần phải giải thích lý do vì sao)</p>
+<p>Tuy nhiên để giúp bạn đọc hiểu rõ metaclass, trong bài viết này, tôi trình bày 2 ví dụ về cách sử dụng metaclass</p>
+<h2 id="sử-dụng-metaclass-để-can-thiệp-vào-việc-tạo-instance-của-class">2.1. Sử dụng metaclass để can thiệp vào việc tạo instance của class</h2>
+<p>Giả sử chúng ta có B là metaclass của A. Việc tạo ra một instance của A chính là việc gọi hàm <code>A(*args, **kwargs)</code>. Nhưng vì A là một instance của B, nên gọi A, chính là gọi hàm <code>__call__</code> của một instance của B. Do đó, để can thiệp vào quá trình tạo instance của class, chúng ta có thể override hàm <code>__call__</code> trong class B</p>
+<p>Xét ví dụ chúng ta muốn tạo ra một Singleton class bằng Metaclass</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>singleton.py </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">SingletonMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span> <span class="o">=</span> <span class="bp">None</span>
+</span><span class='line'>        <span class="nb">super</span><span class="p">(</span><span class="n">SingletonMeta</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="p">:</span>
+</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">SingletonMeta</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__call__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">SingletonMeta</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;kiennt&#39;</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="mi">26</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">a</span> <span class="o">=</span> <span class="n">Person</span><span class="p">()</span>
+</span><span class='line'><span class="k">print</span> <span class="n">a</span><span class="o">.</span><span class="n">name</span> <span class="c"># kiennt</span>
+</span><span class='line'><span class="k">print</span> <span class="n">a</span><span class="o">.</span><span class="n">age</span> <span class="c"># 26</span>
+</span><span class='line'><span class="n">b</span> <span class="o">=</span> <span class="n">Person</span><span class="p">()</span>
+</span><span class='line'><span class="k">print</span> <span class="n">b</span> <span class="o">==</span> <span class="n">a</span> <span class="c"># True</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Nếu bỏ thuộc tính <code>__metaclass__</code> trong class Person, thì b sẽ không bằng a nữa</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>singleton.py </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+</span><span class='line'>    <span class="c">#__metaclass__ = SingletonMeta</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;kiennt&#39;</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="mi">26</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">a</span> <span class="o">=</span> <span class="n">Person</span><span class="p">()</span>
+</span><span class='line'><span class="n">b</span> <span class="o">=</span> <span class="n">Person</span><span class="p">()</span>
+</span><span class='line'><span class="k">print</span> <span class="n">b</span> <span class="o">==</span> <span class="n">a</span> <span class="c"># False</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<h2 id="sử-dụng-metaclass-để-can-thiệp-vào-các-thuộc-tính-của-một-class">2.2. Sử dụng metaclass để can thiệp vào các thuộc tính của một class</h2>
+<p>Hãy xem xét một ví dụ về cài đặt ORM (Object Relational Mapping)</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>orm.py </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Field</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">pass</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">CharField</span><span class="p">(</span><span class="n">Field</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">pass</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">IntegerField</span><span class="p">(</span><span class="n">Field</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">pass</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">name</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">age</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Giờ nếu chúng ta muốn lưu một biến <code>_fields</code> để chứa tất cả các thuộc tính của class là một instance của <code>Field</code>, chúng ta có thể sử dụng metaclass để can thiệp</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>orm.py </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">ModelMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
+</span><span class='line'>        <span class="c"># get all Field attributes</span>
+</span><span class='line'>        <span class="n">fields</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span class='line'>        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+</span><span class='line'>            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">Field</span><span class="p">):</span>
+</span><span class='line'>                <span class="n">fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">__class__</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c">## update attrs</span>
+</span><span class='line'>        <span class="n">attrs</span><span class="p">[</span><span class="s">&#39;_fields&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fields</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">ModelMeta</span><span class="p">,</span> <span class="n">cls</span><span class="p">)</span><span class="o">.</span><span class="n">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">ModelMeta</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">name</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">age</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">print</span> <span class="n">Programmer</span><span class="o">.</span><span class="n">_fields</span> <span class="c"># [&lt;class &#39;__main__.IntegerField&#39;&gt;, &lt;class &#39;__main__.CharField&#39;&gt;]</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Chú ý rằng <code>__new__</code> là static class, nên chúng ta cần truyền <code>cls</code> vào trong lời gọi <code>super(ModelMeta, cls).__new__(cls, name, bases, attrs)</code></p>
+<p>Nếu không implement ở trong hàm <code>__new__</code>, chúng ta có thể implement ở trong hàm <code>__init__</code> của metaclass như sau</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>orm.py </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">ModelMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span class='line'>        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+</span><span class='line'>            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">Field</span><span class="p">):</span>
+</span><span class='line'>                <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">__class__</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">ModelMeta</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">name</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">age</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">print</span> <span class="n">Programmer</span><span class="o">.</span><span class="n">_fields</span> <span class="c"># [&lt;class &#39;__main__.IntegerField&#39;&gt;, &lt;class &#39;__main__.CharField&#39;&gt;]</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Tuy nhiên cách implement này thường it khi được sử dụng bằng cách implement thứ nhất trong hàm <code>__new__</code>, vì trong Python, hàm <code>__new__</code> thường được sử dụng để allocate object, và <code>__init__</code> được sử dụng để khởi tạo object</p>
+<h1 id="kết-luận">3. Kết luận</h1>
+<p>Bài viết trình bày về khái niệm metaclass và một số cách sử dụng metaclass trong python. Với metaclass, chúng ta có thể thay đổi các thuộc tính ở mức class của một class thông qua hàm <code>__new__</code> và <code>__init__</code> của Metaclass, can thiệp vào quá trình tạo ra instance của class bằng cách thay đổi hàm <code>__call__</code> của metaclass.</p>
+<p>Metaclass là một trong những vấn đề khó và ít khi gặp trong python. Để hiểu và sử dụng metaclass một cách dễ dàng,cách ngăn nhất là code và đọc code python thật nhiều</p>
+<h1 id="tham-khảo">4. Tham khảo</h1>
+<p><a href="http://www.amazon.com/Python-Cookbook-David-Beazley/dp/1449340377">Python Cookbook</a></p>
+<p><a href="https://github.com/kiddouk/redisco">redisco</a></p>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -933,535 +1423,6 @@ Nếu bạn đã từng sử dụng Objective C thì thấy rằng &hellip;">
 <h1 id="kết-luận">3. Kết luận</h1>
 <p>Qua bài viết này chúng ta đã biết cách sử dụng gem chanko để có thể prototype chức năng mới một cách dễ dàng hơn, và ít ảnh hưởng đến hệ thống cũ nhất. Một cách đơn giản thì chanko đưa logic của cả model/view/controller vào tập trung trong 1 file, và cung cấp các helper function để giúp logic của hệ thống cũ có thể invoke các chức năng của unit mới một cách đơn giản nhất.</p>
 <p>Các bạn có thể tham khảo chi tiết thông qua <a href="http://cookpad.github.io/chanko/">homepage của chanko</a></p>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-09-08T11:30:00+09:00" data-updated="true" itemprop="datePublished">Sep 8<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/python/'>python</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/09/08/gioi-thieu-ve-python-descriptor/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/09/08/gioi-thieu-ve-python-descriptor/" itemprop="url">Giới Thiệu về Python Descriptor</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<p>Trong các bài viết trước, chúng tôi đã giới thiệu về các kiến thức cơ bản trong python, như <a href="/blog/2613/04/29/python-object-model/">object trong python</a>, <a href="/blog/2613/05/06/memoization-and-decorator/">decorators</a>.</p>
-<p>Bài viết này sẽ giới thiệu một kỹ nâng cao trong Python, đó là <code>descriptor</code></p>
-<h1 id="ví-dụ-về-descriptor">1. Ví dụ về descriptor</h1>
-<p>Xét ví dụ khi chúng ta muốn xây dựng mô hình cho bài toán về các lập trình viên</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>programmer.py </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">salary</span><span class="p">,</span> <span class="n">rating</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="n">age</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">salary</span> <span class="o">=</span> <span class="n">salary</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">rating</span> <span class="o">=</span> <span class="n">rating</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Giờ nếu bạn muốn thêm một điều kiện là tuổi của lập trình viên phải luôn lớn hơn 0, bạn có thể cài đặt như sau</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>programmer.py </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">salary</span><span class="p">,</span> <span class="n">rating</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">salary</span> <span class="o">=</span> <span class="n">salary</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">rating</span> <span class="o">=</span> <span class="n">rating</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">if</span> <span class="n">age</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="n">age</span>
-</span><span class='line'>        <span class="k">else</span><span class="p">:</span>
-</span><span class='line'>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Negative value not allowed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">age</span><span class="p">)</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Tuy nhiên với cách làm này, bạn vẫn có thể làm cho <code>age</code> &lt; 0, nếu gán giá trị của <code>age</code> trực tiếp từ instance của Programmer</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class=''><span class='line'>>>> kiennt = Programmer('kiennt', 26, 500, 5)
-</span><span class='line'>>>> kiennt.age = -10</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>May mắn thay, ta có thể sử dụng <code>property</code> để giải quyết vấn đề này</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>programmer.py </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">salary</span><span class="p">,</span> <span class="n">rating</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">_age</span> <span class="o">=</span> <span class="bp">None</span> <span class="c"># tạo một thuộc tính private cho age</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="n">age</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">salary</span> <span class="o">=</span> <span class="n">salary</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">rating</span> <span class="o">=</span> <span class="n">rating</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nd">@property</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">age</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_age</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nd">@age.setter</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">age</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">if</span> <span class="n">age</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">_age</span> <span class="o">=</span> <span class="n">value</span>
-</span><span class='line'>        <span class="k">else</span><span class="p">:</span>
-</span><span class='line'>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Negative value not allowed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">age</span><span class="p">)</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>python </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class=''><span class='line'>>>> kiennt = Programmer('kiennt', 26, 500, 5)
-</span><span class='line'>>>> try:
-</span><span class='line'>        kiennt.age = -10
-</span><span class='line'>    except ValueError:
-</span><span class='line'>        print "Cannot set negative value"
-</span><span class='line'>Cannot set negative value</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Cách chúng ta làm ở đây đó là tạo ra một biến private <code>_age</code> để chứa giá trị thật của <code>age</code>. Và sử dụng <span class="citation" data-cites="getter">@getter</span> và <span class="citation" data-cites="setter">@setter</span> để bind thuộc tính <code>age</code> với 2 method. Trong 2 method này, chúng ta sẽ cài đặt logic cho việc gán trị của <code>age</code>. Khi chúng ta gọi <code>kiennt.age = value</code>, python sẽ tự động gọi đến setter của <code>age</code>, còn nếu chỉ gọi <code>kiennt.age</code> (không có gán giá trị), thì getter sẽ được gọi.</p>
-<h1 id="vấn-đề-của-getter-và-setter">2. Vấn đề của getter và setter</h1>
-<p>Nếu giờ, chúng ta cũng muốn kiểm tra giá trị của hai thuộc tính <code>salary</code> và <code>rating</code>. Chúng ta có thể làm tương tự như sau</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>programmer.py </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">salary</span><span class="p">,</span> <span class="n">rating</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">_age</span> <span class="o">=</span> <span class="bp">None</span> <span class="c"># tạo một thuộc tính private cho age</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">_salary</span> <span class="o">=</span> <span class="bp">None</span> <span class="c"># tạo một thuộc tính private cho salary</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">_rating</span> <span class="o">=</span> <span class="bp">None</span> <span class="c"># tạo một thuộc tính private cho rating</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="n">age</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">salary</span> <span class="o">=</span> <span class="n">salary</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">rating</span> <span class="o">=</span> <span class="n">rating</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nd">@property</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">age</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_age</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nd">@age.setter</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">age</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">if</span> <span class="n">age</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">_age</span> <span class="o">=</span> <span class="n">value</span>
-</span><span class='line'>        <span class="k">else</span><span class="p">:</span>
-</span><span class='line'>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Negative value not allowed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">age</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nd">@property</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">salary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_salary</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nd">@age.setter</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">salary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">if</span> <span class="n">salary</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">_salary</span> <span class="o">=</span> <span class="n">value</span>
-</span><span class='line'>        <span class="k">else</span><span class="p">:</span>
-</span><span class='line'>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Negative value not allowed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">age</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nd">@property</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">rating</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rating</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nd">@age.setter</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">rating</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">if</span> <span class="n">rating</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">_rating</span> <span class="o">=</span> <span class="n">value</span>
-</span><span class='line'>        <span class="k">else</span><span class="p">:</span>
-</span><span class='line'>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Negative value not allowed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">age</span><span class="p">)</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Tuy nhiên cách làm này làm cho code của chúng ta có qúa nhiều đoạn code lặp về logic. Đây chính là lúc <code>descriptor</code> có thể sử dụng.</p>
-<h1 id="descriptor">3. Descriptor</h1>
-<p>Descriptor cho phép chúng ta bind cách xử lý truy cập của một thuộc tính trong class A với một class B khác. Nói cách khác, nó cho phép đưa việc truy cập thuộc tính ra ngoài class. Sau đây là cách cài đặt đối với bài toán của chúng ta</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>programmer.py </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">NonNegativeDescriptor</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">label</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">owner</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">instance</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">if</span> <span class="n">value</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">instance</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
-</span><span class='line'>        <span class="k">else</span><span class="p">:</span>
-</span><span class='line'>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Negative value not allowed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">age</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">age</span> <span class="o">=</span> <span class="n">NonNegativeDescriptor</span><span class="p">(</span><span class="s">&#39;age&#39;</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">salary</span> <span class="o">=</span> <span class="n">NonNegativeDescriptor</span><span class="p">(</span><span class="s">&#39;salary&#39;</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">rating</span> <span class="o">=</span> <span class="n">NonNegativeDescriptor</span><span class="p">(</span><span class="s">&#39;rating&#39;</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">salary</span><span class="p">,</span> <span class="n">rating</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="n">age</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">salary</span> <span class="o">=</span> <span class="n">salary</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">rating</span> <span class="o">=</span> <span class="n">rating</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>python </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class=''><span class='line'>>>> kiennt = Programmer('kiennt', 26, 500, 5)
-</span><span class='line'>>>> print kiennt.age
-</span><span class='line'>>>> kiennt.age = 20</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>NonNegativeDescriptor là một descriptor vì class này cài đặt 2 phương thức <code>__get__</code> và <code>__set__</code>. Python nhận ra một class là descriptor nếu như class đó implement một trong 3 phương thức.</p>
-<ul>
-<li><code>__get__</code>: Nhận 2 tham số <code>instance</code> và <code>owner</code>. <code>instance</code> là instance của class mà Descriptor được bind tới. <code>owner</code> là class của <code>instance</code>. Trong trường hợp, không có <code>instance</code> nào được gọi, <code>owner</code> sẽ là None.</li>
-<li><code>__set__</code>: Nhận 2 tham số <code>instance</code> và <code>value</code>. <code>instance</code> có ý nghĩa như trong <code>__get__</code>, value là giá trị muốn set cho thuộc tính của <code>instance</code></li>
-<li><code>__delete__</code>: Nhận 1 tham số <code>instance</code></li>
-</ul>
-<p>Trong class <code>Programmer</code>, chúng ta tạo ra 3 Descriptor ở mức class là <code>age</code>, <code>salary</code> và <code>rating</code>. Khi gọi <code>print kiennt.age</code>, python sẽ nhận ra age là một descriptor, nên nó sẽ gọi đến hàm <code>__get__</code> của descriptor <code>NonNegativeDescriptor.__get__(kiennt, Programmer)</code>. Tương tự khi gán giá trị cho <code>kiennt.age = 20</code>, hàm <code>__set__</code> của descriptor cũng được gọi <code>NonNegativeDescriptor.__set__(kiennt, 20)</code>.</p>
-<p>Nếu chúng ta gọi <code>Programmer.age</code>, thì hàm <code>__get__</code> sẽ được gọi với <code>owner</code> = None.</p>
-<h1 id="descriptor-và-metaclass">4. Descriptor và Metaclass</h1>
-<p>Một điểm cần lưu ý đó là trong descriptor, có sử dụng biến label để bind giữa descriptor và thuộc tính của class. Ta có thể sử dụng Metaclass để giải quyết vấn đề này</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>programmer.py </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">NonNegativeDescriptor</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">label</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">owner</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">instance</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-</span><span class='line'>        <span class="n">instance</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">DescriptorMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-</span><span class='line'>            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">NonNegativeDescriptor</span><span class="p">):</span>
-</span><span class='line'>                <span class="n">v</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">k</span>
-</span><span class='line'>        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">DescriptorMeta</span><span class="p">,</span> <span class="n">cls</span><span class="p">)</span><span class="o">.</span><span class="n">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">age</span> <span class="o">=</span> <span class="n">NonNegativeDescriptor</span><span class="p">()</span>
-</span><span class='line'>    <span class="n">salary</span> <span class="o">=</span> <span class="n">NonNegativeDescriptor</span><span class="p">()</span>
-</span><span class='line'>    <span class="n">rating</span> <span class="o">=</span> <span class="n">NonNegativeDescriptor</span><span class="p">()</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">salary</span><span class="p">,</span> <span class="n">rating</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="n">age</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">salary</span> <span class="o">=</span> <span class="n">salary</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">rating</span> <span class="o">=</span> <span class="n">rating</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Metaclass hoạt động như thế nào, sẽ được giới thiệu trong bài viết tiếp theo.</p>
-<h1 id="kết-luận">Kết luận</h1>
-<p>Bài viết này giới thiệu với các bạn về descriptor trong Python. Với descriptor, chúng ta có thể chuyển việc can thiệp vào từng thuộc tính của một instance trong class tới việc can thiệp vào thuộc tính ở mức class. Cùng với metaclass, descriptor được sử dụng như một <code>ma thuật đen</code> (black magic) trong metaprogramming. Descriptor được sử dụng rất nhiều khi xây dựng các bộ thư viện về ORM (django ORM, peewee, redisco)</p>
-<h1 id="tham-khảo">Tham khảo</h1>
-<ul>
-<li><p><a href="http://nbviewer.ipython.org/urls/gist.github.com/ChrisBeaumont/5758381/raw/descriptor_writeup.ipynb">Python Descriptors Demystified</a></p></li>
-<li><p><a href="http://dabeaz.com/py3meta/Py3Meta.pdf">Python 3 Metaprogramming</a></p></li>
-</ul>
 		
 		
 	</div>

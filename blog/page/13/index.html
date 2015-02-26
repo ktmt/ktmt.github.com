@@ -7,8 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Aug 2nd, 2013 sercurity,, server Comments Các Lỗi Bảo Mật Khi Xây Dựng Server Login Bằng Facebook Cho Mobile App Mở đầu
-Facebook là mạng xã hội phổ &hellip;">
+	<meta name="description" content="Aug 4th, 2013 linux, system Comments Tìm Hiểu Redis (Phần 3): đối Tượng Trong Redis (Redis Objects) 1. Giới thiệu
+Trong các bài viết trước mình đã &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,164 @@ Facebook là mạng xã hội phổ &hellip;">
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-08-04T21:05:00+09:00" data-updated="true" itemprop="datePublished">Aug 4<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/linux/'>linux</a>, <a class='category' href='/blog/categories/system/'>system</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/08/04/tim-hieu-redis-3/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/08/04/tim-hieu-redis-3/" itemprop="url">Tìm Hiểu Redis (Phần 3): đối Tượng Trong Redis (Redis Objects)</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h2 id="giới-thiệu">1. Giới thiệu</h2>
+<p>Trong các bài viết trước mình đã trình bày về <a href="http://ktmt.github.io/blog/2013/07/02/tim-hieu-redis/">cách redis sao lưu dữ liệu</a> cũng như <a href="http://ktmt.github.io/blog/2013/07/16/tim-hieu-redis-2/">framework lập trình hướng sự kiện của redis</a>. Trong bài viết này mình trình bày về các đối tượng và kiểu dữ liệu trong redis.</p>
+<h2 id="khái-quát">2. Khái quát</h2>
+<p>Redis là một hệ thống cơ sở dữ liệu key-value - mỗi giá trị được quản lý bởi 1 cặp khóa và giá trị (key-value). Khi ghi dữ liệu, ta phải chỉ định rõ cặp khóa và giá trị. Khi đọc dữ liệu, ta phải chỉ ra ta muốn đọc dữ liệu của khóa nào. Trong Redis, khóa (key) có thể là một chuỗi. <strong>giá trị của dữ liệu</strong> (value) có thể là một trong một số kiểu dữ liệu thông dụng</p>
+<ul>
+<li>tập hợp (set)</li>
+<li>tập hợp đã sắp xếp (sorted set)</li>
+<li>chuỗi (string)</li>
+<li>danh sách (list)</li>
+</ul>
+<p>Để hỗ trợ các kiểu dữ liệu ở trên, đồng thời đảm bảo tính mở rộng (phát triển thêm các kiểu dữ liệu mới) cũng để dễ dàng quản lý đối tượng trong phần core db, redis thêm 1 layer mô tả dữ liệu trung gian gọi là robj. Các thao tác của core db (đọc, ghi, hash, encoding…) sẽ được thao tác trực tiếp với robj. Các kiểu dữ liệu người dùng ở trên sẽ được chuyển đổi (convert) qua lại đến robj. Nói cách khác, phần core db chỉ biết đến sự tồn tại của robj, các kiểu dữ liệu ở trên muốn được quản lý bởi coredb cần phải được chuyển qua robj.</p>
+<p>Về mặt tổ chức mã, bạn có thể tham khảo sơ đồ dưới đây:</p>
+<pre><code>╒===============╕
+|  t_hash.c     |
+|  t_list.c     |       ╒============╕      ╒=====================╕
+|  t_set.c      |   &lt;=&gt; |  object.c  |  &lt;=&gt; |  db.c (robj -&gt; sds) | 
+|  t_string.c   |       ╘============╛      ╘=====================╛
+|  t_zset.c     |
+╘===============╛</code></pre>
+<h2 id="chi-tiết-về-robj">3. Chi tiết về robj</h2>
+<p>Chi tiết về cấu trúc của robj được khai báo trong file <a href="https://github.com/antirez/redis/blob/unstable/src/redis.h">redis.h</a></p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>robj.c </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='c'><span class='line'><span class="cm">/* A redis object, that is a type able to hold a string / list / set */</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/* The actual Redis Object */</span>
+</span><span class='line'><span class="cp">#define REDIS_LRU_CLOCK_MAX ((1&lt;&lt;21)-1) </span><span class="cm">/* Max value of obj-&gt;lru */</span><span class="cp"></span>
+</span><span class='line'><span class="cp">#define REDIS_LRU_CLOCK_RESOLUTION 10 </span><span class="cm">/* LRU clock resolution in seconds */</span><span class="cp"></span>
+</span><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">redisObject</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="n">type</span><span class="o">:</span><span class="mi">4</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="n">notused</span><span class="o">:</span><span class="mi">2</span><span class="p">;</span>     <span class="cm">/* Not used */</span>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="n">encoding</span><span class="o">:</span><span class="mi">4</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="n">lru</span><span class="o">:</span><span class="mi">22</span><span class="p">;</span>        <span class="cm">/* lru time (relative to server.lruclock) */</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">refcount</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">void</span> <span class="o">*</span><span class="n">ptr</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span> <span class="n">robj</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/* Macro used to initialize a Redis object allocated on the stack.</span>
+</span><span class='line'><span class="cm"> * Note that this macro is taken near the structure definition to make sure</span>
+</span><span class='line'><span class="cm"> * we&#39;ll update it when the structure is changed, to avoid bugs like</span>
+</span><span class='line'><span class="cm"> * bug #85 introduced exactly in this way. */</span>
+</span><span class='line'><span class="cp">#define initStaticStringObject(_var,_ptr) do { \</span>
+</span><span class='line'><span class="cp">    _var.refcount = 1; \</span>
+</span><span class='line'><span class="cp">    _var.type = REDIS_STRING; \</span>
+</span><span class='line'><span class="cp">    _var.encoding = REDIS_ENCODING_RAW; \</span>
+</span><span class='line'><span class="cp">    _var.ptr = _ptr; \</span>
+</span><span class='line'><span class="cp">} while(0);</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Qua đó ta có thể thấy robj gồm có các trường như:</p>
+<ul>
+<li>kiểu dữ liệu type</li>
+<li>loại encoding: kiểu dữ liệu type có thể hiểu là kiểu dữ liệu người dùng, còn encoding có thể hiểu là kiểu dữ liệu ở backend được quản lý ở core db của redis để đảm bảo hiệu năng.</li>
+<li>lru (<a href="http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used">least-recently used</a>): là trường đại diện cho thời gian tồn tại tương đối của redis object. Redis hỗ trợ 1 tính năng đối với các đối tượng được ghi vào cơ sở dữ liệu redis: <a href="http://www.redis.io/commands/expire">expire</a>. Các đối tượng quá thời gian chỉ định trước sẽ được loại bỏ khỏi cơ sở dữ liệu. Trường này dùng để quản lý <strong>thời gian hết hiệu lực</strong> này.</li>
+<li>refcount: là một biến kiểu số nguyên, đại diện cho số lượng reference đến robj này. Mỗi lần có một truy cập đến robj, đại lượng reference sẽ được tăng lên 1, và sẽ bị giảm đi 1 mỗi khi đối tượng <strong>expired</strong> hoặc không được tiếp tục tham chiếu.</li>
+<li>*ptr: con trỏ trỏ trực tiếp đến dữ liệu</li>
+<li>notused??</li>
+</ul>
+<p>Ở đây, ta gặp một kiểu khai báo <strong>rất lạ</strong> đặt ra nhiều câu hỏi. Thay vì khai báo unsigned type tác giả sử dụng unsigned type:4, điều này có ý nghĩa là gì? Sử dụng cả trường notused và lru:22 có ý nghĩa là gì?</p>
+<p>Thực chất khai báo :số nguyên sau kiểu dữ liệu unsigned trong C biểu thị số bit mà trường này muốn sử dụng. Như vậy kiểu type ở trên có độ dài 4 bits. Tương tự như vậy độ dài của encoding là 4 bits. Với độ dài này, redis có thể hỗ trợ tối đa 2^4 = 16 kiểu dữ liệu khác nhau! LRU có độ dài 22 bits. Thực chất trường LRU này đại diện cho thời gian tương đối tính từ <a href="https://github.com/antirez/redis/blob/unstable/src/redis.h#L725">server.lruclock</a>. Thời gian này được tính bằng số phút theo thời gian tương đối này. Để ý với 4 bits cho type, 4 bits cho encoding và 22 bits cho lru, ta mới dùng có 30 bits cho cấu trúc robj này. Do các hệ thống x86 thường căn chỉnh cấu trúc dữ liệu theo bội số của 16 (liên quan đến cơ chế làm việc của CPU cache) nên ta cần padding thêm 2 bits và việc padding 2 bits này chính là nhiệm vụ của notused!</p>
+<p>Mã của robj khá gọn gàng, trong sáng, ngắn gọn và dễ hiểu. Bạn có thể tham khảo tại file <a href="https://github.com/antirez/redis/blob/unstable/src/object.c">object.c</a>. Ở đây tôi sẽ trình bày 2 điểm quan trọng về robj:</p>
+<ul>
+<li>Tại sao phải encode <strong>robj</strong></li>
+<li>Vai trò của refcount.</li>
+</ul>
+<p><strong>Tại sao phải encode robj?</strong> Như trong danh sách các kiểu dữ liệu người dùng ở trên, ta thấy có chuỗi là kiểu dữ liệu cơ bản. Các kiểu dữ liệu còn lại (hast, set, list) đều là kiểu dữ liệu xoay quanh chuỗi, số nguyên hoặc các kiểu dữ liệu khác. Bản thân chuỗi thường có nhiều ký tự lặp lại, vì vậy bằng việc encoding chuỗi dữ liệu ta sẽ tiết kiệm được lượng bộ nhớ mà redis sử dụng. Encoding ở đây thực chất là làm giảm kích thước các object. Thuật toán encode chuỗi có thể tham khảo thủ tục <a href="https://github.com/antirez/redis/blob/unstable/src/object.c#L339">tryObjectEncoding</a> và và các thủ tục trong file <a href="https://github.com/antirez/redis/blob/unstable/src/util.c">util.c</a>. Thử tưởng tượng bạn có 1 key trỏ đến danh sách gồm 100 chuỗi, mỗi chuỗi chỉ cần tiết kiệm được 1 byte, thì việc encode này sẽ giúp bạn tiết kiệm được 100 bytes bộ nhớ. Lượng bộ nhớ tiết kiệm này sẽ có ý nghĩa khi bạn có hàng triệu key và value!</p>
+<p><strong>Vai trò của refcount</strong> Refcount thường được dùng để chia sẻ dữ liệu giống nhau của các đối tượng khác nhau. Ví dụ bạn có 2 xâu a, b cùng giá trị “Chào Thế giới!” thì không việc gì ta phải có 2 chuỗi “Chào Thế giới!” trong bộ nhớ. Chuỗi a và b có thể cùng trỏ tới 1 chuỗi trên bộ nhớ và chỉ thật sự cần có 1 bản copy riêng khi mà 2 chuỗi khác nhau. Đây là cách sử dụng thường gặp của “<a href="http://en.wikipedia.org/wiki/Reference_counting"><strong>reference count idiom</strong></a>”. Tuy vậy ở redis hiếm khi ta thấy 2 object cùng chia sẻ giá trị như trường hợp ở trên. Vậy vai trò của reference count ở đây là gì?</p>
+<p>Thực chất tác giả sử dụng refcount ở đây 1 cách khá sáng tạo (dù mình không biết là có thật sự là 1 cách dùng mới hay không). Thử tưởng tượng 1 trường hợp sau đây: 1 thread đang đọc giá trị của robj trong khi 1 thread khác đang gửi command del robj. Nếu command del được tiến hành ngay lập tức, thread đọc robj có thể bị lỗi và trả về giá trị không đúng (1 list có 10 phần tử nhưng phần tử nhưng khi đọc thì redis báo giá trị không tồn tại :-)). Nếu như command del không được thực thi, khóa trên sẽ vẫn tồn tại trong bộ nhớ, và kết quả thực hiện del sẽ thất bại. Chắc là bạn không muốn command del thất bại liên tục (khi số lượng đọc ghi cực lớn, khả năng xảy ra lỗi này là khá cao!). Để giải quyết bài toán trên, tác giả của redis sử dụng refcount. Khi một object được truy cập bởi nhiều thread, refcount của object sẽ được tăng lên 1 đơn vị và giảm 1 khi không được tham chiếu nữa. Như vậy command del sẽ chỉ giảm refcount của robj đi 1. Nếu như tại thời điểm này không có tham chiếu nào đến robj này, robj này sẽ bị thu hồi ngay lập tức. Tuy vậy nếu có 1 thread khác đang tham chiếu robj này, refcount của robj sẽ lớn hơn 1, và do đó tại thời điểm command del được thực thi, giá trị của refcount giảm xuống còn 1. Khi thread khác hoàn thành công việc, thread này sẽ giảm refcount xuống tiếp 1 đơn vị nữa, lúc này robj refcount sẽ về 0 và robj sẽ được giải phóng!</p>
+<h2 id="các-cấu-trúc-dữ-liệu-người-dùng">4. Các cấu trúc dữ liệu người dùng</h2>
+<p>Tôi gọi các cấu trúc dữ liệu người dùng để phân biệt chúng với cấu trúc dữ liệu redis dùng để tăng hiệu năng ở core. Các cấu trúc dữ liệu này gồm list, hash, set và string được viết ở các file có tiền tố <strong>t_</strong> tương ứng. Như trình bày ở trên phần db core không biết gì ngoài robj vì vậy các cấu trúc dữ liệu này có nhiệm vụ là convert cách biểu diễn dữ liệu về robj.</p>
+<p>Nếu xem các file này, bạn sẽ thấy mỗi file đều có các hàm convert sang robj như: hashTypeConvert, listTypeConvert, … Mỗi cấu trúc dữ liệu có cách viết khác nhau, nhưng đều cùng cấu trúc và khá ngắn gọn và đơn giản. Bạn có thể tham khảo từng file trên để tìm hiểu rõ hơn về cách redis hỗ trợ các kiểu dữ liệu.</p>
+<div>
+<pre><code class='bash'>src git:(unstable) wc -l t_*.c
+   761 t_hash.c
+  1149 t_list.c
+   913 t_set.c
+   459 t_string.c
+  2205 t_zset.c
+  5487 total</code></pre>
+</div>
+<h2 id="kết-luận">5. Kết luận:</h2>
+<p>Bài viết trình bày về cách redis tổ chức các kiểu dữ liệu người dùng cũng như cách tổ chức phần “<strong>frontend</strong>” của redis db. Bài viết cũng trình bày chi tiết về robj, về ý nghĩa và vai trò của các trường trong robj cũng như vai trò của robj với backend db. Trong bài viết sau, mình sẽ cố gắng trình bày chi tiết về phần backend server.</p>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -513,244 +671,6 @@ Facebook là mạng xã hội phổ &hellip;">
 <li><strong>Dynamically-typed language</strong>: Là ngôn ngữ có thể tự hiểu được object tại thời điểm runtime, không cần tại compile time. PHP, Ruby, Python là dynamically-typed language. Ngược lại C hay Java là statically typed language.</li>
 <li><strong>Reflection Class</strong> Là 1 bộ API được PHP cung cấp để sử dụng kỹ thuật reverse engineer, hữu dụng khi tạo document tự động.</li>
 </ul>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-07-24T10:05:00+09:00" data-updated="true" itemprop="datePublished">Jul 24<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/sysadmin/'>sysadmin</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/07/24/install-memcached-with-sasl/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/24/install-memcached-with-sasl/" itemprop="url">Cài đặt Memcached Với Sasl</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h1 id="giới-thiệu">Giới thiệu</h1>
-<p>Memcached là cơ sở dữ liệu được lưu trong memory. Thông thường chúng ta sử dụng memcached trong mạng nội bộ, hoặc sử dụng private IP để kết nối tới memcached, tuy nhiên trong một số trường hợp, IP của memcached server cần public ra ngoài (ví dụ toàn bộ các server đều đặt trên AWS). Trong trường hợp này, chúng ta cần bảo mật kết nối của memcached server.</p>
-<p>Từ phiên bản 1.4.3, memcached đã support sử dụng <a href="http://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer">SASL</a></p>
-<p>Bài viết này sẽ giới thiệu với các bạn cách cài đặt memcached với SASL cũng như giới thiệu cơ chế, cách làm việc của SASL</p>
-<h1 id="cách-cài-đặt-sasl-với-memcached">Cách cài đặt SASL với memcached</h1>
-<p>Đầu tiên bạn cần cài đặt phiên bản mới nhất của memcached. Bạn sẽ cần một số gói và thư viện khác để support SASL.</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>install.sh </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> sudo apt-get install libsasl2-2 sasl2-bin libsasl2-2 libsasl2-dev libsasl2-modules
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Đừng quên, để cài đặt memcached, bạn cùng sẽ cần cài <code>libevent</code></p>
-<p>Cài đặt memcached</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>install.sh </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> wget http://memcached.googlecode.com/files/memcached-1.4.3.tar.gz
-</span><span class='line'><span class="nv">$&gt;</span> tar xvf memcached-1.4.3.tar.gz
-</span><span class='line'><span class="nv">$&gt;</span> <span class="nb">cd </span>memcached-1.4.3
-</span><span class='line'><span class="nv">$&gt;</span> ./configure --enable-sasl
-</span><span class='line'><span class="nv">$&gt;</span> sed -i <span class="s1">&#39;s/-Werror//g&#39;</span> Makefile
-</span><span class='line'><span class="nv">$&gt;</span> make
-</span><span class='line'><span class="nv">$&gt;</span> sudo make install
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Cài đặt libmemcached</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>install.sh </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> wget https://launchpad.net/libmemcached/1.0/1.0.17/+download/libmemcached-1.0.17.tar.gz
-</span><span class='line'><span class="nv">$&gt;</span> tar xvf libmemcached-1.0.17.tar.gz
-</span><span class='line'><span class="nv">$&gt;</span> <span class="nb">cd </span>libmemcached-1.0.17
-</span><span class='line'><span class="nv">$&gt;</span> ./configure
-</span><span class='line'><span class="nv">$&gt;</span> make
-</span><span class='line'><span class="nv">$&gt;</span> sudo make install
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<h1 id="set-up-sasl-với-memcached">Set up SASL với memcached</h1>
-<p>Điều đầu tiên bạn cần đảm bảo đó là set biến môi trường <code>SASL_CONF_PATH</code> khi bạn chay memcached. Trong ví dụ này <code>SASL_CONF_PATH</code> sẽ được trỏ tới <code>/home/kiennt/sasl</code></p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>install.sh </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> <span class="nb">export </span><span class="nv">SASL_CONF_PATH</span><span class="o">=</span>/home/kiennt/sasl
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Sau đó bạn cần set up file memcached.conf trong SASL (tên của file sẽ là tên của ứng dụng SASL - cụ thể ở đây là memcached)</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class=''><span class='line'>mech_list: plain
-</span><span class='line'>log_level: 5
-</span><span class='line'>sasldb_path: /home/kiennt/sasl/sasldb2</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Tiếp theo, bạn cần tạo một file database (được trỏ tới từ bước trước) trong file <code>memcached.conf</code></p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>install.sh </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> sudo saslpasswd2 -c -a memcached -f /home/kiennt/sasl/sasldb2 &lt;username&gt;
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Chú ý rằng cờ -a xác định tên của ứng dụng <code>memcached</code> - chính là tên của config file bạn đã xác định ở trên <code>memcached.conf</code>. Khi bạn chạy <code>saslpasswd2</code>, bạn sẽ được hỏi password và password verify cation.</p>
-<h1 id="chạy-memcached-với-sasl">Chạy memcached với SASL</h1>
-<p>Để chạy memcached với SASL, bạn cần sử dụng cờ <code>-S</code> để bật cơ chế security của mecached lên</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>install.sh </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='sh'><span class='line'><span class="nv">$&gt;</span> <span class="nb">export </span><span class="nv">SASL_CONF_PATH</span><span class="o">=</span>/home/kiennt/sasl
-</span><span class='line'><span class="nv">$&gt;</span> /usr/local/bin/memcached -S -vvv
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<h1 id="tổng-kết">Tổng kết</h1>
-<p>Bài viết này giới thiệu với các cài đặt và chạy memcached với SASL. Giờ bạn có thể tập trung vào việc code ứng dụng của bạn rồi.</p>
 		
 		
 	</div>

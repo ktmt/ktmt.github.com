@@ -7,7 +7,7 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Sep 17th, 2013 iOS Comments Những Mẹo Lập Trình Với Objective-C Phần 2 Tiếp theo phần trước, trong bài viết này sẽ giới thiệu 1 kỹ thuật khác trong &hellip;">
+	<meta name="description" content="Oct 7th, 2013 Comments Assembly vs C Giới thiệu “Không ngôn ngữ lập trình nào có thể sinh mã chạy nhanh hơn mã assembly được viết cẩn thận” Đây là &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -76,6 +76,364 @@
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-10-07T19:05:00+09:00" data-updated="true" itemprop="datePublished">Oct 7<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/10/07/C-vs-assembly/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/10/07/C-vs-assembly/" itemprop="url">Assembly vs C</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1 id="giới-thiệu">Giới thiệu</h1>
+<blockquote>
+<p>“Không ngôn ngữ lập trình nào có thể sinh mã chạy nhanh hơn mã assembly được viết cẩn thận”</p>
+</blockquote>
+<p>Đây là điều đã được nói đến rất nhiều tại nhiều diễn đàn và blog công nghệ nhưng hầu như không có ví dụ minh hoạ nào cụ thể?? Để kiểm chứng tuyên bố trên, mình đã thử viết 1 chương trình bằng ngôn ngữ C, sau đó thử optimize chương trình bằng mã assembly, và cuối cùng đo thời gian chạy của 2 phiên bản. Điều mình rút ra là thực sự 1 chương trình assembly chạy nhanh hơn hẳn chương trình C tương tự, đúng như tuyên bố.</p>
+<p>Bài viết này viết về quá trình mình kiểm chứng cũng như những điều rút ra từ quá trình này.</p>
+<h1 id="bài-toán">Bài toán</h1>
+<p>Ta sẽ giải quyết bài toán: “biểu diễn tập con bằng số nhị phân”.</p>
+<p>Ta có thể biểu diễn tập hợp con của 1 tập hợp bằng 1 chuỗi bit. Ví dụ xét tập hợp 4 phần tử, thì “0101” là 1 tập con. Ta có thể diễn giải chuỗi trên như sau: tập con có sự <strong>xuất hiện</strong> của phần tử vị trí 0 và 2. Nói 1 cách mình hoạ xét chuỗi ký tự “abcd” thì với chuỗi nhị phân ở trên ta có tập con “bd”.</p>
+<p>Bài toán là làm thế nào để liệt kê tất cả các tập con 2 phần tử của tập hợp trên. Nói cách khác liệt kê các xâu có 2 ký tự từ xâu “abcd”</p>
+<h1 id="thuật-toán">Thuật toán</h1>
+<p>Ta sẽ sử dụng thuật toán được <strong>nghĩ ra</strong> bởi Bill Gosper được lưu lại trong <a href="http://www.inwap.com/pdp10/hbaker/hakmem/hakmem.html">HAKMEM</a> số 175 (Hacker Memo) nổi tiếng của phóng thí nghiệm trí tuệ nhân tạo của trường MIT.</p>
+<p>Thuật toán như sau: Giả sử có chuỗi bit <strong>x = xxx0 1111 0000</strong> (xxx là 1 chuỗi bit 0 bất kỳ). Ta cần tìm cách sinh ra chuỗi bit có số lượng bit 1 không đổi. Nói cách khác kết quả của hàm sinh sẽ từ chuỗi hiện tại phải là <strong>xxx1 0000 0111</strong>. Các bước sinh diễn ra như sau:</p>
+<ol type="1">
+<li>Thuật toán bắt đầu bằng cách tìm bit 1 cuối cùng bên phải bằng công thức s = x &amp; -x cho ra kết quả <strong>xxx0 0001 0000</strong></li>
+<li>Cộng kết quả hiện tại với x cho ra kết quả r = xxx1 0000 0000. Bit 1 ở đây là 1 bit trong kết quả.</li>
+<li>Đối với các bit kết quả còn lại, chúng ta tiến hành <strong>điều chỉnh</strong> n-1 bit 1, trong đấy n là số lượng bit 1 của nhóm bit 1 nằm bên phải nhất. Cụ thể ở đây là nhóm 1111. Ta có thể làm điều này bằng cách đầu tiên exclusive or (xor) r với x cho kết quả <strong>xxx1 1111 0000</strong>. Ta chia kết quả này cho s (là luỹ thừa của 2) và dịch kết quả có được thêm 2 vị trí nữa để loại bỏ bit không cần thiết. Kết quả có được là giá trị điểu chỉnh cuối cùng này or với r.</li>
+</ol>
+<p>Công thức đại số để tính các bước ở trên như sau:</p>
+<pre><code> s &lt;- x &amp; -x
+ y &lt;- s + x
+ y &lt;- r | (((x xor r) &gt;&gt; 2) / s)</code></pre>
+<h1 id="chương-trình.">Chương trình.</h1>
+<p>Ta sẽ benchmark bằng cách đo thời gian chạy của thuật toán viết bằng ngôn ngữ C và assembly rồi so sánh thời gian chạy của 2 chương trình viết bằng 2 ngôn ngữ với nhau.</p>
+<h2 id="chương-trình-viết-bằng-c">Chương trình viết bằng C</h2>
+<p>Để benchmark ta viết chương trình C biểu diễn thuật toán trên. binreprlà hàm giúp in giá trị nhị phân giúp quá trình kiểm tra được dễ dàng hơn. Nội dung thuật toán được viết trong hàm snoob_c:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>snoob.c </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="nf">binrepr</span><span class="p">(</span><span class="kt">unsigned</span> <span class="n">a</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="n">r</span><span class="p">[</span><span class="mi">32</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">32</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">r</span><span class="p">[</span><span class="mi">31</span> <span class="o">-</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">a</span> <span class="o">&gt;&gt;</span> <span class="n">i</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="sc">&#39;0&#39;</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="n">puts</span><span class="p">(</span><span class="n">r</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">unsigned</span> <span class="nf">snoob_c</span><span class="p">(</span><span class="kt">unsigned</span> <span class="n">x</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>        <span class="kt">unsigned</span> <span class="n">smallest</span><span class="p">,</span> <span class="n">ripple</span><span class="p">,</span> <span class="n">ones</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">smallest</span> <span class="o">=</span> <span class="n">x</span> <span class="o">&amp;</span> <span class="o">-</span><span class="n">x</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">ripple</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">smallest</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">ones</span> <span class="o">=</span> <span class="n">x</span> <span class="o">^</span> <span class="n">ripple</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">ones</span> <span class="o">=</span> <span class="p">(</span><span class="n">ones</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">smallest</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">ripple</span> <span class="o">|</span> <span class="n">ones</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">scanf</span><span class="p">(</span><span class="s">&quot;%d&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">a</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">binrepr</span><span class="p">(</span><span class="n">a</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">b</span> <span class="o">=</span> <span class="n">snoob_c</span><span class="p">(</span><span class="n">a</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">binrepr</span><span class="p">(</span><span class="n">b</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<div>
+<pre><code class='bash'>$ gcc -o snoob snoob.c
+$ ./snoob
+752
+00000000000000000000001011110000
+00000000000000000000001100000111</code></pre>
+</div>
+<p>Tuyệt thuật toán chạy đúng! Ta sẽ cho thuật toán trên chạy 100 000 000 lần và đo tổng thời gian. Ta sửa lại hàm main như dưới đây:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>snoob.c </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">a</span> <span class="o">=</span> <span class="mi">752</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">100000000</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">b</span> <span class="o">=</span> <span class="n">snoob_c</span><span class="p">(</span><span class="n">a</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<div>
+<pre><code class='bash'>$ gcc -o snoob snoob.c
+$ time ./snoob
+./snoob  0.83s user 0.00s system 99% cpu 0.832 total</code></pre>
+</div>
+<p>Chương trình chạy 100 triệu lần hết 0.83s! C quả thực rất nhanh.</p>
+<h2 id="chương-trình-viết-bằng-assembly">Chương trình viết bằng assembly</h2>
+<p>Để có thể optimize hàm snoob, ta sẽ thử quan sát mã assembly của hàm snoob_c do gcc sinh ra:</p>
+<div>
+<pre><code class='bash'>$ gdb snoob
+(gdb) disassemble snoob_c
+Dump of assembler code for function snoob_c:
+0x0000000100000e20 &lt;snoob_c+0&gt;: push   rbp
+0x0000000100000e21 &lt;snoob_c+1&gt;: mov    rbp,rsp
+0x0000000100000e24 &lt;snoob_c+4&gt;: mov    DWORD PTR [rbp-0x4],edi
+0x0000000100000e27 &lt;snoob_c+7&gt;: mov    eax,DWORD PTR [rbp-0x4]
+0x0000000100000e2a &lt;snoob_c+10&gt;:        mov    ecx,0x0
+0x0000000100000e2f &lt;snoob_c+15&gt;:        sub    ecx,eax
+0x0000000100000e31 &lt;snoob_c+17&gt;:        mov    eax,DWORD PTR [rbp-0x4]
+0x0000000100000e34 &lt;snoob_c+20&gt;:        and    ecx,eax
+0x0000000100000e36 &lt;snoob_c+22&gt;:        mov    DWORD PTR [rbp-0x10],ecx
+0x0000000100000e39 &lt;snoob_c+25&gt;:        mov    eax,DWORD PTR [rbp-0x4]
+0x0000000100000e3c &lt;snoob_c+28&gt;:        mov    ecx,DWORD PTR [rbp-0x10]
+0x0000000100000e3f &lt;snoob_c+31&gt;:        add    eax,ecx
+0x0000000100000e41 &lt;snoob_c+33&gt;:        mov    DWORD PTR [rbp-0x14],eax
+0x0000000100000e44 &lt;snoob_c+36&gt;:        mov    eax,DWORD PTR [rbp-0x4]
+0x0000000100000e47 &lt;snoob_c+39&gt;:        mov    ecx,DWORD PTR [rbp-0x14]
+0x0000000100000e4a &lt;snoob_c+42&gt;:        xor    eax,ecx
+0x0000000100000e4c &lt;snoob_c+44&gt;:        mov    DWORD PTR [rbp-0x18],eax
+0x0000000100000e4f &lt;snoob_c+47&gt;:        mov    eax,DWORD PTR [rbp-0x18]
+0x0000000100000e52 &lt;snoob_c+50&gt;:        shr    eax,0x2
+0x0000000100000e55 &lt;snoob_c+53&gt;:        mov    ecx,DWORD PTR [rbp-0x10]
+0x0000000100000e58 &lt;snoob_c+56&gt;:        xor    edx,edx
+0x0000000100000e5a &lt;snoob_c+58&gt;:        div    ecx
+0x0000000100000e5c &lt;snoob_c+60&gt;:        mov    DWORD PTR [rbp-0x18],eax
+0x0000000100000e5f &lt;snoob_c+63&gt;:        mov    ecx,DWORD PTR [rbp-0x14]
+0x0000000100000e62 &lt;snoob_c+66&gt;:        or     ecx,eax
+0x0000000100000e64 &lt;snoob_c+68&gt;:        mov    DWORD PTR [rbp-0xc],ecx
+0x0000000100000e67 &lt;snoob_c+71&gt;:        mov    DWORD PTR [rbp-0x8],ecx
+0x0000000100000e6a &lt;snoob_c+74&gt;:        mov    eax,DWORD PTR [rbp-0x8]
+0x0000000100000e6d &lt;snoob_c+77&gt;:        pop    rbp
+0x0000000100000e6e &lt;snoob_c+78&gt;:        ret
+0x0000000100000e6f &lt;snoob_c+79&gt;:        nop
+End of assembler dump.
+(gdb)</code></pre>
+</div>
+<p>Quan sát mã assembly ta có vài nhận xét sau:</p>
+<ul>
+<li>Mã rất dài. Bên cạnh các instruction dùng để tính toán, các instruction dùng để di chuyển dữ liệu cũng chiếm khá nhiều thời gian chạy.</li>
+<li>Các kết quả tính toán trung gian được ghi ra bộ nhớ (do ta dùng các biến smalless, ripples, ones)</li>
+</ul>
+<p>Theo như <a href="https://gist.github.com/talzeus/2851656">“con số về độ trễ mà mọi lập trình viên nên biết”</a>, thì truy cập bộ nhớ / cache dù rất nhanh (tốn 0.5ns) vẫn chậm hơn rất nhiều so với truy cập trực tiếp từ thanh ghi. Ta đặt câu hỏi liệu có thể giảm thiểu lượt truy cập bộ nhớ cache được không?</p>
+<p>Quay trở lại thuật toán, ta thấy công thức đại số dùng 6 phép tính. Số lượng biến sử dụng chỉ có 4 biến. Do đó ta hoàn toàn có thể loại bổ các truy cập bộ nhớ, tính toán trực tiếp bằng các thanh ghi. Ta có hàm snoob viết bằng assembly như sau:</p>
+<div>
+<pre><code class='bash'>section .text
+                global _snoob
+
+;;; HAK Item 175
+_snoob:
+                push ebp
+                mov ebp, esp
+                mov ecx, [ebp + 8]
+                mov ebx, ecx
+                mov eax, ecx
+                neg ebx
+                and ebx, ecx
+                add eax, ebx
+                mov edi, eax
+                xor eax, ecx
+                shr eax, 2
+                xor edx, edx
+                div ebx
+                or eax, edi
+                pop ebp</code></pre>
+</div>
+<p>Ta thay code hàm main thay vì gọi đến snoob_c ta gọi đến hàm snoob ở trên:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>snoob.c </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">extern</span> <span class="kt">unsigned</span> <span class="nf">snoob</span><span class="p">(</span><span class="kt">unsigned</span> <span class="n">a</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="nf">binrepr</span><span class="p">(</span><span class="kt">unsigned</span> <span class="n">a</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="n">r</span><span class="p">[</span><span class="mi">32</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">32</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">r</span><span class="p">[</span><span class="mi">31</span> <span class="o">-</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">a</span> <span class="o">&gt;&gt;</span> <span class="n">i</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="sc">&#39;0&#39;</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="n">puts</span><span class="p">(</span><span class="n">r</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">scanf</span><span class="p">(</span><span class="s">&quot;%d&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">a</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">binrepr</span><span class="p">(</span><span class="n">a</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">b</span> <span class="o">=</span> <span class="n">snoob</span><span class="p">(</span><span class="n">a</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">binrepr</span><span class="p">(</span><span class="n">b</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<div>
+<pre><code class='bash'>$ yasm -a x86 -f macho binrepr.asm
+$ gcc -m32 -c snoob.c
+$ gcc -m32 -o snoob snoob.o binrepr.o
+$ ./snoob
+752
+00000000000000000000001011110000
+00000000000000000000001100000111</code></pre>
+</div>
+<p>Chương trình chạy đúng! Giờ đến phẩn benchmark. Ta sử dụng lại đoạn code benchmark, lần này thay vì gọi hàm snoob_c ta gọi hàm snoob viết bằng assembly. Ta có kết quả như sau:</p>
+<div>
+<pre><code class='bash'>$ gcc -m32 -c snoob.c
+$ gcc -m32 -o snoob snoob.o binrepr.o
+$ time ./snoob
+./snoob  0.53s user 0.00s system 99% cpu 0.536 total</code></pre>
+</div>
+<p>Ta có thể thấy tốc độ thay đổi 1 cách đáng kể! Thời gian chạy chỉ bằng <strong>63.85%</strong> thời gian chạy lần trước đấy.</p>
+<p>※<em>Các đoạn code được chạy trên máy tính có phần cứng: cpu corei7, 8G Ram</em></p>
+<h1 id="kết-luận">Kết luận</h1>
+<ul>
+<li>Bằng việc trực tiếp kiểm chứng, ta công nhận rằng mã viết bằng assembly nếu được optimize cẩn thận sẽ chạy nhanh hơn hẳn mã sinh bởi các ngôn ngữ bậc cao như C.</li>
+<li>Assembly rất thú vị. Ta có cảm giác kiểm soát toàn bộ máy tính!</li>
+</ul>
+<h1 id="tham-khảo">Tham khảo</h1>
+<ol type="1">
+<li><a href="http://www.hackersdelight.org/">Hacker Delights</a></li>
+<li><a href="http://www.inwap.com/pdp10/hbaker/hakmem/hakmem.html">HAKMEM</a></li>
+</ol>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -646,497 +1004,6 @@
 <li>UDFs được viết sẵn <a href="https://cwiki.apache.org/confluence/display/PIG/PiggyBank">Piggy Bank</a>.</li>
 <li><a href="http://blog.cloudera.com/wp-content/uploads/2010/01/IntroToPig.pdf">Slide giới thiệu tổng hợp của Cloudera</a>.</li>
 </ul>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-09-10T16:33:00+09:00" data-updated="true" itemprop="datePublished">Sep 10<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/09/10/su-dung-metaclass-trong-python/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/09/10/su-dung-metaclass-trong-python/" itemprop="url">Sử Dụng Metaclass Trong Python</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<p>Bài viết này trình bày về metaclass và một số cách dùng metaclass trong Python. Để hiểu bài viết này, bạn nên có kiến thức về <code>magic method</code> trong Python. Cụ thể là các hàm <code>__init__</code>, <code>__new__</code>, <code>__call__</code></p>
-<h1 id="metaclass-là-gì">1. Metaclass là gì</h1>
-<p>Trong Python, tất cả mọi thứ đều là object, là instance của một Class nào đó. Để kiểm tra class của một object, chúng ta có thể sử dụng hàm <code>type</code> hoặc thuộc tính <code>__class__</code></p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>test.py </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='py'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">__class__</span>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">type</span> <span class="s">&#39;int&#39;</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">A</span><span class="p">:</span> <span class="k">pass</span>
-</span><span class='line'>    <span class="o">...</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="n">A</span><span class="p">()</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
-</span><span class='line'><span class="o">&lt;</span><span class="k">class</span> <span class="err">&#39;</span><span class="nc">__main__</span><span class="o">.</span><span class="n">A</span><span class="s">&#39;&gt;</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Trong ví dụ trên, a là một instance của class A, class của a chính là A. Vậy còn kiểu của A là gì?</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>test.py </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='py'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="nb">type</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">type</span> <span class="s">&#39;type&#39;</span><span class="o">&gt;</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Kiểu của A là <code>type</code>. Bởi vì mặc đinh thì class A tạo bởi hàm <a href="http://docs.python.org/2/library/functions.html#type"><code>type</code></a>, với 3 tham số truyền vào</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>test.py </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='py'><span class='line'><span class="nb">type</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">name</span> <span class="o">-</span> <span class="n">T</span><span class="err">ê</span><span class="n">n</span> <span class="n">c</span><span class="err">ủ</span><span class="n">a</span> <span class="k">class</span> <span class="nc">s</span><span class="err">ẽ</span> <span class="err">đượ</span><span class="n">c</span> <span class="n">t</span><span class="err">ạ</span><span class="n">o</span> <span class="n">ra</span>
-</span><span class='line'>    <span class="n">bases</span> <span class="o">-</span> <span class="n">Tuple</span> <span class="n">danh</span> <span class="n">s</span><span class="err">á</span><span class="n">ch</span> <span class="n">c</span><span class="err">á</span><span class="n">c</span> <span class="n">parent</span> <span class="k">class</span> <span class="nc">c</span><span class="err">ủ</span><span class="n">a</span> <span class="k">class</span> <span class="nc">s</span><span class="err">ẽ</span> <span class="err">đượ</span><span class="n">c</span> <span class="n">t</span><span class="err">ạ</span><span class="n">o</span> <span class="n">ra</span>
-</span><span class='line'>    <span class="nb">dict</span> <span class="o">-</span> <span class="n">Danh</span> <span class="n">s</span><span class="err">á</span><span class="n">ch</span> <span class="n">c</span><span class="err">á</span><span class="n">c</span> <span class="n">thu</span><span class="err">ộ</span><span class="n">c</span> <span class="n">t</span><span class="err">í</span><span class="n">nh</span> <span class="n">c</span><span class="err">ủ</span><span class="n">a</span> <span class="k">class</span> <span class="nc">s</span><span class="err">ẽ</span> <span class="err">đượ</span><span class="n">c</span> <span class="n">t</span><span class="err">ạ</span><span class="n">o</span> <span class="n">ra</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Sử dụng hàm <code>type</code>, chúng ta có thể tạo ra một class mới</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>test.py </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='py'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">Person</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="s">&#39;Person&#39;</span><span class="p">,</span> <span class="p">(),</span> <span class="p">{</span><span class="s">&#39;country&#39;</span><span class="p">:</span> <span class="s">&#39;vietnam&#39;</span><span class="p">}</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">Person</span><span class="o">.</span><span class="n">country</span>
-</span><span class='line'><span class="n">vietnam</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Chúng ta có thể thay đổi quá trình tạo ra class A bằng cách set thuộc tính <code>__metaclass__</code> của A. Thuộc tính <code>__metaclass__</code> là một callable object (một function, hoặc một object) nhận 3 tham số truyền vào như hàm <code>type</code> nói trên.</p>
-<p>Khi định nghĩa một class bằng từ khoá <code>class</code>, nếu <code>__metaclass__</code> được set, metaclass sẽ được gọi sau khi các thuộc tính khác của class đã được set.</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>test.py </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">PersonMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">PersonMeta</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">PersonMeta</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">country</span> <span class="o">=</span> <span class="s">&#39;Vietnam&#39;</span>
-</span><span class='line'>    <span class="n">people</span> <span class="o">=</span> <span class="p">[]</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p><code>PersonMeta</code> sẽ được gọi với các tham số (‘Person’, (object), {‘country’: ‘Vietnam’, ‘people’: []}). Bằng cách metaclass được gọi cuối cùng, chúng ta có thể sử dụng metaclass để can thiệp vào qúa trình tạo ra class, cụ thể là các thuộc tính ở mức class của class đó. Có thể coi Metaclass là Class của class. Và class là một instance của Metaclass. Những thuộc tính của ở mức class của một class (các class attribute, các <span class="citation" data-cites="classmethod">@classmethod</span>) chính là các thuộc tính ở mức instance của một Metaclass</p>
-<h1 id="giới-thiệu-một-số-trường-hợp-sử-dụng-metaclass">2. Giới thiệu một số trường hợp sử dụng Metaclass</h1>
-<p>Metaclass là một trong những <code>black magic</code> và rất ít khi được sử dụng trong Python.</p>
-<p>“Metaclasses are deeper magic than 99% of users should ever worry about. If you wonder whether you need them, you don’t (the people who actually need them know with certainty that they need them, and don’t need an explanation about why).” -Python Guru Tim Peters&quot;</p>
-<p>(Tạm dịch: Metaclass sâu sắc hơn 99% những gì mà người dùng nên lo lắng. Nếu bạn phân vân khi nào bạn cần chúng, bạn sẽ không bao giờ cần (những người thực sự cần Metaclass, sẽ biết chính xác trong trường hợp nào họ cần, và không cần phải giải thích lý do vì sao)</p>
-<p>Tuy nhiên để giúp bạn đọc hiểu rõ metaclass, trong bài viết này, tôi trình bày 2 ví dụ về cách sử dụng metaclass</p>
-<h2 id="sử-dụng-metaclass-để-can-thiệp-vào-việc-tạo-instance-của-class">2.1. Sử dụng metaclass để can thiệp vào việc tạo instance của class</h2>
-<p>Giả sử chúng ta có B là metaclass của A. Việc tạo ra một instance của A chính là việc gọi hàm <code>A(*args, **kwargs)</code>. Nhưng vì A là một instance của B, nên gọi A, chính là gọi hàm <code>__call__</code> của một instance của B. Do đó, để can thiệp vào quá trình tạo instance của class, chúng ta có thể override hàm <code>__call__</code> trong class B</p>
-<p>Xét ví dụ chúng ta muốn tạo ra một Singleton class bằng Metaclass</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>singleton.py </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">SingletonMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span> <span class="o">=</span> <span class="bp">None</span>
-</span><span class='line'>        <span class="nb">super</span><span class="p">(</span><span class="n">SingletonMeta</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="p">:</span>
-</span><span class='line'>            <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">SingletonMeta</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__call__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</span><span class='line'>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">SingletonMeta</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;kiennt&#39;</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="mi">26</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">a</span> <span class="o">=</span> <span class="n">Person</span><span class="p">()</span>
-</span><span class='line'><span class="k">print</span> <span class="n">a</span><span class="o">.</span><span class="n">name</span> <span class="c"># kiennt</span>
-</span><span class='line'><span class="k">print</span> <span class="n">a</span><span class="o">.</span><span class="n">age</span> <span class="c"># 26</span>
-</span><span class='line'><span class="n">b</span> <span class="o">=</span> <span class="n">Person</span><span class="p">()</span>
-</span><span class='line'><span class="k">print</span> <span class="n">b</span> <span class="o">==</span> <span class="n">a</span> <span class="c"># True</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Nếu bỏ thuộc tính <code>__metaclass__</code> trong class Person, thì b sẽ không bằng a nữa</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>singleton.py </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="c">#__metaclass__ = SingletonMeta</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;kiennt&#39;</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="mi">26</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">a</span> <span class="o">=</span> <span class="n">Person</span><span class="p">()</span>
-</span><span class='line'><span class="n">b</span> <span class="o">=</span> <span class="n">Person</span><span class="p">()</span>
-</span><span class='line'><span class="k">print</span> <span class="n">b</span> <span class="o">==</span> <span class="n">a</span> <span class="c"># False</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<h2 id="sử-dụng-metaclass-để-can-thiệp-vào-các-thuộc-tính-của-một-class">2.2. Sử dụng metaclass để can thiệp vào các thuộc tính của một class</h2>
-<p>Hãy xem xét một ví dụ về cài đặt ORM (Object Relational Mapping)</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>orm.py </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Field</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">pass</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">CharField</span><span class="p">(</span><span class="n">Field</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">pass</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">IntegerField</span><span class="p">(</span><span class="n">Field</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">pass</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">name</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">age</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Giờ nếu chúng ta muốn lưu một biến <code>_fields</code> để chứa tất cả các thuộc tính của class là một instance của <code>Field</code>, chúng ta có thể sử dụng metaclass để can thiệp</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>orm.py </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">ModelMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
-</span><span class='line'>        <span class="c"># get all Field attributes</span>
-</span><span class='line'>        <span class="n">fields</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span class='line'>        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-</span><span class='line'>            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">Field</span><span class="p">):</span>
-</span><span class='line'>                <span class="n">fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">__class__</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="c">## update attrs</span>
-</span><span class='line'>        <span class="n">attrs</span><span class="p">[</span><span class="s">&#39;_fields&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fields</span>
-</span><span class='line'>        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">ModelMeta</span><span class="p">,</span> <span class="n">cls</span><span class="p">)</span><span class="o">.</span><span class="n">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">ModelMeta</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">name</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">age</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">print</span> <span class="n">Programmer</span><span class="o">.</span><span class="n">_fields</span> <span class="c"># [&lt;class &#39;__main__.IntegerField&#39;&gt;, &lt;class &#39;__main__.CharField&#39;&gt;]</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Chú ý rằng <code>__new__</code> là static class, nên chúng ta cần truyền <code>cls</code> vào trong lời gọi <code>super(ModelMeta, cls).__new__(cls, name, bases, attrs)</code></p>
-<p>Nếu không implement ở trong hàm <code>__new__</code>, chúng ta có thể implement ở trong hàm <code>__init__</code> của metaclass như sau</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>orm.py </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">ModelMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span class='line'>        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-</span><span class='line'>            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">Field</span><span class="p">):</span>
-</span><span class='line'>                <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">__class__</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Programmer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">ModelMeta</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">name</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">age</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">print</span> <span class="n">Programmer</span><span class="o">.</span><span class="n">_fields</span> <span class="c"># [&lt;class &#39;__main__.IntegerField&#39;&gt;, &lt;class &#39;__main__.CharField&#39;&gt;]</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Tuy nhiên cách implement này thường it khi được sử dụng bằng cách implement thứ nhất trong hàm <code>__new__</code>, vì trong Python, hàm <code>__new__</code> thường được sử dụng để allocate object, và <code>__init__</code> được sử dụng để khởi tạo object</p>
-<h1 id="kết-luận">3. Kết luận</h1>
-<p>Bài viết trình bày về khái niệm metaclass và một số cách sử dụng metaclass trong python. Với metaclass, chúng ta có thể thay đổi các thuộc tính ở mức class của một class thông qua hàm <code>__new__</code> và <code>__init__</code> của Metaclass, can thiệp vào quá trình tạo ra instance của class bằng cách thay đổi hàm <code>__call__</code> của metaclass.</p>
-<p>Metaclass là một trong những vấn đề khó và ít khi gặp trong python. Để hiểu và sử dụng metaclass một cách dễ dàng,cách ngăn nhất là code và đọc code python thật nhiều</p>
-<h1 id="tham-khảo">4. Tham khảo</h1>
-<p><a href="http://www.amazon.com/Python-Cookbook-David-Beazley/dp/1449340377">Python Cookbook</a></p>
-<p><a href="https://github.com/kiddouk/redisco">redisco</a></p>
 		
 		
 	</div>
