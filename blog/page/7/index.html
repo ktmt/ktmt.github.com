@@ -7,8 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jan 6th, 2014 Clang, Compiler, Modules, Objective-C, iOS Comments #include, #import, @import (Clang Modules) Mở đầu
-Happy New Year! Chúc mọi người &hellip;">
+	<meta name="description" content="Mar 3rd, 2014 Comments Full Text Search Từ Khái Niệm đến Thực Tiễn (Phần 4) Introduction
+Trong phần 3, các bạn đã được tìm hiểu về việc sử dụng &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -82,6 +82,66 @@ Happy New Year! Chúc mọi người &hellip;">
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-03T01:43:00+09:00" data-updated="true" itemprop="datePublished">Mar 3<span>rd</span>, 2014</time></div>
+		<div class="tags">
+
+</div>
+		
+			<span class="comments"><a href="/blog/2014/03/03/full-text-search-tu-khai-niem-den-thuc-tien-phan-4/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2014/03/03/full-text-search-tu-khai-niem-den-thuc-tien-phan-4/" itemprop="url">Full Text Search Từ Khái Niệm đến Thực Tiễn (Phần 4)</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1 id="introduction">Introduction</h1>
+<p>Trong <a href="http://ktmt.github.io/blog/2014/01/04/full-text-search-engine-part-3/">phần 3</a>, các bạn đã được tìm hiểu về việc sử dụng Boolean Logic để tìm ra các Document chứa các term trong query cần tìm kiếm. Vậy sau khi tìm được các Document thích hợp rồi thì chỉ việc trả lại cho người dùng, hay đưa lên màn hình? Bài toán sẽ rất đơn giản khi chỉ có 5, 10 kết quả, nhưng khi kết quả lên đến hàng trăm nghìn, thì mọi việc sẽ không đơn giản là trả lại kết quả nữa. Lúc đó sẽ có vấn đề mới cần giải quyết, đó là <strong>đưa kết quả nào lên trước</strong>, hay chính là bài toán về <strong>Ranking</strong></p>
+<p>Việc Ranking trong Full Text Search thông thường sẽ được thực hiện thông qua việc <strong>tính điểm</strong> các Document được tìm thấy, rồi Rank dựa vào điểm số tính được. Việc tính điểm thế nào sẽ được thực hiện thông qua các công thức, hay thuật toán, mà mình gọi chung là <strong>Ranking Model</strong></p>
+<h1 id="ranking-model">Ranking Model</h1>
+<p>Trong bài viết về <a href="http://ktmt.github.io/blog/2013/08/06/a-little-bit-about-news-ranking/">Ranking news</a>, mình đã nói về việc giải quyết một bài toán gần tương tự. Tuy nhiên bài toán lần này cần giải quyết khác một chút, đó là việc Ranking sẽ phải thực hiện dựa trên mối quan hệ giữa “query terms” và “document”.</p>
+<p>Ranking Model được chia làm 3 loại chính: <strong>Static, Dynamic, Machine Learning</strong>. Dưới đây mình sẽ giới thiệu lần lượt về mỗi loại này.</p>
+<h1 id="static">Static</h1>
+<p>Static ở đây có nghĩa là, Ranking Model thuộc loại này sẽ <strong>không phụ thuộc</strong> vào mối quan hệ ngữ nghĩa giữa “query term” và “document”. Tại sao không phụ thuộc vào “query term” mà vẫn ranking được? Việc này được giải thích dựa theo quan điểm khoa học là <code>độ quan trọng của document phụ thuộc vào mối quan hệ giữa các document với nhau</code>.</p>
+<p>Chúng ta sẽ đi vào cụ thể một Ranking Model rất nổi tiếng trong loại này, đó chính là <a href="http://en.wikipedia.org/wiki/PageRank">PageRank</a>. PageRank là thuật toán đời đầu của Google, sử dụng chủ yếu cho web page, khi mà chúng có thể “link” được đến nhau. Idea của PageRank là “Page nào càng được nhiều link tới, và được link tới bởi các page càng quan trọng, thì score càng cao”. Để tính toán được PageRank, thì chúng ta chỉ cần sử dụng WebCrawler để crawl được mối quan hệ “link” giữa tất cả các trang web, và tạo được một Directed Graph của chúng.</p>
+<p>Chính vì cách tính theo kiểu, tạo được Graph xong là có score, nên mô hình dạng này được gọi là “Static”.</p>
+<p>Ngoài PageRank ra còn có một số thuật toán khác gần tương tự như <a href="http://en.wikipedia.org/wiki/HITS_algorithm">HITS</a> đã từng được sử dụng trong Yahoo! trong thời gian đầu.</p>
+<h1 id="dynamic">Dynamic</h1>
+<p>Ranking Model thuộc dạng Dynamic dựa chủ yếu vào <strong>Mối quan hệ</strong> giữa “query term” và “document”. Có rất nhiều thuật toán thuộc dạng này, có thuật toán dựa vào tần suất xuất hiện của “query term” trong document, có thuật toán lại dựa vào các đặc tính ngữ nghĩa (semantic) của query term , có thuật toán lại sử dụng những quan sát mang tính con người như thứ tự xuất hiện các từ trong “query term” và thứ tự xuất hiện trong “document”.</p>
+<p>Một trong những thuật toán được sử dụng nhiều nhất là <a href="http://en.wikipedia.org/wiki/Tf%E2%80%93idf">TF-IDF</a> (Term Frequency Inverse Document Frequency). Thuật toán này dựa vào Idea là “query term” xuất hiện càng nhiều trong document, document sẽ có điểm càng cao.</p>
+<p>Thuật toán này được biểu diễn dưới công thức sau <span class="math">\[TF-IDF(t, d, D) = TF(t, d) * IDF (t, D)\]</span> Ở đây t là query term, d là document cần được score, và D là tập hợp “tất cả” các documents. Trong đó thì: <span class="math">\[TF(t, d) = frequency(t, d)\]</span> <span class="math">\[IDF(t, D) = log{N \over \|\{d \in D : t \in d\}\|}\]</span></p>
+<p>Một cách đơn giản thì:</p>
+<ul>
+<li>TF : tần suất xuất hiện của term t trong document d</li>
+<li>IDF : chỉ số này biểu hiện cho tần suất xuất hiện của term t trong toàn bộ các documents. t xuất hiện càng nhiều, chỉ số càng thấp (vì xuất hiện quá nhiều đồng nghĩa với độ quan trọng rất thấp)</li>
+</ul>
+<p>Công thức của TF-IDF đã phối hợp một cách rất hợp lý giữa tần suất của term và ý nghĩa/độ quan trọng của term đó.</p>
+<p>Trong thực tế thì người ta hay sử dụng thuật toán <a href="http://en.wikipedia.org/wiki/Okapi_BM25">Okapi BM25</a> hay gọi tắt là BM25, là một mở rộng của TF-IDF, nhưng thêm một vài weight factor hợp lý.</p>
+<h1 id="machine-learning">Machine Learning</h1>
+<p>Ngoài việc sử dụng các mối quan hệ đơn giản giừa query term và document, hay giứa document với nhau, thì gần đây việc sử dụng học máy (Machine Learning) trong Ranking cũng đang trở nên rất phổ biến. Để nói về Machine Learning thì không gian bài viết này có lẽ là không đủ, mình sẽ nói về ý tưởng của Model này.</p>
+<p>Idea của việc sử dụng Machine Learning trong ranking là chúng ta sẽ sử dụng một mô hình xác suất để tính toán. Cụ thể hơn là chúng ta sẽ sử dụng supervised learning, nghĩa là chúng ta sẽ có input là một tập dữ liệu X để training, một model M ban đầu, một hàm error để so sánh kết quả output X’ có được từ việc áp dụng model M vào query term, và một hàm boost để từ kêt quả của hàm error chúng ta có thể tính lại được model M. Việc này được lặp đi lặp lại mỗi lần có query, hoặc lặp lại một cách định kỳ (1 ngày 1 lần, 1 tháng 1 lần..) để model M luôn luôn được cải thiện.</p>
+<p>Thuật toán gần đây được sử dụng khá nhiều trong Ranking model chính là Gradient Boosting Decision Tree mà các bạn có thể tham khảo ở <a href="https://www.cse.cuhk.edu.hk/irwin.king/_media/presentations/gbdt-tom.pdf">đây</a></p>
+<h1 id="conclusion">Conclusion</h1>
+<p>Bài viết đã giới thiệu về 3 mô hình chính dùng để Ranking kết quả tìm kiếm trong Full Text Search. Trong thực tế thì các công ty lớn nhưn Google, Yahoo, MS sẽ không có một mô hình cố định nào cả, mà sẽ dựa trên các kết quả có từ người dùng để liên tục cải thiện. Không có một mô hinh nào là “đúng” hay “không đúng” cả, mà để đánh giá Ranking Model chúng ta sẽ phải dựa trên thông kê người dùng (như click rate, view time…). Việc hiểu rõ Ranking Model sẽ giúp chúng ta build được một search engine tốt cho service của mình, đông thời cũng giúp ích rất nhiều cho việc SEO (Search Engine Optimization).</p>
+<p>Tài liệu tham khảo: - <a href="http://jmlr.org/proceedings/papers/v14/chapelle11a/chapelle11a.pdf">Yahoo! Learning to Rank Challenge Overview</a></p>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -587,89 +647,6 @@ Từ ví dụ trên chúng ta thấy rằng độ phức tạp của việc tìm
 <p>Tham khảo:</p>
 <ul>
 <li><a href="http://gihyo.jp/dev/serial/01/make-findspot">Make Findspot</a></li>
-</ul>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-12-22T20:36:00+09:00" data-updated="true" itemprop="datePublished">Dec 22<span>nd</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/dependability/'>dependability</a>, <a class='category' href='/blog/categories/failure/'>failure,</a>, <a class='category' href='/blog/categories/system/'>system,</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/12/22/tro-lai-co-ban-1-do-tin-cay/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/12/22/tro-lai-co-ban-1-do-tin-cay/" itemprop="url">Trở Lại Cơ Bản - Độ Tin Cậy</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h3 id="giới-thiệu">Giới thiệu</h3>
-<p>Các bạn là fan của <a href="http://en.wikipedia.org/wiki/Distributed_computing">tính toán phân tán</a> chắc hẳn đều biết <a href="http://en.wikipedia.org/wiki/Werner_Vogels">Werner Vogels</a> (CTO của amazon) cũng như trang blog <a href="www.allthingsdistributed.com">All Things Distributed</a> của ông. Một trong những loạt bài viết mà cá nhân tôi rất thích là loạt bài viết có tựa đề: Back-to-Basic của Vogels. Trong loạt bài viết này, Vogels giới thiệu những paper nổi tiếng mà những người làm tính toán phân tán cần đọc và tất cả đều hết sức cơ bản.</p>
-<p>Lấy cảm hứng từ trùm bài viết đấy, mình quyết định sẽ viết trùm bài có tựa đề “Trở lại cơ bản” tổng hợp lại những kiến thức cơ bản, trước hết là để cho bản thân và sau đấy để là để chia sẻ cho mọi người (có những thứ bạn nghĩ là cơ bản nhưng không phải ai cũng biết ;) ).</p>
-<p>Bài viết tuần này sẽ nêu khái lược khái niệm độ tin cậy, cách tính độ tin cậy.</p>
-<h3 id="độ-tin-cậy-là-gì">Độ tin cậy là gì?</h3>
-<p>Độ tin cậy có thể hiểu là độ bền của sản phẩm hoặc dịch vụ . Sản phẩm (dịch vụ) của bạn càng bền, chạy càng lâu mà không hỏng hóc gì, thì độ bền của sản phẩm càng cao, và do đó độ tin cậy vào sản phẩm của bạn nói riêng và của người dùng nói chung vào sản phẩm càng cao. Đối với dịch vụ (cloud, website) thì độ tin cậy có thể đo bằng thời gian hệ thống sẵn sàng phục vụ bạn (không bị dừng vì sự cố hay hỏng hóc).</p>
-<p>Với cách hiểu trên, một vấn đề đặt ra là làm thế nào <strong>cân đo đong đếm</strong> độ tin cậy. Ví dụ khi một hãng phần cứng bán cho bạn 1 chiếc ổ cứng và họ bảo đảm với bạn rằng phần cứng của họ có độ tin cậy cao, thì họ dựa vào điều gì để nói như vậy?</p>
-<p>Các hãng bán máy tính đều đưa ra chế độ bảo hành cho sản phẩm của họ, với lời quảng cáo rằng trong thời gian bảo hành họ sẵn sàng thay thế sản phầm của họ nếu sản phẩm của họ bị lỗi. Độ tin cậy như vậy có thể đo bằng thời gian bảo hành. Qua thời gian bảo hành, sản phẩm có thể bị hỏng hóc và hãng sẽ không chịu trách nhiệm cho những hỏng hóc đó. Ví dụ máy tính apple thường có thời gian bảo hành 1 năm.</p>
-<p>Đối với các sản phẩm là dịch vụ trên internet, người ta thường đưa ra các <a href="http://en.wikipedia.org/wiki/Service-level_agreement">Service Level Agreements (SLA)</a> hoặc <strong>Service Level Objectives (SLO)</strong> để quảng cáo cho độ tin cậy của dịch vụ, và họ sẵn sàng bồi thường cho khách hàng nếu sản phẩm của họ không đáp ứng được những “đồng ý” này. Amazon EC2 cam kết trong <a href="http://aws.amazon.com/ec2-sla/">Amazon SLA</a> rằng họ đảm bảo EC2 99.95% có uptime thời gian trong 1 tháng. Nếu họ không đáp ứng điều kiện này, họ sẽ có chính xác bồi thường cho người dùng. Giống như vậy, các công ty dịch vụ cloud khác nhưng rackspace cũng đều có <a href="http://www.rackspace.com/information/legal/cloud/sla">Rackspace SLA</a> của riêng họ. Ngược lại việc hãng cloud như heroku không có một đảm bảo SLA nào ngoài <a href="https://www.heroku.com/policy/promise">Heroku Promise</a>, làm cho độ tin tưởng vào sản phẩm của họ giảm hẳn.</p>
-<h3 id="đo-độ-tin-cậy-thế-nào">Đo độ tin cậy thế nào?</h3>
-<p>Chắc chắn amazon sẽ không ngu gì đưa ra 1 cam kết không tưởng 100% uptime, nhưng họ cũng không thể đưa ra con số quá thấp được vì điều đó sẽ làm giảm khả năng cạnh tranh với các công ty khác. Apple cũng không dại gì đưa ra số năm bảo hành cao hơn vì nó sẽ làm giảm lợi nhuận của họ. Vậy các hãng đưa ra các con số trên như thế nào?</p>
-<p>Mỗi công ty cung câp dịch vụ sẽ có nhiều chỉ số riêng để đánh giá và tính toán trước khi đưa ra con số của dịch vụ của họ, tuy vậy các tính toán đề dựa vào cách tính cơ bản trình bày dưới đây.</p>
-<p>Để tính toán độ tin cậy, ta chia hệ thống làm 2 trạng thái tương ứng như được ghi trong SLA:</p>
-<ul>
-<li>Thời gian phục vụ như cam kết</li>
-<li>Thời gian dừng dịch vụ (do hỏng hóc)</li>
-</ul>
-<p>Hệ thống thay đổi giữa 2 trạng thái này là: hỏng hóc và phục hồi. Để đo được độ tin cậy của hệ thống, ta cần đo được thời gian hệ thống ở 1 trong 2 trạng thái trên. Một hệ thống được xây dựng từ nhiều modules, do vậy độ tin cậy của hệ thống sẽ liên quan đến độ tin cậy của từng module trong hệ thống. Trước hết ta tìm hiểu các chỉ số tương ứng với 2 trạng thái trên.</p>
-<p>Độ tin cậy của 1 thành phần (module) được đo bằng thời gian phục vụ liên tục từ lúc bắt đầu được sử dụng đến lúc hỏng hóc gọi là MTTF (Mean Time to Failure). Nghịch đảo của con số này chính là tỉ lệ hỏng hóc FIT (Failures in time) và thường được đo bằng số hỏng hóc / 1 tỷ giờ vận hành.</p>
-<p>Độ hỏng hóc (hỏng nặng hay nhẹ) được đo bằng MTTR (Mean Time To Repair) hay thời gian từ lúc hệ thống hỏng hóc cho đến lúc được phục hồi.</p>
-<p>Thời gian giữa 2 lần hỏng hóc</p>
-<pre><code>MTBF (Mean Time Between Failures) = MTTF + MTTR</code></pre>
-<p>Tính sẵn sàng của 1 modules (Module availability) được đo bởi thời gian hoạt động cho đến lúc hỏng hóc trên tổng thời gian giữa 2 lần hỏng hóc:</p>
-<pre><code>Module Availability = MTTF / (MTTF + MTTR)</code></pre>
-<p>Từ công thức trên, ta có thể đo được tính sẵn sàng của hệ thống dựa vào tính tin cậy của từng module dùng để xây dựng nên hệ thống.</p>
-<h3 id="áp-dụng">Áp dụng</h3>
-<p>Tính MTTF của 1 hệ thống Giả sử ta có 1 hệ thống được xây dựng bởi</p>
-<ul>
-<li>10 đĩa cứng, mỗi đĩa có MTTF 1000000 giờ</li>
-<li>1 bộ điều khiển <a href="http://en.wikipedia.org/wiki/SCSI">SCSI</a> có MTTF 500000 giờ</li>
-<li>1 bộ nguồn có MTTF 200000 giờ</li>
-<li>1 quạt làm mát có MTTF 200000 giờ</li>
-<li>1 cáp SCSI có MTTF 1000000 giờ.</li>
-</ul>
-<p>Hãy tính MTTF của cả hệ thống.</p>
-<p>Lời giải</p>
-<p>Tỉ lệ hỏng hóc của toàn hệ thống:</p>
-<pre><code>Failure rate = 10 / 1000000 + 1/500000 + 1/200000 + 1/200000 + 1/1000000
-             = (10 + 2 + 5 + 5 + 1) / 1000000 = 23 / 1000000 = 23000 / 1000000000</code></pre>
-<p>hệ thống sẽ có tỉ lệ hỏng hóc 23000FIT. MTTF của hệ thống sẽ bằng nghịch đảo con số trên</p>
-<pre><code>MTTF = 1000000000 / 230000 = 43450 giờ (khoảng 5 năm)</code></pre>
-<p>Từ con số trên, ta có thể thấy mặc dù MTTF của từng module khá lớn, nhưng MTTF của cả hệ thống nói chung chỉ là 5 năm. MTTF của các module trong máy tính cá nhân có lẽ thấp hơn nhiều. Có lẽ vì vậy mà các công ty bán phần cứng không bao giờ đưa ra thời gian bảo hành lâu quá 2, 3 năm! Từ con số này các công ty làm dịch vụ internet cũng phải có cách lập kế hoạch bảo trì thay mới máy chủ để đảm bảo tính tin cậy của dịch vụ của mình. Trong trường hợp công ty mình, tất cả các máy chủ đều được thay mới sau 5 năm (Và giờ bạn đã hiều tại sao phải thay và con số 5 này từ đâu ra :) ).</p>
-<h3 id="kết-luận">Kết luận</h3>
-<p>Qua bài viết này, chúng ta đã có thể lý giải và cân đong đo đếm được độ tin cậy của hệ thống dựa trên các chỉ số MTTF, MTTR, FIT, cũng như lý giải được ý nghĩa của SLA của 1 dịch vụ.</p>
-<h3 id="tham-khảo">Tham khảo</h3>
-<ul>
-<li><a href="http://www.amazon.com/Computer-Architecture-Quantitative-Approach-Edition/dp/0123704901">Computer Architecture A quantitative Approach</a></li>
 </ul>
 		
 		

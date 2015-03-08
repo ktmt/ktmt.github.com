@@ -7,8 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jul 10th, 2013 redis, sinatra, tutorial Comments Tự tạo Dịch vụ Thu Gọn Url Với Sinatra và Redis Mở đầu
-Chắc hẳn các bạn đã biết về các dịch vụ rút &hellip;">
+	<meta name="description" content="Jul 15th, 2013 DI, Design pattern, IoC, PHP Comments Inversion of Control and Dependency Injection Preface
+Trước khi đọc bài này, tôi có 1 vài &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -82,6 +82,655 @@ Chắc hẳn các bạn đã biết về các dịch vụ rút &hellip;">
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-15T02:02:00+09:00" data-updated="true" itemprop="datePublished">Jul 15<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/di/'>DI</a>, <a class='category' href='/blog/categories/design-pattern/'>Design pattern</a>, <a class='category' href='/blog/categories/ioc/'>IoC</a>, <a class='category' href='/blog/categories/php/'>PHP</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/07/15/inversion-of-control-and-dependency-injection/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/07/15/inversion-of-control-and-dependency-injection/" itemprop="url">Inversion of Control and Dependency Injection</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h2 id="preface">Preface</h2>
+<p>Trước khi đọc bài này, tôi có 1 vài recommend cho độc giả :)</p>
+<ol type="1">
+<li><p>Bạn nên đọc trước bài viết về <a href="http://ktmt.github.io/blog/2013/06/14/design-pattern-ap-dung-builder-pattern-trong-test-java/">Builder Pattern trong Java</a> cũng trong blog ktmt, sẽ có 1 cái nhìn tổng quát và hình dung dễ dàng hơn về ứng dụng của các pattern trong programming.</p></li>
+<li><p>Có hàng tá bài viết về Inversion Of Control và Dependency Injection. Try to google it first.</p></li>
+<li><p>Nếu không, nhớ google thêm sau khi đọc bài viết :D</p></li>
+</ol>
+<h2 id="dependency-injection">Dependency Injection</h2>
+<p>Chúng ta sẽ bắt đầu với 1 ví dụ gần giống ví dụ trong bài viết về Builder Pattern ở trên. Xem đoạn code sau. Ngôn ngữ ở đây là PHP.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>Book.php </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Book</span> <span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">title</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Title</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Author</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">genre</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Genre</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">publishDate</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">PublishDate</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">ISBN</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ISBN</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Ở đây giả sử Title, Author, Genre, PublishDate hay ISBN đều là các class đã được định nghĩa trước. Như vậy class Book có 5 <strong>dependency</strong> là 5 class kể trên.</p>
+<p>Về mặt technical, chẳng có gì là không ổn với 1 class như trên cả. Tuy nhiên programmer có kinh nghiệm sẽ dễ dàng nhận thấy chúng ta đã hardcoded 5 dependency trên vào trong Book. Nói cách khác nếu muốn Book chứa những dependency khác, chẳng có cách nào khác là sửa lại định nghĩa class.</p>
+<p>Như vậy, để tránh những phiền phức nói trên và tạo độ linh hoạt khi sử dụng, class Book nên được viết lại như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>Book.php </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Book</span> <span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nv">$title</span><span class="p">,</span> <span class="nv">$author</span><span class="p">,</span> <span class="nv">$genre</span><span class="p">,</span> <span class="nv">$publishdate</span><span class="p">,</span> <span class="nv">$isbn</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">title</span> <span class="o">=</span> <span class="nv">$title</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">genre</span> <span class="o">=</span> <span class="nv">$genre</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">publishDate</span> <span class="o">=</span> <span class="nv">$publishdate</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">ISBN</span> <span class="o">=</span> <span class="nv">$isbn</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span> <span class="p">(</span><span class="k">new</span> <span class="nx">Title</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Author</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Genre</span><span class="p">,</span> <span class="k">new</span> <span class="nx">PublishDate</span><span class="p">,</span> <span class="k">new</span> <span class="nx">ISBN</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Bạn có thể thấy, ý tưởng của Dependency Injection(DI) thực ra rất đơn giản, chỉ là bạn vẫn thường sử dụng và không để ý. Dependency có thể được inject theo nhiều kiểu, ví dụ bên trên là constructor injection. Chúng ta còn có setter injection như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>Book.php </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Book</span> <span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">setTitle</span><span class="p">(</span><span class="nv">$title</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">title</span> <span class="o">=</span> <span class="nv">$title</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="c1">// Here we have 4 more methods : setAuthor ,setGenre, setPublishDate, setISBN</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
+</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setTitle</span><span class="p">(</span><span class="k">new</span> <span class="nx">Title</span><span class="p">);</span>
+</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">);</span>
+</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setGenre</span><span class="p">(</span><span class="k">new</span> <span class="nx">Genre</span><span class="p">);</span>
+</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setPublishDate</span><span class="p">(</span><span class="k">new</span> <span class="nx">PublishDate</span><span class="p">);</span>
+</span><span class='line'><span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setISBN</span><span class="p">(</span><span class="k">new</span> <span class="nx">ISBN</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Và vấn đề mới lại nảy sinh! Có quá nhiều setter và điều đó biến Book thành 1 class phức tạp khi sử dụng. Việc viết lại tất cả các setter khi khởi tạo 1 Book thật là painful !</p>
+<p>Để giải quyết vấn đề kể trên, chúng ta sẽ đến với design pattern tiếp theo: Inversion of Control (IoC)</p>
+<h2 id="inversion-of-control">Inversion of Control</h2>
+<blockquote>
+<p>In software engineering, inversion of control (IoC) is a programming technique, expressed here in terms of object-oriented programming, in which object coupling is bound at run time by an assembler object and is typically not known at compile time using static analysis.</p>
+</blockquote>
+<p>Giải thích lý thuyết về IoC có lẽ sẽ tốn nhiều công sức, như recommend trên đầu bài, bạn có thể google 1 chút về IoC. Ở đây tôi sẽ đưa ra luôn 1 implement để sử dụng với class Book kể trên.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>IoC.php </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">IoC</span> <span class="p">{</span>
+</span><span class='line'>   <span class="k">protected</span> <span class="k">static</span> <span class="nv">$registry</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>   <span class="c1">// Register</span>
+</span><span class='line'>   <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">register</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nx">Closure</span> <span class="nv">$resolve</span><span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>      <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">[</span><span class="nv">$name</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$resolve</span><span class="p">;</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>   <span class="c1">// Resolve</span>
+</span><span class='line'>   <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">resolve</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span> <span class="k">static</span><span class="o">::</span><span class="na">registered</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span> <span class="p">)</span>
+</span><span class='line'>      <span class="p">{</span>
+</span><span class='line'>         <span class="nv">$name</span> <span class="o">=</span> <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">[</span><span class="nv">$name</span><span class="p">];</span>
+</span><span class='line'>         <span class="k">return</span> <span class="nv">$name</span><span class="p">();</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">throw</span> <span class="k">new</span> <span class="nx">Exception</span><span class="p">(</span><span class="s1">&#39;Nothing registered with that name, fool.&#39;</span><span class="p">);</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>   <span class="c1">// Check resigtered or not</span>
+</span><span class='line'>   <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">registered</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nb">array_key_exists</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">);</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>WTH! Cái khỉ gì trông lằng nhằng quá phải không :D</p>
+<p>Đừng lo lắng, để hiểu đoạn code trên trước hết hãy để ý rằng ở đây chúng ta có rất nhiều các static function. Static function có thể gọi trục tiếp trên class chứ không phải trên instance thông qua cách gọi “Class::StaticMethod()”. Ngoài ra Closure là 1 anonymous function. Bạn sẽ hiểu ngay khi xem cách dùng dưới đây</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>Book.php </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="nx">IoC</span><span class="o">::</span><span class="na">register</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">,</span> <span class="k">function</span><span class="p">(){</span>
+</span><span class='line'>    <span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
+</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setTitle</span><span class="p">(</span><span class="k">new</span> <span class="nx">Title</span><span class="p">);</span>
+</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">);</span>
+</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setGenre</span><span class="p">(</span><span class="k">new</span> <span class="nx">Genre</span><span class="p">);</span>
+</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setPublishDate</span><span class="p">(</span><span class="k">new</span> <span class="nx">PublishDate</span><span class="p">);</span>
+</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setISBN</span><span class="p">(</span><span class="k">new</span> <span class="nx">ISBN</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="nv">$book</span><span class="p">;</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="nx">IoC</span><span class="o">::</span><span class="na">resolve</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Woo! Bây giở mỗi khi muốn tạo 1 instance của Book với đầy đủ các dependency, chỉ cần <code>IoC::resolve('book')</code>. Cùng với đó, các dependency có thể inject thông qua <code>IoC::register('book',function(){...})</code>. Đến khi unit test, bạn có thể dùng <code>IoC::register</code> để mocking các dependency và test Book mà không khởi tạo Title,Author…</p>
+<h2 id="singleton-pattern-with-ioc">Singleton pattern with IoC</h2>
+<p>Bạn thử tưởng tượng, nếu như phần register ‘book’ bên trên chiếm nhiều tài nguyên, có thể bạn sẽ không muốn mỗi lần resolve lại khởi tạo 1 instance mới. Nói cách khác, bạn chỉ muốn chỉ có 1 Book với đầy đủ Title, Author, … được khởi tạo 1 lần, và lần sau muốn sử dụng thì gọi lại chính instance đã được tạo.</p>
+<p>Đây là đất diễn của Singleton design pattern :) Tôi sẽ thêm static function <code>singleton</code> cho IoC như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>IoC.php </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">IoC</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">protected</span> <span class="k">static</span> <span class="nv">$registry</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
+</span><span class='line'>  <span class="k">protected</span> <span class="k">static</span> <span class="nv">$shared</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Register, here save the Closure to static::$registry</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">register</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nx">Closure</span> <span class="nv">$resolve</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>     <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">[</span><span class="nv">$name</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$resolve</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Singleton, Note that here we save the result of Closure, not the Closure</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">singleton</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nx">Closure</span> <span class="nv">$resolve</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="k">static</span><span class="o">::</span><span class="nv">$shared</span><span class="p">[</span><span class="nv">$name</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$resolve</span><span class="p">();</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Resolve, consider register or singleton here</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">resolve</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span> <span class="k">static</span><span class="o">::</span><span class="na">registered</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span> <span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="nv">$name</span> <span class="o">=</span> <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">[</span><span class="nv">$name</span><span class="p">];</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nv">$name</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span> <span class="k">static</span><span class="o">::</span><span class="na">singletoned</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span> <span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="nv">$instance</span> <span class="o">=</span> <span class="k">static</span><span class="o">::</span><span class="nv">$shared</span><span class="p">[</span><span class="nv">$name</span><span class="p">];</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nv">$instance</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">throw</span> <span class="k">new</span> <span class="nx">Exception</span><span class="p">(</span><span class="s1">&#39;Nothing registered with that name, fool.&#39;</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Check resigtered or not</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">registered</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>     <span class="k">return</span> <span class="nb">array_key_exists</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="k">static</span><span class="o">::</span><span class="nv">$registry</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Check singleton object or not</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">singletoned</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nb">array_key_exists</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="k">static</span><span class="o">::</span><span class="nv">$shared</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Và bây giờ</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>Book.php </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="nx">IoC</span><span class="o">::</span><span class="na">singleton</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">,</span> <span class="k">function</span><span class="p">(){</span>
+</span><span class='line'>    <span class="nv">$book</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
+</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setTitle</span><span class="p">(</span><span class="k">new</span> <span class="nx">Title</span><span class="p">);</span>
+</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">);</span>
+</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setGenre</span><span class="p">(</span><span class="k">new</span> <span class="nx">Genre</span><span class="p">);</span>
+</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setPublishDate</span><span class="p">(</span><span class="k">new</span> <span class="nx">PublishDate</span><span class="p">);</span>
+</span><span class='line'>    <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">setISBN</span><span class="p">(</span><span class="k">new</span> <span class="nx">ISBN</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="nv">$book</span><span class="p">;</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$book1</span> <span class="o">=</span> <span class="nx">IoC</span><span class="o">::</span><span class="na">resolve</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">);</span>
+</span><span class='line'><span class="nv">$book2</span> <span class="o">=</span> <span class="nx">IoC</span><span class="o">::</span><span class="na">resolve</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">);</span> <span class="c1">// exactly same instance with $book1</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Bạn có thể lấy <a href="https://gist.github.com/DTVD/5997723">đoạn code sample trên Gist</a> về chạy thử. Have fun with IoC :)</p>
+<h2 id="real-world-use-case">Real-World Use Case</h2>
+<p>Đọc đến đây có thể bạn sẽ hỏi tôi, việc quái gì phải xoắn cái IoC này thế, nó có thực sự hữu dụng hay chỉ là 1 cái pattern mang tính demo biếu diễn ?</p>
+<p>Chúng ta hãy cùng ghé qua <a href="http://laravel.com/docs/ioc">Laravel</a>, 1 framework hiện đại của PHP.</p>
+<p>Ở Laravel, <a href="http://laravel.com/docs/ioc">IoC</a> đã được chuẩn bị sẵn và không chỉ dùng 1 mình, còn kết hợp với <a href="http://laravel.com/docs/ioc#service-providers">ServiceProviders</a> và <a href="http://laravel.com/docs/facades">Facades</a> để tăng tối đa độ linh hoạt của code base. Một Facades (lại là 1 design pattern khác - hãy google sau khi đọc bài này :) ) có thể được kết nối với IoC và UnitTest như sau :</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>Facades.php </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// binding IoC</span>
+</span><span class='line'><span class="nx">App</span><span class="o">::</span><span class="na">bind</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">,</span> <span class="k">function</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// binding facades to IoC</span>
+</span><span class='line'><span class="k">use</span> <span class="nx">Illuminate\Support\Facades\Facade</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">FacadesBook</span> <span class="k">extends</span> <span class="nx">Facade</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">protected</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">getFacadeAccessor</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="s1">&#39;book&#39;</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Tại sao đã bind class Book vào IoC <code>book</code> rồi, lại còn tiếp tục bind IoC <code>book</code> và Facades <code>FacadesBook</code> lần nữa?</p>
+<p>Facades trong Laravel có thể “biến thành” Mock object sau khi gọi method <code>shouldReceive</code> (a magic method :D)</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>Facades.php </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="c1">//Use Book as usual:</span>
+</span><span class='line'><span class="nv">$book</span> <span class="o">=</span> <span class="nx">FacadesBook</span><span class="o">::</span><span class="na">AnInstanceMethodOfBookClass</span><span class="p">(</span><span class="nv">$AParams</span><span class="p">);</span>
+</span><span class='line'><span class="c1">//Mocking for UnitTest:</span>
+</span><span class='line'><span class="nx">FacadesBook</span><span class="o">::</span><span class="na">shouldReceive</span><span class="p">(</span><span class="s1">&#39;AnInstanceMethodOfBookClass&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">once</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">with</span><span class="p">(</span><span class="nv">$AParams</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">andReturn</span><span class="p">(</span><span class="nv">$FakeValue</span><span class="p">);</span>
+</span><span class='line'><span class="nv">$mockBook</span> <span class="o">=</span> <span class="nx">FacadesBook</span><span class="o">::</span><span class="na">AnInstanceMethodOfBookClass</span><span class="p">(</span><span class="nv">$AParams</span><span class="p">);</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p><code>$book</code> sẽ trả về giá trị thực khi thực hiện method <code>AnInstanceMethodOfBookClass</code> của class Book, trong khi đó <code>$mockBook</code> sẽ trả về <code>$FakeValue</code>.</p>
+<h2 id="summary">Summary</h2>
+<ul>
+<li><strong>Dependency Injection</strong>: Đưa các dependency vào class thông qua constructor hoặc setter, không khỏi tạo trực tiếp bên trong class.</li>
+<li><strong>Inversion of Control</strong>: bind object vào thời điểm run time, không phải vào thời điểm compile time.</li>
+<li><strong>Singleton</strong>: Design pattern, cho phép trong 1 hệ thống chỉ có 1 instance duy nhất của class được tồn tại.</li>
+</ul>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -723,176 +1372,6 @@ Chắc hẳn các bạn đã biết về các dịch vụ rút &hellip;">
 <p>Qua 2 bài viết về githook, bạn đã nắm được phần nào các hooks trong git, và các ứng dụng liên quan đến chúng. Giờ bạn có thể sử dụng githook để tạo nên workflow phù hợp nhất với git cho project của mình</p>
 <h1 id="tham-khảo">Tham khảo</h1>
 <p><a href="http://git-scm.com/book/en/Customizing-Git-Git-Hooks">Githook documentation</a> <a href="http://git-scm.com/book/en/Customizing-Git-An-Example-Git-Enforced-Policy">Customizing Git</a></p>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-07-06T16:44:00+09:00" data-updated="true" itemprop="datePublished">Jul 6<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/ios/'>iOS</a>, <a class='category' href='/blog/categories/iphone/'>iPhone</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/07/06/tu-tao-uitableviewcell/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/06/tu-tao-uitableviewcell/" itemprop="url">Tự tạo UITableViewCell</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<p>UITableView là 1 trong những control được sử dụng nhiều nhất trong các ứng dụng iOS. Tuy nhiên, các kiểu cơ bản của UITableViewCell có rất nhiều hạn chế cho người sử dụng bởi vì sự đơn giản của nó. Trong bài viết này, tôi sẽ hướng dẫn các bạn tạo ra tuỳ chỉnh 1 UITableViewCell của riêng mình.</p>
-<p>Trong bài viết này, chúng ta sẽ tạo ra 1 Table View Cell đơn giản chứa 1 tiêu đề, 1 button và 1 switcher. Bạn hoàn toàn có thể thay thế các thành phần này theo mục đích riêng của mình.</p>
-<p>Trước hết, hãy tạo 1 class mới kế thừa từ UITableViewCell, tạm gọi là CustomTableCell. Tiếp theo, tạo 1 file xib mới đặt tên trùng với 2 file class đã tạo: New -&gt; File -&gt; User Interface -&gt; View</p>
-<p><img src="/images/CustomCell/new_xib.png"></p>
-<p>Trên file xib, hãy xoá đi View hiện tại và kéo vào 1 UITableViewCell từ panel bên phải vào:</p>
-<p><img src="/images/CustomCell/pull_xib.png"></p>
-<p>Sau đó, hãy kéo các thành phần bạn muốn vào trong view này, trong ví dụ này là 1 UILabel, 1 UIButton, 1 Switch.</p>
-<p>Tiếp theo chúng ta phải khai báo class cho file xib này. Bấm vào View và chuyển sang tab Identity inspector của panel bên phải, mục Custom Class đặt tên là CustomTableCell (tên của class chúng ta vừa kế thừa từ UITableViewCell):</p>
-<p><img src="/images/CustomCell/class_name.png"></p>
-<p>Mỗi UITableViewCell đều có 1 định danh để có thể sử dụng lại trong 1 TableView. Chúng ta có thể set trường này trong tab Attributes inspector của panel bên phải trong mục Identifier. Đặt 1 id bất kỳ cho trường này, trong ví dụ là “CustomIdentifier”:</p>
-<p><img src="/images/CustomCell/name_iden.png"></p>
-<p>Vẫn ở tab Identity Inspector này, bấm vào File’s Owner ở panel bên trái, mục custom class đặt tên là UIViewController. Điều này có thể hiểu nôm na là chúng ta sẽ khởi tạo CustomTableCell từ 1 UIViewController:</p>
-<p><img src="/images/CustomCell/owner_name.png"></p>
-<p>Bước tiếp theo là kéo Outlet cho các thành phần của View. Bấm vào File’s Owner rồi chuyển sang tab Connections inspector của pannel bên phải, kéo Outlet View vào Custom Table Cell ở panel bên trái. Điều này giúp kết nối file xib của bạn với class định nghĩa trong file h, m</p>
-<p><img src="/images/CustomCell/outlet_view.png"> Để sử dụng được label, button và switch trên table cell, chúng ta phải khai báo Outlet trong file .h bằng đoạn code:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='objc'><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="n">nonatomic</span><span class="p">,</span> <span class="n">unsafe_unretained</span><span class="p">)</span> <span class="kt">IBOutlet</span> <span class="n">UILabel</span> <span class="o">*</span><span class="n">nameLabel</span><span class="p">;</span>
-</span><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="n">nonatomic</span><span class="p">,</span> <span class="n">unsafe_unretained</span><span class="p">)</span> <span class="kt">IBOutlet</span> <span class="n">UISwitch</span> <span class="o">*</span><span class="n">switcher</span><span class="p">;</span>
-</span><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="n">nonatomic</span><span class="p">,</span> <span class="n">unsafe_unretained</span><span class="p">)</span> <span class="kt">IBOutlet</span> <span class="n">UIButton</span> <span class="o">*</span><span class="n">aButton</span><span class="p">;</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Sau đó, chuyển sang file xib, bấm vào Custom Table Cell ở panel bên trái, bấm vào Connections Inspector tab ở panel bên phải rồi kéo outlet vào các thành phần của view:</p>
-<p><img src="/images/CustomCell/outlet_component.png"></p>
-<p>Vậy là đã xong các bước cài đặt cho Custom Table Cell. Tiếp đến là sử dụng TableCell này như thế nào. Hãy cùng so sánh 2 đoạn code của hàm -(UITableViewCell <em>)tableView:(UITableView </em>)tableView_ cellForRowAtIndexPath:(NSIndexPath *)indexPath:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='objc'><span class='line'><span class="k">static</span> <span class="n">NSString</span> <span class="o">*</span><span class="n">identifier</span> <span class="o">=</span> <span class="s">@&quot;NormalCell&quot;</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">UITableViewCell</span> <span class="o">*</span><span class="n">cell</span> <span class="o">=</span> <span class="p">[</span><span class="n">tableView</span> <span class="nl">dequeueReusableCellWithIdentifier:</span><span class="n">identifier</span><span class="p">];</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">cell</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="n">cell</span> <span class="o">=</span> <span class="p">[[</span><span class="n">UITableViewCell</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithStyle:</span><span class="n">UITableViewCellStyleDefault</span> <span class="nl">reuseIdentifier:</span><span class="n">identifier</span><span class="p">];</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">cell</span><span class="p">;</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='objc'><span class='line'><span class="k">static</span> <span class="n">NSString</span> <span class="o">*</span><span class="n">identifier</span> <span class="o">=</span> <span class="s">@&quot;CustomIdentifier&quot;</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">CustomTableCell</span> <span class="o">*</span><span class="n">cell</span> <span class="o">=</span> <span class="p">[</span><span class="n">tableView</span> <span class="nl">dequeueReusableCellWithIdentifier:</span><span class="n">identifier</span><span class="p">];</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">cell</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="n">UIViewController</span> <span class="o">*</span><span class="n">tempVC</span> <span class="o">=</span> <span class="p">[[</span><span class="n">UIViewController</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithNibName:</span><span class="s">@&quot;CustomTableCell&quot;</span> <span class="nl">bundle:</span><span class="nb">nil</span><span class="p">];</span>
-</span><span class='line'>        <span class="n">cell</span> <span class="o">=</span> <span class="p">(</span><span class="n">CustomTableCell</span> <span class="o">*</span><span class="p">)</span><span class="n">tempVC</span><span class="p">.</span><span class="n">view</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="k">return</span> <span class="n">cell</span><span class="p">;</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Đoạn code đầu tiên là cách khởi tạo UITableViewCell bình thường. Cách thứ 2 là khởi tạo CustomTableCell. Hãy chú ý là identifier được sử dụng chính là identifier chúng ta đã đặt trong file xib, và biến này phải được để là static. Tại vì sao lại để là static thì tôi sẽ đề cập trong 1 bài viết khác.</p>
-<p>Sau khi khởi tạo Cell xong, chúng ta có thể tuỳ chỉnh nó, như trong ví dụ:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='objc'><span class='line'><span class="c1">// Set up cell</span>
-</span><span class='line'>    <span class="n">cell</span><span class="p">.</span><span class="n">nameLabel</span><span class="p">.</span><span class="n">text</span> <span class="o">=</span> <span class="p">[</span><span class="n">NSString</span> <span class="nl">stringWithFormat:</span><span class="s">@&quot;Cell %d&quot;</span><span class="p">,</span> <span class="n">indexPath</span><span class="p">.</span><span class="n">row</span><span class="p">];</span>
-</span><span class='line'>    <span class="n">cell</span><span class="p">.</span><span class="n">switcher</span><span class="p">.</span><span class="n">on</span> <span class="o">=</span> <span class="n">indexPath</span><span class="p">.</span><span class="n">row</span> <span class="o">%</span> <span class="mi">2</span><span class="p">;</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Vậy là xong. Hãy viết nốt đoạn code cho TableView và đây là kết quả cuối cùng:</p>
-<p><img src="/images/CustomCell/final.png" width="320" height="480"></p>
-<p>Toàn bộ code của ví dụ bạn có thể download ở đây https://github.com/toandk/Custom-UITableViewCell</p>
 		
 		
 	</div>

@@ -7,8 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jul 24th, 2013 sysadmin Comments Cài đặt Memcached Với Sasl Giới thiệu
-Memcached là cơ sở dữ liệu được lưu trong memory. Thông thường chúng ta sử &hellip;">
+	<meta name="description" content="Jul 28th, 2013 PHP, Reflection Comments Reflection and Reverse Engineer in PHP Giới thiệu Reflection class trong PHP
+Kể từ PHP 5 trở đi, Programmer &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -82,6 +82,372 @@ Memcached là cơ sở dữ liệu được lưu trong memory. Thông thường 
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-28T23:45:00+09:00" data-updated="true" itemprop="datePublished">Jul 28<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/php/'>PHP</a>, <a class='category' href='/blog/categories/reflection/'>Reflection</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/07/28/reflection-and-reverse-engineer-in-php/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/07/28/reflection-and-reverse-engineer-in-php/" itemprop="url">Reflection and Reverse Engineer in PHP</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h2 id="giới-thiệu-reflection-class-trong-php">Giới thiệu Reflection class trong PHP</h2>
+<p>Kể từ PHP 5 trở đi, Programmer PHP đã có bộ API Reflection rất hữu dụng để reverse-engineer các class, interfaces, function hay các extension. Bài viết này sẽ giới thiệu tính năng, ý nghĩa và ứng dụng của Reflection trong PHP.</p>
+<h2 id="thế-nào-là-dynamically-typed-language">Thế nào là dynamically-typed language ?</h2>
+<p>Cũng giống như Python hay Ruby, PHP là 1 dynamically-typed language.</p>
+<p>Chúng ta hãy cùng xem xét 2 class sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>Author.php </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Author</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">private</span> <span class="nv">$name</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">private</span> <span class="nv">$birth</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nv">$birth</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">name</span> <span class="o">=</span> <span class="nv">$name</span><span class="p">;</span>
+</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">birth</span> <span class="o">=</span> <span class="nv">$birth</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">public</span> <span class="k">function</span> <span class="nf">getName</span><span class="p">()</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">name</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">public</span> <span class="k">function</span> <span class="nf">getBirth</span><span class="p">()</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">birth</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>Book.php </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Book</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">private</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">setAuthor</span><span class="p">(</span><span class="nv">$author</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">getAuthor</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>2 class rất đơn giản phải không :) Book hoàn toàn có thể được setAuthor() là 1 string hay là 1 instance của class Author.</p>
+<p>Không khó để hình dung ra kết quả của đoạn code dưới đây.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>sample.php </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="nv">$book1</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
+</span><span class='line'><span class="nv">$book1</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="s2">&quot;Nam Cao&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="nb">var_dump</span><span class="p">(</span><span class="nv">$book1</span><span class="o">-&gt;</span><span class="na">getAuthor</span><span class="p">());</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$book2</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
+</span><span class='line'><span class="nv">$book2</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">(</span><span class="s2">&quot;Nam Cao&quot;</span><span class="p">,</span><span class="s2">&quot;29-10-1915&quot;</span><span class="p">));</span>
+</span><span class='line'><span class="nb">var_dump</span><span class="p">(</span><span class="nv">$book1</span><span class="o">-&gt;</span><span class="na">getAuthor</span><span class="p">());</span>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Nếu chỉ dừng ở đây thì tôi với bạn chẳng có gì để nói với nhau :D Nhưng bạn hãy thử để ý, 1 instance của 1 class Book khi gọi đến hàm <code>setAuthor</code> hoàn toàn không có 1 khái niệm nào về <code>$author</code> cả. Nói cách khác, $author có thể là bất cứ 1 object nào. Điều gì sẽ xảy ra khi tôi modify class Book 1 chút như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>Book.php </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Book</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">private</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">setAuthor</span><span class="p">(</span><span class="nv">$author</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>      <span class="nb">var_dump</span><span class="p">(</span><span class="nv">$author</span><span class="o">-&gt;</span><span class="na">getName</span><span class="p">());</span> <span class="c1">// Attention here! Now we try to call getName() of variable $author</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">getAuthor</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Bạn thử chạy lại đoạn code sample.php bên trên, bạn sẽ thấy $book1 trả về Fatal Error nhưng $book2 sẽ chạy qua bình thường!</p>
+<p>Vào thời điểm runtime $book2, PHP sẽ “inspect” object $author truyền vào cho <code>setAuthor()</code> và tự hiểu $author là 1 instance của class Author và có 1 method là <code>getName()</code>.</p>
+<h2 id="reverse-engineer-example">Reverse engineer example</h2>
+<p>Vậy PHP nói riêng và các dynamically-typed language nói chung làm thế nào để nhận biết được type của object truyền vào function hay class ?</p>
+<p>Câu trả lời là reflection class! Bạn đã nhận ra PHP dùng reflection như thế nào qua ví dụ bên trên, bạn thậm chí có thể tự sử dụng reflection class.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>Book.php </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Book</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">private</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">setAuthor</span><span class="p">(</span><span class="nv">$author</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="nv">$author</span><span class="p">;</span>
+</span><span class='line'>      <span class="nb">var_dump</span><span class="p">(</span><span class="nv">$author</span><span class="o">-&gt;</span><span class="na">getName</span><span class="p">());</span> <span class="c1">// original name</span>
+</span><span class='line'>      <span class="nv">$reflector</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ReflectionClass</span><span class="p">(</span><span class="nv">$author</span><span class="p">);</span> <span class="c1">// Here we start to inspect $author</span>
+</span><span class='line'>      <span class="nv">$authorName</span> <span class="o">=</span> <span class="nv">$reflector</span><span class="o">-&gt;</span><span class="na">getProperty</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">);</span> <span class="c1">// Get local variable &#39;name&#39;</span>
+</span><span class='line'>      <span class="nv">$authorName</span><span class="o">-&gt;</span><span class="na">setAccessible</span><span class="p">(</span><span class="k">true</span><span class="p">);</span> <span class="c1">// since &#39;name&#39; is a private local variable of class Author, we need access here to modify </span>
+</span><span class='line'>      <span class="nv">$authorName</span><span class="o">-&gt;</span><span class="na">setValue</span><span class="p">(</span><span class="nv">$author</span><span class="p">,</span><span class="s1">&#39;Ngo Tat To&#39;</span><span class="p">);</span> <span class="c1">// now hack the &#39;name&#39; of $author :))</span>
+</span><span class='line'>      <span class="nb">var_dump</span><span class="p">(</span><span class="nv">$author</span><span class="o">-&gt;</span><span class="na">getName</span><span class="p">());</span> <span class="c1">// Guess what will be output here :D </span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">getAuthor</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Bạn thử đoán xem đoạn var_dump sau sẽ ra kết quả gì :D</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>Book.php </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
+</span><span class='line'><span class="nv">$book2</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
+</span><span class='line'><span class="nv">$book2</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">(</span><span class="s2">&quot;Nam Cao&quot;</span><span class="p">,</span><span class="s2">&quot;29-10-1915&quot;</span><span class="p">));</span>
+</span><span class='line'><span class="nb">var_dump</span><span class="p">(</span><span class="nv">$book1</span><span class="o">-&gt;</span><span class="na">getAuthor</span><span class="p">());</span> <span class="c1">// Suprisingly, &#39;Ngo Tat To&#39;, not &#39;Nam Cao&#39; here </span>
+</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<h2 id="reflection-class-dùng-để-làm-gì">Reflection class dùng để làm gì ?</h2>
+<p>Đến đây có lẽ bạn đọc đã hình dung ra phần nào cách thức hoạt động của reflection class, các ngôn ngữ dynamically-typed “hiểu” các object như thế nào. Reflection thực tế tồn tại trong PHPUnit hay các mocking framework, các code analysis framwworks hay metaprogramming.</p>
+<p>Reflection class trong PHP là 1 tool mạnh mẽ cung cấp cho programmer chính những sức mạnh mà ngôn ngữ sở hữu. Tuy nhiên reflection class không hề được khuyến khích dùng rộng rãi, vì với bản chất là tool của quá trình reverse engineering, nó hoàn toàn có thể làm design của hệ thống trở nên mess up và khó kiểm soát.</p>
+<p>Reflection chỉ nên dùng khi nào thực sự cần thiết, ứng dụng nhìn thấy rõ nhất là khi bạn phải “đối đầu” với 1 project mà document ko đầy đủ hay không được upadte thường xuyên. <a href="https://github.com/cakephp/api_generator">Cake Api Generator</a> là ví dụ điển hình nhất.</p>
+<h2 id="summary">Summary</h2>
+<ul>
+<li><strong>Dynamically-typed language</strong>: Là ngôn ngữ có thể tự hiểu được object tại thời điểm runtime, không cần tại compile time. PHP, Ruby, Python là dynamically-typed language. Ngược lại C hay Java là statically typed language.</li>
+<li><strong>Reflection Class</strong> Là 1 bộ API được PHP cung cấp để sử dụng kỹ thuật reverse engineer, hữu dụng khi tạo document tự động.</li>
+</ul>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -358,337 +724,6 @@ Memcached là cơ sở dữ liệu được lưu trong memory. Thông thường 
 <p>Không nên sử dụng các hàm vẽ mà phải tính toán nhiều, đặc biệt là các hàm của QuartzCore framework, bởi vì các hàm này thường rất chậm, sẽ làm giảm tốc độ load của các cell.</p>
 <p>Khi sử dụng TableView với các cell phức tạp, mà độ cao của cell phụ thuộc vào các content bên trong nó (VD như các news feeds của Facebook app), để cải thiện tốc độ load các cell này, hãy cùng học tập cách làm của Facebook: Trước hết, khi lấy được danh sách các feed, FB sẽ tính toán sẵn height cho từng cell một và lưu các giá trị này vào database (core data). Sau đó, khi load các cell, height của từng cell sẽ được lấy ra từ database. Điều này làm giảm hiện tượng thắt cổ chai khi mà nếu không tính toán height trước, table view sẽ vừa phải khởi tạo các component vừa phải tính toán chiều cao cho các cell. Đặc biệt là trong trường hợp danh sách các feed được lưu lại trên máy, và lần chạy app tiếp theo sẽ sử dụng lại các feed này =&gt; height cho các cell đã được tính toán từ trước.</p>
 <p>Sử dụng multiple thread để giúp app chạy mượt mà hơn, tránh tình trạng bị treo. VD: main thread chỉ điều chỉnh UI và điều khiển các event tương tác với user. Các tác vụ tính toán nên để ở 1 thread khác, vd như các tác vụ network, JSON parsing, tạo và lưu database.</p>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-07-22T14:18:00+09:00" data-updated="true" itemprop="datePublished">Jul 22<span>nd</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/javascript/'>javascript</a>, <a class='category' href='/blog/categories/programming/'>programming</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/07/22/traditional-snake-game-with-javascript/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/22/traditional-snake-game-with-javascript/" itemprop="url">Traditional Snake Game With Javascript</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h2 id="i.-mở-đầu">I. Mở đầu</h2>
-<p>Năm nay năm âm là năm rắn, hồi tết mình ngồi rỗi không biết làm gì nên quyết định làm một game liên quan đến con rắn. Mà đã liên quan đến rắn thì chắc hẳn mọi người đều nhớ đến game cổ điển snake trên chiếc điện thoại nokia 1010. Để code xong cái đưa được cho bạn bè xem ngay, mình nghĩ làm trên javascript có lẽ là sự lựa chọn tốt nhất. Trong bài này mình sẽ giới thiệu về cách làm game snake trên javascript.</p>
-<h2 id="ii.-thiết-kế-chương-trình">II. Thiết kế chương trình</h2>
-<p>Chỉ cần google với từ khóa “snake game trên javascript” cácbạn sẽ có khá nhiều kết quả với khác nhiều cách implement khác nhau cho đò họa. Có cách sử dụng canvas, có cách sử dụng đơn thuần css bình thường. Để làm cho nhanh thì mình sẽ sử dụng css.</p>
-<ul>
-<li><strong>Idea của game</strong>:</li>
-</ul>
-<p>Game snake có dạng như sau:</p>
-<p><img src="/images/snake/snake_normal.jpg" title="image" alt="images"></p>
-<p>Do đó chúng ta sẽ cần một bảng dạng “grid” để con rắn của chúng ta chạy. Bảng này có thể được implement một cách dễ dàng bằng table của html. Chúng ta sẽ tạo một table dynamically bằng code như dưới đây:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>snake.js </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">boardsize</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
-</span><span class='line'><span class="c1">//create table</span>
-</span><span class='line'><span class="nx">tbl</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;=</span> <span class="nx">boardsize</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="nx">tbl</span> <span class="o">+=</span> <span class="s2">&quot;&lt;tr&gt;&quot;</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">j</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="nx">j</span> <span class="o">&lt;=</span> <span class="nx">boardsize</span><span class="p">;</span> <span class="nx">j</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">tbl</span> <span class="o">+=</span> <span class="s2">&quot;&lt;td type=&#39;&#39; row=&#39;&quot;</span><span class="o">+</span><span class="nx">i</span><span class="o">+</span><span class="s2">&quot;&#39; col=&#39;&quot;</span><span class="o">+</span><span class="nx">j</span><span class="o">+</span><span class="s2">&quot;&#39;&gt;&lt;/td&gt;&quot;</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  <span class="nx">tbl</span> <span class="o">+=</span> <span class="s2">&quot;&lt;/tr&gt;&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="nx">$</span><span class="p">(</span><span class="s2">&quot;#gameboard&quot;</span><span class="p">).</span><span class="nx">html</span><span class="p">(</span><span class="nx">tbl</span><span class="p">);</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Như vậy chúng ta sẽ có cái grid view để con rắn của chúng ta chạy vòng quanh. Tiếp theo chúng ta sẽ design logic cho game. Về mặt idea, do chúng ta dùng css cho GUI, nên body con rắn của chúng ta sẽ được quản lý dưới dạng một <strong>array</strong>, mà mỗi element của array đó sẽ chứa 2 phần tử là <strong>row</strong> và <strong>col</strong> chính là vị trí của mỗi một khúc của thân con rắn. Với mỗi một step của Game loop, chúng ta sẽ vẽ những điểm có tọa độ nằm trong body con rắn với một màu nhất định.</p>
-<ul>
-<li><strong>Coding</strong>:</li>
-</ul>
-<p>Để implement idea đó, chúng ta cần có một object Game. Trong object đó sẽ có các properties: snake_head (đầu con rắn), snake_body(array thân con rắn), snake_direction (hướng đi hiện tại, gồm có 4 hướng là left, right, up, down), fps (tốc độ di chuyển con rắn), và food (vị trí của thức ăn)</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>snake.js </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">Game</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(){</span>
-</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">snake_head</span> <span class="o">=</span> <span class="p">{</span><span class="nx">row</span><span class="o">:</span><span class="mi">5</span><span class="p">,</span> <span class="nx">col</span><span class="o">:</span><span class="mi">5</span><span class="p">};</span>
-</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">snake_body</span> <span class="o">=</span> <span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">snake_head</span><span class="p">];</span>
-</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">snake_direction</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">food</span> <span class="o">=</span> <span class="p">{</span><span class="nx">row</span><span class="o">:-</span><span class="mi">1</span><span class="p">,</span> <span class="nx">col</span><span class="o">:-</span><span class="mi">1</span><span class="p">}</span>
-</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">timer</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">fps</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">keys</span> <span class="o">=</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">LEFT</span><span class="o">:</span> <span class="mi">37</span><span class="p">,</span>
-</span><span class='line'>    <span class="nx">UP</span><span class="o">:</span> <span class="mi">38</span><span class="p">,</span>
-</span><span class='line'>    <span class="nx">RIGHT</span><span class="o">:</span> <span class="mi">39</span><span class="p">,</span>
-</span><span class='line'>    <span class="nx">DOWN</span><span class="o">:</span> <span class="mi">40</span>
-</span><span class='line'>  <span class="p">};</span>
-</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">key_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">37</span><span class="p">,</span> <span class="mi">38</span><span class="p">,</span> <span class="mi">39</span><span class="p">,</span> <span class="mi">40</span><span class="p">];</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">colorset</span> <span class="o">=</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">SNAKE</span><span class="o">:</span> <span class="s2">&quot;black&quot;</span><span class="p">,</span>
-</span><span class='line'>    <span class="nx">FOOD</span><span class="o">:</span> <span class="s2">&quot;blue&quot;</span><span class="p">,</span>
-</span><span class='line'>    <span class="nx">BACKGROUND</span><span class="o">:</span> <span class="s2">&quot;white&quot;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">};</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Ok như vậy là đã xong phần khung. Giờ đến đoạn di chuyển và ăn thức ăn của con rắn. Đầu tiên là về mặt di chuyển. Để di chuyển con rắn thì đầu tiên chúng ta phải catch event key và set direction cho nó. Việc này được thực hiện thông qua đoạn code dưới đây:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>snake.js </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='js'><span class='line'><span class="nx">Game</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">key_handler</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">evt</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">self</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">diff</span> <span class="o">=</span> <span class="nx">self</span><span class="p">.</span><span class="nx">snake_direction</span> <span class="o">-</span> <span class="nx">evt</span><span class="p">.</span><span class="nx">keyCode</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="nx">self</span><span class="p">.</span><span class="nx">key_list</span><span class="p">.</span><span class="nx">contains</span><span class="p">(</span><span class="nx">evt</span><span class="p">.</span><span class="nx">keyCode</span><span class="p">))</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">abs</span><span class="p">(</span><span class="nx">diff</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'><span class="cm">/*logic này dùng để check việc khi snake đang di chuyển </span>
-</span><span class='line'><span class="cm">left thì người dùng bấm right (hoặc tương tự với đang di</span>
-</span><span class='line'><span class="cm"> chuyển up bấm down...), khi đó thì con rắn của chúng ta </span>
-</span><span class='line'><span class="cm">sẽ không chuyển hướng*/</span>
-</span><span class='line'>      <span class="nx">self</span><span class="p">.</span><span class="nx">snake_direction</span> <span class="o">=</span> <span class="nx">evt</span><span class="p">.</span><span class="nx">keyCode</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1">//binding key</span>
-</span><span class='line'><span class="nx">$</span><span class="p">(</span><span class="s1">&#39;body&#39;</span><span class="p">).</span><span class="nx">keydown</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">evt</span><span class="p">){</span>
-</span><span class='line'>  <span class="nx">snakeGame</span><span class="p">.</span><span class="nx">key_handler</span><span class="p">(</span><span class="nx">evt</span><span class="p">);</span>
-</span><span class='line'><span class="p">})</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Như vậy chúng ta đã có logic để khi người dùng bấm phím di chuyển con rắn chúng ta sẽ có direction thích hợp. Vấn đề là với direction đó con rắn của chúng ta sẽ di chuyển thế nào. Vấn đề đó được implement ở đoạn code dưới đây:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>snake.js</span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='js'><span class='line'><span class="nx">Game</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">set_body</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">self</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">direction</span> <span class="o">=</span> <span class="nx">self</span><span class="p">.</span><span class="nx">snake_direction</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="c1">//set snake body</span>
-</span><span class='line'>  <span class="nx">len</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">snake_body</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">head_row</span> <span class="o">=</span> <span class="nx">self</span><span class="p">.</span><span class="nx">snake_body</span><span class="p">[</span><span class="nx">len</span><span class="o">-</span><span class="mi">1</span><span class="p">].</span><span class="nx">row</span><span class="p">,</span>
-</span><span class='line'>      <span class="nx">head_col</span> <span class="o">=</span> <span class="nx">self</span><span class="p">.</span><span class="nx">snake_body</span><span class="p">[</span><span class="nx">len</span><span class="o">-</span><span class="mi">1</span><span class="p">].</span><span class="nx">col</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">switch</span><span class="p">(</span><span class="nx">direction</span><span class="p">)</span> <span class="p">{</span> <span class="c1">//set head pos with direction</span>
-</span><span class='line'>    <span class="k">case</span> <span class="nx">self</span><span class="p">.</span><span class="nx">keys</span><span class="p">.</span><span class="nx">LEFT</span><span class="o">:</span>
-</span><span class='line'>      <span class="nx">head_col</span> <span class="o">=</span> <span class="nx">head_col</span><span class="o">-</span><span class="mi">1</span><span class="p">;</span>
-</span><span class='line'>      <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">case</span> <span class="nx">self</span><span class="p">.</span><span class="nx">keys</span><span class="p">.</span><span class="nx">RIGHT</span><span class="o">:</span>
-</span><span class='line'>      <span class="nx">head_col</span> <span class="o">=</span> <span class="nx">head_col</span><span class="o">+</span><span class="mi">1</span><span class="p">;</span>
-</span><span class='line'>      <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">case</span> <span class="nx">self</span><span class="p">.</span><span class="nx">keys</span><span class="p">.</span><span class="nx">UP</span><span class="o">:</span>
-</span><span class='line'>      <span class="nx">head_row</span> <span class="o">=</span> <span class="nx">head_row</span><span class="o">-</span><span class="mi">1</span><span class="p">;</span>
-</span><span class='line'>      <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">case</span> <span class="nx">self</span><span class="p">.</span><span class="nx">keys</span><span class="p">.</span><span class="nx">DOWN</span><span class="o">:</span>
-</span><span class='line'>      <span class="nx">head_row</span> <span class="o">=</span> <span class="nx">head_row</span><span class="o">+</span><span class="mi">1</span><span class="p">;</span>
-</span><span class='line'>      <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">default</span><span class="o">:</span> <span class="k">return</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">head_pos</span> <span class="o">=</span> <span class="nx">getat</span><span class="p">(</span><span class="nx">head_row</span><span class="p">,</span> <span class="nx">head_col</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="c1">//check game over</span>
-</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="nx">head_pos</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span> <span class="o">===</span> <span class="s2">&quot;snake&quot;</span> <span class="o">||</span>
-</span><span class='line'>    <span class="nx">head_row</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="o">||</span> <span class="nx">head_col</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="o">||</span> <span class="nx">head_row</span> <span class="o">&gt;</span> <span class="nx">boardsize</span> <span class="o">||</span> <span class="nx">head_col</span> <span class="o">&gt;</span> <span class="nx">boardsize</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">self</span><span class="p">.</span><span class="nx">end_game</span><span class="p">();</span>
-</span><span class='line'>    <span class="k">return</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nx">self</span><span class="p">.</span><span class="nx">snake_body</span><span class="p">.</span><span class="nx">push</span><span class="p">({</span><span class="nx">row</span><span class="o">:</span> <span class="nx">head_row</span><span class="p">,</span> <span class="nx">col</span><span class="o">:</span> <span class="nx">head_col</span><span class="p">});</span> <span class="c1">//push head</span>
-</span><span class='line'>  <span class="nx">len</span> <span class="o">=</span> <span class="nx">self</span><span class="p">.</span><span class="nx">snake_body</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
-</span><span class='line'>  <span class="c1">//if not get food</span>
-</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">head_pos</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span> <span class="o">!==</span> <span class="s2">&quot;food&quot;</span><span class="p">)</span>
-</span><span class='line'>    <span class="nx">self</span><span class="p">.</span><span class="nx">snake_body</span> <span class="o">=</span> <span class="nx">self</span><span class="p">.</span><span class="nx">snake_body</span><span class="p">.</span><span class="nx">slice</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nx">len</span><span class="p">);</span> <span class="c1">//cut tail</span>
-</span><span class='line'>  <span class="k">else</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;#score&quot;</span><span class="p">).</span><span class="nx">html</span><span class="p">(</span><span class="nb">parseInt</span><span class="p">(</span><span class="nx">$</span><span class="p">(</span><span class="s2">&quot;#score&quot;</span><span class="p">).</span><span class="nx">html</span><span class="p">())</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
-</span><span class='line'>    <span class="nx">self</span><span class="p">.</span><span class="nx">set_food</span><span class="p">();</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Chúng ta có thể thấy gì từ đoạn code trên. Đầu tiên các bạn sẽ thấy chúng ta di chuyển con rắn bằng cách nào. Việc di chuyển con rắn được thưc hiện rất đơn giản. Với mỗi step di chuyển, chúng ta set vị trí mới cho đầu con rắn dựa vào direction tính được ở trên, và cắt cái đuôi của cái array đi. Rất đơn giản phải không :D. Ngoài ra ở đoạn code trên chúng ta cũng thấy, khi vị trí mới của đầu con rắn trùng với vị trí của thức ăn, thì chúng ta sẽ không cắt đuôi của array đi, và việc này đồng nghĩa với việc con rắn dài ra.</p>
-<p>Đoạn code trên đồng thời cũng implement hệ thống tính điểm (mỗi lần ăn thức ăn là score increment thêm 1), và logic về khi con rắn đâm vào tường hoặc là đâm vào chính nó thì sẽ chết (ở đoạn //check game over)</p>
-<p>Thêm thắt một chút css, chúng ta đã có một game con rắn hoàn chỉnh</p>
-<p><img src="/images/snake/screenshot.png" title="image" alt="images"></p>
-<p>Toàn bộ source code cho ví dụ này mình để ở trên <a href="https://github.com/ktmt/snake-js" class="uri">https://github.com/ktmt/snake-js</a> , các bạn có thể sử dụng tùy thích.</p>
 		
 		
 	</div>

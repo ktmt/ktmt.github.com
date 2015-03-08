@@ -7,8 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jun 8th, 2013 html5, introduction Comments Playing With Web Audio Api Web audio api là gì?
-Web audio api là là javascript API dành cho xử lý ( &hellip;">
+	<meta name="description" content="Jun 9th, 2013 programming, python, Comments Giới Thiệu Một Số Phương Pháp Sinh 64 Bit Unique ID Bài toán sinh unique ID
+Unique ID được sử dụng để &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -82,6 +82,233 @@ Web audio api là là javascript API dành cho xử lý ( &hellip;">
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-06-09T21:15:00+09:00" data-updated="true" itemprop="datePublished">Jun 9<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/programming/'>programming</a>, <a class='category' href='/blog/categories/python/'>python,</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/06/09/xay-dung-he-thong-sinh-64bit-unique-id/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/06/09/xay-dung-he-thong-sinh-64bit-unique-id/" itemprop="url">Giới Thiệu Một Số Phương Pháp Sinh 64 Bit Unique ID</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1 id="bài-toán-sinh-unique-id">Bài toán sinh unique ID</h1>
+<p>Unique ID được sử dụng để phân biệt các đối tượng khác nhau. Ví dụ primary key là một unique key đặc biệt dùng để phân biệt các row trong table.</p>
+<p>Bài viết giới thiệu một số phương pháp sinh 64 bit unique ID.</p>
+<h1 id="một-số-giải-pháp-sinh-unique-id">Một số giải pháp sinh unique ID</h1>
+<ul>
+<li>Nếu số lượng dữ liệu nhỏ, ta có thể sử dụng ID kiểu Integer và set cho nó thuộc tính auto increment.</li>
+</ul>
+<p>Ưu điểm: đơn giản, dễ làm.</p>
+<p>Nhược điểm: số lượng ID bị giới hạn (2 ^ 32 = 4294967296) và đặc biệt cách làm này không scale. Để đảm bảo tính duy nhất, tại một thời điểm, chỉ có thể sinh ra đúng một ID mà thôi.</p>
+<ul>
+<li>Sử dụng <a href="http://en.wikipedia.org/wiki/Uuid">UUID</a> - UUID là một giá trị 128bit, tuỳ vào thuật toán xây dựng UUID, có thể dựa trên Mac Address của máy.</li>
+</ul>
+<p>Ưu điểm: scalable, distributed. Tại một thời điểm có thể sinh ra nhiều ID khác nhau, thậm chí client cũng có thể sinh ID mà vẫn đảm bảo không bị trùng lặp với server</p>
+<p>Nhược điểm: sử dụng 128 bit, một số hệ thống phải lưu trữ dưới dạng char, tốn tài nguyên và index</p>
+<p>64 bit unique ID trùng hoà giữa 2 cách trên, đảm bảo số lượng ID sinh ra là đủ lớn, đồng thời có thể lưu trữ dưới dạng dạng Big Int</p>
+<h1 id="một-số-phương-pháp-sinh-64-bit-unique-id">Một số phương pháp sinh 64 bit unique ID</h1>
+<ol type="1">
+<li>Twitter <a href="https://github.com/twitter/snowflake/">snowflake</a> Snowflake là thrift service sử dụng Apache ZooKeeper để liên kết các node và sinh ra 64bit unique ID. Mỗi node là một worker, các worker được đánh số khác nhau</li>
+</ol>
+<p>ID được sinh ra theo công thức</p>
+<ul>
+<li>time - 42bit (được tính bằng epoch)</li>
+<li>worker id - 10 bit (số worker có thể lên đến 1024)</li>
+<li>sequence number - 12 bit (number được tăng liên tiếp, đảm bảo tại một thời điểm, mỗi worker có thể sinh được 4096 ID)</li>
+</ul>
+<p>Ở phần tiếp theo, chúng ta sẽ implement thuật một service sử dụng thuật toán trên để sinh ID</p>
+<ol start="2" type="1">
+<li><a href="http://instagram-engineering.tumblr.com/post/10853187575/sharding-ids-at-instagram">Instagram 64bt ID</a></li>
+</ol>
+<p>Instagram sinh ID dựa vào posgresql schema. Thuật toán sinh ID tương tự như snowflake, mỗi ID 64 bit bao gồm</p>
+<ul>
+<li>time - 41 bit (time epoch)</li>
+<li>shard_id - 13 bit (so shard id lên tới 8192)</li>
+<li>sequence number - 10 bit</li>
+</ul>
+<h1 id="implement-thuật-toán-sinh-64-bit-uniqueid-của-snowflake-bằng-python">Implement thuật toán sinh 64 bit uniqueID của snowflake bằng python</h1>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>flake.py </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='py'><span class='line'><span class="kn">import</span> <span class="nn">simplejson</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">sys</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">tornado.httpserver</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">tornado.ioloop</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">tornado.options</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">tornado.web</span>
+</span><span class='line'>
+</span><span class='line'><span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">tornado.options</span> <span class="kn">import</span> <span class="n">define</span><span class="p">,</span> <span class="n">options</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">define</span><span class="p">(</span><span class="s">&quot;port&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">8888</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;run on the given port&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+</span><span class='line'><span class="n">define</span><span class="p">(</span><span class="s">&quot;worker_id&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;globally unique worker_id between 0 and 1023&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">IDHandler</span><span class="p">(</span><span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">RequestHandler</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">max_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="p">()</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">sequence</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="n">worker_id</span> <span class="o">=</span> <span class="bp">False</span>
+</span><span class='line'>    <span class="n">epoch</span> <span class="o">=</span> <span class="mi">137079712900000</span> <span class="c"># 2013-06-09</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">curr_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="p">()</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="n">curr_time</span> <span class="o">&lt;</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">max_time</span><span class="p">:</span>
+</span><span class='line'>            <span class="c"># stop handling requests til we&#39;ve caught back up</span>
+</span><span class='line'>            <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="s">&#39;Clock went backwards! </span><span class="si">%d</span><span class="s"> &lt; </span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">curr_time</span><span class="p">,</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">max_time</span><span class="p">))</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="n">curr_time</span> <span class="o">&gt;</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">max_time</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>            <span class="n">IDHandler</span><span class="o">.</span><span class="n">max_time</span> <span class="o">=</span> <span class="n">curr_time</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span class='line'>        <span class="k">if</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span> <span class="o">&gt;</span> <span class="mi">4095</span><span class="p">:</span>
+</span><span class='line'>            <span class="c"># Sequence overflow, bail out</span>
+</span><span class='line'>            <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="s">&#39;Sequence Overflow: </span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">generated_id</span> <span class="o">=</span> <span class="p">((</span><span class="n">curr_time</span> <span class="o">-</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">epoch</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">22</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">IDHandler</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">&lt;&lt;</span> <span class="mi">12</span><span class="p">)</span> <span class="o">+</span> <span class="n">IDHandler</span><span class="o">.</span><span class="n">sequence</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">set_header</span><span class="p">(</span><span class="s">&quot;Content-Type&quot;</span><span class="p">,</span> <span class="s">&quot;text/plain&quot;</span><span class="p">)</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">generated_id</span><span class="p">))</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span> <span class="c"># avoid ETag, etc generation</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+</span><span class='line'>    <span class="n">tornado</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">parse_command_line</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="s">&#39;worker_id&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">print</span> <span class="s">&#39;missing --worker_id argument, see </span><span class="si">%s</span><span class="s"> --help&#39;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span class='line'>        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">options</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">&lt;</span> <span class="mi">1024</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">print</span> <span class="s">&#39;invalid worker id, must be between 0 and 1023&#39;</span>
+</span><span class='line'>        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">IDHandler</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">worker_id</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">application</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">Application</span><span class="p">([</span>
+</span><span class='line'>        <span class="p">(</span><span class="s">r&quot;/&quot;</span><span class="p">,</span> <span class="n">IDHandler</span><span class="p">),</span>
+</span><span class='line'>    <span class="p">],</span> <span class="n">static_path</span><span class="o">=</span><span class="s">&quot;./static&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">http_server</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">httpserver</span><span class="o">.</span><span class="n">HTTPServer</span><span class="p">(</span><span class="n">application</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">http_server</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">port</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">tornado</span><span class="o">.</span><span class="n">ioloop</span><span class="o">.</span><span class="n">IOLoop</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+</span><span class='line'>    <span class="n">main</span><span class="p">()</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Đoạn code trên được trích từ repository <a href="https://github.com/formspring/flake/blob/master/flake.py">flake</a> Sử dụng <a href="http://www.tornadoweb.org/en/stable/">tornado</a> - Python web framework and asynchronous networking library, ở một thời điểm (độ chính xác tới millisecond), một node có thể handle được nhiều request, mỗi một request sẽ được trả về một số là ID được sinh ra. Số lượng ID được sinh ra bởi một node, tại một thời điểm bị giới hạn bởi 4096, nếu lớn hơn, request sẽ bị báo lỗi</p>
+<h1 id="kết-luận">Kết luận</h1>
+<p>Bài viết trình bày một số phương pháp sinh ID 64 bit, kèm code minh hoạ. Tuỳ vào hệ thống của bạn, bạn có thể sử dụng ID 64 bit cho những mục đích khác nhau. Ví dụ như đánh số tất cả các đối tượng trong database (giống như FB làm với graph API), hoặc sử dụng 64 bit ID như một bước đệm và áp dụng thêm một bước mã hoá để sinh ID cho một loại đối tượng (giống như youtube đánh số các video).</p>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -334,284 +561,6 @@ grep B data.dat | wc -l
 <h3 id="kết-luận">Kết luận</h3>
 <p>Bài viết đã giới thiệu qua các công cụ commandline của unix cũng như cách áp dụng công cụ đó vào bài toán cụ thể. Hy vọng qua bài viết bạn đã thấy được phần nào tầm quan trọng cũng như sức mạng của các chương trình tiện ích như awk, wc, grep, uniq, sort. Và để hiểu rõ công cụ thì không cách nào khác là áp dụng thật sáng tạo chúng vào công việc hàng ngày, do vậy bạn hãy thử áp dụng các công cụ trên vào bài toán sau nhé:</p>
 <p><strong>Với log file trên, đếm xem có bao nhiêu nguồn truy cập, và nguồn truy cập nào có số lượng truy cập lớn nhất</strong> ;)</p>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-06-02T19:47:00+09:00" data-updated="true" itemprop="datePublished">Jun 2<span>nd</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/code-golf/'>Code golf</a>, <a class='category' href='/blog/categories/php/'>PHP</a>, <a class='category' href='/blog/categories/web-programming/'>Web programming</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/06/02/99-bottles-of-beer/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/02/99-bottles-of-beer/" itemprop="url">99-bottles-of-beer</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h2 id="the-song-and-the-home-page">The song, and the home page</h2>
-<p>Đầu tiên có thể độc giả sẽ tự hỏi ý nghĩa của tiêu đề bài viết là gì ? Vậy trước hết mời bạn ghé qua <a href="http://99-bottles-of-beer.net">home page</a> và enjoy the <a href="http://www.youtube.com/watch?v=qVjCag8XoHQ">song</a></p>
-<p>99-bottles-of-beer cũng từng là đề bài của code golf và phpgolf. Mission của chúng ta là code 1 đoạn PHP snippet print <a href="http://99-bottles-of-beer.net/lyrics.html">lyric</a> của bài hát mà dung lượng đoạn code là nhỏ nhất. Logic thật đơn giản phải không :D</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>lyric</span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class=''><span class='line'>99 bottles of beer on the wall, 99 bottles of beer.
-</span><span class='line'>Take one down and pass it around, 98 bottles of beer on the wall.
-</span><span class='line'>
-</span><span class='line'>98 bottles of beer on the wall, 98 bottles of beer.
-</span><span class='line'>Take one down and pass it around, 97 bottles of beer on the wall.
-</span><span class='line'>
-</span><span class='line'>97 bottles of beer on the wall, 97 bottles of beer.
-</span><span class='line'>Take one down and pass it around, 96 bottles of beer on the wall.
-</span><span class='line'>
-</span><span class='line'>...
-</span><span class='line'>
-</span><span class='line'>1 bottle of beer on the wall, 1 bottle of beer.
-</span><span class='line'>Go to the store and buy some more, 99 bottles of beer on the wall.</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Với mục tiêu dùng ít code nhất có thể, tôi sẽ không dùng cấu trúc rẽ nhánh if-else, thay vào đó là ternary operator của PHP ( có nghĩa là bạn có thể viết “(condition)?true-action:false-action” thay vì “if (condition) {true-action} else {false-action}” )</p>
-<p>Đoạn code đầu tiên tôi nghĩ ra trong đầu như sau:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>sol1.php </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'>  <span class="nv">$a</span><span class="o">=</span><span class="s2">&quot;beer on the wall&quot;</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="nv">$i</span><span class="o">=</span><span class="mi">99</span><span class="p">;</span><span class="nv">$i</span><span class="o">&gt;=</span><span class="mi">1</span><span class="p">;</span><span class="nv">$i</span><span class="o">--</span><span class="p">){</span>
-</span><span class='line'>    <span class="nv">$x</span><span class="o">=</span><span class="p">(</span><span class="nv">$i</span><span class="o">==</span><span class="mi">1</span><span class="p">)</span><span class="o">?</span><span class="s2">&quot;bottle&quot;</span><span class="o">:</span><span class="s2">&quot;bottles&quot;</span><span class="p">;</span>
-</span><span class='line'>    <span class="nv">$b</span><span class="o">=</span><span class="s2">&quot;&lt;p&gt;</span><span class="si">$i</span><span class="s2"> </span><span class="si">$x</span><span class="s2"> of </span><span class="si">$a</span><span class="s2">, </span><span class="si">$i</span><span class="s2"> </span><span class="si">$x</span><span class="s2"> of beer.&lt;br&gt;&quot;</span><span class="p">;</span>
-</span><span class='line'>    <span class="nv">$b</span><span class="o">.=</span><span class="p">(</span><span class="nv">$i</span><span class="o">==</span><span class="mi">1</span><span class="p">)</span><span class="o">?</span><span class="s2">&quot;Go to the store and buy some more, 99 bottles of </span><span class="si">$a</span><span class="s2">.&quot;</span><span class="o">:</span><span class="s2">&quot;Take one down and pass it around, &quot;</span><span class="o">.</span><span class="p">(</span><span class="nv">$i</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="s2">&quot; </span><span class="si">$x</span><span class="s2"> of </span><span class="si">$a</span><span class="s2">.&lt;/p&gt;&quot;</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">print</span> <span class="nv">$b</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<h2 id="optimize">Optimize</h2>
-<p>Bạn thử ls -l sẽ thấy đoạn code trên có dung lượng 288 bytes!</p>
-<p>Để rút ngắn đoạn code trên, đầu tiên tôi nhớ lại những kiến thức cơ bản về PHP: dấu space hoàn toàn không cần thiết, và ký tự “?&gt;” ở cuối cũng có thể bỏ đi PHP long tag ở đầu có thể thay = PHP short tag</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>sol2.php </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='php'><span class='line'><span class="cp">&lt;?</span>
-</span><span class='line'><span class="nv">$a</span><span class="o">=</span><span class="s2">&quot;beer on the wall&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="k">for</span><span class="p">(</span><span class="nv">$i</span><span class="o">=</span><span class="mi">99</span><span class="p">;</span><span class="nv">$i</span><span class="o">&gt;=</span><span class="mi">1</span><span class="p">;</span><span class="nv">$i</span><span class="o">--</span><span class="p">){</span>
-</span><span class='line'><span class="nv">$x</span><span class="o">=</span><span class="p">(</span><span class="nv">$i</span><span class="o">==</span><span class="mi">1</span><span class="p">)</span><span class="o">?</span><span class="s2">&quot;bottle&quot;</span><span class="o">:</span><span class="s2">&quot;bottles&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="nv">$b</span><span class="o">=</span><span class="s2">&quot;&lt;p&gt;</span><span class="si">$i</span><span class="s2"> </span><span class="si">$x</span><span class="s2"> of </span><span class="si">$a</span><span class="s2">, </span><span class="si">$i</span><span class="s2"> </span><span class="si">$x</span><span class="s2"> of beer.&lt;br&gt;&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="nv">$b</span><span class="o">.=</span><span class="p">(</span><span class="nv">$i</span><span class="o">==</span><span class="mi">1</span><span class="p">)</span><span class="o">?</span><span class="s2">&quot;Go to the store and buy some more, 99 bottles of </span><span class="si">$a</span><span class="s2">.&quot;</span><span class="o">:</span><span class="s2">&quot;Take one down and pass it around, &quot;</span><span class="o">.</span><span class="p">(</span><span class="nv">$i</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="s2">&quot; </span><span class="si">$x</span><span class="s2"> of </span><span class="si">$a</span><span class="s2">.&lt;/p&gt;&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="k">print</span> <span class="nv">$b</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>263 bytes!</p>
-<p>Làm thế nào để rút ngắn hơn nữa ? Nếu để ý vào những chi tiết nhỏ hơn, bạn sẽ thấy:</p>
-<ul>
-<li>trong điều kiện vòng lặp, thay “<span class="math">\(i&gt;=1&quot; bằng &quot;\)</span>i&gt;0”</li>
-<li>“(<span class="math">\(i==1)?&quot; là quá dài. Ta có thể bỏ đi 2 dấu ngoặc &quot;\)</span>i==1?”</li>
-<li>print có thể thay bằng echo. ( Thực tế trong PHP bạn còn có thể thay rtrim -&gt; chop, explode -&gt; split, implode -&gt; join, preg_split -&gt; split (trong 1 vài trường hợp) và preg_replace -&gt; preg_filter trong hầu hết các TH )</li>
-<li>“<span class="math">\(x=(\)</span>i==1)?”bottle“:”bottles“;” có thể được viết lại : “<span class="math">\(x=&#39;bottle&#39;;\)</span>i==1?:$x.=‘s’;”</li>
-<li>Mỗi lần sử dụng biến $a ta đều có “of” ở đăng trước. Vậy có thể đơn giản cho word “of” vào trong biến a</li>
-<li>“99 bottles of <span class="math">\(a&quot; có thể rewrite tiếp lại thành &quot;99{\)</span>x}s of $a”</li>
-<li>Chúng ta có thể xoá “<span class="math">\(i&#8211;&quot; trong vòng lặp for, vì thế thêm &#8211; vào trước &quot;\)</span>i==1” ở dòng gần cuối thành “<span class="math">\(i&#8211;==1&quot; và vì thế bỏ luôn đoạn (\)</span>i-1) ở sau đó</li>
-</ul>
-<p>Như vậy solution tiếp theo của chúng ta sẽ là</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>sol2.php </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='php'><span class='line'><span class="cp">&lt;?</span>
-</span><span class='line'><span class="nv">$a</span><span class="o">=</span><span class="s2">&quot; of beer on the wall&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="k">for</span><span class="p">(</span><span class="nv">$i</span><span class="o">=</span><span class="mi">99</span><span class="p">;</span><span class="nv">$i</span><span class="o">&gt;=</span><span class="mi">1</span><span class="p">;){</span>
-</span><span class='line'><span class="nv">$x</span><span class="o">=</span><span class="s1">&#39;bottle&#39;</span><span class="p">;</span><span class="nv">$i</span><span class="o">==</span><span class="mi">1</span><span class="o">?:</span><span class="nv">$x</span><span class="o">.=</span><span class="s1">&#39;s&#39;</span><span class="p">;</span>
-</span><span class='line'><span class="nv">$b</span><span class="o">=</span><span class="s2">&quot;&lt;p&gt;</span><span class="si">$i</span><span class="s2"> </span><span class="si">$x$a</span><span class="s2">, </span><span class="si">$i</span><span class="s2"> </span><span class="si">$x</span><span class="s2"> of beer.&lt;br&gt;&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="nv">$b</span><span class="o">.=</span><span class="nv">$i</span><span class="o">--==</span><span class="mi">1</span><span class="o">?</span><span class="s2">&quot;Go to the store and buy some more, 99 </span><span class="si">{</span><span class="nv">$x</span><span class="si">}</span><span class="s2">s</span><span class="si">$a</span><span class="s2">.&quot;</span><span class="o">:</span><span class="s2">&quot;Take one down and pass it around, &quot;</span><span class="o">.</span><span class="nv">$i</span><span class="o">.</span><span class="s2">&quot; </span><span class="si">$x$a</span><span class="s2">.&lt;/p&gt;&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="k">echo</span> <span class="nv">$b</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>241 bytes!</p>
-<h2 id="the-trick">The trick</h2>
-<p>Bạn có nghĩ đã hết cách để rút gọn đoạn code ?</p>
-<p>Bạn có quên điều gì không ? Bỏ đi tất cả các ký tự line-feed (line break), cho code thành 1 dòng, chúng ra sẽ có kết quả tốt hơn.</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>sol4.php </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='php'><span class='line'><span class="cp">&lt;?</span><span class="nv">$a</span><span class="o">=</span><span class="s2">&quot; of beer on the wall&quot;</span><span class="p">;</span><span class="k">for</span><span class="p">(</span><span class="nv">$i</span><span class="o">=</span><span class="mi">99</span><span class="p">;</span><span class="nv">$i</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">;){</span><span class="nv">$x</span><span class="o">=</span><span class="s1">&#39;bottle&#39;</span><span class="p">;</span><span class="nv">$i</span><span class="o">^</span><span class="mi">1</span><span class="o">?</span><span class="nv">$x</span><span class="o">.=</span><span class="s1">&#39;s&#39;</span><span class="o">:</span><span class="mi">0</span><span class="p">;</span><span class="nv">$b</span><span class="o">=</span><span class="s2">&quot;&lt;p&gt;</span><span class="si">$i</span><span class="s2"> </span><span class="si">$x$a</span><span class="s2">, </span><span class="si">$i</span><span class="s2"> </span><span class="si">$x</span><span class="s2"> of beer.&lt;br&gt;&quot;</span><span class="p">;</span><span class="nv">$b</span><span class="o">.=</span><span class="err">$</span>
-</span><span class='line'><span class="nx">i</span><span class="o">--==</span><span class="mi">1</span><span class="o">?</span><span class="s2">&quot;Go to the store and buy some more, 99 </span><span class="si">{</span><span class="nv">$x</span><span class="si">}</span><span class="s2">s</span><span class="si">$a</span><span class="s2">.&quot;</span><span class="o">:</span><span class="s2">&quot;Take one down and pass it around, &quot;</span><span class="o">.</span><span class="nv">$i</span><span class="o">.</span><span class="s2">&quot; </span><span class="si">$x$a</span><span class="s2">.&lt;/p&gt;&quot;</span><span class="p">;</span><span class="k">echo</span>
-</span><span class='line'> <span class="nv">$b</span><span class="p">;}</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>233 bytes!</p>
-<p>Bạn có tin có 1 đoạn code sẽ cho kết quả tương tự với … 30 bytes ???</p>
-<p>!!</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>trick.php </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='php'><span class='line'><span class="cp">&lt;?</span><span class="k">include</span><span class="p">(</span><span class="s1">&#39;http://bit.ly/xxxx&#39;</span><span class="p">);</span> <span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>PHP là 1 ngôn ngữ web! Với allow_url_fopen và allow_url_include turn on có thể dễ dàng load 1 link kết quả có sẵn đi kèm 1 dịch vụ như bitly !</p>
-<p>Stay hungry, stay foolish :D</p>
-<h2 id="tham-khảo">Tham khảo</h2>
-<ol type="1">
-<li><a href="http://www.phpgolf.org/tips">phpgolf tips and tricks</a></li>
-<li><a href="http://stackoverflow.com/questions/3801097/solve-this-php-puzzle-in-as-few-bytes-as-possible">Question on StackOverFlow</a></li>
-</ol>
 		
 		
 	</div>

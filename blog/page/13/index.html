@@ -7,8 +7,7 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Aug 4th, 2013 linux, system Comments Tìm Hiểu Redis (Phần 3): đối Tượng Trong Redis (Redis Objects) 1. Giới thiệu
-Trong các bài viết trước mình đã &hellip;">
+	<meta name="description" content="Aug 5th, 2013 iOS Comments Những Lưu ý Khi Dùng UITableView - Phần 2 Như đã giới thiệu ở phần trước, chúng ta có thể làm giảm load của chương trình &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -82,6 +81,202 @@ Trong các bài viết trước mình đã &hellip;">
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-08-05T10:28:00+09:00" data-updated="true" itemprop="datePublished">Aug 5<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/ios/'>iOS</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/08/05/nhung-luu-y-khi-dung-uitableview-phan-2/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/08/05/nhung-luu-y-khi-dung-uitableview-phan-2/" itemprop="url">Những Lưu ý Khi Dùng UITableView - Phần 2</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<p>Như đã giới thiệu ở phần trước, chúng ta có thể làm giảm load của chương trình bằng cách tính toán trước chiều cao của các table cell. Ở phần này, chúng ta sẽ cùng xem chi tiết vấn đề này thông qua 1 ví dụ nhỏ.</p>
+<p>Hãy xét 1 tình huống chúng ta có 1 table view để hiện thị 1 danh sách tin tức (có thể lấy từ sv về). Các bản tin này bao gồm ảnh, tiêu đề và nội dung. Phần tiêu đề chỉ hiện thị trên 1 dòng, vì thế chiều cao của bản tin sẽ phụ thuộc vào phần nội dung. Để cho đơn giản, trong ví dụ này, nội dung của tin sẽ được set cứng, lưu vào và lấy ra trong NSUserDefault.</p>
+<p>Trước hết, hãy tạo ra 1 custom TableView Cell tương tự như trong bài viết 1. Cell này có 3 thành phần: avatar, nameLabel, contentLabel tương ứng với 3 thành phần của bài viết.</p>
+<p><img src="/images/luuYTableView/custom_cell.png"></p>
+<p>Chúng ta khởi tạo cell dựa vào 1 dictionary chứa thông tin của bài viết, thông qua hàm: -(void)setupCellWithDictionary:(NSDictionary *)dictionary</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='objc'><span class='line'>    <span class="n">nameLabel</span><span class="p">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s">@&quot;name&quot;</span><span class="p">];</span>
+</span><span class='line'>    <span class="n">contentLabel</span><span class="p">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s">@&quot;content&quot;</span><span class="p">];</span>
+</span><span class='line'>    <span class="n">avatarImg</span><span class="p">.</span><span class="n">image</span> <span class="o">=</span> <span class="p">[</span><span class="n">UIImage</span> <span class="nl">imageNamed:</span><span class="n">dictionary</span><span class="p">[</span><span class="s">@&quot;avatar&quot;</span><span class="p">]];</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">float</span> <span class="n">contentLabelWidth</span> <span class="o">=</span> <span class="mi">228</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">CGSize</span> <span class="n">constraint</span> <span class="o">=</span> <span class="n">CGSizeMake</span><span class="p">(</span><span class="n">contentLabelWidth</span><span class="p">,</span> <span class="mf">20000.0f</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">CGSize</span> <span class="n">size</span> <span class="o">=</span> <span class="p">[</span><span class="n">contentLabel</span><span class="p">.</span><span class="n">text</span> <span class="nl">sizeWithFont:</span><span class="n">contentLabel</span><span class="p">.</span><span class="n">font</span> <span class="nl">constrainedToSize:</span><span class="n">constraint</span> <span class="nl">lineBreakMode:</span><span class="n">NSLineBreakByWordWrapping</span><span class="p">];</span>
+</span><span class='line'>    <span class="n">contentLabel</span><span class="p">.</span><span class="n">frame</span> <span class="o">=</span> <span class="n">CGRectMake</span><span class="p">(</span><span class="n">contentLabel</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="n">contentLabel</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">y</span><span class="p">,</span> <span class="n">contentLabel</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">width</span><span class="p">,</span> <span class="n">size</span><span class="p">.</span><span class="n">height</span><span class="p">);</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>và tính toán chiều cao của cell bằng cách tính chiều cao của contentLabel qua hàm: +(float)heightForCellWithDictionary:(NSDictionary *)dictionary</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='objc'><span class='line'>    <span class="n">NSString</span> <span class="o">*</span><span class="n">content</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s">@&quot;content&quot;</span><span class="p">];</span>
+</span><span class='line'>    <span class="kt">float</span> <span class="n">contentLabelWidth</span> <span class="o">=</span> <span class="mi">228</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">CGSize</span> <span class="n">constraint</span> <span class="o">=</span> <span class="n">CGSizeMake</span><span class="p">(</span><span class="n">contentLabelWidth</span><span class="p">,</span> <span class="mf">20000.0f</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">CGSize</span> <span class="n">size</span> <span class="o">=</span> <span class="p">[</span><span class="n">content</span> <span class="nl">sizeWithFont:</span><span class="p">[</span><span class="n">UIFont</span> <span class="nl">systemFontOfSize:</span><span class="mi">17</span><span class="p">]</span> <span class="nl">constrainedToSize:</span><span class="n">constraint</span> <span class="nl">lineBreakMode:</span><span class="n">NSLineBreakByWordWrapping</span><span class="p">];</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">size</span><span class="p">.</span><span class="n">height</span> <span class="o">+</span> <span class="mi">34</span> <span class="o">+</span> <span class="mi">10</span><span class="p">;</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Vậy là xong cho table cell, tiếp đến sẽ là sử dụng các cell này cho hiệu quả. Trước hết là lấy danh sách các bản tin:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='objc'><span class='line'>    <span class="n">listNews</span> <span class="o">=</span> <span class="p">[[</span><span class="n">NSUserDefaults</span> <span class="n">standardUserDefaults</span><span class="p">]</span> <span class="nl">objectForKey:</span><span class="s">@&quot;list_news&quot;</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">[</span><span class="n">self</span> <span class="n">calculateCellHeights</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">[</span><span class="n">myTableView</span> <span class="n">reloadData</span><span class="p">];</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Sau khi lấy được listNews, chúng ta sẽ tính toán luôn height cho từng cell và lưu vào database (ở đây là NSUserDefault) qua hàm calculateCellHeights, và khi lấy ra các height này qua hàm -(float)tableView:(UITableView <em>)tableView heightForRowAtIndexPath:(NSIndexPath </em>)indexPath chúng ta sẽ lấy ra từ database dựa vào Id của cell chứ không phải tính toán lại như thông thường:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='objc'><span class='line'>    <span class="n">NSString</span> <span class="o">*</span><span class="n">key</span> <span class="o">=</span> <span class="p">[</span><span class="n">NSString</span> <span class="nl">stringWithFormat:</span><span class="s">@&quot;cell_%@&quot;</span><span class="p">,</span> <span class="n">cellId</span><span class="p">];</span>
+</span><span class='line'>    <span class="kt">float</span> <span class="n">height</span> <span class="o">=</span> <span class="p">[[</span><span class="n">NSUserDefaults</span> <span class="n">standardUserDefaults</span><span class="p">]</span> <span class="nl">floatForKey:</span><span class="n">key</span><span class="p">];</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">height</span><span class="p">;</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Điểm đặc biệt của phương pháp này là các cell height sẽ chỉ phải tính 1 lần cho từng cell_ID, vì thế nếu lần load sau, nếu có cùng dữ liệu thì các height này sẽ không phải tính lại. Nếu bộ dữ liệu lớn, hoặc là các cell này được sử dụng lại nhiều lần, thì phương pháp này sẽ vô cùng hữu hiệu.</p>
+<p>Hàm -(void)calculateCellHeights</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='objc'><span class='line'>        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">listNews</span><span class="p">.</span><span class="n">count</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">NSDictionary</span> <span class="o">*</span><span class="n">cellDict</span> <span class="o">=</span> <span class="n">listNews</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+</span><span class='line'>        <span class="n">NSString</span> <span class="o">*</span><span class="n">cellId</span> <span class="o">=</span> <span class="n">cellDict</span><span class="p">[</span><span class="s">@&quot;cellId&quot;</span><span class="p">];</span>
+</span><span class='line'>        <span class="c1">// Chỉ tính toán cho các cell chưa tồn tại</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="p">[</span><span class="n">self</span> <span class="nl">isCellIdExisted:</span><span class="n">cellId</span><span class="p">])</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">NSLog</span><span class="p">(</span><span class="s">@&quot;calculate cell height&quot;</span><span class="p">);</span>
+</span><span class='line'>            <span class="kt">float</span> <span class="n">height</span> <span class="o">=</span> <span class="p">[</span><span class="n">CustomTableCell</span> <span class="nl">heightForCellWithDictionary:</span><span class="n">cellDict</span><span class="p">];</span>
+</span><span class='line'>            <span class="p">[</span><span class="n">self</span> <span class="nl">saveCellHeight:</span><span class="n">height</span> <span class="nl">forCellId:</span><span class="n">cellId</span><span class="p">];</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Lưu ý là trong ví dụ này, các cell height được lưu trong NSUserDefault, bạn hoàn toàn có thể lưu trong database như sqlite hoặc core data với nhiều tính năng hơn. Toàn bộ code của bài viết có thể được download tại đây https://github.com/toandk/NewsFeedExample</p>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -310,372 +505,6 @@ Trong các bài viết trước mình đã &hellip;">
 <h1 id="tổng-kết">Tổng kết</h1>
 <p>Bài viết trình bày 2 lỗi bảo mật hay gặp khi cài đặt hệ thống login bằng facebook trên server cho ứng dụng mobile. Lỗi thứ nhất là sử dụng client để lấy access token, mà không kiểm tra độ chính xác của access token. Lỗi thứ hai là chỉ kiểm tra độ chính xác của access token bằng cách thông tin user, mà không kiểm tra thông tin của app từ access token.</p>
 <p>Nếu bạn đã có một hệ thống login bằng FB, hãy check lại nó. Nếu bạn chưa từng cài đặt hệ thống này thì chúc mừng bạn, bạn đã được cảnh báo !!!</p>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-07-28T23:45:00+09:00" data-updated="true" itemprop="datePublished">Jul 28<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/php/'>PHP</a>, <a class='category' href='/blog/categories/reflection/'>Reflection</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/07/28/reflection-and-reverse-engineer-in-php/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/28/reflection-and-reverse-engineer-in-php/" itemprop="url">Reflection and Reverse Engineer in PHP</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h2 id="giới-thiệu-reflection-class-trong-php">Giới thiệu Reflection class trong PHP</h2>
-<p>Kể từ PHP 5 trở đi, Programmer PHP đã có bộ API Reflection rất hữu dụng để reverse-engineer các class, interfaces, function hay các extension. Bài viết này sẽ giới thiệu tính năng, ý nghĩa và ứng dụng của Reflection trong PHP.</p>
-<h2 id="thế-nào-là-dynamically-typed-language">Thế nào là dynamically-typed language ?</h2>
-<p>Cũng giống như Python hay Ruby, PHP là 1 dynamically-typed language.</p>
-<p>Chúng ta hãy cùng xem xét 2 class sau:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>Author.php </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">Author</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="k">private</span> <span class="nv">$name</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">private</span> <span class="nv">$birth</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nv">$birth</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">name</span> <span class="o">=</span> <span class="nv">$name</span><span class="p">;</span>
-</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">birth</span> <span class="o">=</span> <span class="nv">$birth</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">public</span> <span class="k">function</span> <span class="nf">getName</span><span class="p">()</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">name</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">public</span> <span class="k">function</span> <span class="nf">getBirth</span><span class="p">()</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">birth</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>Book.php </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">Book</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="k">private</span> <span class="nv">$author</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">setAuthor</span><span class="p">(</span><span class="nv">$author</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="nv">$author</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">getAuthor</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>2 class rất đơn giản phải không :) Book hoàn toàn có thể được setAuthor() là 1 string hay là 1 instance của class Author.</p>
-<p>Không khó để hình dung ra kết quả của đoạn code dưới đây.</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>sample.php </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="nv">$book1</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
-</span><span class='line'><span class="nv">$book1</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="s2">&quot;Nam Cao&quot;</span><span class="p">);</span>
-</span><span class='line'><span class="nb">var_dump</span><span class="p">(</span><span class="nv">$book1</span><span class="o">-&gt;</span><span class="na">getAuthor</span><span class="p">());</span>
-</span><span class='line'>
-</span><span class='line'><span class="nv">$book2</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
-</span><span class='line'><span class="nv">$book2</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">(</span><span class="s2">&quot;Nam Cao&quot;</span><span class="p">,</span><span class="s2">&quot;29-10-1915&quot;</span><span class="p">));</span>
-</span><span class='line'><span class="nb">var_dump</span><span class="p">(</span><span class="nv">$book1</span><span class="o">-&gt;</span><span class="na">getAuthor</span><span class="p">());</span>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Nếu chỉ dừng ở đây thì tôi với bạn chẳng có gì để nói với nhau :D Nhưng bạn hãy thử để ý, 1 instance của 1 class Book khi gọi đến hàm <code>setAuthor</code> hoàn toàn không có 1 khái niệm nào về <code>$author</code> cả. Nói cách khác, $author có thể là bất cứ 1 object nào. Điều gì sẽ xảy ra khi tôi modify class Book 1 chút như sau:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>Book.php </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">Book</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="k">private</span> <span class="nv">$author</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">setAuthor</span><span class="p">(</span><span class="nv">$author</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="nv">$author</span><span class="p">;</span>
-</span><span class='line'>      <span class="nb">var_dump</span><span class="p">(</span><span class="nv">$author</span><span class="o">-&gt;</span><span class="na">getName</span><span class="p">());</span> <span class="c1">// Attention here! Now we try to call getName() of variable $author</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">getAuthor</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Bạn thử chạy lại đoạn code sample.php bên trên, bạn sẽ thấy $book1 trả về Fatal Error nhưng $book2 sẽ chạy qua bình thường!</p>
-<p>Vào thời điểm runtime $book2, PHP sẽ “inspect” object $author truyền vào cho <code>setAuthor()</code> và tự hiểu $author là 1 instance của class Author và có 1 method là <code>getName()</code>.</p>
-<h2 id="reverse-engineer-example">Reverse engineer example</h2>
-<p>Vậy PHP nói riêng và các dynamically-typed language nói chung làm thế nào để nhận biết được type của object truyền vào function hay class ?</p>
-<p>Câu trả lời là reflection class! Bạn đã nhận ra PHP dùng reflection như thế nào qua ví dụ bên trên, bạn thậm chí có thể tự sử dụng reflection class.</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>Book.php </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">Book</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="k">private</span> <span class="nv">$author</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">setAuthor</span><span class="p">(</span><span class="nv">$author</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="nv">$author</span><span class="p">;</span>
-</span><span class='line'>      <span class="nb">var_dump</span><span class="p">(</span><span class="nv">$author</span><span class="o">-&gt;</span><span class="na">getName</span><span class="p">());</span> <span class="c1">// original name</span>
-</span><span class='line'>      <span class="nv">$reflector</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ReflectionClass</span><span class="p">(</span><span class="nv">$author</span><span class="p">);</span> <span class="c1">// Here we start to inspect $author</span>
-</span><span class='line'>      <span class="nv">$authorName</span> <span class="o">=</span> <span class="nv">$reflector</span><span class="o">-&gt;</span><span class="na">getProperty</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">);</span> <span class="c1">// Get local variable &#39;name&#39;</span>
-</span><span class='line'>      <span class="nv">$authorName</span><span class="o">-&gt;</span><span class="na">setAccessible</span><span class="p">(</span><span class="k">true</span><span class="p">);</span> <span class="c1">// since &#39;name&#39; is a private local variable of class Author, we need access here to modify </span>
-</span><span class='line'>      <span class="nv">$authorName</span><span class="o">-&gt;</span><span class="na">setValue</span><span class="p">(</span><span class="nv">$author</span><span class="p">,</span><span class="s1">&#39;Ngo Tat To&#39;</span><span class="p">);</span> <span class="c1">// now hack the &#39;name&#39; of $author :))</span>
-</span><span class='line'>      <span class="nb">var_dump</span><span class="p">(</span><span class="nv">$author</span><span class="o">-&gt;</span><span class="na">getName</span><span class="p">());</span> <span class="c1">// Guess what will be output here :D </span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">function</span> <span class="nf">getAuthor</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">author</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Bạn thử đoán xem đoạn var_dump sau sẽ ra kết quả gì :D</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>Book.php </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='php'><span class='line'><span class="cp">&lt;?php</span>
-</span><span class='line'><span class="nv">$book2</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Book</span><span class="p">;</span>
-</span><span class='line'><span class="nv">$book2</span><span class="o">-&gt;</span><span class="na">setAuthor</span><span class="p">(</span><span class="k">new</span> <span class="nx">Author</span><span class="p">(</span><span class="s2">&quot;Nam Cao&quot;</span><span class="p">,</span><span class="s2">&quot;29-10-1915&quot;</span><span class="p">));</span>
-</span><span class='line'><span class="nb">var_dump</span><span class="p">(</span><span class="nv">$book1</span><span class="o">-&gt;</span><span class="na">getAuthor</span><span class="p">());</span> <span class="c1">// Suprisingly, &#39;Ngo Tat To&#39;, not &#39;Nam Cao&#39; here </span>
-</span><span class='line'><span class="cp">?&gt;</span><span class="x"></span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<h2 id="reflection-class-dùng-để-làm-gì">Reflection class dùng để làm gì ?</h2>
-<p>Đến đây có lẽ bạn đọc đã hình dung ra phần nào cách thức hoạt động của reflection class, các ngôn ngữ dynamically-typed “hiểu” các object như thế nào. Reflection thực tế tồn tại trong PHPUnit hay các mocking framework, các code analysis framwworks hay metaprogramming.</p>
-<p>Reflection class trong PHP là 1 tool mạnh mẽ cung cấp cho programmer chính những sức mạnh mà ngôn ngữ sở hữu. Tuy nhiên reflection class không hề được khuyến khích dùng rộng rãi, vì với bản chất là tool của quá trình reverse engineering, nó hoàn toàn có thể làm design của hệ thống trở nên mess up và khó kiểm soát.</p>
-<p>Reflection chỉ nên dùng khi nào thực sự cần thiết, ứng dụng nhìn thấy rõ nhất là khi bạn phải “đối đầu” với 1 project mà document ko đầy đủ hay không được upadte thường xuyên. <a href="https://github.com/cakephp/api_generator">Cake Api Generator</a> là ví dụ điển hình nhất.</p>
-<h2 id="summary">Summary</h2>
-<ul>
-<li><strong>Dynamically-typed language</strong>: Là ngôn ngữ có thể tự hiểu được object tại thời điểm runtime, không cần tại compile time. PHP, Ruby, Python là dynamically-typed language. Ngược lại C hay Java là statically typed language.</li>
-<li><strong>Reflection Class</strong> Là 1 bộ API được PHP cung cấp để sử dụng kỹ thuật reverse engineer, hữu dụng khi tạo document tự động.</li>
-</ul>
 		
 		
 	</div>

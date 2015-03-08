@@ -7,8 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Apr 19th, 2014 algorithm Comments Một Số ví Dụ về Quy Hoạch động Giới thiệu
-Quy hoạch động là một trong những kĩ thuật lập trình cơ bản được sử dụng &hellip;">
+	<meta name="description" content="May 9th, 2014 Comments Full Text Search Từ Lý Thuyết đến Thực Tiễn (Phần Cuối) Introduction
+Trong loạt bài viết trước về Full-text search, mình đã &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -82,6 +82,546 @@ Quy hoạch động là một trong những kĩ thuật lập trình cơ bản �
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-09T20:00:00+09:00" data-updated="true" itemprop="datePublished">May 9<span>th</span>, 2014</time></div>
+		<div class="tags">
+
+</div>
+		
+			<span class="comments"><a href="/blog/2014/05/09/full-text-search-tu-ly-thuyet-den-thuc-tien-phan-cuoi/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2014/05/09/full-text-search-tu-ly-thuyet-den-thuc-tien-phan-cuoi/" itemprop="url">Full Text Search Từ Lý Thuyết đến Thực Tiễn (Phần Cuối)</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1 id="introduction">Introduction</h1>
+<p>Trong loạt bài viết trước về Full-text search, mình đã giới thiệu về các khái niệm hết sức cơ bản để làm nên một search-engine:</p>
+<ul>
+<li><a href="http://ktmt.github.io/blog/2013/10/27/full-text-search-engine/">Phần 1: Giới thiệu cơ bản: Inverted Index</a></li>
+<li><a href="http://ktmt.github.io/blog/2013/11/03/full-text-search/">Phần 2: Kỹ thuật Tokenize</a></li>
+<li><a href="http://ktmt.github.io/blog/2014/01/04/full-text-search-engine-part-3/">Phần 3: Tìm kiếm sử dụng Boolean Logic</a></li>
+<li><a href="http://ktmt.github.io/blog/2014/03/03/full-text-search-tu-khai-niem-den-thuc-tien-phan-4/">Phần 4: Các mô hình Ranking</a></li>
+</ul>
+<p>Trong bài viết này, để khép lại loạt bài về Full-Text search, mình sẽ hướng dẫn cách làm một search engine hết sức đơn giản sử dụng inverted index. Sample code mình sẽ sử dụng Python để cho dễ hiểu.</p>
+<h1 id="code-design">Code Design</h1>
+<p>Việc đầu tiên trước khi code chúng ta phải design xem chương trình của chúng ta sẽ gồm những module nào, nhiệm vụ mỗi module ra sao. Để design được thì chúng ta phải làm rõ yêu cầu bài toán và cách giải quyết.</p>
+<p>Bài toán trong bài viết này là <strong>xây dụng một search engine</strong>. Để cho đơn giản chúng ta sẽ xây dựng search engine trên command line, dựa trên đầu vào là các documents với format được định nghĩa trước. Trong bài này, mình sẽ sử dụng một sample nhỏ của twitter data như là input documents. Bài toán được tóm tắt lại như dưới đây:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class=''><span class='line'>Input document:
+</span><span class='line'>11  superkarafan  superkarafan  http://twitter.com/superkarafan Yes. He is Kendo Kobayashi. One of great JKamilia RT "@nicolexrina:  Is your twitter DP you? I have seen him in ametalk before!"
+</span><span class='line'>12  sao_mama  saomama http://twitter.com/sao_mama @miwauknow  持って行きたいけど、北海道からだから重い(T_T)飲むゼリーとかはダメなのかな。「SMT」のときそうしたんだけど・・・
+</span><span class='line'>
+</span><span class='line'>Command-line Interface:
+</span><span class='line'>./searcher &lt;word&gt;</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Như đã giới thiệu ở loạt bài trước, Full Text Search sử dụng inverted index để lưu lại term và các document chứa term đó:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class=''><span class='line'>"this" =&gt; {D1, D2, D3, D4}</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Vì vậy chúng ta cần một module để lưu Structure này, chúng ta sẽ gọi module đó là DocID. DocID sẽ có nhiệm vụ là lưu term và một array để chứa id của các documents mà chứa term đó.</p>
+<p>Tuy nhiên chỉ lưu đơn thuần dữ liệu inverted index thì sẽ không đủ, chúng ta cần một module để lưu lại các document và ID của chúng để khi có kết quả tìm kiếm chúng ta có thể present kết quả dễ dàng hơn. Module này chúng ta sẽ gọi là Content. Content sẽ lưu lại Id và nội dung của document.</p>
+<p>Chúng ta cũng sẽ cần một module để làm nhiệm vụ phân tích document ra thành các term như đã giới thiệu trong <a href="http://ktmt.github.io/blog/2013/11/03/full-text-search/">Bài 2: Kỹ thuật Tokenize</a>. Chúng ta sẽ gọi module này là Tokenizer.</p>
+<p>Đã có Tokenizer, DocID, Content, chúng ta cần một module sử dụng cả 3 module này để lưu trữ thông tin được tạo ra từ Tokenizer vào DocID và Content, chúng ta sẽ gọi nó là Indexer.</p>
+<p>Cuối cùng, chúng ta cần một module sử dụng boolean logic như đã giới thiệu trong <a href="http://ktmt.github.io/blog/2014/01/04/full-text-search-engine-part-3/">Bài 3</a> để tìm kiếm. Chúng ta sẽ gọi module này là Searcher. Module Searcher sẽ có nhiệm vụ sử dụng tách query ra thành các term, search ra một tập document chứa các term đó, và present ra màn hình.</p>
+<p>Tóm tắt lại chúng ta sẽ có các module sau:</p>
+<ul>
+<li>DocID : Lưu inverted index</li>
+<li>Content : Lưu id và dữ liệu thô từ input data</li>
+<li>Tokenizer : Bóc tách term</li>
+<li>Indexer : Sử dụng tokenizer để lưu thông tin</li>
+<li>Searcher : Tìm kiếm</li>
+</ul>
+<h1 id="implement">Implement</h1>
+<p>Để implement bài toán này chúng ta sẽ sử dụng python. Chúng ta cũng cần một thư viện để lưu lại/sử dụng (dump) dữ liệu (inverted index) ra file. Python có một thư viện rất tốt để dump data structure ra file gọi là Pickle.</p>
+<p>Sử dụng pickle, chúng ta sẽ lưu dữ liệu ra file và khi load chương trình lên sẽ sử load file vào data structure lên sau. Tách ra làm 2 bước như vậy giúp chúng ta tách biệt được 2 quá trình 1) Index và 2) Search, mà qua đó khi có thêm dữ liệu mới, index file sẽ được update thêm mà không ảnh hưởng đên Searcher.</p>
+<p>Dưới đây chúng ta sẽ đi lần lượt vào implementation của từng module. Đầu tiên là DocID.</p>
+<h2 id="docid">DocID</h2>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>DocID - DocID.py </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='py'><span class='line'><span class="kn">import</span> <span class="nn">pickle</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">DocID</span><span class="p">:</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">docIDTable</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">get_doc_num</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">docIDTable</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">term</span><span class="p">,</span> <span class="n">docID</span><span class="p">,</span> <span class="n">termPos</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">docIDTable</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="p">[])</span>
+</span><span class='line'>    <span class="n">value</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">docID</span><span class="p">,</span> <span class="n">termPos</span><span class="p">))</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">docIDTable</span><span class="p">[</span><span class="n">term</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">term</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">docIDTable</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="p">[])</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">file</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="nb">file</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">docIDTable</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">file</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="nb">file</span><span class="p">)</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">docIDTable</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Ở DocID chúng ta có property docIDTable được lưu dưới dạng dictionary của python, mà trong đó key là term , và value sẽ là array chứa Ids của các document chứa term đó. docIDTable chính là biểu diễn bằng code của inverted index data structure.</p>
+<p>Module DocID có các hàm dump và load để lưu dữ liệu ra file và load dữ liệu lên memory. Tiếp theo chúng ta sẽ đến với implemetation của module Content.</p>
+<h2 id="content">Content</h2>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>Content - Content.py </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='py'><span class='line'><span class="kn">import</span> <span class="nn">pickle</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">Content</span><span class="p">:</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">contentTable</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">get_content_num</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">contentTable</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">contentTable</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">get_content_num</span><span class="p">()]</span> <span class="o">=</span> <span class="n">content</span>
+</span><span class='line'>    <span class="n">current_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_content_num</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">current_index</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">contentTable</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="o">...</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Module này chỉ nhằm nhiệm vụ lưu lại dữ liệu của document và Id của document đó. Việc này sẽ được thực hiện cũng qua dictionary của python, với key là Id của document, và value là content của document tương ứng.</p>
+<p>Tiếp đến, module Tokenizer sẽ được implement như dưới đây</p>
+<h2 id="tokenizer">Tokenizer</h2>
+<p>Để cho đơn giản, tokenizer của chúng ta sẽ sử dụng ngram.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>Tokenizer - Tokenizer.py </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='py'><span class='line'><span class="k">class</span> <span class="nc">Tokenizer</span><span class="p">:</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">engine</span><span class="p">):</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">engine</span> <span class="o">=</span> <span class="n">engine</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">split</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statement</span><span class="p">,</span> <span class="n">ngram</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">statement</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">ngram</span><span class="p">):</span>
+</span><span class='line'>      <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">statement</span><span class="p">)</span> <span class="o">-</span> <span class="n">ngram</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">statement</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="n">ngram</span><span class="p">])</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">result</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<h2 id="indexer">Indexer</h2>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>Indexer - Indexer.py </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='py'><span class='line'><span class="kn">from</span> <span class="nn">docid</span> <span class="kn">import</span> <span class="n">DocID</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">content</span> <span class="kn">import</span> <span class="n">Content</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">tokenizer</span> <span class="kn">import</span> <span class="n">Tokenizer</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">Index</span><span class="p">:</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ngram</span><span class="p">):</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">Tokenizer</span><span class="p">(</span><span class="s">&quot;ma&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">docID</span> <span class="o">=</span> <span class="n">DocID</span><span class="p">()</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="n">Content</span><span class="p">()</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">ngram</span> <span class="o">=</span> <span class="n">ngram</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">tokenize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statement</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">statement</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">append_doc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">docID</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">pos</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">set_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statement</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">statement</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statement</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">tokenized_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenize</span><span class="p">(</span><span class="n">statement</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">content_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_content</span><span class="p">(</span><span class="n">statement</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">token_index</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokenized_str</span><span class="p">:</span>
+</span><span class='line'>      <span class="bp">self</span><span class="o">.</span><span class="n">append_doc</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">content_id</span><span class="p">,</span> <span class="n">token_index</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">token_index</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">dir</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">f_content_name</span> <span class="o">=</span> <span class="s">&quot;content.pickle&quot;</span>
+</span><span class='line'>    <span class="n">f_docid_name</span> <span class="o">=</span> <span class="s">&quot;docid.pickle&quot;</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">f_content_name</span><span class="p">)</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">docID</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">f_docid_name</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">dir</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">f_content_name</span> <span class="o">=</span> <span class="s">&quot;content.pickle&quot;</span>
+</span><span class='line'>    <span class="n">f_docid_name</span> <span class="o">=</span> <span class="s">&quot;docid.pickle&quot;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f_content_name</span><span class="p">)</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">docID</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">f_docid_name</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">column</span><span class="p">):</span>
+</span><span class='line'>  <span class="n">indexer</span> <span class="o">=</span> <span class="n">Index</span><span class="p">(</span><span class="n">NGRAM</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">f</span> <span class="o">=</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">,</span> <span class="s">&quot;utf-8&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">lines</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+</span><span class='line'>    <span class="k">print</span> <span class="n">line</span>
+</span><span class='line'>    <span class="n">elems</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\t</span><span class="s">&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">indexer</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">elems</span><span class="p">[</span><span class="n">column</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span><span class='line'>  <span class="n">indexer</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="s">&quot;data/&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+</span><span class='line'>  <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+</span><span class='line'>    <span class="k">print</span> <span class="s">&quot;usage: ./indexer.py INPUT_TSV_FILE_PATH TARGET_COLUMN_NUM&quot;</span>
+</span><span class='line'>    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">filepath</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+</span><span class='line'>  <span class="n">column</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+</span><span class='line'>  <span class="n">main</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">column</span><span class="p">)</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Module này có nhiệm vụ là sử dụng Tokenizer để tách input document thành các term sử dụng ngram, tức là mỗi term sẽ có độ dài bằng độ dài ngram. Sau đó sẽ index term đó vào DocID, nếu term đó đã tồn tại thì id của document hiện tại sẽ được add vào docIDTable của docId thông qua hàm “set”.</p>
+<p>Kết quả index sẽ được lưu vào file docid.pickle (inverted index data) và content.pickle (content data).</p>
+<h2 id="searcher">Searcher</h2>
+<p>Module này có nhiệm vụ load dữ liệu đã qua index từ 2 file docid.pickle và content.pickle vào memory, sau đó với mỗi query, Searcher sẽ phân tích query đó thành các term dựa vào tokenizer, tìm kiếm document chứa các term đó dựa vào dữ liệu từ docid, và present kết quả ra màn hình dựa vào dữ liệu lấy được từ content.pickle:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>Searcher - Searcher.py </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='py'><span class='line'><span class="kn">from</span> <span class="nn">docid</span> <span class="kn">import</span> <span class="n">DocID</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">content</span> <span class="kn">import</span> <span class="n">Content</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">tokenizer</span> <span class="kn">import</span> <span class="n">Tokenizer</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">collections</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">Searcher</span><span class="p">:</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ngram</span><span class="p">,</span> <span class="nb">dir</span><span class="p">):</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">docID</span> <span class="o">=</span> <span class="n">DocID</span><span class="p">()</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">Tokenizer</span><span class="p">()</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="n">Content</span><span class="p">()</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">docID</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">dir</span> <span class="o">+</span> <span class="s">&quot;docid.pickle&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">dir</span> <span class="o">+</span> <span class="s">&quot;content.pickle&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statement</span><span class="p">,</span> <span class="n">numOfResult</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">tokenized_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">split_query</span><span class="p">(</span><span class="n">statement</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_search</span><span class="p">(</span><span class="n">tokenized_list</span><span class="p">,</span> <span class="n">numOfResult</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">_search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tokenList</span><span class="p">,</span> <span class="n">numOfResult</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">token_search_index</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokenList</span><span class="p">:</span>
+</span><span class='line'>      <span class="n">content_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">docID</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">for</span> <span class="n">content_id</span> <span class="ow">in</span> <span class="n">content_ids</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="p">[</span><span class="n">content_id</span><span class="p">]:</span>
+</span><span class='line'>          <span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">[</span><span class="n">content_id</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>        <span class="k">else</span><span class="p">:</span>
+</span><span class='line'>          <span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">[</span><span class="n">content_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="n">content_id</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">print_result</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">sorted_result</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">sorted_result</span><span class="p">:</span>
+</span><span class='line'>      <span class="k">print</span> <span class="s">&quot;{}</span><span class="se">\n</span><span class="s">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Chúng ta có thể thấy Searcher là một module rất đơn giản sử dụng tokenizer để bóc tách query. Sau khi bóc tách query thành các term, với mỗi term chúng ta sẽ tìm các document chứa term đó dựa vào docID. Mỗi term chúng ta sẽ thu được một chuỗi Ids chứa id của document chứa chúng.</p>
+<p>Để kết hợp các các chuỗi ids tìm được thành kết quả cuối cùng, chúng ta làm một mô hình ranking rất đơn giản, document nào chứa nhiều term hơn thì hiển thị trước. Logic này được thực hiện dựa vào tạo một dictionary chứa kết quả (self.result) , cứ mỗi khi tìm được document nào thì ta cộng kết quả thêm 1.</p>
+<p>Kết quả cuối cùng sẽ được in ra màn hình thông qua hàm print_result. Như vậy chúng ta đã implement xong một search engine hết sức đơn giản.</p>
+<h1 id="conclusion">Conclusion</h1>
+<p>Thông qua chuỗi bài viết, chúng ta đã hiểu được phần nào việc tạo ra một search engine. Để có một search engine thành công, như google hay yahoo, không những performance phải được hoàn thiện ở mức tối đa với khối lượng dữ liệu rất lớn, thì việc có một mô hình ranking thích hợp cũng vô cùng quan trọng. Hy vọng chuỗi bài viết đã đem đến cho các bạn cái nhìn cơ bản nhất về search engine.</p>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -710,66 +1250,6 @@ Quy hoạch động là một trong những kĩ thuật lập trình cơ bản �
 <li><a href="http://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm">Floyd-Warshall Algorithm</a></li>
 <li><a href="http://community.topcoder.com/tc?module=Static&amp;d1=tutorials&amp;d2=graphsDataStrucs3">TopCoder Graph Tutorial</a></li>
 </ol>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-03-03T01:43:00+09:00" data-updated="true" itemprop="datePublished">Mar 3<span>rd</span>, 2014</time></div>
-		<div class="tags">
-
-</div>
-		
-			<span class="comments"><a href="/blog/2014/03/03/full-text-search-tu-khai-niem-den-thuc-tien-phan-4/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2014/03/03/full-text-search-tu-khai-niem-den-thuc-tien-phan-4/" itemprop="url">Full Text Search Từ Khái Niệm đến Thực Tiễn (Phần 4)</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h1 id="introduction">Introduction</h1>
-<p>Trong <a href="http://ktmt.github.io/blog/2014/01/04/full-text-search-engine-part-3/">phần 3</a>, các bạn đã được tìm hiểu về việc sử dụng Boolean Logic để tìm ra các Document chứa các term trong query cần tìm kiếm. Vậy sau khi tìm được các Document thích hợp rồi thì chỉ việc trả lại cho người dùng, hay đưa lên màn hình? Bài toán sẽ rất đơn giản khi chỉ có 5, 10 kết quả, nhưng khi kết quả lên đến hàng trăm nghìn, thì mọi việc sẽ không đơn giản là trả lại kết quả nữa. Lúc đó sẽ có vấn đề mới cần giải quyết, đó là <strong>đưa kết quả nào lên trước</strong>, hay chính là bài toán về <strong>Ranking</strong></p>
-<p>Việc Ranking trong Full Text Search thông thường sẽ được thực hiện thông qua việc <strong>tính điểm</strong> các Document được tìm thấy, rồi Rank dựa vào điểm số tính được. Việc tính điểm thế nào sẽ được thực hiện thông qua các công thức, hay thuật toán, mà mình gọi chung là <strong>Ranking Model</strong></p>
-<h1 id="ranking-model">Ranking Model</h1>
-<p>Trong bài viết về <a href="http://ktmt.github.io/blog/2013/08/06/a-little-bit-about-news-ranking/">Ranking news</a>, mình đã nói về việc giải quyết một bài toán gần tương tự. Tuy nhiên bài toán lần này cần giải quyết khác một chút, đó là việc Ranking sẽ phải thực hiện dựa trên mối quan hệ giữa “query terms” và “document”.</p>
-<p>Ranking Model được chia làm 3 loại chính: <strong>Static, Dynamic, Machine Learning</strong>. Dưới đây mình sẽ giới thiệu lần lượt về mỗi loại này.</p>
-<h1 id="static">Static</h1>
-<p>Static ở đây có nghĩa là, Ranking Model thuộc loại này sẽ <strong>không phụ thuộc</strong> vào mối quan hệ ngữ nghĩa giữa “query term” và “document”. Tại sao không phụ thuộc vào “query term” mà vẫn ranking được? Việc này được giải thích dựa theo quan điểm khoa học là <code>độ quan trọng của document phụ thuộc vào mối quan hệ giữa các document với nhau</code>.</p>
-<p>Chúng ta sẽ đi vào cụ thể một Ranking Model rất nổi tiếng trong loại này, đó chính là <a href="http://en.wikipedia.org/wiki/PageRank">PageRank</a>. PageRank là thuật toán đời đầu của Google, sử dụng chủ yếu cho web page, khi mà chúng có thể “link” được đến nhau. Idea của PageRank là “Page nào càng được nhiều link tới, và được link tới bởi các page càng quan trọng, thì score càng cao”. Để tính toán được PageRank, thì chúng ta chỉ cần sử dụng WebCrawler để crawl được mối quan hệ “link” giữa tất cả các trang web, và tạo được một Directed Graph của chúng.</p>
-<p>Chính vì cách tính theo kiểu, tạo được Graph xong là có score, nên mô hình dạng này được gọi là “Static”.</p>
-<p>Ngoài PageRank ra còn có một số thuật toán khác gần tương tự như <a href="http://en.wikipedia.org/wiki/HITS_algorithm">HITS</a> đã từng được sử dụng trong Yahoo! trong thời gian đầu.</p>
-<h1 id="dynamic">Dynamic</h1>
-<p>Ranking Model thuộc dạng Dynamic dựa chủ yếu vào <strong>Mối quan hệ</strong> giữa “query term” và “document”. Có rất nhiều thuật toán thuộc dạng này, có thuật toán dựa vào tần suất xuất hiện của “query term” trong document, có thuật toán lại dựa vào các đặc tính ngữ nghĩa (semantic) của query term , có thuật toán lại sử dụng những quan sát mang tính con người như thứ tự xuất hiện các từ trong “query term” và thứ tự xuất hiện trong “document”.</p>
-<p>Một trong những thuật toán được sử dụng nhiều nhất là <a href="http://en.wikipedia.org/wiki/Tf%E2%80%93idf">TF-IDF</a> (Term Frequency Inverse Document Frequency). Thuật toán này dựa vào Idea là “query term” xuất hiện càng nhiều trong document, document sẽ có điểm càng cao.</p>
-<p>Thuật toán này được biểu diễn dưới công thức sau <span class="math">\[TF-IDF(t, d, D) = TF(t, d) * IDF (t, D)\]</span> Ở đây t là query term, d là document cần được score, và D là tập hợp “tất cả” các documents. Trong đó thì: <span class="math">\[TF(t, d) = frequency(t, d)\]</span> <span class="math">\[IDF(t, D) = log{N \over \|\{d \in D : t \in d\}\|}\]</span></p>
-<p>Một cách đơn giản thì:</p>
-<ul>
-<li>TF : tần suất xuất hiện của term t trong document d</li>
-<li>IDF : chỉ số này biểu hiện cho tần suất xuất hiện của term t trong toàn bộ các documents. t xuất hiện càng nhiều, chỉ số càng thấp (vì xuất hiện quá nhiều đồng nghĩa với độ quan trọng rất thấp)</li>
-</ul>
-<p>Công thức của TF-IDF đã phối hợp một cách rất hợp lý giữa tần suất của term và ý nghĩa/độ quan trọng của term đó.</p>
-<p>Trong thực tế thì người ta hay sử dụng thuật toán <a href="http://en.wikipedia.org/wiki/Okapi_BM25">Okapi BM25</a> hay gọi tắt là BM25, là một mở rộng của TF-IDF, nhưng thêm một vài weight factor hợp lý.</p>
-<h1 id="machine-learning">Machine Learning</h1>
-<p>Ngoài việc sử dụng các mối quan hệ đơn giản giừa query term và document, hay giứa document với nhau, thì gần đây việc sử dụng học máy (Machine Learning) trong Ranking cũng đang trở nên rất phổ biến. Để nói về Machine Learning thì không gian bài viết này có lẽ là không đủ, mình sẽ nói về ý tưởng của Model này.</p>
-<p>Idea của việc sử dụng Machine Learning trong ranking là chúng ta sẽ sử dụng một mô hình xác suất để tính toán. Cụ thể hơn là chúng ta sẽ sử dụng supervised learning, nghĩa là chúng ta sẽ có input là một tập dữ liệu X để training, một model M ban đầu, một hàm error để so sánh kết quả output X’ có được từ việc áp dụng model M vào query term, và một hàm boost để từ kêt quả của hàm error chúng ta có thể tính lại được model M. Việc này được lặp đi lặp lại mỗi lần có query, hoặc lặp lại một cách định kỳ (1 ngày 1 lần, 1 tháng 1 lần..) để model M luôn luôn được cải thiện.</p>
-<p>Thuật toán gần đây được sử dụng khá nhiều trong Ranking model chính là Gradient Boosting Decision Tree mà các bạn có thể tham khảo ở <a href="https://www.cse.cuhk.edu.hk/irwin.king/_media/presentations/gbdt-tom.pdf">đây</a></p>
-<h1 id="conclusion">Conclusion</h1>
-<p>Bài viết đã giới thiệu về 3 mô hình chính dùng để Ranking kết quả tìm kiếm trong Full Text Search. Trong thực tế thì các công ty lớn nhưn Google, Yahoo, MS sẽ không có một mô hình cố định nào cả, mà sẽ dựa trên các kết quả có từ người dùng để liên tục cải thiện. Không có một mô hinh nào là “đúng” hay “không đúng” cả, mà để đánh giá Ranking Model chúng ta sẽ phải dựa trên thông kê người dùng (như click rate, view time…). Việc hiểu rõ Ranking Model sẽ giúp chúng ta build được một search engine tốt cho service của mình, đông thời cũng giúp ích rất nhiều cho việc SEO (Search Engine Optimization).</p>
-<p>Tài liệu tham khảo: - <a href="http://jmlr.org/proceedings/papers/v14/chapelle11a/chapelle11a.pdf">Yahoo! Learning to Rank Challenge Overview</a></p>
 		
 		
 	</div>

@@ -7,8 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="May 15th, 2013 rails, ssl, tips, tutorials Comments Sử Dụng Ssl Trên Rubyonrails HTTPS trên rails
-Là RoR developer, khi phải làm việc với một số &hellip;">
+	<meta name="description" content="May 18th, 2013 Web programming Comments Web Beacon và Cookie Web Beacon là gì
+Web Beacon, hay Web Bug là 1 khái niệm với 2 tên gọi khác nhau. Có thể &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -82,6 +82,145 @@ Là RoR developer, khi phải làm việc với một số &hellip;">
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-05-18T15:27:00+09:00" data-updated="true" itemprop="datePublished">May 18<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/web-programming/'>Web programming</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/05/18/web-beacon/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/05/18/web-beacon/" itemprop="url">Web Beacon và Cookie</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h2 id="web-beacon-là-gì">Web Beacon là gì</h2>
+<p>Web Beacon, hay Web Bug là 1 khái niệm với 2 tên gọi khác nhau. Có thể bạn chưa từng nghe nói đến, hay đã nghe nhưng ko hiểu rõ lắm về cụm từ này. Trước hết mình sẽ lấy định nghĩa trên Wikipedia xuống để dễ theo dõi</p>
+<blockquote>
+<p>A web bug is an object that is embedded in a web page or email and is usually invisible to the user but allows checking that a user has viewed the page or email. Common uses are email tracking and page tagging for Web analytics</p>
+</blockquote>
+<p>Như vậy, Web beacon là 1 technique trong web programming, mục đích là phục vụ cho web data analytics.</p>
+<p>Tại sao lại cần phải có web beacon ? Cách implement web beacon ra sao ? Bài viết này sẽ trả lời 2 câu hỏi trên và 2 khái niệm liên quan thông qua các ví dụ và hình dung cụ thể.</p>
+<h2 id="tại-sao-lại-phải-có-web-beacon">Tại sao lại phải có web beacon ?</h2>
+<p>Nếu bạn đã từng tự xây dựng 1 web application, deploy trên server của chính bạn - bravo - bạn đã có sản phẩm của chính bạn - đứa con tinh thần đầu tiên :D</p>
+<p>Now what ? Bạn muốn application của mình to hơn, lớn nữa, performance cao lên, vậy sẽ bắt đầu phải scale up, add feature, brainstorming để <strong>lôi kéo user</strong>.</p>
+<p>Phần khó khăn nhất ở đây - Long live the users :D Application cần có nhiều idea mới. Hoặc đơn giản, không có thứ gì interesting thì phải có link đến những web khác có interesting content. Vậy, <strong>làm thế nào</strong> để biết user cảm thấy interesting với content nào nhất ? User hứng thú với dịch vụ gì và không hứng thú với dịch vụ gì ?</p>
+<p>1 cách mô hình hoá, Website của bạn - website A có link đến website N1, N2, N3, … (các site có intersting content) Bạn - site A webmaster muốn biết user của bạn click vào những link nào nhiều nhất trong số các N-site. Dĩ nhiên là site nào ít attractive nhất thì muốn bỏ đi, site nào càng nhiều attractive thì tìm thêm các loại tương ứng. Mặc dù khi user click vào các link thì đã ra khỏi site của bạn và đi đến site khác, nhưng bạn có thể <strong>đặt web beacon ở từng link</strong> để tracking user của bạn.</p>
+<p>Ngược lại, giả sử vì mục đích quảng cáo, site N của bạn đặt link (banner) ở các site A1, A2, A3,…. Đổi lại bạn đang trả tiền cho tất cả. Dĩ nhiên bạn muốn biết user visit site của mình đến từ nơi nào nhiều nhất. Nơi nào user ko đến thì cắt bỏ để giảm chi phí v.v… Bạn có thể <strong>đặt web beacon ở cổng vào site mình</strong> và record lại các information bạn cần.</p>
+<p>Thử tưởng tượng 1 hệ thống web có n node X1, X2,… Xn , mỗi node đều đặt web beacon ở đầu vào và các đầu ra của mình, mỗi node sẽ có 1 action flow của user, được identify bằng 1 sessionID thống nhất. Đến giai đoạn user behavior analytics, chỉ cần dựa vào 1 sessionID đó có thể tổng hợp được flow tổng quát của từng user trên cả hệ thống !</p>
+<h2 id="implement-web-beacon">Implement Web Beacon</h2>
+<p>Trước hết, Web beacon thường được implement dưới dạng 1 file gif 1x1 pixel, gần như trong suốt với user và giảm tối đa load mỗi lần generate ra request với server.</p>
+<p>Trường hợp 1 ở bên trên, cách implement khá đơn giản: Mỗi link đến các website N1, N2, N3… có để đặt gán với 1 hàm javascript, khởi động 1 ajax request đến server của site mình kèm theo các thông tin hữu ích (IP của user, target website v.v…) Nội dung request là GET web beacon (request file fig 1x1 pixel) Như thế server site mình sẽ mất thêm lượng tải tối thiếu cho mục đích tracking.</p>
+<p>Cách viết cụ thể ajax request và xử lý cookie phía server sẽ không trình bày cụ thể ở bài viết này.</p>
+<p>Trường hợp 2, cần có 1 chút lưu ý. Các site A1, A2, A3,… bạn đặt banner cần phải có 1 param ghi lại domain của họ, ví dụ:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>siteA.html </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='html'><span class='line'><span class="nt">&lt;form</span> <span class="na">method =</span><span class="err"> </span><span class="s">&quot;GET&quot;</span> <span class="na">action =</span><span class="err"> </span><span class="s">&quot;www.your_site.com&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'><span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;hidden&quot;</span> <span class="na">name=</span><span class="s">&quot;callback_url&quot;</span> <span class="na">value=</span><span class="s">&quot;domain_of_this_site&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'><span class="nt">&lt;/form&gt;</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Như vậy user đi đến site N của bạn sẽ mang theo “callback_url”. Ở cổng vào site của bạn có thể đặt 1 beacon như sau</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>siteN.html </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='html'><span class='line'><span class="nt">&lt;img</span> <span class="na">src=</span><span class="s">&quot;/img/_.gif?from_=&lt;?php $_GET[&quot;</span><span class="na">callback_url</span><span class="err">&quot;];?</span><span class="nt">&gt;</span><span class="err">&amp;</span>_=<span class="cp">&lt;?php date(&quot;Y-m-d H:i:s&quot;);?&gt;</span>&quot;&gt;
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Tại sao ở đây lại cần hàm date(“Y-m-d H:i:s”) ? Browser có cơ chế cache và thông thường sẽ cache lại các file image tại 1 website để lần sau quay lại load trang web nhanh hơn. Nếu Browser detect thấy file _.gif nằm trong cache thì sẽ <strong>không make request đến server</strong> và tracking sẽ thất bại :D</p>
+<p>Với &amp;_=<?php date("Y-m-d H:i:s");?> image sẽ vẫn đc request nhưng với đuôi có chưa curent time nên sẽ không bị cache.</p>
+<h2 id="cross-domain-cookies">Cross-domain cookies</h2>
+<p>Phần này sẽ đề cập đến 1 khái niệm liên quan: cross-domain cookie. Giả sử site A có đặt link hay ads(quảng cáo) của site N, và cả site A lẫn site N đều nằm thuộc cùng 1 group, 1 công ty. Lúc đó webmaster của site A và site N có thể sử dụng cross-domain cookie để tracking user action flow trên cả 2 site.</p>
+<p>Cái gì gọi là cross-domain cookie ? Chẳng phải là cookie chỉ readable với 1 domain cố định hay sao ?</p>
+<p>Bạn có thể hình dung đơn giản như sau:</p>
+<ul>
+<li>User visit site A, site A tạo 1 cookie với domain của mình, kèm theo 1 sessionID. Với sessionID này site A có thể tracking user trong phạm vi site của mình.</li>
+<li>User click vào link (hoặc ads) đến site N, site A “gửi kèm” 1 param là sessionID kể trên . Site N đón nhận request với sessionID và cũng tạo 1 cookie trên domain của mình chứa sessionID dược nhận.</li>
+<li>User click vào nút “Come back to previous site” trên site N, site N sẽ tổng hợp action flow trên site mình (dựa vào cookie tạo ở trên), send ngược trờ lại cùng với sessionID cho site A.</li>
+<li>Site A sẽ welcome user trở lại, VD thêm đoạn chào hỏi: “Aha, bạn đến site N để mua abcxyz phải không, để tôi show cho bạn thêm vài site khác nữa cũng có thứ đồ abcxyz đó nữa, tốt lắm” etc :D</li>
+</ul>
+<p>Vậy vấn đề sẽ thế nào nếu như ko có nút “Come back to previous site” hay link hoặc ads trên site A ? Nói 1 cách khác, nếu user chỉ visit site A và site N bằng cách gõ URL trực tiếp trên thanh URL của browser ?</p>
+<p>Implement cross-domain cookies sẽ hơi phức tạp hơn nhưng không phải là không làm được.</p>
+<ul>
+<li>User visit siteA, site A vẫn tạo cookie với 1 sessionID như trên</li>
+<li>User visit siteN/randompage, site N redirect lại siteA/cookieGetter.php với param callback_url=“randompage”</li>
+<li>Khi browser quay trờ lại siteA/cookieGetter.php, site A sẽ check cookie của mình và nếu tìm thấy sessionID sẽ gửi dưới dạng param ngược lại cho siteN/randompage (“randompage được lấy ra từ param callback_url”)</li>
+<li>User được redirect back lại siteN/randompage cùng với sessionID, lúc này site N sẽ tạo cookie của site mình với sessionID kể trên.</li>
+</ul>
+<p>Như vậy cross-domain cookie thực tế vẫn là các cookie khác nhau trên các domain khác nhau</p>
+<h2 id="third-party-cookies">Third-party cookies</h2>
+<p>Third-party cookies lại là 1 khái niệm khác và dễ nhầm lẫn. Trong trường hợp site A và site N ở trên không cùng 1 công ty hay đơn vị quản lý, cookie của site A đối với site N gọi là third-party cookie và ngược lại.</p>
+<p>Giả sử trên site A đặt 1 ads banner của site N. Khi browser của user load webpage từ site A, 1 đoạn JS có thể được khỏi động để load banner image từ site N. Site N có thể tạo ra 1 cookie của mình với 1 sessionID (anonymous profile) và <strong>được phép set vào browser mặc dù user đang ở site A</strong>.</p>
+<p>Tiếp theo, user đến site B cũng đặt ads banner của site N. Mọi chuyện sẽ diễn ra tương tự và site N lại <strong>được phép set vào browser 1 cookie mặc dù user đang ở site B</strong> Tuy nhiên với khả năng đọc được cookie của chính mình, lần này site N sẽ detect được cookie đã từng được set và tìm thấy sessionID lần trước. Chuyện gì xảy ra ở đây ?</p>
+<p>Site N không hề biết user ở đâu, dùng browser gì, nhưng biết là <strong>cùng 1 user</strong> đã đi từ site A đến site B. Hay gọi là, site N có “anonymous profile” của user, identify bằng unique sessionID ở trên.</p>
+<p>Kết quả: Site N có thể build rất nhiều anonymous profile cho rất nhiều user, và theo thời gian nắm bắt habit và interest, đưa ra các banner quảng cáo phù hợp nếu lần sau gặp lại mỗi user.</p>
+<p>Đây là một kỹ thuật phổ biến trong công nghệ quảng cáo. Tuy nhiên, các browser hiện đại đều có chức năng block third-party cookie. Vậy nếu bạn không thích bị track, có thể đơn giản disable third-party cookie trên browser của mình.</p>
+<h2 id="kết-luận">Kết luận</h2>
+<ul>
+<li>Web beacon: là 1 technique trong web programming, mục đích là phục vụ cho web data analytics</li>
+<li>Cross-domain cookies: các cookie khác nhau trên các domain khác nhau, tuy nhiên identify được lẫn nhau thông qua unique ID</li>
+<li>Third-party cookies: cookies của domain khác nhưng được set khi user visit webpage của server mình</li>
+</ul>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -628,411 +767,6 @@ Kết quả mong chờ: (a=0, b=0)</code></pre>
 <li><a href="http://stackoverflow.com/questions/11837428/whats-the-difference-between-an-exclusive-lock-and-a-shared-lock">Exclusive lock &amp; shared lock</a></li>
 <li><a href="http://www.amazon.com/High-Performance-MySQL-Optimization-Replication/dp/1449314287">High performance MySQL</a></li>
 </ol>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-05-12T00:15:00+09:00" data-updated="true" itemprop="datePublished">May 12<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/javascript/'>javascript</a>, <a class='category' href='/blog/categories/programming/'>programming</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/05/12/closure-va-scope-cua-javascript/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/05/12/closure-va-scope-cua-javascript/" itemprop="url">Closure và Scope Trong Javascript</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h1 id="scope-và-closure-là-gì">Scope và closure là gì?</h1>
-<p>Scope và closure là 2 khái niệm cơ bản mà một programmer nên biết, vì hiểu rõ 2 khái niệm này vừa giúp cho programmer tránh được một số lỗi hay gặp, vừa giúp thiết kế chương trình tốt hơn. Đầu tiên chúng ta sẽ remind lại 2 khái niệm này một cách ngắn gọn. Đầu tiên là khái niệm về scope, khái niệm này quá cơ bản chắc hẳn mọi người đều biết, nhưng thôi mình cứ quote lại từ wikipedia đề phòng có người quên: &gt; [Scope refers to where variables and functions are accessible, and in what context it is being executed]</p>
-<p>=&gt; Dịch ra đại thể là scope là nơi mà <em>biến</em> hoặc <em>hàm</em> có thể truy cập vào và sử dụng/ tham chiếu được qua tên trực tiếp. Và ở ngoài scope đó thì <em>biến</em> hoặc <em>hàm</em> đó sẽ không thể <strong>nhìn</strong> được một cách trực tiếp nữa. (hơi khó hình dung nhỉ). Để phân loại scope thì có rất nhiều cách tùy thuộc vào từng góc nhìn , nhưng mình sẽ không đi sâu vào vấn đề này. Mỗi ngôn ngữ lại có đặc trưng về scope khác nhau. Trong bài viết này chúng ta sẽ chỉ tập trung vào javascript.</p>
-<p>Khái niệm tiếp theo là về closure, khái niệm này thì không phải ai cũng biết, vì không phải ai cũng cần đến và từng động đến. Một số ngôn ngữ mainstream như C++ , java cũng không hỗ trợ closure, càng làm ít người để ý đến nó (java 8 expected sẽ cho closure vào). Hãy xem wiki nói về closure thế nào:</p>
-<blockquote>
-<p>[a closure (also lexical closure or function closure) is a function or reference to a function together with a <strong>referencing environment</strong>]</p>
-</blockquote>
-<p>=&gt; Dịch ra đại thể là closure là một hàm hoặc một tham chiếu (hay còn gọi là một cái <strong>bao đóng</strong>) đi kèm với cái môi trường mà nó tham chiếu đến (khá là xoắn). Cái cần nhấn mạnh ở đây là cái <strong>referencing environment</strong> (môi trường tham chiếu) mà các bạn sẽ hiểu hơn ở các ví dụ dưới đây.</p>
-<h1 id="scope-và-closure-trong-javascript">Scope và closure trong javascript</h1>
-<p>Javascript là một ngôn ngữ phổ biến hiện nay. Người biết về js thì nhiều, nhưng người hiểu rõ một số corner của js thì chắc không nhiều đến thế :D. Một trong các corner đấy chính là <strong>scope và closure</strong>. Js là một ngôn ngữ khá đặc biệt, đặc biệt ở chỗ js mang hơi hướng của lập trình hàm (functional programming), khi mà <strong>function ở js cũng là một first-class object</strong>, tức là function có thể được tạo mới (construct new) tại run-time, được lưu dưới dạng một cấu trúc dữ liệu (data structure), được truyền qua parameter, được dùng như một giá trị trả về (return value). Chính vì đặc điểm đấy khiến cho scope và closure của js không giống như các ngôn ngữ phổ biến khác.</p>
-<p>Đầu tiên chúng ta sẽ nói về scope</p>
-<h2 id="scope">1. <strong><em><u>Scope</u></em></strong></h2>
-<p>Như chúng ta vừa nói ở trên, scope là khái niệm qui định “visibility” và “lifetime” của variable. Thông thường, ví dụ như C thì scope sẽ là <strong>block scope</strong>, tức là những biến <strong>tạo ra</strong> trong block sẽ chỉ được nhìn thấy trong block đấy thôi, và khi ra ngoài block đấy thì những variable nằm trong block sẽ được giải phóng ( như trong C là các biến tạo ra trong stack sẽ được free khi ra khỏi block), và không nhìn thấy được nữa.</p>
-<p>Tuy nhiên rất buồn là javascript của chúng ta lại không có cái scope dễ hiểu đến thế, mà nó lại là <strong>function block</strong>.Function block ở đây là gì: tức là những gì bạn tạo ra trong một function sẽ available ở trong function đó. Vì javascript cũng là block syntax, nên sẽ hơi dễ confusing, chúng ta sẽ dùng ví dụ dễ hiểu này:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>function.js </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">scope</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="kc">true</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">test</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  <span class="nx">alert</span><span class="p">(</span><span class="nx">test</span><span class="p">);</span> <span class="err">#</span><span class="o">=&gt;</span> <span class="mi">1</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="nx">scope</span><span class="p">();</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Nói đến đây chắc chắn có bạn sẽ nghĩ đến điều gì xảy ra khi chúng ta có <strong>nested function</strong>. Let’s try</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>function.js </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">outer</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">outer_var</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
-</span><span class='line'>  <span class="kd">function</span> <span class="nx">inner</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">alert</span><span class="p">(</span><span class="nx">outer_var</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  <span class="nx">inner</span><span class="p">();</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="nx">outer</span><span class="p">();</span> <span class="err">#</span><span class="o">=&gt;</span> <span class="mi">2</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Từ ví dụ trên ta có thể dễ dàng thấy là inner function có thể access được outer function variable. Từ ví dụ này chúng ta có thể thấy là <strong>inner function có thể inherit biến của outer function</strong>, hay nói cách khác, inner function <strong>chứa(contain)</strong> scope của outer function. Chính nhờ điều đặc biệt này mà chúng ta có cái gọi là <strong>Closure</strong> mà mình sắp sửa nói đến ngay dưới đây. Một điều chú ý là đối với nhiều ngôn ngữ thì các bạn hay được khuyên là declare biến muộn nhất có thể để tránh overhead, tuy nhiên với javascript là ngôn ngữ với <strong>function scope</strong> thì best practice lại là <strong>declare biến sớm nhất có thể </strong> để tránh nguy cơ xảy ra một số lỗi không mong muốn.</p>
-<h2 id="closure">2. <strong><em><u>Closure</u></em></strong></h2>
-<p>Quote lại cái định nghĩa cho đỡ quên:</p>
-<blockquote>
-<p>A closure is an expression (typically a function) that can have free variables <strong>together with an environment that binds those variables (that “closes” the expression).</strong></p>
-</blockquote>
-<p>Chắc có bạn sẽ thắc mắc, <strong>environment</strong> ở đây là gì. Để hình dung một cách dễ hiểu, thì environment ở đây trong phần lớn các trường hợp chính là cái outer function mà chung ta vừa thử ở ví dụ về scope ở trên. Một đặc điểm rất hay của closure là <strong>closure sẽ giữ tham chiếu đến các biến nằm bên trong nó, hoặc được gọi đến bên trong nó</strong>. Điều này dẫn đến việc gì? Chắc sẽ có bạn nghĩ đến một trường hợp rất đặc biệt là khi bạn muốn context của một function được giữ lại sau khi hàm đó đã được execute xong :D. Hãy bắt đầu bằng một ví dụ:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>closure.js </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">outside</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">function</span> <span class="nx">inside</span><span class="p">(</span><span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="nx">x</span> <span class="o">+</span> <span class="nx">y</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  <span class="k">return</span> <span class="nx">inside</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="nx">fn_inside</span> <span class="o">=</span> <span class="nx">outside</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
-</span><span class='line'><span class="nx">result</span> <span class="o">=</span> <span class="nx">fn_inside</span><span class="p">(</span><span class="mi">5</span><span class="p">);</span> <span class="c1">// #=&gt; 8</span>
-</span><span class='line'>
-</span><span class='line'><span class="nx">result1</span> <span class="o">=</span> <span class="nx">outside</span><span class="p">(</span><span class="mi">3</span><span class="p">)(</span><span class="mi">5</span><span class="p">);</span> <span class="c1">// #=&gt; 8</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Bạn có nhận thấy điều gì đặc biệt ở trên? Điều đặc biệt nằm ở hàm <strong>fn_inside</strong> : hàm fn_inside được tạo ra bởi kết quả trả về của hàm outside() với parameter là 3, và bạn có thể nhận thấy hàm fn_inside vẫn giữ tham chiếu đến cái parameter 3 đó <strong>ngay cả khi hàm outside() đã được execute xong</strong>. Chắc các bạn sẽ thấy mâu thuẫn với cái lý thuyết về function scope chúng ta đã nói đến ở trên, khi mà <em>mọi thứ được tạo ra trong function của js chỉ nhìn thấy và sử dụng được ở trong đó, và sẽ được giải phóng hoặc không nhìn thấy khi ra ngoài function đó</em>. Thực tế là không hề mâu thuẫn chút nào cả, chính vì cái gọi là closure của js :D. Nói một cách cụ thể hơn: <strong>fn_inside khi được tạo ra đã đồng thời cũng tạo ra một cái closure (bao đóng), trong cái bao đó, giá trị 3 được truyền vào, và cái bao của fn_inside sẽ vẫn giữ cái giá trị 3 đó cho dù outside() function có execute xong</strong>. Các bạn cứ hình dung trực quan closure như một cái bao chứa rất nhiều thứ trong nó là sẽ thấy dễ hiểu hơn:</p>
-<p><img src="/images/closurejs/closure.png"></p>
-<p>Như vậy chúng ta có thể tóm gọn lại đoạn code ở trên như sau:</p>
-<ol type="1">
-<li>Khi outside() được gọi, outside trả về một function</li>
-<li>function được outside trả lại (fn_inside) đó đóng lại cái context hiện tại và cái context đó <strong>chứa biến x tại thời điểm outside() được gọi</strong></li>
-<li>Khi fn_inside được gọi, nó vẫn nhớ x có giá trị là 3</li>
-<li>Khi invoke fn_inside(5) thì nó sẽ lấy giá trị biến y=5 + giá trị biến x=3 và kết quả sẽ là 8</li>
-</ol>
-<p>Như vậy chúng ta có thể rút ra một đặc điểm của closure là: &gt; <strong><em>A closure must preserve the arguments and variables in all scopes it references</em></strong></p>
-<ul>
-<li><p>Một câu hỏi được đặt ra là: Khi nào cái biến x được giải phóng?? Câu trả lời là khi mà cái context mà biến x được reference đến ( ở đây là fn_inside ) không còn accessible được nữa ( refer đến scope của js, chúng ta có thể hiểu là khi mà function chứa fn_inside được execute xong và không còn bất kì tham chiếu nào đến fn_inside nữa ).</p></li>
-<li><p>Một câu hỏi khác được đặt ra là với multi-nested function thì điều gì sẽ xảy ra?? Let’s give a try:</p></li>
-</ul>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>multinested.js </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">A</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">function</span> <span class="nx">B</span><span class="p">(</span><span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kd">function</span> <span class="nx">C</span><span class="p">(</span><span class="nx">z</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nx">alert</span><span class="p">(</span><span class="nx">x</span> <span class="o">+</span> <span class="nx">y</span> <span class="o">+</span> <span class="nx">z</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="nx">C</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  <span class="nx">B</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="nx">A</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span> <span class="err">#</span><span class="o">=&gt;</span> <span class="mi">6</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Ở đoạn code trên thì điều gì đã xảy ra?</p>
-<ol type="1">
-<li>B tạo ra một cái closure chữa context của A, do đó B có thể access vào A’s variable, ở đây là x</li>
-<li>C tạo ra một cái closure chứa context của B</li>
-<li>Vì B chứa context của A nên C cũng sẽ chứa context của A, tức là C cũng access được vào biến x của A, và cả biến y của B.</li>
-</ol>
-<p>Do đó kết quả sẽ là 1+2+3=6, khá là obvious nhỉ. Đoạn code ở trên giúp chúng ta có thêm một khái niệm mới gọi là <strong><em>scope chaining</em></strong>. Tại sao gọi là chaining, vì khi context được include từ outer function vào inner function, thì chúng ta sẽ hiểu một cách đơn giản là context của inner function và context của outer function được nối với nhau, một cách có chiều (<strong>directed</strong>). Và độ ưu tiên khi access biến là từ trong ra ngoài.</p>
-<p><img src="/images/closurejs/closure2.png"></p>
-<p>Do cái scope chaining là directed nên ở phía ngược lại, A lại không thể access được C, vì C nằm trong context của B, và chỉ visible <strong>inside B</strong>, hay nói cách khác là C sẽ là private của B, và không nhìn được từ A.</p>
-<ul>
-<li>Lại có một bạn nghĩ là khi outer function có biến tên là x, mà ta cũng truyền 1 biến tên là x vào inner function, tức là khi có name-conflict thì chuyện gì sẽ xảy ra. Let’s take an example</li>
-</ul>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>nameconflict.js </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">outside</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
-</span><span class='line'>  <span class="kd">function</span> <span class="nx">inside</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="nx">x</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  <span class="k">return</span> <span class="nx">inside</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="nx">result</span> <span class="o">=</span> <span class="nx">outside</span><span class="p">()(</span><span class="mi">20</span><span class="p">);</span> <span class="err">#</span><span class="o">=&gt;</span> <span class="mi">20</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Bạn có thể thấy kết quả trả về biến x được trực tiếp truyền vào inner function thay vì biến x của outer function. Sử dụng khái niệm scope chaining ở trên thì chúng ta có thể thấy độ ưu tiên của context inside là cao hon context outside khi intepreter tìm giá trị của x, nên giá trị của x ở inside (ở đây là 20) sẽ được sử dụng.</p>
-<p>Hy vọng là với 3 ví dụ trên các bạn đã có cái nhìn rõ ràng hơn về closure.</p>
-<h2 id="closure-pitfalls">3. <strong><em><u>Closure pitfalls</u></em></strong></h2>
-<p>Closure là một khái niệm khá dễ nhầm lẫn và khó nắm rõ với những người người ít quan tâm đến javascript. Một trong những ví dụ hay được dùng để minh họa cái sự dễ nhầm này được gọi là <strong>The Infamous Loop Problem</strong>. Ví dụ này được minh họa bằng đoạn code dưới đây:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>closurepitfall.js </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">add_the_handlers</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">nodes</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">i</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">for</span> <span class="p">(</span><span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">nodes</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">nodes</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">onclick</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nx">alert</span><span class="p">(</span><span class="nx">i</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">};</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">};</span>
-</span><span class='line'><span class="nx">nodes</span> <span class="o">=</span> <span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s2">&quot;click&quot;</span><span class="p">);</span>
-</span><span class='line'><span class="nx">add_the_handlers</span><span class="p">(</span><span class="nx">nodes</span><span class="p">);</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Đoan code ở trên làm một việc là tìm tất cả các node có id là “click”, add vào node đó một cái sự kiện là khi click vào node đó sẽ alert lên thứ tự của node đó. Giả sử bạn có một file html như sau:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>closurepitfall.html </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='html'><span class='line'><span class="nt">&lt;li</span> <span class="na">id=</span><span class="s">&quot;click&quot;</span><span class="nt">&gt;</span>link 1 <span class="nt">&lt;/li&gt;</span>
-</span><span class='line'><span class="nt">&lt;li</span> <span class="na">id=</span><span class="s">&quot;click&quot;</span><span class="nt">&gt;</span>link 2 <span class="nt">&lt;/li&gt;</span>
-</span><span class='line'><span class="nt">&lt;li</span> <span class="na">id=</span><span class="s">&quot;click&quot;</span><span class="nt">&gt;</span>link 3 <span class="nt">&lt;/li&gt;</span>
-</span><span class='line'><span class="nt">&lt;li</span> <span class="na">id=</span><span class="s">&quot;click&quot;</span><span class="nt">&gt;</span>link 4 <span class="nt">&lt;/li&gt;</span>
-</span><span class='line'><span class="nt">&lt;li</span> <span class="na">id=</span><span class="s">&quot;click&quot;</span><span class="nt">&gt;</span>link 5 <span class="nt">&lt;/li&gt;</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Bạn hy vọng là khi click vào link 1 sẽ alert 1, click vào link 2 sẽ alert ra 2…. đúng không. Tuy nhiên thực tế là <strong>bạn click vào link nào nó cũng alert ra 5 cả</strong>. Kì lạ nhỉ? Để giải thích cho hiện tượng này thì chúng ta hãy xem lại khái niệm về closure nào. Biến i được sử dụng trong anonymous function được gán cho onclick, được <strong>kế thừa từ context của add_the_handlers function</strong>. Tại thời điểm mà bạn gọi onclick, for loop đã được execute xong, và biến i <strong>của context của add_the_handlers</strong> lúc này có giá trị là 5. Do đó bạn có click vào link nào thì giá trị được alert ra cũng là 5 cả. Điểm chú ý của việc này chính là do bạn đang nhầm lẫn, hay chính xác là có sự khác biệt giữa <strong>scope/context của for-loop</strong> với <strong>scope/context của outer function là add_the_handlers </strong>.</p>
-<p>Để giải quyết vấn đề này thì bạn có thể làm như dưới đây:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>pitfall.js </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">add_the_handlers</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">nodes</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">helper</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">i</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nx">alert</span><span class="p">(</span><span class="nx">i</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">};</span>
-</span><span class='line'>  <span class="p">};</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">i</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">for</span> <span class="p">(</span><span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">nodes</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">modes</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">onclick</span> <span class="o">=</span> <span class="nx">helper</span><span class="p">(</span><span class="nx">i</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">};</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Point của cách làm này chính là việc truyền được giá trị của (i) tại thời điểm hiện tại vào closure của function được bind (gán) vào onclick. Giúp cho hàm helper() luôn tham chiếu đến giá trị i đúng. Một best practice để tránh những sai lầm như thế này là &gt; Avoid creating functions within a loop. It can be wasteful computationally,and it can cause confusion (tránh tạo mới function trong vòng loop, vì nó vừa làm tốn tài nguyên cpu, vừa dễ gây nhầm lẫn)</p>
-<h1 id="kết-luận">Kết luận</h1>
-<p>Như vậy qua bài viết này chúng ta đã nắm được khái niệm về function scope và closure trong javascript, và một số best practices trong việc sử dụng closure và scope. Closure trong javascript hay sử dụng để tạo ra một cái bao mà các thứ trong đấy không được nhìn thấy bởi bên ngoài nhưng vẫn truy cập được từ bên trong, và thường được áp dụng cho một số design pattern trong js (tiêu biểu nhất là module pattern).Chi tiết hơn các bạn có thể tham khảo ở các tài liệu sau:</p>
-<ul>
-<li><a href="http://www.amazon.com/JavaScript-Good-Parts-Douglas-Crockford/dp/0596517742/ref=sr_1_1?ie=UTF8&amp;qid=1368334060&amp;sr=8-1&amp;keywords=javascript+the+good+part">Javascript the good part (by Douglas Crockford)</a></li>
-<li><a href="http://www.ecma-international.org/publications/standards/Ecma-262.htm">Ecma-262 standard</a></li>
-<li><a href="http://robertnyman.com/2008/10/09/explaining-javascript-scope-and-closures/" class="uri">http://robertnyman.com/2008/10/09/explaining-javascript-scope-and-closures/</a></li>
-<li><a href="https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Functions_and_function_scope" class="uri">https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Functions_and_function_scope</a></li>
-</ul>
 		
 		
 	</div>

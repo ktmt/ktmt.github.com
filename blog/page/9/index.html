@@ -7,7 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Oct 7th, 2013 Comments Assembly vs C Giới thiệu “Không ngôn ngữ lập trình nào có thể sinh mã chạy nhanh hơn mã assembly được viết cẩn thận” Đây là &hellip;">
+	<meta name="description" content="Oct 27th, 2013 lucene, search-engine, solr Comments Full Text Search, Từ Khái Niệm đến Thực Tiễn (Phần 1) Lời nói đầu
+Là một lập trình viên mà đã &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,6 +82,169 @@
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-10-27T22:21:00+09:00" data-updated="true" itemprop="datePublished">Oct 27<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/lucene/'>lucene</a>, <a class='category' href='/blog/categories/search-engine/'>search-engine</a>, <a class='category' href='/blog/categories/solr/'>solr</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/10/27/full-text-search-engine/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/10/27/full-text-search-engine/" itemprop="url">Full Text Search, Từ Khái Niệm đến Thực Tiễn (Phần 1)</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1 id="lời-nói-đầu">Lời nói đầu</h1>
+<p>Là một lập trình viên mà đã từng phải thao tác với cơ sở dữ liệu, hay đơn thuần là đã từng là một trang web bán hàng ,chắc hẳn các bạn đã từng nghe qua về khái niệm “Full text search”. Khái niệm này đã được định nghĩa khá cụ thể và đầy đủ trên <a href="http://en.wikipedia.org/wiki/Full_text_search">wikipedia</a>. Nói một cách đơn giản, “Full text search” là kĩ thuật tìm kiếm trên “Full text database”, ở đây “Full text database” là cơ sở dữ liệu chứa “toàn bộ” các kí tự (text) của một hoặc một số các tài liệu, bài báo.. (document), hoặc là của websites. Trong loạt bài viết này, mình sẽ giới thiệu về Full Text Search, từ khái niệm đến ứng dụng thực tiễn của kĩ thuật này. Chuỗi bài viết không nhằm giúp bạn tìm hiểu cụ thể về Full Text Search technique trong MySQL, Lucene hay bất kì search engine nào nói riêng, mà sẽ giúp bạn hiểu thêm vầ bản chất của kĩ thuật này nói chung. Ở bài viết cuối cùng, mình sẽ cùng các bạn implement thử một “Full Text Search engine” sử dụng python, qua đó giúp các bạn nắm rõ hơn cốt lõi của vấn đề.</p>
+<p>Trong phần đầu tiên mình sẽ giới thiệu về định nghĩa của Full text search, và khái niệm cơ bản nhất trong Full Text Search, đó là Inverted Index.</p>
+<h1 id="introduction">Introduction</h1>
+Chắc hẳn các bạn đã từng dùng qua một kĩ thuật tìm kiếm rất cơ bản, đó là thông qua câu lệnh <strong>LIKE</strong> của SQL.
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sql'><span class='line'><span class="k">SELECT</span> <span class="k">column_name</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+</span><span class='line'><span class="k">FROM</span> <span class="k">table_name</span>
+</span><span class='line'><span class="k">WHERE</span> <span class="k">column_name</span> <span class="k">LIKE</span> <span class="n">pattern</span><span class="p">;</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Sử dụng <strong>LIKE</strong>, các bạn sẽ chỉ phải tìm kiếm ở column đã định trước, do đó lượng thông tin phải tìm giới hạn lại chỉ trong các column đó. Câu lệnh LIKE cũng tương đương với việc bạn matching pattern cho “từng” chuỗi của từng dòng (rows) của field tương ứng, do đó về độ phức tạp sẽ là tuyến tính với số dòng, và số kí tự của từng dòng, hay chính là “toàn bộ kí tự chứa trong field cần tìm kiếm”. Do đó sử dụng <strong>LIKE</strong> query sẽ có 2 vấn đề: - 1) Chỉ search được trong row đã định trươc - 2) Performance không tốt.</p>
+<p>Như vậy chúng ta cần một kĩ thuật tìm kiếm khác, tốt hơn <strong>LIKE</strong> query, mềm dẻo hơn, tốt về performance hơn, đó chính là <strong>Full text searchi</strong>.</p>
+<h1 id="cơ-bản-về-kĩ-thuật-full-text-search">Cơ bản về kĩ thuật Full text search</h1>
+<p>Về mặt cơ bản, điều làm nên sự khác biệt giữa Full text search và các kĩ thuật search thông thường khác chính là “Inverted Index”. Vậy đầu tiên chúng ta sẽ tìm hiểu về Inverted Index</p>
+<h2 id="inverted-index-là-gì">Inverted Index là gì</h2>
+<p>Inverted Index là kĩ thuật thay vì index theo đơn vị row(document) giống như <a href="http://dev.mysql.com/doc/refman/5.0/en/mysql-indexes.html">mysql</a> thì chúng ta sẽ tiến hành index theo đơn vị term. Cụ thể hơn, Inverted Index là một cấu trúc dữ liệu, nhằm mục đích map giữa <strong>term</strong>, và <strong>các document chứa term đó</strong></p>
+Hãy xem ví dụ cụ thể dưới đây, chúng ta có 3 documents D1, D2, D3
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sql'><span class='line'><span class="n">D1</span> <span class="o">=</span> <span class="ss">&quot;This is first document&quot;</span>
+</span><span class='line'><span class="n">D2</span> <span class="o">=</span> <span class="ss">&quot;This is second one&quot;</span>
+</span><span class='line'><span class="n">D3</span> <span class="o">=</span> <span class="ss">&quot;one two&quot;</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Inverted Index của 3 documents đó sẽ được lưu dưới dạng như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sql'><span class='line'><span class="ss">&quot;this&quot;</span> <span class="o">=&gt;</span> <span class="err">{</span><span class="n">D1</span><span class="p">,</span> <span class="n">D2</span><span class="err">}</span>
+</span><span class='line'><span class="ss">&quot;is&quot;</span> <span class="o">=&gt;</span> <span class="err">{</span><span class="n">D1</span><span class="p">,</span> <span class="n">D2</span><span class="err">}</span>
+</span><span class='line'><span class="ss">&quot;first&quot;</span> <span class="o">=&gt;</span> <span class="err">{</span><span class="n">D1</span><span class="err">}</span>
+</span><span class='line'><span class="ss">&quot;document&quot;</span> <span class="o">=&gt;</span> <span class="err">{</span><span class="n">D1</span><span class="err">}</span>
+</span><span class='line'><span class="ss">&quot;second&quot;</span> <span class="o">=&gt;</span> <span class="err">{</span><span class="n">D2</span><span class="err">}</span>
+</span><span class='line'><span class="ss">&quot;one&quot;</span> <span class="o">=&gt;</span> <span class="err">{</span><span class="n">D2</span><span class="p">,</span> <span class="n">D3</span><span class="err">}</span>
+</span><span class='line'><span class="ss">&quot;two&quot;</span> <span class="o">=&gt;</span> <span class="err">{</span><span class="n">D3</span><span class="err">}</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Từ ví dụ trên các bạn có thể hình dung được về thế nào là Inverted Index. Vậy việc tạo index theo term như trên có lợi thế nào? Việc đầu tiên là inverted index giúp cho việc tìm kiếm trên full text database trở nên nhanh hơn bao giờ hết. Hãy giả sử bạn muốn query cụm từ “This is first”, thì thay vì việc phải scan từng document một, bài toán tìm kiếm document chứa 3 term trên sẽ trở thành phép toán <strong>union</strong> của 3 tập hợp (document sets) của 3 term đó trong inverted index.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span></span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sql'><span class='line'><span class="err">{</span><span class="n">D1</span><span class="p">,</span> <span class="n">D2</span><span class="err">}</span> <span class="k">union</span> <span class="err">{</span><span class="n">D1</span><span class="p">,</span> <span class="n">D2</span><span class="err">}</span> <span class="k">union</span> <span class="err">{</span><span class="n">D1</span><span class="err">}</span> <span class="o">=</span> <span class="err">{</span><span class="n">D1</span><span class="err">}</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Một điểm lợi nữa chính là việc inverted index cực kì flexible trong việc tìm kiếm. Query đầu vào của bạn có thể là “This is first”, “first This is” hay “This first is” thì độ phức tạp tính toán của phép union kia vẫn là không đổi.</p>
+<p>Như vậy chúng ta đã hiểu phần nào về khái niệm “Thế nào là Inverted Index”. Trong phần tiếp theo chúng ta sẽ tìm hiểu về cụ thể về cách implement của inverted index, và ứng dụng của inverted index vào việc tìm kiếm thông tin thông qua các kĩ thuật chính như: <strong>tokenization technique</strong> (thông qua N-Gram hoặc Morphological Analysis), <strong>query technique</strong> và <strong>scoring technique</strong>.</p>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -808,207 +972,6 @@ $ time ./snoob
 </notextile>
 </div>
 <p>Bây giờ, chạy chương trình và tận hưởng thành quả :)</p>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-09-16T17:21:00+09:00" data-updated="true" itemprop="datePublished">Sep 16<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/data-analytic/'>Data Analytic</a>, <a class='category' href='/blog/categories/map-reduce/'>Map-Reduce</a>, <a class='category' href='/blog/categories/pig-latin/'>Pig Latin</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/09/16/data-analysis-pig-latin-programming/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/09/16/data-analysis-pig-latin-programming/" itemprop="url">Data Analysis - Pig Latin Programming</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h2 id="giới-thiệu-về-data-analysis-bằng-pig-latin">Giới thiệu về Data Analysis bằng Pig Latin</h2>
-<p>Nếu bạn đã từng làm việc với DB, chắc hẳn đã nghe đến Hadoop và Map-Reduce.</p>
-<p>Map-Reduce, hay NoSQL style là một phương pháp tiếp cận ko thể thiếu cho các database lớn, tuy nhiên lượng knowhow cần phải có và phương pháp tư duy đặc thù là những rào cản lớn đối với những Data Analyser hay ngay cả những DB engineer thông thường.</p>
-<p>Một Data Analyser muốn viết được job cho Map-Reduce, trước hết phải có kỹ năng của 1 Java Engineer, phải re-invent 1 số hàm common (JOIN, FILTER …)</p>
-<p>Yahoo đã giới thiệu 1 hướng tiệp cận khác: Pig Latin, là 1 programming language build trên top của Hadoop, cú pháp tương đối giống SQL thuần tuý, tuy nhiên ở tầng dưới có thể “translate” program execution thành các job Map-Reduce và trả lại kết quả với tốc độ của Map-Reduce.</p>
-<p>Pig Latin (kể từ đây sẽ gọi tắt là “Pig” :D ) với bộ engine đằng sau là Java, có thể extend bằng các thư viện viết = Java hay thậm chí Python. Pig có hiệu suất phát triển cao, nghĩa là thay vì bỏ ra 1 tiếng để viết job 100 lines Map-Reduce bằng Java, bạn có thể chỉ cần 10 phút với 10 lines Pig :D</p>
-<p>Ở các phần tiếp theo của bài viết này, bạn sẽ được giới thiệu những bước học hỏi đầu tiên của Pig Developer.</p>
-<h2 id="get-start">Get Start</h2>
-<p>Rất may là chúng ta không phải ngồi tưởng tượng chay cách hoạt động của Pig. Cloudera có <a href="http://blog.cloudera.com/blog/2012/08/hadoop-on-your-pc-clouderas-cdh4-virtual-machine/">free VM image</a>, bạn chỉ cần down bản tương ứng về chạy trên Virtual Box hoặc VMWare.</p>
-<p>Pig có cấu trúc khá tương đồng với SQL. Trước hết để làm với 1 cục dữ liệu cần phân tích, cần LOAD cả cục lên rồi tiến hành “mổ xẻ”, sau đó STORE lại 1 file kết quả.</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>sample.sql </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='sql'><span class='line'><span class="n">city</span> <span class="o">=</span> <span class="k">LOAD</span> <span class="s1">&#39;/input/gotham/people.txt&#39;</span> <span class="k">AS</span> <span class="p">(</span><span class="n">name</span><span class="p">:</span><span class="n">chararray</span><span class="p">,</span> <span class="n">age</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">income</span><span class="p">:</span><span class="nb">int</span><span class="p">);</span>
-</span><span class='line'><span class="n">citizens</span> <span class="o">=</span> <span class="k">ORDER</span> <span class="n">city</span> <span class="k">BY</span> <span class="n">age</span><span class="p">;</span>
-</span><span class='line'><span class="n">max_age</span> <span class="o">=</span> <span class="k">LIMIT</span> <span class="n">citizens</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class='line'><span class="n">STORE</span> <span class="n">max_age</span> <span class="k">INTO</span> <span class="s1">&#39;output/gotham/analysis1.txt&#39;</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>people.txt là data đầu vào được tạo ra từ table trong DB.</p>
-<h2 id="basic-functions">Basic functions</h2>
-<p>Về cơ bản Pig có những function/commands sau :</p>
-<ul>
-<li>LOAD, STORE: lấy dữ liệu trước khi xử lý và lưu sau khi xử lý. Ngoài ra DUMP có thể dùng để debug kiểu data.</li>
-<li>GROUP, FILTER, ORDER BY, DISTINCT, LIMIT, UNION: những xử lý cơ bản giống hệt SQL.</li>
-<li>FOREACH: loop function, để tạo nest operator (có thể hiểu đơn giản như cách tạo sub-query).</li>
-<li>JOIN: giống JOIN của SQL, cũng có INNER, LEFT OUTER hay RIGHT OUTER… Những bước JOIN trong Pig thường là những bước quan trọng khi muốn tạo relation từ 2 cục data riêng rẽ trở lên.</li>
-<li>Eval functions (MAX, AVG, COUNT, SUM….).</li>
-<li>Math functions (SIN, COS, TAN, SQRT, …).</li>
-<li>Tuple. Bag, Map functions. Phần này khá là khó và tác giả cũng không có nhiều kinh nghiệm sử dụng.</li>
-<li>UDF (User Define Functions): là functions do developer tự viết bằng Java hoặc Python :D</li>
-</ul>
-<p>Bạn có thể xem cụ thể ở <a href="http://pig.apache.org/docs/r0.10.0/basic.html">Pig Latin Basics</a> hoặc <a href="http://pig.apache.org/docs/r0.10.0/func.html">Pig Latin Built In Functions</a></p>
-<h2 id="challenge-1-group-và-foreach">Challenge 1: GROUP và FOREACH</h2>
-<p>Bài toán đơn giản đầu tiên, với data đầu vào là thông tin của các công dân thành phố gotham như ở trên, ta cần tìm người giàu nhất (income cao nhất) trong các nhóm độ tuổi 20~30, 30~40, 40~50, v.v..</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>sample.sql </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='sql'><span class='line'><span class="n">city</span> <span class="o">=</span> <span class="k">LOAD</span> <span class="s1">&#39;/input/gotham/people.txt&#39;</span> <span class="k">AS</span> <span class="p">(</span><span class="n">name</span><span class="p">:</span><span class="n">chararray</span><span class="p">,</span> <span class="n">age</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">income</span><span class="p">:</span><span class="nb">int</span><span class="p">);</span>
-</span><span class='line'><span class="n">city_divide</span> <span class="o">=</span> <span class="n">FOREACH</span> <span class="n">city</span> <span class="n">GENERATE</span>
-</span><span class='line'>  <span class="n">name</span><span class="p">,</span>
-</span><span class='line'>  <span class="n">age</span><span class="o">/</span><span class="mi">10</span> <span class="k">AS</span> <span class="k">class</span><span class="p">,</span>
-</span><span class='line'>  <span class="n">income</span><span class="p">;</span>
-</span><span class='line'><span class="n">city_classes</span> <span class="o">=</span> <span class="k">GROUP</span> <span class="n">city_divide</span> <span class="k">BY</span> <span class="k">class</span><span class="p">;</span>
-</span><span class='line'><span class="n">citizens</span> <span class="o">=</span> <span class="n">FOREACH</span> <span class="n">city_classes</span> <span class="err">{</span>
-</span><span class='line'>  <span class="n">ord</span> <span class="o">=</span> <span class="k">ORDER</span> <span class="n">city_divide</span> <span class="k">BY</span> <span class="n">income</span><span class="p">;</span>
-</span><span class='line'>  <span class="n">lim</span> <span class="o">=</span> <span class="k">LIMIT</span> <span class="n">ord</span> <span class="k">BY</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class='line'>  <span class="n">GENERATE</span> <span class="k">class</span><span class="o">*</span><span class="mi">10</span> <span class="k">as</span> <span class="k">class</span><span class="p">,</span> <span class="n">lim</span><span class="p">.</span><span class="n">name</span> <span class="k">AS</span> <span class="n">name</span><span class="p">,</span> <span class="n">lim</span><span class="p">.</span><span class="n">income</span> <span class="k">AS</span> <span class="n">income</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">STORE</span> <span class="n">citizens</span> <span class="k">INTO</span> <span class="s1">&#39;output/gotham/analysis2.txt&#39;</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Đến đây chắc độc gỉả đã phần nào hình dung được data analyser dùng Pig Latin như thế nào :D</p>
-<h2 id="challende-2-join">Challende 2: JOIN</h2>
-<p>Giả sử ngoài data về từng công dân của gotham, chúng ra có 1 data khác về các …“super heroes”, bao gồm “strength”, “ability”. Làm thế nào để biết các “super heroes” có thu nhập bao nhiêu trong cuộc sống thường ngày của họ ?</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>sample.sql </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='sql'><span class='line'><span class="n">city</span> <span class="o">=</span> <span class="k">LOAD</span> <span class="s1">&#39;/input/gotham/people.txt&#39;</span> <span class="k">AS</span> <span class="p">(</span><span class="n">name</span><span class="p">:</span><span class="n">chararray</span><span class="p">,</span> <span class="n">age</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">income</span><span class="p">:</span><span class="nb">int</span><span class="p">);</span>
-</span><span class='line'><span class="n">heroes</span> <span class="o">=</span> <span class="k">LOAD</span> <span class="s1">&#39;/input/gotham/heroes.txt&#39;</span> <span class="k">AS</span> <span class="p">(</span><span class="n">name</span><span class="p">:</span><span class="n">chararray</span><span class="p">,</span> <span class="n">strength</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">ability</span><span class="p">:</span><span class="n">chararray</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">op</span> <span class="o">=</span> <span class="k">JOIN</span> <span class="n">city</span> <span class="k">BY</span> <span class="n">name</span><span class="p">,</span> <span class="n">heroes</span> <span class="k">BY</span> <span class="n">name</span><span class="p">;</span>
-</span><span class='line'><span class="n">opt</span> <span class="o">=</span> <span class="n">FOREACH</span> <span class="n">op</span> <span class="n">GENERATE</span>
-</span><span class='line'>  <span class="err">$</span><span class="mi">0</span> <span class="k">AS</span> <span class="n">name</span><span class="p">,</span>
-</span><span class='line'>  <span class="err">$</span><span class="mi">1</span> <span class="k">AS</span> <span class="n">age</span><span class="p">,</span>
-</span><span class='line'>  <span class="err">$</span><span class="mi">2</span> <span class="k">AS</span> <span class="n">income</span><span class="p">,</span>
-</span><span class='line'>  <span class="err">$</span><span class="mi">4</span> <span class="k">AS</span> <span class="n">strength</span><span class="p">,</span>
-</span><span class='line'>  <span class="err">$</span><span class="mi">5</span> <span class="k">AS</span> <span class="n">ability</span><span class="p">;</span>
-</span><span class='line'><span class="n">STORE</span> <span class="n">opt</span> <span class="k">INTO</span> <span class="s1">&#39;output/gotham/analysis3.txt&#39;</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Ở đây bạn có thể để ý $0, $1, $2 lần lượt là name, age, income của biến city, $3, $4, $5 là name, strength, ability của biến heroes. Như vậy kết quả sau khi JOIN gồm tất cả các fields của 2 biến JOIN thành phần!</p>
-<h2 id="pig-tuning">Pig Tuning</h2>
-<p>Qua 2 ví dụ trên đây, bạn có thể thế thấy Pig dễ phát triển như thế nào. Tuy nhiên khi engineer hoàn toàn không có kinh nghiệm về Map-Reduce viết Pig thì chắc chắn sẽ không thể biết cách optimize để các job Hadoop bên dưới đạt tốc độ nhanh nhất có thể.</p>
-<p>Để giữ có Pig program có hiệu suất xử lý cao, engineer có thể áp dụng các trick dưới đây:</p>
-<ul>
-<li><p>Dùng FILTER nhiều nhất và sớm nhất có thể. Nếu bạn JOIN a và b rồi lại FILTER, thì hãy tìm cách FILTER a và b trước rồi hãy JOIN.</p></li>
-<li><p>Loại bỏ các cột (các fields) không cần thiết. Giả sử biến a có 11 fields và bạn chỉ cần 7 fields, hãy “FOREACH a GENERATE ($0…$6)” để lập tức loại bỏ 4 fields.</p></li>
-<li><p>PARALLEL là 1 magic keyword. Dùng PARALLEL để chỉ định số lượng reduceers.</p></li>
-</ul>
-<h2 id="udfs">UDFs</h2>
-<p>Điều cuối cùng tác giả muốn chia sẻ, là khi bạn có những tasks xử lý nhỏ sử dụng nhiều lần với các fields, hãy cố gắng viết UDFs để xử lý. Pig được ship cùng với 1 package UDF viết sẵn <a href="https://cwiki.apache.org/confluence/display/PIG/PiggyBank">Piggy Bank</a>.</p>
-<p>UDF có thể viết bằng Java hoặc Python. Java UDFs có tốc độ và khả năng ứng dụng trong Pig tốt hơn. Khi đã làm chủ được cấu trúc dữ liệu giữa Python/Java và Pig, bạn sẽ thấy UDFs là một feature mạnh mẽ và không thể sống thiếu :D</p>
-<h2 id="tóm-tắt">Tóm tắt:</h2>
-<ul>
-<li>Pig Latin: Ngôn ngữ được build trên top của Hadoop, với bộ core Java và engine có thể translate logic sang 1 set các Map-Reduce Jobs.</li>
-<li>VM có thể dùng cho mục đích học hỏi từ đầu <a href="http://blog.cloudera.com/blog/2012/08/hadoop-on-your-pc-clouderas-cdh4-virtual-machine/">Cloudera Pig VM image</a>.</li>
-<li>Tất cả các hàm có thể tra cứu tại <a href="http://pig.apache.org/docs/r0.10.0/func.html">Pig Latin Built In Functions</a>.</li>
-<li>UDFs được viết sẵn <a href="https://cwiki.apache.org/confluence/display/PIG/PiggyBank">Piggy Bank</a>.</li>
-<li><a href="http://blog.cloudera.com/wp-content/uploads/2010/01/IntroToPig.pdf">Slide giới thiệu tổng hợp của Cloudera</a>.</li>
-</ul>
 		
 		
 	</div>

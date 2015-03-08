@@ -7,7 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Sep 10th, 2013 Comments Sử Dụng Metaclass Trong Python Bài viết này trình bày về metaclass và một số cách dùng metaclass trong Python. Để hiểu bài &hellip;">
+	<meta name="description" content="Sep 16th, 2013 Data Analytic, Map-Reduce, Pig Latin Comments Data Analysis - Pig Latin Programming Giới thiệu về Data Analysis bằng Pig Latin
+Nếu &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,6 +82,207 @@
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-09-16T17:21:00+09:00" data-updated="true" itemprop="datePublished">Sep 16<span>th</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/data-analytic/'>Data Analytic</a>, <a class='category' href='/blog/categories/map-reduce/'>Map-Reduce</a>, <a class='category' href='/blog/categories/pig-latin/'>Pig Latin</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/09/16/data-analysis-pig-latin-programming/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/09/16/data-analysis-pig-latin-programming/" itemprop="url">Data Analysis - Pig Latin Programming</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h2 id="giới-thiệu-về-data-analysis-bằng-pig-latin">Giới thiệu về Data Analysis bằng Pig Latin</h2>
+<p>Nếu bạn đã từng làm việc với DB, chắc hẳn đã nghe đến Hadoop và Map-Reduce.</p>
+<p>Map-Reduce, hay NoSQL style là một phương pháp tiếp cận ko thể thiếu cho các database lớn, tuy nhiên lượng knowhow cần phải có và phương pháp tư duy đặc thù là những rào cản lớn đối với những Data Analyser hay ngay cả những DB engineer thông thường.</p>
+<p>Một Data Analyser muốn viết được job cho Map-Reduce, trước hết phải có kỹ năng của 1 Java Engineer, phải re-invent 1 số hàm common (JOIN, FILTER …)</p>
+<p>Yahoo đã giới thiệu 1 hướng tiệp cận khác: Pig Latin, là 1 programming language build trên top của Hadoop, cú pháp tương đối giống SQL thuần tuý, tuy nhiên ở tầng dưới có thể “translate” program execution thành các job Map-Reduce và trả lại kết quả với tốc độ của Map-Reduce.</p>
+<p>Pig Latin (kể từ đây sẽ gọi tắt là “Pig” :D ) với bộ engine đằng sau là Java, có thể extend bằng các thư viện viết = Java hay thậm chí Python. Pig có hiệu suất phát triển cao, nghĩa là thay vì bỏ ra 1 tiếng để viết job 100 lines Map-Reduce bằng Java, bạn có thể chỉ cần 10 phút với 10 lines Pig :D</p>
+<p>Ở các phần tiếp theo của bài viết này, bạn sẽ được giới thiệu những bước học hỏi đầu tiên của Pig Developer.</p>
+<h2 id="get-start">Get Start</h2>
+<p>Rất may là chúng ta không phải ngồi tưởng tượng chay cách hoạt động của Pig. Cloudera có <a href="http://blog.cloudera.com/blog/2012/08/hadoop-on-your-pc-clouderas-cdh4-virtual-machine/">free VM image</a>, bạn chỉ cần down bản tương ứng về chạy trên Virtual Box hoặc VMWare.</p>
+<p>Pig có cấu trúc khá tương đồng với SQL. Trước hết để làm với 1 cục dữ liệu cần phân tích, cần LOAD cả cục lên rồi tiến hành “mổ xẻ”, sau đó STORE lại 1 file kết quả.</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>sample.sql </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sql'><span class='line'><span class="n">city</span> <span class="o">=</span> <span class="k">LOAD</span> <span class="s1">&#39;/input/gotham/people.txt&#39;</span> <span class="k">AS</span> <span class="p">(</span><span class="n">name</span><span class="p">:</span><span class="n">chararray</span><span class="p">,</span> <span class="n">age</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">income</span><span class="p">:</span><span class="nb">int</span><span class="p">);</span>
+</span><span class='line'><span class="n">citizens</span> <span class="o">=</span> <span class="k">ORDER</span> <span class="n">city</span> <span class="k">BY</span> <span class="n">age</span><span class="p">;</span>
+</span><span class='line'><span class="n">max_age</span> <span class="o">=</span> <span class="k">LIMIT</span> <span class="n">citizens</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="n">STORE</span> <span class="n">max_age</span> <span class="k">INTO</span> <span class="s1">&#39;output/gotham/analysis1.txt&#39;</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>people.txt là data đầu vào được tạo ra từ table trong DB.</p>
+<h2 id="basic-functions">Basic functions</h2>
+<p>Về cơ bản Pig có những function/commands sau :</p>
+<ul>
+<li>LOAD, STORE: lấy dữ liệu trước khi xử lý và lưu sau khi xử lý. Ngoài ra DUMP có thể dùng để debug kiểu data.</li>
+<li>GROUP, FILTER, ORDER BY, DISTINCT, LIMIT, UNION: những xử lý cơ bản giống hệt SQL.</li>
+<li>FOREACH: loop function, để tạo nest operator (có thể hiểu đơn giản như cách tạo sub-query).</li>
+<li>JOIN: giống JOIN của SQL, cũng có INNER, LEFT OUTER hay RIGHT OUTER… Những bước JOIN trong Pig thường là những bước quan trọng khi muốn tạo relation từ 2 cục data riêng rẽ trở lên.</li>
+<li>Eval functions (MAX, AVG, COUNT, SUM….).</li>
+<li>Math functions (SIN, COS, TAN, SQRT, …).</li>
+<li>Tuple. Bag, Map functions. Phần này khá là khó và tác giả cũng không có nhiều kinh nghiệm sử dụng.</li>
+<li>UDF (User Define Functions): là functions do developer tự viết bằng Java hoặc Python :D</li>
+</ul>
+<p>Bạn có thể xem cụ thể ở <a href="http://pig.apache.org/docs/r0.10.0/basic.html">Pig Latin Basics</a> hoặc <a href="http://pig.apache.org/docs/r0.10.0/func.html">Pig Latin Built In Functions</a></p>
+<h2 id="challenge-1-group-và-foreach">Challenge 1: GROUP và FOREACH</h2>
+<p>Bài toán đơn giản đầu tiên, với data đầu vào là thông tin của các công dân thành phố gotham như ở trên, ta cần tìm người giàu nhất (income cao nhất) trong các nhóm độ tuổi 20~30, 30~40, 40~50, v.v..</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>sample.sql </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sql'><span class='line'><span class="n">city</span> <span class="o">=</span> <span class="k">LOAD</span> <span class="s1">&#39;/input/gotham/people.txt&#39;</span> <span class="k">AS</span> <span class="p">(</span><span class="n">name</span><span class="p">:</span><span class="n">chararray</span><span class="p">,</span> <span class="n">age</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">income</span><span class="p">:</span><span class="nb">int</span><span class="p">);</span>
+</span><span class='line'><span class="n">city_divide</span> <span class="o">=</span> <span class="n">FOREACH</span> <span class="n">city</span> <span class="n">GENERATE</span>
+</span><span class='line'>  <span class="n">name</span><span class="p">,</span>
+</span><span class='line'>  <span class="n">age</span><span class="o">/</span><span class="mi">10</span> <span class="k">AS</span> <span class="k">class</span><span class="p">,</span>
+</span><span class='line'>  <span class="n">income</span><span class="p">;</span>
+</span><span class='line'><span class="n">city_classes</span> <span class="o">=</span> <span class="k">GROUP</span> <span class="n">city_divide</span> <span class="k">BY</span> <span class="k">class</span><span class="p">;</span>
+</span><span class='line'><span class="n">citizens</span> <span class="o">=</span> <span class="n">FOREACH</span> <span class="n">city_classes</span> <span class="err">{</span>
+</span><span class='line'>  <span class="n">ord</span> <span class="o">=</span> <span class="k">ORDER</span> <span class="n">city_divide</span> <span class="k">BY</span> <span class="n">income</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">lim</span> <span class="o">=</span> <span class="k">LIMIT</span> <span class="n">ord</span> <span class="k">BY</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">GENERATE</span> <span class="k">class</span><span class="o">*</span><span class="mi">10</span> <span class="k">as</span> <span class="k">class</span><span class="p">,</span> <span class="n">lim</span><span class="p">.</span><span class="n">name</span> <span class="k">AS</span> <span class="n">name</span><span class="p">,</span> <span class="n">lim</span><span class="p">.</span><span class="n">income</span> <span class="k">AS</span> <span class="n">income</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">STORE</span> <span class="n">citizens</span> <span class="k">INTO</span> <span class="s1">&#39;output/gotham/analysis2.txt&#39;</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Đến đây chắc độc gỉả đã phần nào hình dung được data analyser dùng Pig Latin như thế nào :D</p>
+<h2 id="challende-2-join">Challende 2: JOIN</h2>
+<p>Giả sử ngoài data về từng công dân của gotham, chúng ra có 1 data khác về các …“super heroes”, bao gồm “strength”, “ability”. Làm thế nào để biết các “super heroes” có thu nhập bao nhiêu trong cuộc sống thường ngày của họ ?</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>sample.sql </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='sql'><span class='line'><span class="n">city</span> <span class="o">=</span> <span class="k">LOAD</span> <span class="s1">&#39;/input/gotham/people.txt&#39;</span> <span class="k">AS</span> <span class="p">(</span><span class="n">name</span><span class="p">:</span><span class="n">chararray</span><span class="p">,</span> <span class="n">age</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">income</span><span class="p">:</span><span class="nb">int</span><span class="p">);</span>
+</span><span class='line'><span class="n">heroes</span> <span class="o">=</span> <span class="k">LOAD</span> <span class="s1">&#39;/input/gotham/heroes.txt&#39;</span> <span class="k">AS</span> <span class="p">(</span><span class="n">name</span><span class="p">:</span><span class="n">chararray</span><span class="p">,</span> <span class="n">strength</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">ability</span><span class="p">:</span><span class="n">chararray</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">op</span> <span class="o">=</span> <span class="k">JOIN</span> <span class="n">city</span> <span class="k">BY</span> <span class="n">name</span><span class="p">,</span> <span class="n">heroes</span> <span class="k">BY</span> <span class="n">name</span><span class="p">;</span>
+</span><span class='line'><span class="n">opt</span> <span class="o">=</span> <span class="n">FOREACH</span> <span class="n">op</span> <span class="n">GENERATE</span>
+</span><span class='line'>  <span class="err">$</span><span class="mi">0</span> <span class="k">AS</span> <span class="n">name</span><span class="p">,</span>
+</span><span class='line'>  <span class="err">$</span><span class="mi">1</span> <span class="k">AS</span> <span class="n">age</span><span class="p">,</span>
+</span><span class='line'>  <span class="err">$</span><span class="mi">2</span> <span class="k">AS</span> <span class="n">income</span><span class="p">,</span>
+</span><span class='line'>  <span class="err">$</span><span class="mi">4</span> <span class="k">AS</span> <span class="n">strength</span><span class="p">,</span>
+</span><span class='line'>  <span class="err">$</span><span class="mi">5</span> <span class="k">AS</span> <span class="n">ability</span><span class="p">;</span>
+</span><span class='line'><span class="n">STORE</span> <span class="n">opt</span> <span class="k">INTO</span> <span class="s1">&#39;output/gotham/analysis3.txt&#39;</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Ở đây bạn có thể để ý $0, $1, $2 lần lượt là name, age, income của biến city, $3, $4, $5 là name, strength, ability của biến heroes. Như vậy kết quả sau khi JOIN gồm tất cả các fields của 2 biến JOIN thành phần!</p>
+<h2 id="pig-tuning">Pig Tuning</h2>
+<p>Qua 2 ví dụ trên đây, bạn có thể thế thấy Pig dễ phát triển như thế nào. Tuy nhiên khi engineer hoàn toàn không có kinh nghiệm về Map-Reduce viết Pig thì chắc chắn sẽ không thể biết cách optimize để các job Hadoop bên dưới đạt tốc độ nhanh nhất có thể.</p>
+<p>Để giữ có Pig program có hiệu suất xử lý cao, engineer có thể áp dụng các trick dưới đây:</p>
+<ul>
+<li><p>Dùng FILTER nhiều nhất và sớm nhất có thể. Nếu bạn JOIN a và b rồi lại FILTER, thì hãy tìm cách FILTER a và b trước rồi hãy JOIN.</p></li>
+<li><p>Loại bỏ các cột (các fields) không cần thiết. Giả sử biến a có 11 fields và bạn chỉ cần 7 fields, hãy “FOREACH a GENERATE ($0…$6)” để lập tức loại bỏ 4 fields.</p></li>
+<li><p>PARALLEL là 1 magic keyword. Dùng PARALLEL để chỉ định số lượng reduceers.</p></li>
+</ul>
+<h2 id="udfs">UDFs</h2>
+<p>Điều cuối cùng tác giả muốn chia sẻ, là khi bạn có những tasks xử lý nhỏ sử dụng nhiều lần với các fields, hãy cố gắng viết UDFs để xử lý. Pig được ship cùng với 1 package UDF viết sẵn <a href="https://cwiki.apache.org/confluence/display/PIG/PiggyBank">Piggy Bank</a>.</p>
+<p>UDF có thể viết bằng Java hoặc Python. Java UDFs có tốc độ và khả năng ứng dụng trong Pig tốt hơn. Khi đã làm chủ được cấu trúc dữ liệu giữa Python/Java và Pig, bạn sẽ thấy UDFs là một feature mạnh mẽ và không thể sống thiếu :D</p>
+<h2 id="tóm-tắt">Tóm tắt:</h2>
+<ul>
+<li>Pig Latin: Ngôn ngữ được build trên top của Hadoop, với bộ core Java và engine có thể translate logic sang 1 set các Map-Reduce Jobs.</li>
+<li>VM có thể dùng cho mục đích học hỏi từ đầu <a href="http://blog.cloudera.com/blog/2012/08/hadoop-on-your-pc-clouderas-cdh4-virtual-machine/">Cloudera Pig VM image</a>.</li>
+<li>Tất cả các hàm có thể tra cứu tại <a href="http://pig.apache.org/docs/r0.10.0/func.html">Pig Latin Built In Functions</a>.</li>
+<li>UDFs được viết sẵn <a href="https://cwiki.apache.org/confluence/display/PIG/PiggyBank">Piggy Bank</a>.</li>
+<li><a href="http://blog.cloudera.com/wp-content/uploads/2010/01/IntroToPig.pdf">Slide giới thiệu tổng hợp của Cloudera</a>.</li>
+</ul>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -1102,332 +1304,6 @@
 <p>Bên trong setter/getter sử dụng lock để tránh việc nhiều thread truy cập đồng thời. Thế nhưng việc dùng lock sẽ mất chi phí cũng như cản trở tốc độ của chương trình. Vì vậy nên trong trường hợp bạn không dùng multithread hoặc không thể xảy ra những vấn đề như trên thì bạn nên dùng thuộc tính <code>nonatomic</code> để tăng tốc độ cho chương trình.</p>
 <h1 id="tổng-kết">Tổng kết</h1>
 <p>Bài viết này mình đã trình bày về các thuộc tính cho property, giải thích qua về các thuộc tính cũng như khi nào nên dùng thuộc tính nào. Mặc dù mình vẫn thấy còn những lập trình viên không dùng ARC nhưng có lẽ đa số mọi người đã chuyển qua dùng ARC. Thế nên thuộc tính <code>retain</code> có thể không cần dùng nữa. Để tìm hiểu kĩ hơn các bạn có thể đọc tại <a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ProgrammingWithObjectiveC/ProgrammingWithObjectiveC.pdf">Programming With Objective C</a></p>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-09-08T21:49:00+09:00" data-updated="true" itemprop="datePublished">Sep 8<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/rails/'>rails</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/09/08/prototype-chuc-nang-moi-cho-webapp-tren-rails-voi-chanko/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/09/08/prototype-chuc-nang-moi-cho-webapp-tren-rails-voi-chanko/" itemprop="url">Prototype Chức Năng Mới Cho Webapp Trên Rails Với Chanko</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<p>Là một web developer nói chung và ruby on rails developer nói riêng, bạn chắc hẳn sẽ gặp nhiều khó khăn khi muốn thêm chức năng mới vào hệ thống hiện tại. Khó khăn đáng nói đến nhất bao gồm: bạn phải add sao cho chức năng mới được add vào sẽ dễ extend, dễ tháo bỏ khi không cần thiết, và việc add chức năng mới vào sẽ có ảnh hưởng tối thiểu nhất đến các chức năng đã có. Trong bài viết này, mình sẽ giới thiệu về <strong><a href="https://github.com/cookpad/chanko">chanko</a></strong>, một <strong>(framework/engine) trên ruby on rails</strong>, mà sẽ giúp cho việc tạo chức năng mới trên một app đã có cực kì clean và dễ dàng.</p>
-<h1 id="cài-đặt">1. Cài đặt</h1>
-Để cài đặt chanko thì chúng ta chỉ cần add chanko vào Gemfile:
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span></span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='ruby'><span class='line'><span class="n">gem</span> <span class="s2">&quot;chanko&quot;</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<h1 id="sử-dụng">2. Sử dụng</h1>
-<p>Đầu tiên chúng ta sẽ nói về ý tưởng của chanko. Chanko tách chức năng mới với app hiện tại thông qua việc tạo ra một folder trong /app/unit. Trong đó sẽ chứa các chức năng được tạo mới thông qua chanko. Việc này có thể được nhìn thấy dễ dàng khi chúng ta sử dụng chanko generator.</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span></span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='ruby'><span class='line'><span class="err">$</span> <span class="n">rails</span> <span class="n">generate</span> <span class="ss">chanko</span><span class="p">:</span><span class="n">unit</span> <span class="n">example_unit</span>
-</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span>
-</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span><span class="o">/</span><span class="n">example_unit</span><span class="o">.</span><span class="n">rb</span>
-</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span><span class="o">/</span><span class="n">views</span><span class="o">/.</span><span class="n">gitkeep</span>
-</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span><span class="o">/</span><span class="n">images</span><span class="o">/.</span><span class="n">gitkeep</span>
-</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span><span class="o">/</span><span class="n">javascripts</span><span class="o">/.</span><span class="n">gitkeep</span>
-</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span><span class="o">/</span><span class="n">stylesheets</span><span class="o">/.</span><span class="n">gitkeep</span>
-</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">assets</span><span class="o">/</span><span class="n">images</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span>
-</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">assets</span><span class="o">/</span><span class="n">javascripts</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span>
-</span><span class='line'>      <span class="n">create</span>  <span class="n">app</span><span class="o">/</span><span class="n">assets</span><span class="o">/</span><span class="n">stylesheets</span><span class="o">/</span><span class="n">units</span><span class="o">/</span><span class="n">example_unit</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Chúng ta có thể thấy chanko generator gần tương tự như scaffold generator của rails. unit ở đây là một đơn vị chức năng.</p>
-<p>Ví dụ khi bạn cần add chức năng search button thì bạn sẽ <code>generate chanko:unit add_search_button</code>, khi đó chanko sẽ tự động tạo folder add_search_button ở trong app/units, và tạo sẵn file add_search_button_unit.rb và thư mục view để chứa view của chức năng mới này. File add_search_button.rb này sẽ chứa logic của cả model/controller của chức năng add_search_button mà chúng ta cần thêm vào.</p>
-<p>Các bạn có thể thấy rõ ý tưởng của chanko là tách logic và cả asset của chức năng mới cần thêm vào càng tách biệt với các chức năng cũ càng tốt. Việc này có tác dụng là chúng ta có thể thêm, bớt chức năng vào hệ thống cũ bằng một flow rất clean , và độ ảnh hưởng với hệ thống cũ cực kì thấp. Vậy nếu tách unit mới ra dưới dạng gần như một thư viện riêng như vậy, chúng ta sẽ intergrate unit này vào rails ra sao?</p>
-<p>Việc intergrate unit được tạo ra bởi chanko vào rails được thể hiện qua các chức năng dưới đây:</p>
-<h2 id="invoke">2.1 Invoke</h2>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span></span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='ruby'><span class='line'><span class="c1"># app/controllers/users_controller.rb</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">UsersController</span> <span class="o">&lt;</span> <span class="no">ApplicationController</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">index</span>
-</span><span class='line'>    <span class="n">invoke</span><span class="p">(</span><span class="ss">:add_search_button_unit</span><span class="p">,</span> <span class="ss">:index</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>      <span class="vi">@users</span> <span class="o">=</span> <span class="no">User</span><span class="o">.</span><span class="n">all</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span></span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">AddSearchButtonUnit</span>
-</span><span class='line'>  <span class="kp">include</span> <span class="ss">Chanko</span><span class="p">:</span><span class="ss">:Unit</span>
-</span><span class='line'>  <span class="n">function</span> <span class="p">(</span><span class="ss">:index</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>    <span class="vi">@users</span> <span class="o">=</span> <span class="no">Users</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">active</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Hàm invoke này sẽ đưa logic của hàm <code>index</code> được định nghĩa trong <code>add_search_button_unit.rb</code> vào trong logic của hàm hiện tại. Block được pass vào hàm invoke sẽ là fallback function, được execute khi có lỗi hày có vấn đề gì xảy ra với hàm invoke. Chúng ta có thể hình dung đơn giản chức năng invoke dùng để extend logic của một hàm của một unit (chức năng mới) và logic của controller (chức năng cũ)</p>
-<h2 id="unit-module">2.2 Unit module</h2>
-<p>Unit module chính là module của chức năng mới được thêm vào, ở đây chính là module AddSearchButton mà chúng ta đã nói đến ở trên. Trong module này sẽ định nghĩa logic cho controller, model và cả view helper cho chức năng mới. Tất cả MVC logic đều được nhét vào 1 file có thể hơi khó nhìn khi chức năng của chúng ta có nhiều logic phức tạp , tuy nhiên khi dừng lại ở mức prototyping thì việc này có thể chấp nhận được.</p>
-<strong>Logic của controller</strong> được add vào thông qua hàm <code>scope(:controller)</code>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span></span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='ruby'><span class='line'><span class="n">scope</span><span class="p">(</span><span class="ss">:controller</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">function</span><span class="p">(</span><span class="ss">:show</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>    <span class="vi">@user</span> <span class="o">=</span> <span class="no">User</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">params</span><span class="o">[</span><span class="ss">:id</span><span class="o">]</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="n">function</span><span class="p">(</span><span class="ss">:index</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>    <span class="vi">@users</span> <span class="o">=</span> <span class="no">User</span><span class="o">.</span><span class="n">active</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Gần tương tự, <strong>Logic của của model</strong> sẽ được thực hiện thông qua hàm <code>model</code>. Một điểm hơi khác là trong block pass vào thì chúng ta phải extend model mà chúng ta muốn thêm chức năng vào. Một điều đặc biệt ở đây là các hàm được extend cho một model X sẽ không được add trực tiếp vào model X thông qua monkey patch, mà sẽ add gián tiếp thông qua một proxy tên là unit. Do đó giả sử chúng ta một thêm hàm <code>method</code> vào model X thì chúng ta sẽ gọi nó thông qua <code>X.unit.method</code>. Như ở ví dụ dưới đây thì hàm active? sẽ được gọi thông qua user.unit.active?</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span></span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='ruby'><span class='line'><span class="n">models</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">expand</span><span class="p">(</span><span class="ss">:User</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>    <span class="n">scope</span> <span class="ss">:active</span><span class="p">,</span> <span class="nb">lambda</span> <span class="p">{</span> <span class="n">where</span><span class="p">(</span><span class="ss">:deleted_at</span> <span class="o">=&gt;</span> <span class="kp">nil</span><span class="p">)</span> <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">active?</span>
-</span><span class='line'>      <span class="n">deleted_at</span><span class="o">.</span><span class="n">nil?</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Logic của view được thực hiện thêm vào thông qua hàm <code>scope(:view)</code> và qua file view được add vào thư mục /units/unit_name/views (file view này sẽ có extension là slim)</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span></span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='ruby'><span class='line'><span class="n">scope</span><span class="p">(</span><span class="ss">:view</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">function</span><span class="p">(</span><span class="ss">:active</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>    <span class="n">render</span> <span class="s1">&#39;/active&#39;</span> <span class="k">if</span> <span class="n">user</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">active?</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Hàm view này sẽ render view active.html.slim nằm trong app/units/unit_name/views</p>
-<p>Ngoài việc add logic của unit vào controller/model/view thông qua các hàm scope và model như đã giới thiệu ở trên. Chanko::Unit cung cấp cho chúng ta một hàm rất hữu ích là <code>active_if</code>. Hàm này giống như một dạng functionality toggle, giúp chúng ta có thể on/off một chức năng mới cực kì dễ dàng. Block được pass vào active_if sẽ quyêt định chức unit có được enable không, nếu không được enable thì tất cả các logic của unit sẽ không được execute.</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span></span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='ruby'><span class='line'><span class="n">active_if</span> <span class="k">do</span> <span class="o">|</span><span class="n">context</span><span class="p">,</span> <span class="n">options</span><span class="o">|</span>
-</span><span class='line'>  <span class="kp">true</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<h1 id="kết-luận">3. Kết luận</h1>
-<p>Qua bài viết này chúng ta đã biết cách sử dụng gem chanko để có thể prototype chức năng mới một cách dễ dàng hơn, và ít ảnh hưởng đến hệ thống cũ nhất. Một cách đơn giản thì chanko đưa logic của cả model/view/controller vào tập trung trong 1 file, và cung cấp các helper function để giúp logic của hệ thống cũ có thể invoke các chức năng của unit mới một cách đơn giản nhất.</p>
-<p>Các bạn có thể tham khảo chi tiết thông qua <a href="http://cookpad.github.io/chanko/">homepage của chanko</a></p>
 		
 		
 	</div>
