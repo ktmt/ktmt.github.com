@@ -4,7 +4,7 @@
   <title><![CDATA[Category: unittest | Blog kỹ thuật máy tính]]></title>
   <link href="http://git@github.com.github.com/blog/categories/unittest/atom.xml" rel="self"/>
   <link href="http://git@github.com.github.com/"/>
-  <updated>2015-03-08T14:45:59+09:00</updated>
+  <updated>2015-05-07T01:18:39+09:00</updated>
   <id>http://git@github.com.github.com/</id>
   <author>
     <name><![CDATA[kỹ thuật máy tính]]></name>
@@ -21,252 +21,128 @@
     <content type="html"><![CDATA[<p>Ở bài viết trước tôi đã đề cập đến <a href="http://ktmt.github.io/blog/2013/05/09/mock-with-unittest-in-python/">cách sử dụng mock để viết unittest</a>. Unittest có tác dụng không chỉ trong việc đảm bảo các đoạn code mới được viết thêm không phá vỡ các yêu cầu logic trước đó, trong bài viết này, tôi sẽ chia sẽ các kinh nghiệm sử dụng unittest để refactoring các đoạn code</p>
 <p>Một trong những vấn đề khi viết các hàm đó là các hàm thường quá phức tạp. <a href="http://en.wikipedia.org/wiki/Robert_Cecil_Martin">Robert Martin</a> trong cuốn sách “Clean code - a handbook of Agile Software Craftmenship” đã nói về nói về các quy tắc khi thiết kế hàm: Quy tắc đầu tiên của function đó là chúng nên nhỏ, quy tắc thứ hai là chúng nên nhỏ hơn thế nữa&quot; (The first rule ò functions is that they should be small. The second rule of functions is that they should be smaller than that). Function càng ngắn thì càng dễ hiểu, function càng ngắn thì nó càng tách biệt so với các hàm khác. Và hơn thế nữa hàm càng ngắn, thì test càng đơn giản. Vậy làm thế nào để biết function bạn viết là đủ ngắn hay chưa? Nếu để test 1 hàm cần tới hơn 20 dòng code, theo bản thân tôi, hàm đó nên được viết lại.</p>
 <p>Hãy xét một ví dụ sau</p>
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>models.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">class</span> <span class="nc">Order</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span> <span class="c"># define fields in here&lt;/p&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">def</span> <span class="nf">create_final_pdf_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_order_id</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">front_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">create_frontcover_image</span><span class="p">()</span>
-</span><span class='line'>    <span class="n">back_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">create_backcover_image</span><span class="p">(</span><span class="n">client_order_id</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_type</span> <span class="o">==</span> <span class="n">Order</span><span class="o">.</span><span class="n">SOFT_COVER</span><span class="p">:</span>
-</span><span class='line'>        <span class="n">frontcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
-</span><span class='line'>            <span class="p">[</span><span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">front_image</span><span class="p">),</span> <span class="bp">None</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_size</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">backcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
-</span><span class='line'>            <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">back_image</span><span class="p">)],</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_size</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">frontcover_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached_pdf_file</span><span class="p">,</span> <span class="n">backcover_file</span><span class="p">]</span>
-</span><span class='line'>    <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_type</span> <span class="o">==</span> <span class="n">Order</span><span class="o">.</span><span class="n">HARD_COVER</span><span class="p">:</span>
-</span><span class='line'>        <span class="n">hardcover_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_hardcover_image</span><span class="p">(</span><span class="n">back_image</span><span class="p">,</span> <span class="n">front_image</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">hardcover_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PDF_SIZES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">size_type</span><span class="p">]</span>
-</span><span class='line'>        <span class="n">hardcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
-</span><span class='line'>            <span class="p">[</span><span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">hardcover_image</span><span class="p">)],</span> <span class="n">hardcover_size</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">hardcover_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached_pdf_file</span><span class="p">]</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">new_path</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">merge_pdf_files</span><span class="p">(</span><span class="n">input_files</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">new_path</span><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>{% codeblock models.py %}</p>
+<p>class Order(models.Model): # define fields in here</p>
+<pre><code>def create_final_pdf_file(self, client_order_id):
+    front_image = self.tree.create_frontcover_image()
+    back_image = self.tree.create_backcover_image(client_order_id)
+
+    if self.order_type == Order.SOFT_COVER:
+        frontcover_file = pdf.create_pdf_from_images(
+            [image_helper.save_image(front_image), None], self.book_size)
+        backcover_file = pdf.create_pdf_from_images(
+            [None, image_helper.save_image(back_image)], self.book_size)
+        input_files = [frontcover_file, self.cached_pdf_file, backcover_file]
+    elif self.order_type == Order.HARD_COVER:
+        hardcover_image = self.create_hardcover_image(back_image, front_image)
+        hardcover_size = self.PDF_SIZES[self.size_type]
+        hardcover_file = pdf.create_pdf_from_images(
+            [image_helper.save_image(hardcover_image)], hardcover_size)
+        input_files = [hardcover_file, self.cached_pdf_file]
+
+    new_path = pdf.merge_pdf_files(input_files)
+    return new_path</code></pre>
+<p>{% endcodeblock %}</p>
 <p>Hàm <code>create_final_pdf_file</code> nhận tham số là một <code>client_order_id</code>, tạo ra một pdf file tương ứng <code>client_order_id</code>, và trả về đường dẫn của pdf file đó. Hàm này tạo ra một ảnh cover trước, và ảnh cover sau, sau đó ghép với một file pdf có sẵn để tạo nên <code>final_pdf</code>.</p>
 <p>Tuy nhiên tuỳ theo giá trị của <code>self.order_type</code> mà cách tạo các ảnh trước và ảnh sau là khác nhau.</p>
 <p>Nếu chỉ dừng ở đây, bản thân tôi, thấy khá hài lòng với hàm <code>create_final_pdf_file</code>. Hàm dài vừa đủ, không quá dài (19 lines), chỉ có một input đầu vào, và 1 output đầu ra. Tuy nhiên, nếu viết testcase cho hàm này, chúng ta sẽ thấy có vấn đề</p>
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>test_models.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">class</span> <span class="nc">TestModel</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span> <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="n">tree</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">()</span> <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="n">Order</span><span class="p">(</span><span class="n">tree</span><span class="o">=</span><span class="n">tree</span><span class="p">)</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nd">@mock.patch</span><span class="p">(</span><span class="o">&amp;</span><span class="c">#39;StoryTree.helpers.image_helper.save_image&amp;#39;)</span>
-</span><span class='line'><span class="nd">@mock.patch</span><span class="p">(</span><span class="o">&amp;</span><span class="c">#39;StoryTree.helpers.generator.pdf.merge_pdf_files&amp;#39;)</span>
-</span><span class='line'><span class="nd">@mock.patch</span><span class="p">(</span><span class="o">&amp;</span><span class="c">#39;StoryTree.helpers.generator.pdf.create_pdf_from_images&amp;#39;)</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">test_create_final_pdf_file_soft_cover</span><span class="p">(</span>
-</span><span class='line'>        <span class="bp">self</span><span class="p">,</span> <span class="n">mock_create_pdf</span><span class="p">,</span> <span class="n">mock_merge_pdf</span><span class="p">,</span> <span class="n">mock_save_image</span><span class="p">):</span>
-</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">order_type</span> <span class="o">=</span> <span class="n">Order</span><span class="o">.</span><span class="n">SOFT_COVER</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">mock_cached_pdf</span> <span class="o">=</span> <span class="n">PropertyMock</span><span class="p">(</span>
-</span><span class='line'>        <span class="n">return_value</span><span class="o">=&amp;</span><span class="c">#39;StoryTree/tests/fixtures/1.pdf&amp;#39;)</span>
-</span><span class='line'>    <span class="n">mock_backcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">mock_frontcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">with</span> <span class="n">nested</span><span class="p">(</span>
-</span><span class='line'>            <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="o">&amp;</span><span class="c">#39;cached_pdf_file&amp;#39;, mock_cached_pdf),</span>
-</span><span class='line'>            <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="o">&amp;</span><span class="c">#39;create_backcover_image&amp;#39;, mock_backcover),</span>
-</span><span class='line'>            <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="o">&amp;</span><span class="c">#39;create_frontcover_image&amp;#39;, mock_frontcover)):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">create_final_pdf_file</span><span class="p">(</span><span class="o">&amp;</span><span class="c">#39;STORYTREE01111&amp;#39;)</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">mock_create_pdf</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">first_args</span> <span class="o">=</span> <span class="n">mock_create_pdf</span><span class="o">.</span><span class="n">call_args_list</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">first_args</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="nd">@mock.patch</span><span class="p">(</span><span class="o">&amp;</span><span class="c">#39;StoryTree.helpers.image_helper.save_image&amp;#39;)</span>
-</span><span class='line'><span class="nd">@mock.patch</span><span class="p">(</span><span class="o">&amp;</span><span class="c">#39;StoryTree.helpers.generator.pdf.merge_pdf_files&amp;#39;)</span>
-</span><span class='line'><span class="nd">@mock.patch</span><span class="p">(</span><span class="o">&amp;</span><span class="c">#39;StoryTree.helpers.generator.pdf.create_pdf_from_images&amp;#39;)</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">test_create_final_pdf_file_hard_cover</span><span class="p">(</span>
-</span><span class='line'>        <span class="bp">self</span><span class="p">,</span> <span class="n">mock_create_pdf</span><span class="p">,</span> <span class="n">mock_merge_pdf</span><span class="p">,</span> <span class="n">mock_save_image</span><span class="p">):</span>
-</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">order_type</span> <span class="o">=</span> <span class="n">Order</span><span class="o">.</span><span class="n">HARD_COVER</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">mock_cached_pdf</span> <span class="o">=</span> <span class="n">PropertyMock</span><span class="p">(</span>
-</span><span class='line'>        <span class="n">return_value</span><span class="o">=&amp;</span><span class="c">#39;StoryTree/tests/fixtures/1.pdf&amp;#39;)</span>
-</span><span class='line'>    <span class="n">mock_backcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">mock_frontcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">mock_hardcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">with</span> <span class="n">nested</span><span class="p">(</span>
-</span><span class='line'>            <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="o">&amp;</span><span class="c">#39;create_backcover_image&amp;#39;, mock_backcover),</span>
-</span><span class='line'>            <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="o">&amp;</span><span class="c">#39;create_frontcover_image&amp;#39;, mock_frontcover),</span>
-</span><span class='line'>            <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="o">&amp;</span><span class="c">#39;cached_pdf_file&amp;#39;, mock_cached_pdf),</span>
-</span><span class='line'>            <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="o">&amp;</span><span class="c">#39;create_hardcover_image&amp;#39;, mock_hardcover)):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">create_final_pdf_file</span><span class="p">(</span><span class="o">&amp;</span><span class="c">#39;STORYTREE01111&amp;#39;)</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_hardcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_create_pdf</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>{% codeblock test_models.py %}</p>
+<p>class TestModel(unittest.TestCase): def setUp(self): tree = Tree() self.order = Order(tree=tree)</p>
+<pre><code>@mock.patch(&#39;StoryTree.helpers.image_helper.save_image&#39;)
+@mock.patch(&#39;StoryTree.helpers.generator.pdf.merge_pdf_files&#39;)
+@mock.patch(&#39;StoryTree.helpers.generator.pdf.create_pdf_from_images&#39;)
+def test_create_final_pdf_file_soft_cover(
+        self, mock_create_pdf, mock_merge_pdf, mock_save_image):
+    self.order.order_type = Order.SOFT_COVER
+
+    mock_cached_pdf = PropertyMock(
+        return_value=&#39;StoryTree/tests/fixtures/1.pdf&#39;)
+    mock_backcover = mock.Mock(return_value=image)
+    mock_frontcover = mock.Mock(return_value=image)
+
+    with nested(
+            mock.patch.object(Order, &#39;cached_pdf_file&#39;, mock_cached_pdf),
+            mock.patch.object(Tree, &#39;create_backcover_image&#39;, mock_backcover),
+            mock.patch.object(Tree, &#39;create_frontcover_image&#39;, mock_frontcover)):
+        self.order.create_final_pdf_file(&#39;STORYTREE01111&#39;)
+
+        self.assertEqual(1, mock_backcover.call_count)
+        self.assertEqual(1, mock_frontcover.call_count)
+        self.assertEqual(2, mock_create_pdf.call_count)
+        first_args = mock_create_pdf.call_args_list[0][0]
+        self.assertTrue(first_args[0][-1] is None)
+
+@mock.patch(&#39;StoryTree.helpers.image_helper.save_image&#39;)
+@mock.patch(&#39;StoryTree.helpers.generator.pdf.merge_pdf_files&#39;)
+@mock.patch(&#39;StoryTree.helpers.generator.pdf.create_pdf_from_images&#39;)
+def test_create_final_pdf_file_hard_cover(
+        self, mock_create_pdf, mock_merge_pdf, mock_save_image):
+    self.order.order_type = Order.HARD_COVER
+
+    mock_cached_pdf = PropertyMock(
+        return_value=&#39;StoryTree/tests/fixtures/1.pdf&#39;)
+    mock_backcover = mock.Mock(return_value=image)
+    mock_frontcover = mock.Mock(return_value=image)
+    mock_hardcover = mock.Mock(return_value=image)
+
+    with nested(
+            mock.patch.object(Tree, &#39;create_backcover_image&#39;, mock_backcover),
+            mock.patch.object(Tree, &#39;create_frontcover_image&#39;, mock_frontcover),
+            mock.patch.object(Order, &#39;cached_pdf_file&#39;, mock_cached_pdf),
+            mock.patch.object(Order, &#39;create_hardcover_image&#39;, mock_hardcover)):
+        self.order.create_final_pdf_file(&#39;STORYTREE01111&#39;)
+        self.assertEqual(1, mock_backcover.call_count)
+        self.assertEqual(1, mock_frontcover.call_count)
+        self.assertEqual(1, mock_hardcover.call_count)
+        self.assertEqual(1, mock_create_pdf.call_count)</code></pre>
+<p>{% endcodeblock %}</p>
 <p>Đoạn code test trên có vấn đề gì? Để test hàm <code>create_final_pdf_file</code>, chúng ta cần viết 2 test case, cho 2 trường hợp trong đoạn code if-else. Và 2 đoạn code test bị lặp lại khá nhiều, đặc biệt là ở việc mock các objects. Chúng ta có thể viết lại test case gọn hơn bằng cách viết một function chung, hoặc một function tạo ra các mock object và gọi nó trong từng hàm test. Nhưng liệu có phải đó là vấn đề chính.</p>
 <p>Điều tôi muốn nói ở đây là: Code smell trong test code có nguyên nhân từ test code, hay từ bản thân đoạn code chúng ta muốn test. Hãy xem lại hàm <code>create_final_pdf_file</code>. Hàm nãy đã thực sự tốt? Một hàm tốt, là một hàm chỉ nên làm một việc. Hàm <code>create_final_pdf_file</code> ở đây, ngoài việc gọi các hàm khác, còn thêm vào nó đoạn xử lý logic xét kiểu của <code>order</code>. Đoạn code if-else xử lý 2 logic khác nhau, chúng nên được tách ra thành một hàm khác.</p>
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>models.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">class</span> <span class="nc">Order</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">def</span> <span class="nf">create_input_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">front_image</span><span class="p">,</span> <span class="n">back_image</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_type</span> <span class="o">==</span> <span class="n">Order</span><span class="o">.</span><span class="n">SOFT_COVER</span><span class="p">:</span>
-</span><span class='line'>        <span class="n">frontcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
-</span><span class='line'>            <span class="p">[</span><span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">front_image</span><span class="p">),</span> <span class="bp">None</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_size</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">backcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
-</span><span class='line'>            <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">back_image</span><span class="p">)],</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_size</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">frontcover_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached_pdf_file</span><span class="p">,</span> <span class="n">backcover_file</span><span class="p">]</span>
-</span><span class='line'>    <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_type</span> <span class="o">==</span> <span class="n">Order</span><span class="o">.</span><span class="n">HARD_COVER</span><span class="p">:</span>
-</span><span class='line'>        <span class="n">hardcover_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_hardcover_image</span><span class="p">(</span><span class="n">back_image</span><span class="p">,</span> <span class="n">front_image</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">hardcover_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PDF_SIZES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">size_type</span><span class="p">]</span>
-</span><span class='line'>        <span class="n">hardcover_file</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">create_pdf_from_images</span><span class="p">(</span>
-</span><span class='line'>            <span class="p">[</span><span class="n">image_helper</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="n">hardcover_image</span><span class="p">)],</span> <span class="n">hardcover_size</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">hardcover_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached_pdf_file</span><span class="p">]</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">input_files</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">def</span> <span class="nf">create_final_pdf_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_order_id</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">front_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">create_frontcover_image</span><span class="p">()</span>
-</span><span class='line'>    <span class="n">back_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">create_backcover_image</span><span class="p">(</span><span class="n">client_order_id</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">input_files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_input_files</span><span class="p">(</span><span class="n">front_image</span><span class="p">,</span> <span class="n">back_image</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">new_path</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">merge_pdf_files</span><span class="p">(</span><span class="n">input_files</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">new_path</span><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>{% codeblock models.py %}</p>
+<p>class Order(models.Model):</p>
+<pre><code>def create_input_files(self, front_image, back_image):
+    if self.order_type == Order.SOFT_COVER:
+        frontcover_file = pdf.create_pdf_from_images(
+            [image_helper.save_image(front_image), None], self.book_size)
+        backcover_file = pdf.create_pdf_from_images(
+            [None, image_helper.save_image(back_image)], self.book_size)
+        input_files = [frontcover_file, self.cached_pdf_file, backcover_file]
+    elif self.order_type == Order.HARD_COVER:
+        hardcover_image = self.create_hardcover_image(back_image, front_image)
+        hardcover_size = self.PDF_SIZES[self.size_type]
+        hardcover_file = pdf.create_pdf_from_images(
+            [image_helper.save_image(hardcover_image)], hardcover_size)
+        input_files = [hardcover_file, self.cached_pdf_file]
+    return input_files
+
+def create_final_pdf_file(self, client_order_id):
+    front_image = self.tree.create_frontcover_image()
+    back_image = self.tree.create_backcover_image(client_order_id)
+    input_files = self.create_input_files(front_image, back_image)
+    new_path = pdf.merge_pdf_files(input_files)
+    return new_path</code></pre>
+<p>{% endcodeblock %}</p>
 <p>Hàm <code>create_final_pdf_file</code> sau khi được refactoring, đã trở nên đơn giản và dễ đọc hơn, thay vì phải lướt qua 19 lines, và đọc hiểu logic của đoạn code if-else, giờ đây bạn có thể hiểu nó chỉ bằng <code>create_input_files</code>. Và code test mới cho hàm <code>create_final_pdf_file</code> như sau</p>
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>test_models.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'> <span class="k">class</span> <span class="nc">TestModel</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span> <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="n">Order</span><span class="p">()</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nd">@mock.patch</span><span class="p">(</span><span class="o">&amp;</span><span class="c">#39;StoryTree.helpers.generator.pdf.merge_pdf_files&amp;#39;)</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">test_create_final_pdf_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_merge_pdf</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">mock_cached_pdf</span> <span class="o">=</span> <span class="n">PropertyMock</span><span class="p">(</span>
-</span><span class='line'>        <span class="n">return_value</span><span class="o">=&amp;</span><span class="c">#39;StoryTree/tests/fixtures/1.pdf&amp;#39;)</span>
-</span><span class='line'>    <span class="n">mock_backcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">mock_frontcover</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">mock_input_files</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">Mock</span><span class="p">(</span><span class="n">return_values</span><span class="o">=</span><span class="p">[</span><span class="o">&amp;</span><span class="c">#39;&amp;#39;])</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">with</span> <span class="n">nested</span><span class="p">(</span>
-</span><span class='line'>            <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="o">&amp;</span><span class="c">#39;create_input_files&amp;#39;, mock_input_files)</span>
-</span><span class='line'>            <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Order</span><span class="p">,</span> <span class="o">&amp;</span><span class="c">#39;cached_pdf_file&amp;#39;, mock_cached_pdf),</span>
-</span><span class='line'>            <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="o">&amp;</span><span class="c">#39;create_backcover_image&amp;#39;, mock_backcover),</span>
-</span><span class='line'>            <span class="n">mock</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">Tree</span><span class="p">,</span> <span class="o">&amp;</span><span class="c">#39;create_frontcover_image&amp;#39;, mock_frontcover)):</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">.</span><span class="n">create_final_pdf_file</span><span class="p">(</span><span class="o">&amp;</span><span class="c">#39;STORYTREE01111&amp;#39;)</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_backcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_frontcover</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span>
-</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEquals</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mock_input_files</span><span class="o">.</span><span class="n">call_count</span><span class="p">)</span><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>{% codeblock test_models.py %} class TestModel(unittest.TestCase): def setUp(self): self.order = Order()</p>
+<pre><code>@mock.patch(&#39;StoryTree.helpers.generator.pdf.merge_pdf_files&#39;)
+def test_create_final_pdf_file(self, mock_merge_pdf):
+    mock_cached_pdf = PropertyMock(
+        return_value=&#39;StoryTree/tests/fixtures/1.pdf&#39;)
+    mock_backcover = mock.Mock(return_value=image)
+    mock_frontcover = mock.Mock(return_value=image)
+    mock_input_files = mock.Mock(return_values=[&#39;&#39;])
+
+    with nested(
+            mock.patch.object(Order, &#39;create_input_files&#39;, mock_input_files)
+            mock.patch.object(Order, &#39;cached_pdf_file&#39;, mock_cached_pdf),
+            mock.patch.object(Tree, &#39;create_backcover_image&#39;, mock_backcover),
+            mock.patch.object(Tree, &#39;create_frontcover_image&#39;, mock_frontcover)):
+        self.order.create_final_pdf_file(&#39;STORYTREE01111&#39;)
+
+        self.assertEqual(1, mock_backcover.call_count)
+        self.assertEqual(1, mock_frontcover.call_count)
+        self.assertEquals(1, mock_input_files.call_count)</code></pre>
+<p>{% endcodeblock %}</p>
 <p>Việc tách logic của đoạn code tạo 2 input files ra thành một hàm <code>create_input_files</code>, làm cho hàm <code>create_final_pdf</code> dễ hiểu hơn, nói cách khác, nó che giấu thông tin không cần thiết cho lập trình viên khi đọc tới đoạn code của <code>create_final_pdf</code>. Hàm <code>create_final_test</code> giờ đây không làm gì khác ngoại việc gọi tới các hàm khác. Không có bất cứ logic nào được đặt trong hàm này. Trên thực tế rất nhiều lập trình viên sẽ không viết test cho những hàm như <code>create_final_pdf</code> nữa. Họ chỉ cần viết test cho 4 hàm <code>create_input_files</code>, <code>create_backcover_image</code>, <code>create_frontcover_image</code>, và <code>cached_pdf_file</code> là đủ.</p>
 <p>Tóm lại, bạn có thể tìm kiếm code smell trong unittest, và refactoring hàm mà unittest đó muốn test</p>]]></content>
   </entry>

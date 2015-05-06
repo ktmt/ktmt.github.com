@@ -4,7 +4,7 @@
   <title><![CDATA[Category: unix | Blog kỹ thuật máy tính]]></title>
   <link href="http://git@github.com.github.com/blog/categories/unix/atom.xml" rel="self"/>
   <link href="http://git@github.com.github.com/"/>
-  <updated>2015-03-08T14:45:59+09:00</updated>
+  <updated>2015-05-07T01:18:39+09:00</updated>
   <id>http://git@github.com.github.com/</id>
   <author>
     <name><![CDATA[kỹ thuật máy tính]]></name>
@@ -50,28 +50,16 @@
 <h4 id="thống-kê-requests-đến-a-b">Thống kê requests đến A, B</h4>
 <p>Bài toán này thực chất khá dễ và ta có thể giải quyết bằng grep và wc. Để ý rằng mỗi dòng là 1 requests đến A, B hoặc C vì vậy bài toán có thể chuyển về là: đếm số dòng có ký tự A và ký tự B. Để lọc ký tự ta có thể dùng grep, để đếm số dòng ta có thể dùng wc. Như vậy bài toán có thể được giải quyết bằng cách pipe kết quả grep sang wc.</p>
 <p>Lời giải:</p>
-<p><div>
-  <pre><code class='bash'>grep A data.dat | wc -l 4 grep B data.dat | wc -l 5</code></pre>
-</div>
-</p>
+<p>{% highlight bash %} grep A data.dat | wc -l 4 grep B data.dat | wc -l 5 {% endhighlight %}</p>
 <p>Như vậy có 4 requests đến A và 5 requests đến B trong log file. Bằng 1 câu lệnh, ta có thể đưa ngay ra được kết quả. Dễ như ăn kẹo!</p>
 <h4 id="đếm-số-request-trong-1-phút.">Đếm số request trong 1 phút.</h4>
 <p>Bài toán này khó hơn 1 chút do ta chỉ có trong log các request theo từng giây, trong khi ta cần thống kê theo phút. Liệu có cách nào biến bài toán về bài toán đếm số dòng như ở trên không? Nếu như ta có thể nhóm các dòng dữ liệu theo phút, bài toán có thể được giải quyết tương tự như bài toán trên.</p>
 <p>Trước tiên, làm thế nào để nhóm dòng theo phút? Muốn nhóm dòng theo phút ta phải tách được phần phút ra. Để ý giờ:phút là trường thứ 3 trong file. Do vậy nếu tách được cột thứ 3 và lấy 5 ký tự đầu tiên, ta có thể lấy phút của từng request. Tách cột là việc của awk!</p>
-<p><div>
-  <pre><code class='bash'>awk ‘{print substr($3, 1, 5)}’ data.dat 20:00 20:00 20:00 20:02 20:03 20:03 20:03 20:04 20:05 20:05 20:06 20:07</code></pre>
-</div>
-</p>
+<p>{% highlight bash %} awk ‘{print substr($3, 1, 5)}’ data.dat 20:00 20:00 20:00 20:02 20:03 20:03 20:03 20:04 20:05 20:05 20:06 20:07 {% endhighlight %}</p>
 <p>Ồ, ta đã tiến được 1 bước! Bước tiếp theo, nếu như ta có thể nhóm các phần tử giống nhau và đếm các phần tử đó, ta sẽ có kết quả mong muốn. Nhóm các giá trị giống nhau là nhiệm vụ của uniq!</p>
-<p><div>
-  <pre><code class='bash'>awk ‘{print substr($3, 1, 5)}’ data.dat | uniq -c 3 20:00 2 20:02 3 20:03 1 20:04 2 20:05 1 20:06 1 20:07</code></pre>
-</div>
-</p>
+<p>{% highlight bash %} awk ‘{print substr($3, 1, 5)}’ data.dat | uniq -c 3 20:00 2 20:02 3 20:03 1 20:04 2 20:05 1 20:06 1 20:07 {% endhighlight %}</p>
 <p>Tuyệt! Như vậy bằng 1 dòng lệnh, ta đã nhóm được các API trong cùng 1 phút, cũng như số lượng API trong thời điểm đấy. Nếu số lượng request nhiều, số dòng kết quả lớn và ta chỉ muốn biết thời điểm có truy cập lớn nhất, ta có thể sắp xếp theo số lượng truy cập. Sắp xếp các dòng theo giá trị cột là công việc của sort! Bằng câu lệnh sort ta có kết quả như dưới đây:</p>
-<p><div>
-  <pre><code class='bash'>awk ‘{print substr($3, 1, 5)}’ data.dat | uniq -c | sort -nk1 -r 3 20:03 3 20:00 2 20:05 1 20:07 1 20:06 1 20:04 1 20:02</code></pre>
-</div>
-</p>
+<p>{% highlight bash %} awk ‘{print substr($3, 1, 5)}’ data.dat | uniq -c | sort -nk1 -r 3 20:03 3 20:00 2 20:05 1 20:07 1 20:06 1 20:04 1 20:02 {% endhighlight %}</p>
 <p>Bài toán đầu tiên cũng đã được giải quyết chỉ với 1 dòng lệnh!</p>
 <h3 id="kết-luận">Kết luận</h3>
 <p>Bài viết đã giới thiệu qua các công cụ commandline của unix cũng như cách áp dụng công cụ đó vào bài toán cụ thể. Hy vọng qua bài viết bạn đã thấy được phần nào tầm quan trọng cũng như sức mạng của các chương trình tiện ích như awk, wc, grep, uniq, sort. Và để hiểu rõ công cụ thì không cách nào khác là áp dụng thật sáng tạo chúng vào công việc hàng ngày, do vậy bạn hãy thử áp dụng các công cụ trên vào bài toán sau nhé:</p>
@@ -89,10 +77,7 @@
 <h2 id="i.-một-số-kiến-thức-tổng-quan">I. Một số kiến thức tổng quan</h2>
 <p>Tất cả các chương trình trong Unix thực chất đều là các processes. terminal bạn chạy, apache, nginx, vim, hay bất cứ lệnh nào bạn gõ vào terminal. Process chính là đơn vị cấu thành nên Unix. Nó chính là một instance của chương trình bạn viết ra. Nói cách khác mỗi dòng code của bạn, sẽ được thực thi trên một process.</p>
 <p>Unix cung cấp tool <code>ps</code> để list ra tất cả các process đang chạy trên hệ thống</p>
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>proc.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'> <span class="nv">$&amp;</span>gt; ps -e -opid,ppid,user,rss,command PID PPID USER RSS COMMAND 1 0 root 152 init <span class="o">[</span>2<span class="o">]</span> 1695 1 root 428 /usr/sbin/sshd 1863 1 root 48 /sbin/getty 38400 tty1 1864 1 root 48 /sbin/getty 38400 tty2 1865 1 root 48 /sbin/getty 38400 tty3 1866 1 root 48 /sbin/getty 38400 tty4 1867 1 root 48 /sbin/getty 38400 tty5 1868 1 root 48 /sbin/getty 38400 tty6 24477 1695 root 2888 sshd: vagrant <span class="o">[</span>priv<span class="o">]</span> 24479 24477 vagrant 1996 sshd: vagrant@pts/0 24480 24479 vagrant 2328 -bash 24591 24480 vagrant 1060 ps -e -opid,ppid,user,rss,command
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>{% codeblock proc.sh %} $&gt; ps -e -opid,ppid,user,rss,command PID PPID USER RSS COMMAND 1 0 root 152 init [2] 1695 1 root 428 /usr/sbin/sshd 1863 1 root 48 /sbin/getty 38400 tty1 1864 1 root 48 /sbin/getty 38400 tty2 1865 1 root 48 /sbin/getty 38400 tty3 1866 1 root 48 /sbin/getty 38400 tty4 1867 1 root 48 /sbin/getty 38400 tty5 1868 1 root 48 /sbin/getty 38400 tty6 24477 1695 root 2888 sshd: vagrant [priv] 24479 24477 vagrant 1996 sshd: vagrant@pts/0 24480 24479 vagrant 2328 -bash 24591 24480 vagrant 1060 ps -e -opid,ppid,user,rss,command {% endcodeblock %}</p>
 <p>Ở đây, mình chạy lênh <code>ps</code> và show ra các thuộc tính <code>pid,ppid,user,rss,command</code> của process (chú ý (1) <code>ps</code> có rất nhiều option để chạy, nếu bạn muốn hiểu chỉ tiết, hãy sử dụng <code>man ps</code> để biết, (2) kểt quả trả về chỉ là một phần các process trên máy mình). Các thông tin mình muốn hiện thị ở đây bao gồm:</p>
 <ol type="1">
 <li>PID - Process ID (id của process),</li>
@@ -106,40 +91,24 @@
 <h3 id="làm-sao-hệ-điều-hành-đánh-số-các-process-id">1. Làm sao hệ điều hành đánh số các Process ID?</h3>
 <p>Process ID được đánh số theo thứ tự tăng dần. Bắt đầu từ 0 và tăng lên cho tới khi gặp giá trị maximum. Giá trị maximum của Process ID là có thể cấu hình được tuỳ vào từng hệ thống.</p>
 <p>Trên Linux bạn có thể xem và thay đổi giá trị mặc định của Process ID maximum bằng cách thay đổi file <code>/proc/sys/kernel/pid_max</code></p>
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>main.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'> <span class="c"># read current maximum value of process id $&amp;gt; cat /proc/sys/kernel/pid_max 32768&lt;/p&gt;</span>
-</span><span class='line'>&lt;h1 <span class="nv">id</span><span class="o">=</span><span class="s2">&quot;set-maximum-value-for-process-id&quot;</span>&gt;set maximum value <span class="k">for </span>process id&lt;/h1&gt;
-</span><span class='line'>&lt;p&gt;<span class="nv">$&amp;</span>gt; <span class="nb">echo </span>40000 &amp;gt; /proc/sys/kernel/pid_max
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>{% codeblock main.sh %} # read current maximum value of process id $&gt; cat /proc/sys/kernel/pid_max 32768</p>
+<h1 id="set-maximum-value-for-process-id">set maximum value for process id</h1>
+<p>$&gt; echo 40000 &gt; /proc/sys/kernel/pid_max {% endcodeblock %}</p>
 <p>Khi process ID tăng đến giá trị maximum value, hệ điều hành (OS) sẽ quay trở lại đánh số từ một giá trị cụ thế (một số tài liệu nói giá trị này với Linux là 300, và với Mac OS là 100 - mình chưa biết cách để kiểm nghiệm điều này một cách an toàn)</p>
 <p>UNIX cung cấp syscall <code>getpid</code> trả về Process ID của process hiện tại. Bạn có thể viết một chương trình C đơn gian để lấy ra process id với <code>getpid</code>. Tuy nhiên, bài viết này của tôi sẽ tập trung vào ngôn ngữ Ruby</p>
 <p>Trong Ruby, muốn lấy Process ID của process hiện tai, bạn sử dụng <code>Process.pid</code>.</p>
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>pid.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'> <span class="nb">puts</span> <span class="err">“</span><span class="no">Process</span> <span class="ss">pid</span><span class="p">:</span> <span class="c1">#{Process.pid}” </span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>{% codeblock pid.rb %} puts “Process pid: #{Process.pid}” {% endcodeblock %}</p>
 <p>Dòng code trên gọi tới hàm <code>puts</code> - hàm này có tác dụng in một String ra màn hình. Chúng ta có thể manipulate các String trong Ruby thông qua các syntax #{}. Code ruby trong #{ } sẽ được thực hiện trước khi truyền cho String</p>
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>irb.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'> <span class="vg">$&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">irb</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
-</span><span class='line'><span class="sr">&lt;p&gt;irb(main):001:0&amp;gt; puts “Example for String manipulate: 1 + 2 = </span><span class="si">#{</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span><span class="si">}</span><span class="sr">” Example for String manipulate: 1 + 2 = 3 =&amp;gt; nil&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>{% codeblock irb.rb %} $&gt; irb</p>
+<p>irb(main):001:0&gt; puts “Example for String manipulate: 1 + 2 = #{1 + 2}” Example for String manipulate: 1 + 2 = 3 =&gt; nil</p>
+<p>{% endcodeblock %}</p>
 <p>(Các file Ruby có extension là .rb. Để chạy một file ruby, bạn dùng lệnh <code>ruby &lt;file_name&gt;</code>. Không cần phải compile, rất đơn giản phải không)</p>
 <h3 id="liệu-có-phải-process-nào-cũng-có-process-cha">2. Liệu có phải process nào cũng có Process cha?</h3>
 <p>Ở trên tôi đã nói rằng, mỗi một process đều thuộc về một Process cha nào đó. Nếu bạn suy nghĩ kỹ, bạn sẽ thấy có điều gì đó không ổn? À, thực ra điều này liên quan đến quá trình khởi động của UNIX. Khi UNIX được khởi động, nó sẽ start một process số 0 (với PID = 0) (process này là process của Kernel UNIX). Process 0 sẽ tạo ra cho nó một Process con, Process 1. Trong phần lớn hệ thống, Process 1 được đặt tên là init process, các process khác được tạo ra đều từ init process.</p>
 <p>Hãy quay lại ví dụ về lệnh <code>ps</code> như ở phần đầu mục I. Bạn có thể để ý thấy PPID của dòng đầu tiên là 0. Đó chính là process đầu tiên của OS.</p>
 <p>Vậy là process trong Unix thực chất được tổ chức dưới dạng cây. Mỗi một node trong cây đại diện cho một process trong Unix. Gốc chính là process 0, các con của một node chính là các process con của process ứng với node đó.</p>
 <p>Trong Ruby, để lấy ra parent process id của một process, chúng ta sử dung <code>Process.ppid</code></p>
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>ppid.rb </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='rb'><span class='line'> <span class="c1"># file test_ppid.rb puts “Process id #{Process.pid}, parent process id #{Process.ppid}” </span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>{% codeblock ppid.rb %} # file test_ppid.rb puts “Process id #{Process.pid}, parent process id #{Process.ppid}” {% endcodeblock %}</p>
 <p>Cũng rõ ràng đấy chứ. Liệu tôi có quên gì nữa không nhỉ?</p>
 <p>Vấn đề là làm sao một process có thể sinh ra một process con? À đừng lo, tôi sẽ nói kỹ về điều này ở phần 2</p>
 <h3 id="process-resource">3. Process Resource</h3>

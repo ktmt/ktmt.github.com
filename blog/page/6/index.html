@@ -7,8 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="May 9th, 2014 Comments Full Text Search Từ Lý Thuyết đến Thực Tiễn (Phần Cuối) Introduction
-Trong loạt bài viết trước về Full-text search, mình đã &hellip;">
+	<meta name="description" content="May 19th, 2014 computing, parallel Comments Định Luật Amdahl Giới thiệu
+Có 1 người bạn gần đây bắt đầu lập trình với threads và thiết kế chương &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -35,6 +35,16 @@ Trong loạt bài viết trước về Full-text search, mình đã &hellip;">
 
 
 <body>
+	<div class="notif">
+		<p>
+			Cảm ơn bạn đã đọc và ủng hộ blog KTMT ʘ‿ʘ
+			Từ bây giờ chúng tôi sẽ là
+			<a target="_blank" href="/blog/2015/05/06/kipalog-cau-chuyen-ve-viet-va-chia-se/">
+				kipalog.com
+			</a>
+			!
+		</p>
+	</div>
 	<div class="container">
 		<div class="left-col">
 			<div class="intrude-less">
@@ -50,7 +60,7 @@ Trong loạt bài viết trước về Full-text search, mình đã &hellip;">
 </ul>
 </nav>
 <nav class="hint">
-	<p style="color: #FFFFFF; margin-top: 2em;">
+	<p>
 	  Cập nhật thông tin bài viết qua Facebook page hay link RSS dưới đây
 	</p>
 </nav>
@@ -82,6 +92,118 @@ Trong loạt bài viết trước về Full-text search, mình đã &hellip;">
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-19T21:35:00+09:00" data-updated="true" itemprop="datePublished">May 19<span>th</span>, 2014</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/computing/'>computing</a>, <a class='category' href='/blog/categories/parallel/'>parallel</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2014/05/19/dinh-luat-amdahl/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2014/05/19/dinh-luat-amdahl/" itemprop="url">Định Luật Amdahl</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h3 id="giới-thiệu">Giới thiệu</h3>
+<p>Có 1 người bạn gần đây bắt đầu lập trình với threads và thiết kế chương trình như sau.</p>
+<p>Chương trình có đầu vào là một mảng gồm một số phần tử (khoảng vài chục). Chương trình làm nhiệm vụ duyệt từng phần tử trong mảng, tính toán và trả về kết quả đối với từng phần tử. Bạn mình thiết kế chương trình bằng cách với mỗi phần tử trong mảng, bạn tạo một thread và cho thread thực hiện tính toán với phần tử đó.</p>
+<p>Khi mình hỏi tại sao bạn lại thiết kế chương trình như thế thì bạn trả lời: các thread sẽ chạy song song nên về lý thuyết càng nhiều thread thì chương trình chạy càng nhanh!</p>
+<p>Mình nhận ra bạn mình có về không biết định luật Amdahl, tuy đơn giản nhưng lại là một định luật rát quan trọng trong tính toán song song. Khi hiểu định luật này chắc chắn bạn sẽ có cái nhìn tổng quan hơn về hệ thống máy tính nói chung, và cụ thể là lập trình multithread nói riêng. Trong bài viết này, mình muốn giới thiệu định luật Amdahl.</p>
+<h3 id="định-luật-amdahl">Định luật Amdahl</h3>
+<p>Giả sử bạn thay CPU mới có tốc độ cao hơn CPU cũ.</p>
+<p><a href="http://en.wikipedia.org/wiki/Amdahl&#39;s_law">Định luật Amdahl</a> nói rằng sự tằng tốc nhờ cải thiện hiệu năng của CPU = thời gian chạy toàn bộ tác vụ khi sử dụng CPU cũ / thời gian chạy toàn bộ tác vụ khi sử dụng CPU mới.</p>
+<p>Độ tăng tốc phụ thuộc vào 2 thừa số:</p>
+<ul>
+<li>Tỉ lệ chương trình có thể cải thiện nhờ CPU mới. Ví dụ chương trình của bạn có 60 tính toán, 20 tính toán có thể được chuyển qua CPU mới (ví dụ CPU mới cung cấp tập lệnh mà CPU không có) như vậy tỉ lệ này là 20/60. Tỉ lệ này luôn nhỏ hơn hoặc bằng 1.</li>
+<li>Độ Tăng tốc thu được thu được từ CPU mới. Ví dụ 20 tính toán ở ví dụ trên ở CPU cũ hết 5s, CPU mới hết 2s, độ tăng tốc sẽ là 5/2</li>
+</ul>
+<p>Thời gian chạy với CPU mới = Thời gian chạy CPU cũ * (1 - tỉ lệ chương trình có thể cải thiện nhờ CPU mới + tỉ lệ chương trình có thể cải thiện nhờ CPU mới / độc tăng tốc thu được từ CPU mới).</p>
+<pre><code> Độ tăng tốc tổng thể = Thời gian chạy trên CPU cũ / Thời gian chạy trên CPU mới     
+                      = 1 / (1 - tỉ lệ chương trình cải thiện nhờ CPU mới + tỉ lệ chương trình cải thiện nhờ CPU mới / độ tăng tốc thu được từ CPU mới)</code></pre>
+<h4 id="ví-dụ-1">Ví dụ 1:</h4>
+<p>Bạn thay CPU cho máy chủ web. CPU mới chạy nhanh hơn CPU cũ 10 lần. Chương trình web của bạn giả sử tốn 60% cho SQL (I/O) và 40% tính toán (nhận kết quả từ cơ sở dữ liệu, render page). Hỏi tốc độ cải thiện từ việc thay CPU là bao nhiêu?</p>
+<p>Giải:</p>
+<ul>
+<li>Tỉ lệ chương trình có thể cải thiện nhờ CPU mới = 0.4</li>
+<li>Độ tăng tốc = 10</li>
+</ul>
+<p>Độ tăng tốc tổng thể = 1 / (0.6 + 0.4/10) = 1 / 0.64 = 1.56</p>
+<p>Vậy dù rằng CPU có tính nhanh 10 lần thì tốc độ của cả hệ thống chỉ được cải thiện 1.56 lần.</p>
+<h4 id="ví-dụ-2">Ví dụ 2:</h4>
+<p>Hàm căn bậc hai của một số thực được sử dụng rất nhiều trong đồ hoạ máy tính. Giả sử tính toán căn bậc 2 chiếm 20% tổng thời chạy của thao tác đồ hoạ. Bạn muốn tăng tốc độ của hệ thống đồ hoạ của bạn. Có 2 lựa chọn sau đây:</p>
+<ul>
+<li>Mua card đồ hoạ mới với chip tính toán nhanh hơn 10 lần.</li>
+<li>Tăng tốc độ của các thao tác số thực khác lên 1.6 lần (ngoài thao tác tính căn bậc 2). Giả sử tổng số thao tác số thực là 50% (50% tính toán của bạn liên quan đến số thực).</li>
+</ul>
+<p>Bạn sẽ đầu tư tiền hay bỏ thời gian và trí não cải thiện các thao tác còn lại.</p>
+<p>Giải:</p>
+<p>Trường hợp 1, độ tăng tốc = 1 / (0.8 + 0.2 / 10) = 1 / 0.82 = 1.22</p>
+<p>Trường hợp 2, độ tăng tốc = 1 / (0.5 + 0.5 / 1.6) = 1.23</p>
+<p>Như vậy lựa chọn 2 cho kết quả tốt hơn 1 chút!</p>
+<h4 id="quan-sát">Quan sát</h4>
+<p>Nếu thử quan sát, bạn sẽ thấy từ công thức Amdahl có thể rút ra là độ tăng tốc phụ thuộc cả vào bản chất bài toán. Nếu tỉ lệ có thể tăng tốc được không cao, việc bạn thêm song song cũng không giải quyết vấn đề gì. Nói cách khác nếu tỉ lệ cải thiện nhờ CPU mới = 0 thì độ tăng tốc tổng thể sẽ là 1 / (1 + 0/10) = 1 tức không thay đổi.</p>
+<h4 id="bạn-mình-sai-lầm-ở-đâu">Bạn mình sai lầm ở đâu?</h4>
+<p>Quay trở lợi vấn đề của bạn mình, tại sao mình lại nghĩ việc tăng số thread lên không giải quyết được tốc độ?</p>
+<p>Giả sử bạn CPU bạn có 4 cores (Ví dụ Corei7 MQ). Chương trình của bạn sẽ được lập lịch bởi kernel. Nếu bạn dùng 2 threads, tại thời điểm CPU được cấp cho process của bạn, 2 cores sẽ được sử dụng để chạy chương trình. Giả sử chương trình bạn dùng CPU để tính toán 50% thời gian, 50% thời gian còn lại được chia đều cho các cores.</p>
+<p>Nếu không dùng thread, chương trình của bạn là 1 chương trình liên tục bình thường, tốc độ sẽ cải thiện sẽ là:</p>
+<pre><code>Độ tăng tốc = 1 / (0.5 + 0.5 / 1) = 1 (không tăng tí nào!)</code></pre>
+<p>Nếu bạn dùng 2 threads:</p>
+<p>Độ tăng tốc = 1 / (0.5 + 0.5 / 2) = 1.33 (Tăng 33%!)</p>
+<p>Nếu bạn dùng 4 threads:</p>
+<pre><code>Độ tăng tốc = 1 / (0.5 + 0.5 / 4) = 1.6 (Tăng 60%!)</code></pre>
+<p>Nếu dùng 8 threads, bạn mong chờ tốc độ tăng tốc là 1.7! Sai lầm! Lý do: giống như quan sát ở trên, bản thân việc chia việc cho CPU không phải là việc làm song song được. Nói cách khác CPU chỉ thực hiện được cùng 1 lúc 4 tác vụ. Nếu có nhiều hơn 4 tác vụ, tỉ lệ thực hiện song song (số task thực hiện đồng thời không đổi, nhưng só task phải thực hiện tăng lên) sẽ giảm khiến hiệu năng toàn hệ thống giảm xuống.</p>
+<p>Ví dụ ta có 4 threads, thì số task có thể tận dụng được CPU là 100%. Khi ta có 5 threads, số threads có thể tận dụng được CPU sẽ giảm xuống 80%. Ta có thể xem sự thay đổi về hiệu năng so sánh tương đối với trường hợp 1 thread như sau:</p>
+<p>4 threads: Độ tăng tốc = 1 / (0 + 1 / 4) = 4</p>
+<p>5 threads: Độ tăng tốc = 1 / (0.2 + 0.8 / 4) = 1 / 0.4 = 2.5</p>
+<p>Như vậy độ tăng tốc tương đối với trường hợp chỉ sử dụng 1 thread đã giảm từ 4 lần xuông còn 2.5 lần.</p>
+<p>Nói cách khác, khi tất cả các cores đã làm việc thì việc tăng threads sẽ chỉ làm tăng thêm phần không thể tính song song, khiến hiệu năng hệ thống giảm. Ngoài ra còn có các chi phí khác mà ta chưa kể đến như: tạo một thread cũng tốn thời gian, bộ nhớ v.v. Nói cách khác việc tăng thread không làm tăng tốc độ chương trình mà nhiều trường hợp còn làm giảm tốc độ chạy. Suy nghĩ lúc đầu của bạn mình là sai lầm!</p>
+<h3 id="design-nhờ-định-luật-amdahl">Design nhờ định luật Amdahl</h3>
+<p>Như ở ví dụ 2 ở trên, bạn thấy rằng việc mua card đồ hoạ mới không làm tăng hiệu năng tổng thể như việc tối ưu chương trình. Như vậy ta hoàn toàn có thể thay đổi thiết kế chương trình để làm tăng hiệu năng. Ta xét bài toán ví dụ sau đây:</p>
+<p>Nhập n. In ra tất cả các số nhỏ hơn n mà là số nguyên tố.</p>
+<p>Dưới góc độ thread, ta có 2 cách design hệ thống (Giả định hệ thống có CPU 4 cores)</p>
+<ul>
+<li>Chia n ra làm 4 phần, mỗi thread thực hiện tìm số nguyên tố trong 1 phần.</li>
+<li>Một biến đếm từ 3 -&gt; n, bước nhảy 2, cho mỗi thread đang rảnh lần lượt kiểm tra xem số hiện tại có phải là số nguyên tố không.</li>
+</ul>
+<p>Bạn sẽ chọn cách nào?</p>
+<p>Thoạt nhìn có vẻ 2 cách không có gì khác nhau, nhưng nếu để ý sẽ nhận ra là mật độ số nguyên tố không giống nhau. Nói cách khác nếu làm theo cách 1, sẽ có thread rất nhanh hoàn thành (thread phải xử lý vùng ít số nguyên tố), và có những thread phải làm việc rất vất vả (thread phải xử lý vùng có nhiều số nguyên tố). Nói cách khác cách design 1 có tỉ lệ tính toán có thể cải thiện không cao.</p>
+<p>Cách 2 thoạt nhìn có vẻ chậm nhưng lại là cách cho tỉ lệ xử lý song song cao hơn, vì việc xử lý từng số một không phụ thuộc và phân bố của số nguyên tố!</p>
+<p>Vậy ta nên thiết kế chương trình theo cách 2!</p>
+<h3 id="tổng-kết">Tổng kết</h3>
+<p>Bài viết giới thiệu định luật Amdahl, làm rõ ý nghĩa định luật cũng qua 2 ví dụ đồng thời áp dụng định luật Amdahl vào việc thiết kế bài toán đơn giản. Hy vọng qua bài viết bạn hiểu phần nào về đột tăng tốc trong tính toán song song, cũng như biết cách tính toán định lượng để đánh giá các thiết kế (Nhiều khi mua máy mới không hắn đã là tốt!).</p>
+<h3 id="quiz">Quiz</h3>
+<ol type="1">
+<li>Lý giải tại sao các hệ thống lại thiết kế dùng worker queue!</li>
+<li>mysql có biến innodb_read_io_threads. Bạn sẽ thiết lập giá trị biến này là bao nhiêu?</li>
+</ol>
+<h3 id="tài-liệu-tham-khảo">Tài liệu tham khảo</h3>
+<ol type="1">
+<li><a href="http://en.wikipedia.org/wiki/Amdahl&#39;s_law">Định luật Amdahl</a></li>
+<li><a href="http://www.amazon.com/Computer-Architecture-Quantitative-Approach-Edition/dp/0123704901">Computer Architecture, A Quantitative Approach</a></li>
+</ol>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -996,259 +1118,6 @@ Trong loạt bài viết trước về Full-text search, mình đã &hellip;">
 <li><a href="http://community.topcoder.com/tc?module=Static&amp;d1=tutorials&amp;d2=dynProg">TopCoder Graph Tutorial</a></li>
 <li><a href="http://community.topcoder.com/stat?c=problem_statement&amp;pm=1259&amp;rd=4493">ZigZag</a></li>
 <li><a href="http://community.topcoder.com/stat?c=problem_statement&amp;pm=1889&amp;rd=4709">AvoidRoad</a></li>
-</ol>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-03-22T21:45:00+09:00" data-updated="true" itemprop="datePublished">Mar 22<span>nd</span>, 2014</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/algorithm/'>algorithm,</a>, <a class='category' href='/blog/categories/graph/'>graph</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2014/03/22/thuat-toan-floyd-warshall-de-duyet-do-thi/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2014/03/22/thuat-toan-floyd-warshall-de-duyet-do-thi/" itemprop="url">Thuật Toán Floyd-Warshall để Duyệt đồ Thị</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h1 id="introduction">Introduction</h1>
-<p>Khi nhắc đến các thuật toán duyệt đồ thị, có thể bạn đã biết (và đã từng implement) Depth-First Search, Breadth-First Search, hoặc Dijkstra. Xin nhắc lại về ý nghĩa của từng thuật toán, đứng ở khía cạnh bài toán tìm đường đi ngắn nhất. DFS dùng để giải các bài toán mà chúng ta muốn tìm được lời giải (không nhất thiết phải là quãng đường ngắn nhất), hoặc ta muốn thăm tất cả các đỉnh của đồ thị. BFS cũng để duyệt các đỉnh của đồ thị, nhưng có một tính chất quan trọng là: nếu tất cả các cạnh <em>không có trọng số</em>, lần đầu tiên một đỉnh được thăm, ta có ngay đường đi ngắn nhất đến đỉnh đó. Bây giờ đến thuật toán Disjkstra, đây là thuật toán nổi tiếng dùng để tìm đường đi ngắn nhất từ một đỉnh cho trước đến các đỉnh còn lại, trong một đồ thị có các cạnh <em>có trọng số không âm</em>. Như vậy, Dijkstra đã tiến hơn một bước so với BFS.</p>
-<p>Đó là sơ qua về ba thuật toán mà có thể mọi người đều đã biết. Trong bài viết này, tôi xin giới thiệu một thuật toán ít biết đến hơn để duyệt đồ thị, đó là Floyd-Warshall.</p>
-<h1 id="thuật-toán-floyd-warshall-là-gì">Thuật toán Floyd-Warshall là gì?</h1>
-<p>Nếu như Dijkstra giải quyết bài toán tìm đường đi ngắn nhất từ <em>một đỉnh cho trước</em> đến mọi đỉnh khác trong đồ thị, thì Floyd-Warshall sẽ tìm đường đi ngắn nhất <em>giữa mọi đỉnh</em> sau một lần chạy thuật toán. Một tính chất nữa là Floyd-Warshall có thể chạy trên đồ thị có các cạnh có trọng số <em>có thể âm</em>, tức là không bị giới hạn như Dijkstra. Tuy nhiên, lưu ý là trong đồ thị không được có vòng (cycle) nào có tổng các cạnh là âm, nếu có vòng như vậy ta không thể tìm được đường đi ngắn nhất (mỗi lần đi qua vòng này độ dài quãng đường lại giảm, nên ta có thể đi vô hạn lần)</p>
-<p>Thuật toán Floyd-Warshall so sánh tất cả các đường đi có thể giữa từng cặp đỉnh. Nó là một dạng của quy hoạch động (Dynamic Programming). Đặt hàm adj(i,j,k) là đường đi ngắn nhất từ i đến j, chỉ dùng các đỉnh trong tập {1,2,…,k}. Giả sử ta muốn tính adj{i,j,k+1}. Với mỗi cặp đỉnh i và j, đường đi ngắn nhất có thể là: (1) đường đi chỉ sử dụng các đỉnh trong tập {1,…k} hoặc (2) đường đi từ i đến k+1 rồi từ k+1 đến j, cũng chỉ sử dụng các đỉnh trong tập {1,…k}. Do vậy:</p>
-<p>Trường hợp cơ bản: adj(i,j,0) = w(i,j)</p>
-<p>Đệ quy: adj(i,j,k+1) = min{adj(i,j,k), adj(i,k+1, k) + adj(k+1, j, k)}</p>
-<p>Đây là đoạn pseudocode của Floyd-Warshall (có một chút thay đổi, nhưng ý tưởng là như nhau)</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>pseudo.c </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='c'><span class='line'><span class="k">for</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="mi">1</span> <span class="n">to</span> <span class="n">n</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="n">i</span><span class="o">=</span><span class="mi">1</span> <span class="n">to</span> <span class="n">n</span><span class="p">)</span>
-</span><span class='line'>      <span class="k">for</span><span class="p">(</span><span class="n">j</span><span class="o">=</span><span class="mi">1</span> <span class="n">to</span> <span class="n">n</span><span class="p">)</span>
-</span><span class='line'>          <span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">min</span><span class="p">(</span><span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">],</span> <span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">+</span> <span class="n">adj</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">j</span><span class="p">]);</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Dễ thấy độ phức tạp thuật toán là O(n^3) với n là số đỉnh của đồ thị.</p>
-<h1 id="thuật-toán-floyd-warshall-dùng-cho-tìm-tính-chất-kết-nối">Thuật toán Floyd-Warshall dùng cho tìm tính chất kết nối</h1>
-<p>Tư tưởng của thuật toán Floyd-Warshall trong việc tìm đường đi ngắn nhất có thể áp dụng vào các bài toán dạng tìm tính chất kết nối giữa các đỉnh. Tôi xin lấy một ví dụ, đó là bài <a href="http://community.topcoder.com/stat?c=problem_statement&amp;pm=2356&amp;rd=4740">TopCoder SRM 184, Div 2, 1000-point problem</a></p>
-<p>Đề bài như sau (xin chịu khó đọc hiểu đề bài)</p>
-<blockquote>
-<p>You are arranging a weird game for a team building exercise. In this game there are certain locations that people can stand at, and from each location there are paths that lead to other locations, but there are not necessarily paths that lead directly back. You have everything set up, but you need to know two important numbers. There might be some locations from which every other location can be reached. There might also be locations that can be reached from every other location. You need to know how many of each of these there are.</p>
-<p>Create a class TeamBuilder with a method specialLocations that takes a String[] paths that describes the way the locations have been connected, and returns a int[] with exactly two elements, the first one is the number of locations that can reach all other locations, and the second one is the number of locations that are reachable by all other locations. Each element of paths will be a String containing as many characters as there are elements in paths. The i-th element of paths (beginning with the 0-th element) will contain a ‘1’ (all quotes are for clarity only) in position j if there is a path that leads directly from i to j, and a ‘0’ if there is not a path that leads directly from i to j.</p>
-<p><strong>Examples</strong></p>
-<ul>
-<li><p>{“010”,“000”,“110”} Returns: { 1, 1 } Locations 0 and 2 can both reach location 1, and location 2 can reach both of the other locations, so we return {1,1}.</p></li>
-<li><p>{“0010”,“1000”,“1100”,“1000”} Returns: { 1, 3 } Only location 3 is able to reach all of the other locations, but it must take more than one path to reach locations 1 and 2. Locations 0, 1, and 2 are reachable by all other locations. The method returns {1,3}.</p></li>
-<li><p>{“01000”,“00100”,“00010”,“00001”,“10000”} Returns: { 5, 5 } Each location can reach one other, and the last one can reach the first, so all of them can reach all of the others.</p></li>
-<li><p>{“0110000”,“1000100”,“0000001”,“0010000”,“0110000”,“1000010”,“0001000”} Returns: { 1, 3 }</p></li>
-</ul>
-</blockquote>
-<p><em>Solution</em> Về cơ bản, bài này cần tìm số lượng các đỉnh mà từ đó có thể đi đến tất cả các đỉnh khác, và số lượng các đỉnh mà các đỉnh khác đều có thể đi tới. Một ví dụ rất tốt để áp dụng thuật toán Floyd-Warshall tìm tính chất kết nối giữa 2 đỉnh bất kì.</p>
-<p>Trong bài này, chúng ta chỉ cần phải kiểm tra xem có đường đi từ đỉnh i đến đỉnh j trong đồ thị hay không. Chúng ta sẽ áp dụng thuật toán Floyd-Warshall trên, nhưng có thay đổi một chút trong dòng xử lý bên trong vòng lặp. Về cơ bản, chúng ta vẫn sử dụng ý tưởng là update thông tin giữa 2 đỉnh i và j, mỗi khi ta có thêm thông tin giữa đỉnh i và đỉnh k, đỉnh k và đỉnh j, với k là một đỉnh khác i và j. Nhưng ta không cập nhật thông tin về * đường đi ngắn nhất* nữa, mà ta cập nhật thông tin về <em>có hay không đường đi từ i đến j</em>. Với mỗi cặp đỉnh i và j chưa có kết nối, ta sẽ kiểm tra xem nếu có đường đi từ i đến k và từ k đến j, thì ta cập nhật là có đường đi từ i đến j.</p>
-<p>Sau đây là đoạn code C++ minh hoạ:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>TeamBuilder.cpp </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-<span class='line-number'>64</span>
-<span class='line-number'>65</span>
-<span class='line-number'>66</span>
-<span class='line-number'>67</span>
-<span class='line-number'>68</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='cpp'><span class='line'><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">TeamBuilder</span><span class="o">::</span><span class="n">specialLocations</span><span class="p">(</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">string</span><span class="o">&gt;</span> <span class="n">paths</span><span class="p">){</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="kt">int</span> <span class="n">N</span> <span class="o">=</span> <span class="n">paths</span><span class="p">.</span><span class="n">size</span><span class="p">();</span>
-</span><span class='line'>  <span class="n">vector</span><span class="o">&lt;</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="o">&gt;</span> <span class="n">adj</span><span class="p">;</span>
-</span><span class='line'>  
-</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">i</span> <span class="o">++</span><span class="p">){</span>
-</span><span class='line'>      <span class="n">string</span> <span class="n">s</span> <span class="o">=</span> <span class="n">paths</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
-</span><span class='line'>      <span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">row</span><span class="p">;</span>
-</span><span class='line'>      <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
-</span><span class='line'>          <span class="n">row</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span><span class="sc">&#39;0&#39;</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>      <span class="n">adj</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">row</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="c1">//Floyd-Warshall</span>
-</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">k</span><span class="o">++</span><span class="p">){</span>
-</span><span class='line'>      <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
-</span><span class='line'>          <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
-</span><span class='line'>              <span class="c1">//i,j,k must be different</span>
-</span><span class='line'>              <span class="k">if</span><span class="p">(</span><span class="n">i</span><span class="o">==</span><span class="n">j</span> <span class="o">||</span> <span class="n">j</span> <span class="o">==</span> <span class="n">k</span> <span class="o">||</span> <span class="n">k</span><span class="o">==</span><span class="n">i</span><span class="p">)</span>
-</span><span class='line'>                  <span class="k">continue</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>              <span class="c1">//only update those no-paths</span>
-</span><span class='line'>              <span class="k">if</span><span class="p">(</span><span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">){</span>
-</span><span class='line'>                  <span class="k">if</span><span class="p">(</span><span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">!=</span><span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">adj</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">){</span>
-</span><span class='line'>                      <span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class='line'>                  <span class="p">}</span>
-</span><span class='line'>              <span class="p">}</span>
-</span><span class='line'>          <span class="p">}</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="c1">//find number of locations that can reach all other locations</span>
-</span><span class='line'>  <span class="kt">int</span> <span class="n">firstNum</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
-</span><span class='line'>      <span class="kt">bool</span> <span class="n">canReachAll</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
-</span><span class='line'>      <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span><span class="o">&lt;</span><span class="n">N</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
-</span><span class='line'>          <span class="k">if</span><span class="p">(</span><span class="n">j</span><span class="o">==</span><span class="n">i</span><span class="p">)</span> <span class="k">continue</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>          <span class="k">if</span><span class="p">(</span><span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">){</span>
-</span><span class='line'>              <span class="n">canReachAll</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
-</span><span class='line'>              <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>          <span class="p">}</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>      <span class="k">if</span><span class="p">(</span><span class="n">canReachAll</span><span class="p">)</span>
-</span><span class='line'>          <span class="n">firstNum</span> <span class="o">++</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="c1">//find number of locations that are reachable from other locations</span>
-</span><span class='line'>  <span class="kt">int</span> <span class="n">secondNum</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
-</span><span class='line'>      <span class="kt">bool</span> <span class="n">canBeReachedFromAll</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
-</span><span class='line'>      <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">N</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
-</span><span class='line'>          <span class="k">if</span><span class="p">(</span><span class="n">j</span><span class="o">!=</span><span class="n">i</span> <span class="o">&amp;&amp;</span> <span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">){</span>
-</span><span class='line'>              <span class="n">canBeReachedFromAll</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
-</span><span class='line'>              <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>          <span class="p">}</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>      <span class="k">if</span><span class="p">(</span><span class="n">canBeReachedFromAll</span><span class="p">)</span>
-</span><span class='line'>          <span class="n">secondNum</span> <span class="o">++</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">res</span><span class="p">;</span>
-</span><span class='line'>  <span class="n">res</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">firstNum</span><span class="p">);</span>
-</span><span class='line'>  <span class="n">res</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">secondNum</span><span class="p">);</span>
-</span><span class='line'>  <span class="k">return</span> <span class="n">res</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<h1 id="tham-khảo">Tham khảo:</h1>
-<ol type="1">
-<li><a href="http://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm">Floyd-Warshall Algorithm</a></li>
-<li><a href="http://community.topcoder.com/tc?module=Static&amp;d1=tutorials&amp;d2=graphsDataStrucs3">TopCoder Graph Tutorial</a></li>
 </ol>
 		
 		

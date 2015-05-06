@@ -7,8 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jun 30th, 2013 hash, java,, programming,, thread, Comments Tutorial: Duplicate File Finder (Java) Mở đầu
-Trong quá trình dọn dẹp máy tính cá nhân, &hellip;">
+	<meta name="description" content="Jul 2nd, 2013 linux, system, Comments Tìm Hiểu Redis - Phần 1 1. Giới thiệu
+Redis là hệ thống lưu trữ key-value với rất nhiều tính năng và được sử &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -35,6 +35,16 @@ Trong quá trình dọn dẹp máy tính cá nhân, &hellip;">
 
 
 <body>
+	<div class="notif">
+		<p>
+			Cảm ơn bạn đã đọc và ủng hộ blog KTMT ʘ‿ʘ
+			Từ bây giờ chúng tôi sẽ là
+			<a target="_blank" href="/blog/2015/05/06/kipalog-cau-chuyen-ve-viet-va-chia-se/">
+				kipalog.com
+			</a>
+			!
+		</p>
+	</div>
 	<div class="container">
 		<div class="left-col">
 			<div class="intrude-less">
@@ -50,7 +60,7 @@ Trong quá trình dọn dẹp máy tính cá nhân, &hellip;">
 </ul>
 </nav>
 <nav class="hint">
-	<p style="color: #FFFFFF; margin-top: 2em;">
+	<p>
 	  Cập nhật thông tin bài viết qua Facebook page hay link RSS dưới đây
 	</p>
 </nav>
@@ -82,6 +92,181 @@ Trong quá trình dọn dẹp máy tính cá nhân, &hellip;">
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-02T23:38:00+09:00" data-updated="true" itemprop="datePublished">Jul 2<span>nd</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/linux/'>linux</a>, <a class='category' href='/blog/categories/system/'>system,</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/07/02/tim-hieu-redis/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/07/02/tim-hieu-redis/" itemprop="url">Tìm Hiểu Redis - Phần 1</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h2 id="giới-thiệu">1. Giới thiệu</h2>
+<p><a href="www.redis.io">Redis</a> là hệ thống lưu trữ key-value với rất nhiều tính năng và được <a href="http://redis.io/topics/whos-using-redis">sử dụng rộng rãi</a>. Redis nổi bật bởi việc hỗ trợ nhiều cấu trúc dữ liệu cơ bản (hash, list, set, sorted set, string), đồng thời cho phép scripting bằng ngôn ngữ lua. Bên cạnh lưu trữ key-value trên RAM với hiệu năng cao, redis còn hỗ trợ lưu trữ dữ liệu trên đĩa cứng (persistent redis) cho phép phục hồi dữ liệu khi gặp sự cố. Ngoài tính năng replicatation (sao chép giữa master-client), tính năng cluster (sao lưu master-master) cũng đang được phát triển . Để sử dụng một cách hiệu quả những tính năng redis hỗ trợ cũng như vận hành redis với hiệu suất cao nhất thì việc am hiểu hệ thống lưu trữ này là điều không thể thiếu. Chính vì lý do này, mình quyết định tìm hiểu mã nguồn redis. Loạt bài viết về redis này tóm tắt những điều mình tìm hiểu được từ việc đọc mã nguồn của redis.</p>
+<h2 id="khái-quát">2. Khái quát</h2>
+<p>Bạn có thể clone mã nguồn redis về máy tính mình bằng câu lệnh dưới đây:</p>
+<div>
+<pre><code class='bash'>git clone https://github.com/antirez/redis.git</code></pre>
+</div>
+Trước hết là một số thống kê nho nhỏ về redis (tại thời điểm bài viết): * Số lượng file mã nguồn: 55
+<div>
+<pre><code class='bash'>ls *.c | wc -l
+55</code></pre>
+</div>
+<ul>
+<li>Số lượng file header: 30
+<div>
+<pre><code class='bash'>ls *.h | wc -l
+30</code></pre>
+</div></li>
+<li>Tổng số dòng code: 43829
+<div>
+<pre><code class='bash'>wc -l *.[ch]
+341    adlist.c     197   pqsort.c            228   sha1.c          810   dict.c
+93     adlist.h     40    pqsort.h            17    sha1.h          173   dict.h
+435    ae.c         359   pubsub.c            169   slowlog.c       124   endianconv.c
+130    ae_epoll.c   93    rand.c              47    slowlog.h       64    endianconv.h
+315    ae_evport.c  38    rand.h              50    solarisfixes.h  52    fmacros.h
+118    ae.h         1230  rdb.c               530   sort.c          759   help.h
+132    ae_kqueue.c  114   rdb.h               144   syncio.c        483   intset.c
+99     ae_select.c  683   redis-benchmark.c   57    testhelp.h      50    intset.h
+441    anet.c       3008  redis.c             761   t_hash.c        295   lzf_c.c
+60     anet.h       218   redis-check-aof.c   1149  t_list.c        150   lzf_d.c
+1178   aof.c        768   redis-check-dump.c  913   t_set.c         100   lzf.h
+47     asciilogo.h  1556  redis-cli.c         459   t_string.c      159   lzfP.h
+220    bio.c        1517  redis.h             2205  t_zset.c        279   memtest.c
+41     bio.h        52    release.c           520   util.c          323   multi.c
+412    bitops.c     3     release.h           41    util.h          1444  networking.c
+2866   cluster.c    1658  replication.c       1     version.h       128   notify.c
+1726   config.c     198   rio.c               1534  ziplist.c       580   object.c
+195    config.h     104   rio.h               46    ziplist.h
+88     crc16.c      1065  scripting.c         467   zipmap.c
+191    crc64.c      732   sds.c               49    zipmap.h
+8      crc64.h      99    sds.h               351   zmalloc.c
+815    db.c         3160  sentinel.c          85    zmalloc.h
+929    debug.c      261   setproctitle.c
+43829  total</code></pre>
+</div></li>
+</ul>
+<p>Một số thư viện được sử dụng: <a href="http://www.canonware.com/jemalloc/">jemalloc</a>, <a href="https://github.com/antirez/linenoise">linenoise</a>, <a href="http://www.lua.org/">lua</a></p>
+<h2 id="các-modules">3. Các modules</h2>
+<p>Redis bao gồm các module sau:</p>
+<ul>
+<li>Framework hỗ trợ xử lý bất đồng bộ, networking: ae, anet</li>
+<li>Mô tả dữ liệu: sds.c, t_hash.c, t_list.c, t_string.c, t_zset.c, object.c, notify.c (pub-sub)</li>
+<li>Lưu trữ dữ liệu, cơ sở dữ liệu: db.c, dict.c, ziplist.c, zipmap.c, adlist.c</li>
+<li>Module hỗ trợ IO/persistent redis: rdb.c, aof.c, bio.c, rio.c</li>
+<li>Utilities: crc16.c, crc64.c, pqsort.c, lzf_c.c, lzf_d.c</li>
+</ul>
+<p>Mình sẽ lần lượt giới thiệu các modules trong các bài viết sau. Ở bài viết này, mình sẽ tập trung vào module IO/persistent redis.</p>
+<h2 id="persistent-redis">4. Persistent redis</h2>
+<p>Bên cạnh việc lưu key-value trên bộ nhớ RAM, Redis có 2 background threads chuyên làm nhiệm vụ định kỳ ghi dữ liệu lên đĩa cứng.</p>
+<p>Có 2 loại file được ghi xuống đĩa cứng:</p>
+<ul>
+<li>RDB</li>
+<li>AOF</li>
+</ul>
+<p>RDB lưu dữ liệu dưới dạng đã mã hóa. AOF lưu lại toàn bộ dưới liệu dưới dạng command, giống như command mà redis client gửi đến server để thao tác bằng cách ghi đè xuống cuối file.</p>
+<p>File rdb có thể coi là một snapshot của cơ sở dữ liệu tại một thời điểm nhất định. File dữ liệu này được dùng với 2 mục đích</p>
+<ul>
+<li>Cho phép redis có thể phục hồi lại dữ liệu trên memory bằng việc đọc file</li>
+<li>Bản thân dữ liệu được ghi ra file rdb sẽ được gửi đến các redis slave server, phục vụ mục đích sao lưu server.</li>
+</ul>
+<p>Dữ liệu ghi ra file rdb được chỉnh sửa và mã hóa để giảm kích thước ghi trên đĩa, đồng thời tằng tốc độ replication. Cụ thể định dạng của file rdb như sau.</p>
+<p>Với những key ngắn, việc dùng 32 bit để mô tả key là thừa thãi, do vậy redis quy định những key ngắn được mã hóa sử dụng 2 bit đầu tiên của 1 byte. Cụ thể: 00|000000 =&gt; 00, độ dài dữ liệu mô tả bởi 6 bit 01|000000 00000000 =&gt; 01, độ dài dữ liệu là 14 bit 10|000000 [số 32 bit] =&gt; 1 chuỗi độ dài 32 bit sẽ theo sau 11|000000 =&gt; obj được encode đặc biệt sẽ theo sau byte này. 6 bit sau sẽ xác định kiểu object.</p>
+<p>Kiểu object ở đây cụ thể như sau:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>rdb.c </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='c'><span class='line'><span class="cm">/* When a length of a string object stored on disk has the first two bits</span>
+</span><span class='line'><span class="cm"> * set, the remaining two bits specify a special encoding for the object</span>
+</span><span class='line'><span class="cm"> * accordingly to the following defines: */</span>
+</span><span class='line'><span class="cp">#define REDIS_RDB_ENC_INT8 0        </span><span class="cm">/* 8 bit signed integer */</span><span class="cp"></span>
+</span><span class='line'><span class="cp">#define REDIS_RDB_ENC_INT16 1       </span><span class="cm">/* 16 bit signed integer */</span><span class="cp"></span>
+</span><span class='line'><span class="cp">#define REDIS_RDB_ENC_INT32 2       </span><span class="cm">/* 32 bit signed integer */</span><span class="cp"></span>
+</span><span class='line'><span class="cp">#define REDIS_RDB_ENC_LZF 3         </span><span class="cm">/* string compressed with FASTLZ */</span><span class="cp"></span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Với AOF file, các command sẽ được nhóm thành các block. Các block được tổ chức dưới dạng danh sách liên kết. Mỗi block có độ lớn 10MB là vì trong trường hợp redis server chịu tải cao, số lượng key được cập nhật lớn, nếu kích thước buffer lớn, việc realloc buffer dùng cho các command với tốc độ lớn không đảm bảo.</p>
+<p>Trong trường hợp file rdb, redis fork 1 process con và thực hiện ghi dữ liệu xuống đĩa cứng sử dụng rio (stream IO).</p>
+<p>Trong trường hợp file aof, việc thực hiện ghi dữ liệu là của background threads. Toàn bộ chức năng này được code trong file bio.c (background IO?). Thiết kế background IO này khá đơn giản. Môt loạt thread sẽ chia sẻ 1 job queue và thay nhau đợi việc từ job queue. Mỗi khi có job mới, thread sẽ chạy và thực thi job được mô tả. Có 2 loại job đơn giản:</p>
+<ul>
+<li>REDIS_BIO_CLOSE_FILE: đóng file</li>
+<li><p>REDIS_BIO_AOF_FSYNC: thực hiện việc flush dữ liệu từ buffer của kernel xuống buffer của đĩa cứng.</p>
+<p>process -&gt; job 1 -&gt; job2 -&gt; … background threads</p></li>
+</ul>
+<p>Tạo ra các job là công việc của child process. Để thực hiện ghi dữ liệu ra đĩa cứng, redis sẽ fork ra 1 process con. Process con này sẽ tạo ra việc cho các background threads. Một đặc điểm cùa aof file đấy là dữ liệu trong các block mới sẽ không được ghi trực tiếp vào file aof hiện tại, mà sẽ được ghi vào file tạm thời. Khi việc ghi dữ liệu hoàn thành, redis mới tiến hành ghi đè file tạm lên file thật. Việc này đảm bảo trong trường hợp hệ thống có sự cố, file aof cũ vẫn được duy trì, giúp phục hồi phần nào dữ liệu.</p>
+<p>Trong cả 2 trường hợp, redis sử dụng tính năng <a href="http://en.wikipedia.org/wiki/Copy-on-write">Copy-on-Write</a> của linux khi fork process con, do vậy hiệu năng không vì fork process con mà suy giảm.</p>
+<p>Đến đây, sau khi tìm hiểu về định dạng của 2 files dữ liệu cũng như phương thức ghi dữ liệu của từng loại file, ta vẫn còn những câu hỏi mở về persistent redis như sau:</p>
+<ul>
+<li>Tần suất ghi dữ liệu là bao nhiêu?</li>
+<li>Ai chịu trách nhiệm fork process con.</li>
+</ul>
+<p>Thực chất redis định nghĩa 1 giá trị gọi là tần số ghi: REDIS_DEFAULT_HZ với giá trị mặc định là 10 (redis.h). Như vậy trong 1s, redis sẽ thực hiện 10 lần việc gọi hàm fork. Toàn bộ thao tác ghi dữ liệu redis và thao tác với các key hết hạn được thực hiện bởi 1 hệ thống các “cron”. Hàm cron thực hiện việc validate các key là: databaseCron. Hàm cron thực hiện ghi dữ liệu là serverCron. Hàm serverCron sẽ được gọi theo cơ chế bất đồng bộ (dùng thư viện bất đồng bộ của chính redis) với tần số 1/1000s. Với REDIS_DEFAULT_HZ là 10, cứ 100 lần gọi, serverCron sẽ thực hiện fork child process 1 lần để ghi dữ liệu xuống bộ đĩa cứng.</p>
+<h2 id="tại-sao-phải-fsync">5. Tại sao phải fsync</h2>
+<p>Đến đây chắc bạn đã hiểu phần nào về cơ chế persistent của redis. Tuy nhiên ta vẫn còn 1 câu hỏi nhỏ khá thú vị: tại sao phải flush liên tục như vậy (100ms / lần)? Tại sao không chỉ dùng hàm write/read của kernel và mặc định việc ghi dữ liệu xuống đĩa cứng cho kernel. Để trả lời câu hỏi nhỏ này, ta cần hiểu mối liên quan giữa OS - đĩa cứng - buffer của tầng ứng dụng.</p>
+<p>Về mặt trực quan tra có mô hình như sau:</p>
+<pre><code>buffer ---(Write) --| (kernel buffer) ---&gt; hard disk buffer ---&gt; đĩa từ.</code></pre>
+<p>Một thao tác ghi dùng write/read api của kernel sẽ copy dữ liệu từ buffer tần ứng dụng xuống buffer của kernel. Đây là thao tác cơ bản của write api. Tại buffer của kernel, kernel có toàn quyền quyết định với buffer này như: khi nào ghi, ghi bao nhiêu bytes… Khi kernel ghi dữ liệu (sử dụng các hàm IO của đĩa), dữ liệu sẽ được ghi xuống hard disk buffer và được schedule ghi xuống đĩa từ. Do vậy nếu tại tầng kernel hệ thống gặp sự cố, dữ liệu vẫn có thể bị mất dù rằng write <strong>thành công</strong> (và tầng ứng dụng không có cách nào biết write không thành công). Bằng việc định kỳ gọi fsync, ứng dụng có thể <strong>thoát khỏi sử quản lý của kernel</strong>, ghi thằng dữ liệu đang có ở buffer xuống hard disk buffer. Bằng việc gọi fsync, ta tránh khỏi được rủi ro mất dữ liệu do đổ vớ ở tầng ứng dụng. Tất nhiên dữ liệu hard disk vẫn chưa hoàn toàn an toàn (ví dụ trường hợp đĩa cứng bị hỏng).</p>
+<p>Đây là cách làm chung của các hệ thống cơ sở dữ liệu RDMS hiện hành.</p>
+<h2 id="kết-luận">6. Kết luận</h2>
+<p>Bài viết giới thiệu khái quát các module redis, đồng thời trình bày cụ thể cơ chế ghi dữ liệu của redis. Bài viết cũng làm rõ hơn ý nghĩa của fsync cũng như quy trình ghi dữ liệu của hệ điều hành. Hy vọng qua bài viết, người đọc hiểu phần nào cơ chế, hành vi của redis, qua đó sử dụng công cụ này hiệu quả hơn.</p>
+<h2 id="tham-khảo">7. Tham khảo</h2>
+<ol type="1">
+<li><a href="http://redis.io/topics/persistence">persistent redis</a></li>
+<li><a href="http://redis.io/topics/virtual-memory">vm</a></li>
+<li><a href="http://www.redhat.com/magazine/001nov04/features/vm/">Understanding Virtual Memory</a></li>
+<li><a href="http://openmymind.net/redis.pdf">redis book</a></li>
+</ol>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -453,232 +638,6 @@ Trong quá trình dọn dẹp máy tính cá nhân, &hellip;">
 <p>Bài viết giới thiệu về githooks và một số client hooks thường dùng. Hy vọng bạn tìm thấy một vài thông tin hữu ích giúp bạn tự động hoá một số công việc hàng ngày khi làm việc với git.</p>
 <h1 id="tham-khảo">Tham khảo</h1>
 <p><a href="http://git-scm.com/book/en/Customizing-Git-Git-Hooks">Githook documentation</a></p>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-06-21T23:07:00+09:00" data-updated="true" itemprop="datePublished">Jun 21<span>st</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/html5/'>html5</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/06/21/playing-with-web-audio-api-part-2/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/06/21/playing-with-web-audio-api-part-2/" itemprop="url">Playing With Web Audio Api (Part 2)</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h3 id="playing-audio-with-multisource-and-precise-timing">Playing audio with multisource and precise timing</h3>
-<p>Để làm game một game hay trên html5 thì âm thanh là một thứ không thể thiếu. Đầu tiên hãy đến với một game rất nổi tiếng: <a href="http://chrome.angrybirds.com/">Angry bird chrome</a></p>
-<p>Các bạn có thể để ý khi play một màn game bất kì nào đấy thì sẽ thấy rất nhiều âm thanh với các lớp (layer) khác nhau, được play vào các thời điểm khác nhau một cách hợp lý. Nếu chỉ đơn thuần dùng audio tag thì việc control các layer âm thanh khác nhau được play vào thời điểm nào sẽ rất khó.</p>
-<p>Nhờ có web audio api mà việc này trở nên dễ dàng hơn rất nhiều.</p>
-<p>Như mình đã nói ở bài trước, web audio api xoay quanh audio context. Điều đặc biệt là <strong>một context có thể load cùng một lúc nhiều audio source</strong>, và <strong>play mỗi audio source tại các thời điểm khác nhau</strong>, với một interface rất dễ hiểu. Đầu tiên là việc load nhiều audio source vào cùng một context. Dưới đây là module <strong><em>BufferLoader</em></strong> có nhiệm vụ load các file audio từ nhiều source khác nhau và quản lý thông qua bufferList.</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>loadfile.js </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">BufferLoader</span><span class="p">(</span><span class="nx">context</span><span class="p">,</span> <span class="nx">urlList</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">context</span> <span class="o">=</span> <span class="nx">context</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">urlList</span> <span class="o">=</span> <span class="nx">urlList</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">onload</span> <span class="o">=</span> <span class="nx">callback</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">bufferList</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">();</span>
-</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">loadCount</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="nx">BufferLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadBuffer</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">url</span><span class="p">,</span> <span class="nx">index</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="c1">// Load buffer asynchronously</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">request</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">XMLHttpRequest</span><span class="p">();</span>
-</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">open</span><span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="nx">url</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
-</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">responseType</span> <span class="o">=</span> <span class="s2">&quot;arraybuffer&quot;</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">loader</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">onload</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>    <span class="c1">// Asynchronously decode the audio file data in request.response</span>
-</span><span class='line'>    <span class="nx">loader</span><span class="p">.</span><span class="nx">context</span><span class="p">.</span><span class="nx">decodeAudioData</span><span class="p">(</span>
-</span><span class='line'>      <span class="nx">request</span><span class="p">.</span><span class="nx">response</span><span class="p">,</span>
-</span><span class='line'>      <span class="kd">function</span><span class="p">(</span><span class="nx">buffer</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">buffer</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>          <span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;error decoding file data: &#39;</span> <span class="o">+</span> <span class="nx">url</span><span class="p">);</span>
-</span><span class='line'>          <span class="k">return</span><span class="p">;</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>        <span class="nx">loader</span><span class="p">.</span><span class="nx">bufferList</span><span class="p">[</span><span class="nx">index</span><span class="p">]</span> <span class="o">=</span> <span class="nx">buffer</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="o">++</span><span class="nx">loader</span><span class="p">.</span><span class="nx">loadCount</span> <span class="o">==</span> <span class="nx">loader</span><span class="p">.</span><span class="nx">urlList</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span>
-</span><span class='line'>          <span class="nx">loader</span><span class="p">.</span><span class="nx">onload</span><span class="p">(</span><span class="nx">loader</span><span class="p">.</span><span class="nx">bufferList</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">},</span>
-</span><span class='line'>      <span class="kd">function</span><span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;decodeAudioData error&#39;</span><span class="p">,</span> <span class="nx">error</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>    <span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">onerror</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;BufferLoader: XHR error&#39;</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nx">request</span><span class="p">.</span><span class="nx">send</span><span class="p">();</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="nx">BufferLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">load</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">urlList</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="o">++</span><span class="nx">i</span><span class="p">)</span>
-</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="nx">loadBuffer</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">urlList</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span> <span class="nx">i</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Giải thích đoạn code trên một chút, module BufferLoader sẽ có properties là <strong>urllist</strong> chứa một list url của các audio source, BufferList là một <strong>array các buffer</strong> tương ứng với từng source đã load.</p>
-<p>Hàm <strong>load</strong> sẽ chạy từng file trong urllist, gọi hàm <strong><em>loadBuffer</em></strong> để load từng file thông qua <strong>XHR</strong>, sau khi load được qua XHR thì buffer được tạo ra và cho vào <strong>bufferList</strong> Như vậy là chúng ta đã có thể control multiple audio source thông qua <strong><em>BufferLoader</em></strong></p>
-<p>Giờ đến việc play theo precise timing, như bài lần trước chúng ta đã biết để play thì chúng ta sẽ dùng hàm noteOn(t), để play từ đầu thì t = 0, thế nên để play tại một thời điểm bất kì thì chúng ta sẽ chỉ cần set t(với đơn vị là second và relative theo thời điêm bắt đầu của audio).</p>
-<p>Hãy thử bằng một ví dụ đơn giản :D, bạn muốn làm 1 game bắn súng, trong đấy có một khẩu súng rất cool, giả sử là m4a1 đi :D. Chắc hẳn bạn nào đã chơi counter strike rồi thì sẽ biết là m4a1 thì phải bắt phát một được, hoặc bắn 3 viên một, hoặc bắn liên thanh. Cơ mà bạn chỉ có 1 file âm thanh chứa ngắn chứa một tiếng súng, vậy bạn phải làm sao? Rất đơn giản, bạn chỉ cần timing để playback lại cái source của bạn là ok . Hãy tham khảo đoạn code dưới đây:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<figcaption>
-<span>loadfile.js </span>
-</figcaption>
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class='js'><span class='line'><span class="nx">MachineGun</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">shootRound</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">type</span><span class="p">,</span> <span class="nx">rounds</span><span class="p">,</span> <span class="nx">interval</span><span class="p">,</span> <span class="nx">random</span><span class="p">,</span> <span class="nx">random2</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="k">typeof</span> <span class="nx">random</span> <span class="o">==</span> <span class="s1">&#39;undefined&#39;</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nx">random</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">time</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">currentTime</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">rounds</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="kd">var</span> <span class="nx">source</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">makeSource</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">buffers</span><span class="p">[</span><span class="nx">type</span><span class="p">]);</span>
-</span><span class='line'>        <span class="nx">source</span><span class="p">.</span><span class="nx">playbackRate</span><span class="p">.</span><span class="nx">value</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="nx">random2</span><span class="p">;</span>
-</span><span class='line'>        <span class="nx">source</span><span class="p">.</span><span class="nx">noteOn</span><span class="p">(</span><span class="nx">time</span> <span class="o">+</span> <span class="nx">i</span> <span class="o">*</span> <span class="nx">interval</span> <span class="o">+</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="nx">random</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="nx">MachineGun</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">makeSource</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">buffer</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">source</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">createBufferSource</span><span class="p">();</span>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">compressor</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">createDynamicsCompressor</span><span class="p">();</span>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">gain</span> <span class="o">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">createGainNode</span><span class="p">();</span>
-</span><span class='line'>    <span class="nx">gain</span><span class="p">.</span><span class="nx">gain</span><span class="p">.</span><span class="nx">value</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">;</span>
-</span><span class='line'>    <span class="nx">source</span><span class="p">.</span><span class="nx">buffer</span> <span class="o">=</span> <span class="nx">buffer</span><span class="p">;</span>
-</span><span class='line'>    <span class="nx">source</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">gain</span><span class="p">);</span>
-</span><span class='line'>    <span class="nx">gain</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">compressor</span><span class="p">);</span>
-</span><span class='line'>    <span class="nx">compressor</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">destination</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">return</span> <span class="nx">source</span><span class="p">;</span>
-</span><span class='line'><span class="p">};</span>
-</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Đoạn code trên có 2 hàm là <strong>shootRound</strong> và <strong>makeSource</strong>. Hàm <strong>makeSource</strong> nhận đầu vào là buffer , chỉnh lại âm thanh cho nhỏ đi một chút thông qua việc set gain = 0.2, sử dụng compressor Node để smoothing data đi một chút trước khi kết nối với destination node. Hàm <strong>shootRound</strong> có mục đích đúng như cái tên của nó, dùng để bắn, hay chính xác là timing buffer có sẵn theo các paramter đầu vào. Các parameter ở đây gồm có rounds ( là số lần lặp lại, ví dụ súng của bạn bắn 3 phát một thì rounds sẽ là 3), interval (khoảng cách giữa 2 lần bắn), 2 biến random và random2 dùng để set xem nên bắn đều đều hay bắn một cách random cho nó thật :D.</p>
-<p>Chỉ nói lý thuyết không hơi khó hiểu, các bạn có thể xem ví dụ trực quan ở: <a href="https://github.com/huydx/html5collection.git" class="uri">https://github.com/huydx/html5collection.git</a> Ví dụ ở trên mình đặt ở html5collection / webaudioapi / guneffect.html. Lưu ý một chút là mình dùng XHR để load file nên các bạn sẽ phải sử dụng thông qua web server (đơn giản nhất là XAMPP) và xem thông qua localhost.</p>
 		
 		
 	</div>

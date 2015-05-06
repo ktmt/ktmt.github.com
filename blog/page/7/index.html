@@ -7,8 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Mar 3rd, 2014 Comments Full Text Search Từ Khái Niệm đến Thực Tiễn (Phần 4) Introduction
-Trong phần 3, các bạn đã được tìm hiểu về việc sử dụng &hellip;">
+	<meta name="description" content="Mar 22nd, 2014 algorithm,, graph Comments Thuật Toán Floyd-Warshall để Duyệt đồ Thị Introduction
+Khi nhắc đến các thuật toán duyệt đồ thị, có thể &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -35,6 +35,16 @@ Trong phần 3, các bạn đã được tìm hiểu về việc sử dụng &he
 
 
 <body>
+	<div class="notif">
+		<p>
+			Cảm ơn bạn đã đọc và ủng hộ blog KTMT ʘ‿ʘ
+			Từ bây giờ chúng tôi sẽ là
+			<a target="_blank" href="/blog/2015/05/06/kipalog-cau-chuyen-ve-viet-va-chia-se/">
+				kipalog.com
+			</a>
+			!
+		</p>
+	</div>
 	<div class="container">
 		<div class="left-col">
 			<div class="intrude-less">
@@ -50,7 +60,7 @@ Trong phần 3, các bạn đã được tìm hiểu về việc sử dụng &he
 </ul>
 </nav>
 <nav class="hint">
-	<p style="color: #FFFFFF; margin-top: 2em;">
+	<p>
 	  Cập nhật thông tin bài viết qua Facebook page hay link RSS dưới đây
 	</p>
 </nav>
@@ -82,6 +92,259 @@ Trong phần 3, các bạn đã được tìm hiểu về việc sử dụng &he
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-22T21:45:00+09:00" data-updated="true" itemprop="datePublished">Mar 22<span>nd</span>, 2014</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/algorithm/'>algorithm,</a>, <a class='category' href='/blog/categories/graph/'>graph</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2014/03/22/thuat-toan-floyd-warshall-de-duyet-do-thi/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2014/03/22/thuat-toan-floyd-warshall-de-duyet-do-thi/" itemprop="url">Thuật Toán Floyd-Warshall để Duyệt đồ Thị</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1 id="introduction">Introduction</h1>
+<p>Khi nhắc đến các thuật toán duyệt đồ thị, có thể bạn đã biết (và đã từng implement) Depth-First Search, Breadth-First Search, hoặc Dijkstra. Xin nhắc lại về ý nghĩa của từng thuật toán, đứng ở khía cạnh bài toán tìm đường đi ngắn nhất. DFS dùng để giải các bài toán mà chúng ta muốn tìm được lời giải (không nhất thiết phải là quãng đường ngắn nhất), hoặc ta muốn thăm tất cả các đỉnh của đồ thị. BFS cũng để duyệt các đỉnh của đồ thị, nhưng có một tính chất quan trọng là: nếu tất cả các cạnh <em>không có trọng số</em>, lần đầu tiên một đỉnh được thăm, ta có ngay đường đi ngắn nhất đến đỉnh đó. Bây giờ đến thuật toán Disjkstra, đây là thuật toán nổi tiếng dùng để tìm đường đi ngắn nhất từ một đỉnh cho trước đến các đỉnh còn lại, trong một đồ thị có các cạnh <em>có trọng số không âm</em>. Như vậy, Dijkstra đã tiến hơn một bước so với BFS.</p>
+<p>Đó là sơ qua về ba thuật toán mà có thể mọi người đều đã biết. Trong bài viết này, tôi xin giới thiệu một thuật toán ít biết đến hơn để duyệt đồ thị, đó là Floyd-Warshall.</p>
+<h1 id="thuật-toán-floyd-warshall-là-gì">Thuật toán Floyd-Warshall là gì?</h1>
+<p>Nếu như Dijkstra giải quyết bài toán tìm đường đi ngắn nhất từ <em>một đỉnh cho trước</em> đến mọi đỉnh khác trong đồ thị, thì Floyd-Warshall sẽ tìm đường đi ngắn nhất <em>giữa mọi đỉnh</em> sau một lần chạy thuật toán. Một tính chất nữa là Floyd-Warshall có thể chạy trên đồ thị có các cạnh có trọng số <em>có thể âm</em>, tức là không bị giới hạn như Dijkstra. Tuy nhiên, lưu ý là trong đồ thị không được có vòng (cycle) nào có tổng các cạnh là âm, nếu có vòng như vậy ta không thể tìm được đường đi ngắn nhất (mỗi lần đi qua vòng này độ dài quãng đường lại giảm, nên ta có thể đi vô hạn lần)</p>
+<p>Thuật toán Floyd-Warshall so sánh tất cả các đường đi có thể giữa từng cặp đỉnh. Nó là một dạng của quy hoạch động (Dynamic Programming). Đặt hàm adj(i,j,k) là đường đi ngắn nhất từ i đến j, chỉ dùng các đỉnh trong tập {1,2,…,k}. Giả sử ta muốn tính adj{i,j,k+1}. Với mỗi cặp đỉnh i và j, đường đi ngắn nhất có thể là: (1) đường đi chỉ sử dụng các đỉnh trong tập {1,…k} hoặc (2) đường đi từ i đến k+1 rồi từ k+1 đến j, cũng chỉ sử dụng các đỉnh trong tập {1,…k}. Do vậy:</p>
+<p>Trường hợp cơ bản: adj(i,j,0) = w(i,j)</p>
+<p>Đệ quy: adj(i,j,k+1) = min{adj(i,j,k), adj(i,k+1, k) + adj(k+1, j, k)}</p>
+<p>Đây là đoạn pseudocode của Floyd-Warshall (có một chút thay đổi, nhưng ý tưởng là như nhau)</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>pseudo.c </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='c'><span class='line'><span class="k">for</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="mi">1</span> <span class="n">to</span> <span class="n">n</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="n">i</span><span class="o">=</span><span class="mi">1</span> <span class="n">to</span> <span class="n">n</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">for</span><span class="p">(</span><span class="n">j</span><span class="o">=</span><span class="mi">1</span> <span class="n">to</span> <span class="n">n</span><span class="p">)</span>
+</span><span class='line'>          <span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">min</span><span class="p">(</span><span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">],</span> <span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">+</span> <span class="n">adj</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">j</span><span class="p">]);</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<p>Dễ thấy độ phức tạp thuật toán là O(n^3) với n là số đỉnh của đồ thị.</p>
+<h1 id="thuật-toán-floyd-warshall-dùng-cho-tìm-tính-chất-kết-nối">Thuật toán Floyd-Warshall dùng cho tìm tính chất kết nối</h1>
+<p>Tư tưởng của thuật toán Floyd-Warshall trong việc tìm đường đi ngắn nhất có thể áp dụng vào các bài toán dạng tìm tính chất kết nối giữa các đỉnh. Tôi xin lấy một ví dụ, đó là bài <a href="http://community.topcoder.com/stat?c=problem_statement&amp;pm=2356&amp;rd=4740">TopCoder SRM 184, Div 2, 1000-point problem</a></p>
+<p>Đề bài như sau (xin chịu khó đọc hiểu đề bài)</p>
+<blockquote>
+<p>You are arranging a weird game for a team building exercise. In this game there are certain locations that people can stand at, and from each location there are paths that lead to other locations, but there are not necessarily paths that lead directly back. You have everything set up, but you need to know two important numbers. There might be some locations from which every other location can be reached. There might also be locations that can be reached from every other location. You need to know how many of each of these there are.</p>
+<p>Create a class TeamBuilder with a method specialLocations that takes a String[] paths that describes the way the locations have been connected, and returns a int[] with exactly two elements, the first one is the number of locations that can reach all other locations, and the second one is the number of locations that are reachable by all other locations. Each element of paths will be a String containing as many characters as there are elements in paths. The i-th element of paths (beginning with the 0-th element) will contain a ‘1’ (all quotes are for clarity only) in position j if there is a path that leads directly from i to j, and a ‘0’ if there is not a path that leads directly from i to j.</p>
+<p><strong>Examples</strong></p>
+<ul>
+<li><p>{“010”,“000”,“110”} Returns: { 1, 1 } Locations 0 and 2 can both reach location 1, and location 2 can reach both of the other locations, so we return {1,1}.</p></li>
+<li><p>{“0010”,“1000”,“1100”,“1000”} Returns: { 1, 3 } Only location 3 is able to reach all of the other locations, but it must take more than one path to reach locations 1 and 2. Locations 0, 1, and 2 are reachable by all other locations. The method returns {1,3}.</p></li>
+<li><p>{“01000”,“00100”,“00010”,“00001”,“10000”} Returns: { 5, 5 } Each location can reach one other, and the last one can reach the first, so all of them can reach all of the others.</p></li>
+<li><p>{“0110000”,“1000100”,“0000001”,“0010000”,“0110000”,“1000010”,“0001000”} Returns: { 1, 3 }</p></li>
+</ul>
+</blockquote>
+<p><em>Solution</em> Về cơ bản, bài này cần tìm số lượng các đỉnh mà từ đó có thể đi đến tất cả các đỉnh khác, và số lượng các đỉnh mà các đỉnh khác đều có thể đi tới. Một ví dụ rất tốt để áp dụng thuật toán Floyd-Warshall tìm tính chất kết nối giữa 2 đỉnh bất kì.</p>
+<p>Trong bài này, chúng ta chỉ cần phải kiểm tra xem có đường đi từ đỉnh i đến đỉnh j trong đồ thị hay không. Chúng ta sẽ áp dụng thuật toán Floyd-Warshall trên, nhưng có thay đổi một chút trong dòng xử lý bên trong vòng lặp. Về cơ bản, chúng ta vẫn sử dụng ý tưởng là update thông tin giữa 2 đỉnh i và j, mỗi khi ta có thêm thông tin giữa đỉnh i và đỉnh k, đỉnh k và đỉnh j, với k là một đỉnh khác i và j. Nhưng ta không cập nhật thông tin về * đường đi ngắn nhất* nữa, mà ta cập nhật thông tin về <em>có hay không đường đi từ i đến j</em>. Với mỗi cặp đỉnh i và j chưa có kết nối, ta sẽ kiểm tra xem nếu có đường đi từ i đến k và từ k đến j, thì ta cập nhật là có đường đi từ i đến j.</p>
+<p>Sau đây là đoạn code C++ minh hoạ:</p>
+<div class="bogus-wrapper">
+<notextile>
+<figure class="code">
+<figcaption>
+<span>TeamBuilder.cpp </span>
+</figcaption>
+<div class="highlight">
+<table>
+<tr>
+<td class="gutter">
+<pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+</pre>
+</td>
+<td class="code">
+<pre><code class='cpp'><span class='line'><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">TeamBuilder</span><span class="o">::</span><span class="n">specialLocations</span><span class="p">(</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">string</span><span class="o">&gt;</span> <span class="n">paths</span><span class="p">){</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">N</span> <span class="o">=</span> <span class="n">paths</span><span class="p">.</span><span class="n">size</span><span class="p">();</span>
+</span><span class='line'>  <span class="n">vector</span><span class="o">&lt;</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="o">&gt;</span> <span class="n">adj</span><span class="p">;</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">i</span> <span class="o">++</span><span class="p">){</span>
+</span><span class='line'>      <span class="n">string</span> <span class="n">s</span> <span class="o">=</span> <span class="n">paths</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+</span><span class='line'>      <span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">row</span><span class="p">;</span>
+</span><span class='line'>      <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>          <span class="n">row</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span><span class="sc">&#39;0&#39;</span><span class="p">);</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>      <span class="n">adj</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">row</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//Floyd-Warshall</span>
+</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">k</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>      <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>          <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>              <span class="c1">//i,j,k must be different</span>
+</span><span class='line'>              <span class="k">if</span><span class="p">(</span><span class="n">i</span><span class="o">==</span><span class="n">j</span> <span class="o">||</span> <span class="n">j</span> <span class="o">==</span> <span class="n">k</span> <span class="o">||</span> <span class="n">k</span><span class="o">==</span><span class="n">i</span><span class="p">)</span>
+</span><span class='line'>                  <span class="k">continue</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>              <span class="c1">//only update those no-paths</span>
+</span><span class='line'>              <span class="k">if</span><span class="p">(</span><span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>                  <span class="k">if</span><span class="p">(</span><span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">!=</span><span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">adj</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>                      <span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>                  <span class="p">}</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//find number of locations that can reach all other locations</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">firstNum</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>      <span class="kt">bool</span> <span class="n">canReachAll</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+</span><span class='line'>      <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span><span class="o">&lt;</span><span class="n">N</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>          <span class="k">if</span><span class="p">(</span><span class="n">j</span><span class="o">==</span><span class="n">i</span><span class="p">)</span> <span class="k">continue</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="k">if</span><span class="p">(</span><span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>              <span class="n">canReachAll</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+</span><span class='line'>              <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>      <span class="k">if</span><span class="p">(</span><span class="n">canReachAll</span><span class="p">)</span>
+</span><span class='line'>          <span class="n">firstNum</span> <span class="o">++</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//find number of locations that are reachable from other locations</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">secondNum</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>      <span class="kt">bool</span> <span class="n">canBeReachedFromAll</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+</span><span class='line'>      <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">N</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>          <span class="k">if</span><span class="p">(</span><span class="n">j</span><span class="o">!=</span><span class="n">i</span> <span class="o">&amp;&amp;</span> <span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>              <span class="n">canBeReachedFromAll</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+</span><span class='line'>              <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>      <span class="k">if</span><span class="p">(</span><span class="n">canBeReachedFromAll</span><span class="p">)</span>
+</span><span class='line'>          <span class="n">secondNum</span> <span class="o">++</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">res</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">res</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">firstNum</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">res</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">secondNum</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">res</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre>
+</td>
+</tr>
+</table>
+</div>
+</figure>
+</notextile>
+</div>
+<h1 id="tham-khảo">Tham khảo:</h1>
+<ol type="1">
+<li><a href="http://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm">Floyd-Warshall Algorithm</a></li>
+<li><a href="http://community.topcoder.com/tc?module=Static&amp;d1=tutorials&amp;d2=graphsDataStrucs3">TopCoder Graph Tutorial</a></li>
+</ol>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -494,159 +757,6 @@ Trong phần 3, các bạn đã được tìm hiểu về việc sử dụng &he
 <ul>
 <li><a href="http://clang.llvm.org/docs/Modules.html">clang_modules</a></li>
 <li><a href="http://llvm.org/devmtg/2012-11/Gregor-Modules.pdf">Bài phát biểu của Gregor</a></li>
-</ul>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-01-04T21:23:00+09:00" data-updated="true" itemprop="datePublished">Jan 4<span>th</span>, 2014</time></div>
-		<div class="tags">
-
-</div>
-		
-			<span class="comments"><a href="/blog/2014/01/04/full-text-search-engine-part-3/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2014/01/04/full-text-search-engine-part-3/" itemprop="url">Full Text Search, Từ Khái Niệm đến Thực Tiễn (Phần 3)</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<h1 id="introduction">Introduction</h1>
-<p>Trong <a href="http://ktmt.github.io/blog/2013/11/03/full-text-search/">phần 2</a>, chúng ta đã nắm được một kĩ thuật cơ bản và quan trọng để tạo ra search-engine, đó chính là kĩ thuật tách chữ (Tokenize), thông qua 2 phương pháp chính là N-gram và Morphological Analysis. Nhờ có kĩ thuật này mà văn bản gốc sẽ được bóc tách thành các kí tự, sau đó sẽ được lưu trữ dưới dạng Inverted Index như đã giới thiệu ở <a href="http://ktmt.github.io/blog/2013/10/27/full-text-search-engine/">phần 1</a>.</p>
-<p>Trong bài viết này, chúng ta sẽ tìm hiểu là làm thế nào, mà khi được cung cấp đầu vào là một chuỗi truy vấn (query string), search engine sẽ cung cấp được cho chúng ta kết quả phù hợp nhất. Về cơ bản, để tìm kiếm bên trong một khối dữ liệu khổng lồ đã được index dưới dạng “Inverted Index”, search-engine sẽ sử dụng “Boolean Logic”.</p>
-<h1 id="boolean-logic-và-tại-sao-search-engine-lại-sử-dụng-boolean-logic">Boolean Logic và tại sao Search Engine lại sử dụng Boolean Logic</h1>
-<p>Khi nhắc đến Boolean Logic, các bạn sẽ hình dung ra trong đầu những hình ảnh như thao tác AND/OR/XOR với bit, mạch logic trong điện tử số, hay biểu đồ ven. Đối tượng thao tác của Boolean Logic có thể là bit, cổng logic, hay là tập hợp (set). Trong bài này, Boolean Logic sẽ được nhắc đến với đối tượng là tập hợp (set), và hình ảnh dễ hình dung nhất khi thao tác với đối tượng này chính là biểu đồ Ven.</p>
-<p>Để tìm hiểu mối liên quan giữa Boolean Logic và Search Engine, chúng ta hãy thử hình dung cơ chế của Search Engine. Khi được cung cấp một chuỗi truy vấn (query string), việc đầu tiên Search Engine sẽ phải sử dụng Parser module để bóc tách chuỗi truy vấn này theo một <strong>ngữ pháp</strong> đã được qui định trước, để tạo thành các token sử dụng cho logic tìm kiếm. Việc sử dụng Parser này cũng giống như compiler hay intepreter sẽ sử dụng các cú pháp đã được định nghĩa trước của một ngôn ngữ bất kỳ để dịch một đoạn code ra mã máy hoặc là bytecode. Ngữ pháp qui định trước càng phức tạp, không chỉ dẫn đến việc parse chuỗi truy vấn trở nên phức tạp hơn, việc viết ra một câu truy vấn phức tạp hơn (ảnh hưởng đến người dùng), mà còn khiến logic tìm kiếm cũng trở nên phức tạp, qua đó làm giảm hiệu suất của việc tìm kiếm. Chính vì thế mà việc tận dụng một ngữ pháp gần giống với Boolean Logic không những sẽ giúp giữ cho độ phức tạp khi parse query string ở mức thấp, mà nó còn giúp cho người dùng tạo ra những câu truy vấn dễ hiểu hơn.</p>
-<h1 id="sử-dụng-boolean-logic-trong-search-engine">Sử dụng Boolean Logic trong Search Engine</h1>
-<p>Boolean logic sử dụng trong Search Engine thường sẽ gồm 3 phép toán chính là <strong>AND</strong>, <strong>NOT</strong> <strong>và OR</strong> Hãy trở lại ví dụ gần giống trong <a href="http://ktmt.github.io/blog/2013/10/27/full-text-search-engine/">phần 1</a>, chúng ta có 5 documents {D1, D2, D3, D4, D5} đã được index như sau:</p>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class=''><span class='line'>D1 = "This is first document"
-</span><span class='line'>D2 = "This is second one"
-</span><span class='line'>D3 = "one two"
-</span><span class='line'>D4 = "This one is great"
-</span><span class='line'>D5 = "This two is great!"</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class=''><span class='line'>"this" =&gt; {D1, D2, D4, D5}
-</span><span class='line'>"is" =&gt; {D1, D2, D4, D5}
-</span><span class='line'>"first" =&gt; {D1}
-</span><span class='line'>"document" =&gt; {D1}
-</span><span class='line'>"second" =&gt; {D2}
-</span><span class='line'>"one" =&gt; {D2, D3, D4}
-</span><span class='line'>"two" =&gt; {D3, D5}</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>Giả sử chúng ta muốn query một câu truy vấn như sau : “This one”. Sử dụng Morphological Analysis đã giới thiệu trong <a href="http://ktmt.github.io/blog/2013/11/03/full-text-search/">phần 2</a>, chúng ta sẽ tách câu truy vấn đó thành 2 token là “This” và “one”. Bỏ qua yếu tố chữ hoa và chữ thường, thì “This” đã được index {D1, D2, D4, D5}, và “one” đã được index {D2, D3, D4}.</p>
-<p>Thông thường để cho dễ hiểu và phù hợp với logic của người dùng, thì space sẽ tương đương với logic AND, hay là việc tìm kiếu “This one” sẽ tương đương với kết tìm kiếm “This” AND với kết quả tìm kiếm “one”. Hay như trong ví dụ này thì kết quả tìm kiếm sẽ là kết quả AND của 2 set {D1, D2, D4, D5} và {D2, D3, D4}. Kết quả này có thể thấy dễ dàng là {D2, D4}</p>
-Vậy nếu người dùng input là “This OR one” thì sao? Lúc này kết quả tìm kiếm sẽ là
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class=''><span class='line'>{D1, D2, D4, D5} OR {D2, D3, D4} = {D1, D3, D5}</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-Từ ví dụ trên chúng ta thấy rằng độ phức tạp của việc tìm kiếm lúc này sẽ chuyển thành
-<div class="bogus-wrapper">
-<notextile>
-<figure class="code">
-<div class="highlight">
-<table>
-<tr>
-<td class="gutter">
-<pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre>
-</td>
-<td class="code">
-<pre><code class=''><span class='line'>Độ phức tạp của parse query string(1) 
-</span><span class='line'>+ Độ phức tạp của Index lookup(2) 
-</span><span class='line'>+ Độ phức tạp của thao tác boolean Logic dựa trên kết quả của Index lookup(3)</span></code></pre>
-</td>
-</tr>
-</table>
-</div>
-</figure>
-</notextile>
-</div>
-<p>(1) thường sẽ không lớn do query string do user input khá ngắn, và trong trường hợp query string được generate phức tạp khi sử dụng lucene hoặc solr, thì việc sử dụng boolean logic rất đơn giản cũng làm độ phức tạp khi parse query string là không cao.</p>
-<p>(2) Độ phức tạp của Index lookup tương đương với việc tìm kiếm giá trị của một key trong Hash table, chỉ khác là trên HDD, tuy nhiên so sánh với việc tìm kiếm trên BTree của MySQL thì performance của xử lý này là hoàn toàn vuợt trội.</p>
-<p>(3) Thao tác này có thể được optimize rất nhiều dựa vào các lý thuyết tập hợp, hay các thư viện toán học cho big number.</p>
-<p>Như vậy chúng ta có thể thấy bài toán tìm kiếm ban đầu đã được đưa về 3 bài toán nhỏ hơn, dễ optimize hơn.</p>
-<h1 id="kết-luận">Kết luận</h1>
-<p>Bài viết đã giới thiệu về việc sử dụng Boolean Logic trong Full Text Search Engine. Qua đó các bạn chắc đã hình dung ra phần nào khi các bạn gõ một câu lệnh tìm kiếm vào ô tìm kiếm của Google, những gì sẽ xảy ra đằng sau (mặc dù trên thực tế những gì google làm sẽ phức tạp hơn rất nhiều).</p>
-<p>Tham khảo:</p>
-<ul>
-<li><a href="http://gihyo.jp/dev/serial/01/make-findspot">Make Findspot</a></li>
 </ul>
 		
 		

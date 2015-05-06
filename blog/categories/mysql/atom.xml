@@ -4,7 +4,7 @@
   <title><![CDATA[Category: mysql | Blog kỹ thuật máy tính]]></title>
   <link href="http://git@github.com.github.com/blog/categories/mysql/atom.xml" rel="self"/>
   <link href="http://git@github.com.github.com/"/>
-  <updated>2015-03-08T14:45:59+09:00</updated>
+  <updated>2015-05-07T01:18:39+09:00</updated>
   <id>http://git@github.com.github.com/</id>
   <author>
     <name><![CDATA[kỹ thuật máy tính]]></name>
@@ -22,10 +22,7 @@
 <p>2h sáng. “beep, you’ve got mail”. Mail từ hệ thống giám sát zabbix.</p>
 <p>1 URL quan trọng trong hệ thống web không hiển thị được. Truy cập vào URL đó nhận status code http trả về 503. Zabbix định kỳ kiểm tra mã lỗi và khi mã trả về khác 200, <a href="zabbix.com">zabbix</a> gửi mail cho hắn.</p>
 <p>“Lại có vấn đề gì rồi đây…” — hắn vùng dậy, mở laptop lên, mở browser ra và truy cập thử vào URL được thông báo. “Quả nhiên là không vào được”, hắn nghĩ. Ssh thử vào một máy chủ và kiểm tra error log. Thông báo lỗi “Không truy cập được đến máy chủ cơ sở dữ liệu X” liên tiếp liên tiếp được ghi ra log. “Máy chủ X lại có vấn đề gì rồi đây …”. Hắn vừa nghĩ, mắt vừa lướt qua các đồ thị giám sát tài nguyên của toàn bộ hệ thống. “Lưu lượng truy cập vào máy chủ web vẫn bình thường. Tỉ lệ cachehit vẫn không đổi. Mọi thứ không có gì có vẻ bất thường. Vậy vấn đề này ở máy chủ X rồi”. Hắn nghĩ, rồi gõ</p>
-<p><div>
-  <pre><code class='bash'>ssh X</code></pre>
-</div>
-</p>
+<p>{% highlight bash %} ssh X {% endhighlight %}</p>
 <h1 id="truy-tìm">Truy tìm</h1>
 <p>X là một máy chủ cơ sở dữ liệu chạy mysql, 4 cores 24GB Ram 2 đĩa cứng 300GB RAID 1. Không quá yếu nhưng cũng không quá khoẻ. Vì là máy chủ cơ sở dữ liệu nên phần lớn tài nguyên của X được dùng cho mysql.</p>
 <p>“Để xem chú mày bị làm sao nhé!” - hắn bắt đầu công đoạn chẩn đoán bệnh của máy chủ.</p>
@@ -38,46 +35,28 @@
 <li>Thứ nhất name được query theo cả kiểu số và xâu dữ liệu.</li>
 <li>Thứ hai query trên khá đơn giản, lệnh show table status like ‘table_name’ cho hắn kết quả số dòng chỉ khoảng 70000 dòng - 1 con số không lớn. Vậy mà X phải hoạt đông 95% cpu mà vẫn không thể nào trả về kết quả câu lệnh trên trong 1s.</li>
 </ul>
-<p><div>
-  <pre><code class='bash'>&lt;/p&gt;
-&lt;p&gt;$ mysql -u root -p Enter password: *********** mysql&amp;gt; use database database_name; mysql&amp;gt; show table status like ‘table_name’; *************************** 1. row *************************** Name: table_name Engine: InnoDB Version: 10 Row_format: Compact Rows: 72148 Avg_row_length: 924 Data_length: 66732032 Max_data_length: 0 Index_length: 14630912 Data_free: 7340032 Auto_increment: NULL Create_time: 2013-10-11 18:33:07 Update_time: NULL Check_time: NULL Collation: utf8_general_ci Checksum: NULL Create_options: Comment: Latest translation for vid</code></pre>
-</div>
-</p>
+<p>{% highlight bash %}</p>
+<p>$ mysql -u root -p Enter password: *********** mysql&gt; use database database_name; mysql&gt; show table status like ‘table_name’; *************************** 1. row *************************** Name: table_name Engine: InnoDB Version: 10 Row_format: Compact Rows: 72148 Avg_row_length: 924 Data_length: 66732032 Max_data_length: 0 Index_length: 14630912 Data_free: 7340032 Auto_increment: NULL Create_time: 2013-10-11 18:33:07 Update_time: NULL Check_time: NULL Collation: utf8_general_ci Checksum: NULL Create_options: Comment: Latest translation for vid {% endhighlight %}</p>
 <p>Để xem chú mày đang bận rộn xử lý cái gì nhé.</p>
-<p><div>
-  <pre><code class='bash'>&lt;/p&gt;
-&lt;p&gt;mysql&amp;gt; show process list;&lt;/p&gt;
-&lt;p&gt;1 loạt query kiểu&lt;/p&gt;
-&lt;p&gt;“select * from table_name where video_id in (12345, ‘23434’) and language = ‘en-us’;”&lt;/p&gt;
-&lt;p&gt;</code></pre>
-</div>
-</p>
+<p>{% highlight bash %}</p>
+<p>mysql&gt; show process list;</p>
+<p>1 loạt query kiểu</p>
+<p>“select * from table_name where video_id in (12345, ‘23434’) and language = ‘en-us’;”</p>
+<p>{% endhighlight %}</p>
 <p>“beep, you’ve got mail”. Một mail mới lại về. Máy chủ web đã không thể nào truy cập được X. Zabbix thông báo bản thân zabbix cũng không thể nào truy cập máy chủ X để lấy thông tin giám sát.</p>
 <p>“Tình huống có vẻ nghiêm trọng lên.” hắn lẩm bẩm.</p>
 <p>Máy chủ bận rộn CPU, I/O không lớn chứng tỏ là query trên tốn rất nhiều CPU. Có lẽ CPU đang tốn thời gian để sắp xếp và tìm kiếm, một mình chứng của việc mysql đang phải tìm với 1 lượng dữ liệu lớn. 70000 không phải con số to, do vậy chỉ có thể là máy chủ X đang phải tìm kiếm mà không có chỉ mục (index)!</p>
 <p>“Không lẽ nào!”, vừa nói hắn vừa gõ lệnh</p>
-<p><div>
-  <pre><code class='bash'>mysql&amp;gt; show index from table_name;&lt;/p&gt;
-&lt;p&gt;+————-+————+——————-+————–+————-+———–+————-+———-+——–+——+————+———+ | Table | Non_unique | Key_name | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | +————-+————+——————-+————–+————-+———–+————-+———-+——–+——+————+———+ | table_name | 0 | PRIMARY | 1 | id | A | 73908 | NULL | NULL | | BTREE | | | table_name | 0 | PRIMARY | 2 | language | A | 73908 | NULL | NULL | | BTREE | | | table_name | 1 | idx_table_name_1 | 1 | user_id | A | 24636 | NULL | NULL | | BTREE | | +————-+————+——————-+————–+————-+———–+————-+———-+——–+——+————+———+</code></pre>
-</div>
-</p>
+<p>{% highlight bash %} mysql&gt; show index from table_name;</p>
+<p>+————-+————+——————-+————–+————-+———–+————-+———-+——–+——+————+———+ | Table | Non_unique | Key_name | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | +————-+————+——————-+————–+————-+———–+————-+———-+——–+——+————+———+ | table_name | 0 | PRIMARY | 1 | id | A | 73908 | NULL | NULL | | BTREE | | | table_name | 0 | PRIMARY | 2 | language | A | 73908 | NULL | NULL | | BTREE | | | table_name | 1 | idx_table_name_1 | 1 | user_id | A | 24636 | NULL | NULL | | BTREE | | +————-+————+——————-+————–+————-+———–+————-+———-+——–+——+————+———+ {% endhighlight %}</p>
 <p>Rất buồn, vậy là video_id có gắn index đàng hoàng. Vậy thì không có lý do gì mà query trên lại không query theo index cả. Thật kỳ lạ. Vậy để thử xem query trên có dùng index không nhé. Đoạn hắn lấy 1 query bất kỳ và thử <a href="http://dev.mysql.com/doc/refman/5.6/en/explain.html">EXPLAIN</a>.</p>
-<p><div>
-  <pre><code class='bash'>mysql&amp;gt; explain SELECT * FROM table_name WHERE &lt;code&gt;video_id&lt;/code&gt; IN (1412240325) AND &lt;code&gt;language&lt;/code&gt; = “en-us”; *************************** 1. row *************************** id: 1 select_type: SIMPLE table: table_name type: ALL possible_keys: PRIMARY,idx_table_name_2 key: NULL key_len: NULL ref: NULL rows: 66870 Extra: Using where 1 row in set (0.00 sec)&lt;/p&gt;
-&lt;p&gt;ERROR: No query specified</code></pre>
-</div>
-</p>
+<p>{% highlight bash %} mysql&gt; explain SELECT * FROM table_name WHERE <code>video_id</code> IN (1412240325) AND <code>language</code> = “en-us”; *************************** 1. row *************************** id: 1 select_type: SIMPLE table: table_name type: ALL possible_keys: PRIMARY,idx_table_name_2 key: NULL key_len: NULL ref: NULL rows: 66870 Extra: Using where 1 row in set (0.00 sec)</p>
+<p>ERROR: No query specified {% endhighlight %}</p>
 <p><em>key: NULL</em> nghĩa là query trên không sử dụng index! Tại sao bảng có chỉ mục mà query lại không dùng index. Chắc chắn là video_id có vấn đề rồi. Vừa nghĩ hắn vừa gõ câu lệnh show create table để xem kiểu dữ liệu lúc tạo bảng.</p>
-<p><div>
-  <pre><code class='bash'>mysql&amp;gt; show create table table_name; table_name | CREATE TABLE &lt;code&gt;table_name&lt;/code&gt; ( &lt;code&gt;video_id&lt;/code&gt; varchar(34) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL, &lt;code&gt;language&lt;/code&gt; varchar(32) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL, &lt;code&gt;user_id&lt;/code&gt; int(10) unsigned NOT NULL, PRIMARY KEY (&lt;code&gt;video_id&lt;/code&gt;,&lt;code&gt;language&lt;/code&gt;), KEY &lt;code&gt;idx_videotranslationinfo_1&lt;/code&gt; (&lt;code&gt;user_id&lt;/code&gt;), KEY &lt;code&gt;idx_videotranslationinfo_2&lt;/code&gt; (&lt;code&gt;video_id&lt;/code&gt;), KEY &lt;code&gt;idx_videotranslationinfo_3&lt;/code&gt; (&lt;code&gt;language&lt;/code&gt;), ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT=‘Latest translation for videos.’ |</code></pre>
-</div>
-</p>
+<p>{% highlight bash %} mysql&gt; show create table table_name; table_name | CREATE TABLE <code>table_name</code> ( <code>video_id</code> varchar(34) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL, <code>language</code> varchar(32) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL, <code>user_id</code> int(10) unsigned NOT NULL, PRIMARY KEY (<code>video_id</code>,<code>language</code>), KEY <code>idx_videotranslationinfo_1</code> (<code>user_id</code>), KEY <code>idx_videotranslationinfo_2</code> (<code>video_id</code>), KEY <code>idx_videotranslationinfo_3</code> (<code>language</code>), ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT=‘Latest translation for videos.’ | {% endhighlight %}</p>
 <p>Có gì đó không ổn. Query thì coi video_id như là kiểu số nguyên, trong khi bảng lại định nghĩa video_id kiểu xâu dữ liệu. Có lẽ việc khác nhau trong kiểu dữ liệu này làm mysql không so sánh được truy cập với index, làm cho mysql sẽ tìm bản ghi bằng cách lặp toàn bộ bảng. Suy nghĩ vậy, hắn liền thử explain 1 query sau khi đã thay số bằng chữ.</p>
-<p><div>
-  <pre><code class='bash'>mysql&amp;gt; explain SELECT * FROM table_name WHERE &lt;code&gt;video_id&lt;/code&gt; IN (“1412240325”) AND &lt;code&gt;language&lt;/code&gt; = “en-us”; *************************** 1. row *************************** id: 1 select_type: SIMPLE table: table_name type: ALL possible_keys: PRIMARY,idx_table_name_2 key: PRIMARY key_len: NULL ref: NULL rows: 66870 Extra: Using where 1 row in set (0.00 sec)&lt;/p&gt;
-&lt;p&gt;ERROR: No query specified</code></pre>
-</div>
-</p>
+<p>{% highlight bash %} mysql&gt; explain SELECT * FROM table_name WHERE <code>video_id</code> IN (“1412240325”) AND <code>language</code> = “en-us”; *************************** 1. row *************************** id: 1 select_type: SIMPLE table: table_name type: ALL possible_keys: PRIMARY,idx_table_name_2 key: PRIMARY key_len: NULL ref: NULL rows: 66870 Extra: Using where 1 row in set (0.00 sec)</p>
+<p>ERROR: No query specified {% endhighlight %}</p>
 <p>“Ồ la la” hắn khẽ reo lên.</p>
 <p>Sau khi đổi video_id thành kiểu chuỗi thì index đã được sử dụng <em>key: PRIMARY</em>. Hắn ngay lập tức liên lạc với bên phát triển và để sửa đoạn code sinh ra query trên. Bên phát triển lập tức tìm ra có 1 dòng code chưa gọi strval để biến video_id thành xâu dữ liệu trước ném query cho DB. Bên phát triển lập tức sửa source code và cập nhật phiên bản mới nhất lên máy chủ. Ngay lập tức %cpu của X trở về 1%. Trang web lại vào bình thường như chưa từng có gì cản trở. Slow log query cũng dừng log query hẳn.</p>
 <h1 id="bài-học">Bài học</h1>
@@ -115,86 +94,50 @@
 <h4 id="bước-1-dump-toàn-bộ-dữ-liệu">Bước 1: dump toàn bộ dữ liệu</h4>
 <p>Ta có thể dump toàn bộ dữ liệu từ slave hoặc master hiện tại.</p>
 <ol type="a">
-<li>Dump dữ liệu từ slave <div>
-  <pre><code class='bash'>mysql&amp;gt; stop slave mysql&amp;gt; show slave status;</code></pre>
-</div>
-</li>
+<li>Dump dữ liệu từ slave {% highlight bash %} mysql&gt; stop slave mysql&gt; show slave status; {% endhighlight %}</li>
 </ol>
 <p>Ghi nhớ các thông tin: master_host, master_port, replication_user, relay_master_log_file,</p>
-<p><div>
-  <pre><code class='bash'>$ mysqldump -u username -p –all-database –single-transaction | gzip -f &amp;gt; dumpfile.gz</code></pre>
-</div>
-</p>
-<p><div>
-  <pre><code class='bash'>mysql&amp;gt; start slave;</code></pre>
-</div>
-</p>
+<p>{% highlight bash %} $ mysqldump -u username -p –all-database –single-transaction | gzip -f &gt; dumpfile.gz {% endhighlight %}</p>
+<p>{% highlight bash %} mysql&gt; start slave; {% endhighlight %}</p>
 <ol start="2" type="a">
 <li>Dump dữ liệu từ master</li>
 </ol>
-<p><div>
-  <pre><code class='bash'>mysql&amp;gt; flush tables with read lock; mysql&amp;gt; show master status;</code></pre>
-</div>
-</p>
-<p><div>
-  <pre><code class='bash'>mysqldump -u username -p –all-database –single-transaction | gzip -f &amp;gt; dumpfile.gz</code></pre>
-</div>
-</p>
-<p><div>
-  <pre><code class='bash'>mysql&amp;gt; unlock tables;</code></pre>
-</div>
-</p>
+<p>{% highlight bash %} mysql&gt; flush tables with read lock; mysql&gt; show master status; {% endhighlight %}</p>
+<p>{% highlight bash %} mysqldump -u username -p –all-database –single-transaction | gzip -f &gt; dumpfile.gz {% endhighlight %}</p>
+<p>{% highlight bash %} mysql&gt; unlock tables; {% endhighlight %}</p>
 <h4 id="bước-2-cài-đặt-mysql-phiên-bản-5.6">Bước 2: Cài đặt mysql phiên bản 5.6</h4>
-<p><div>
-  <pre><code class='bash'>$ /etc/init.d/mysql stop # stop mysql-5.0 $ cd /usr/local $ wget http://dev.mysql.com/get/Downloads/MySQL-5.6/mysql-5.6.13-linux-glibc2.5-x86_64.tar.gz/from/http://cdn.mysql.com/&lt;/p&gt;
-&lt;p&gt;$ tar xfz mysql-5.6.13-linux-glibc2.5-x86_64.tar.gz $ mv mysql-5.6.13-linux-glibc2.5-x86_64 mysql-5.6.13&lt;/p&gt;
-&lt;h1 id=&quot;symbolic-link張替える&quot;&gt;symbolic link張替える&lt;/h1&gt;
-&lt;p&gt;$ rm mysql $ ln -sf mysql-5.6.13 mysql $ cd mysql $ chown -R mysql:mysql .</code></pre>
-</div>
-</p>
+<p>{% highlight bash %} $ /etc/init.d/mysql stop # stop mysql-5.0 $ cd /usr/local $ wget http://dev.mysql.com/get/Downloads/MySQL-5.6/mysql-5.6.13-linux-glibc2.5-x86_64.tar.gz/from/http://cdn.mysql.com/</p>
+<p>$ tar xfz mysql-5.6.13-linux-glibc2.5-x86_64.tar.gz $ mv mysql-5.6.13-linux-glibc2.5-x86_64 mysql-5.6.13</p>
+<h1 id="symbolic-link張替える">symbolic link張替える</h1>
+<p>$ rm mysql $ ln -sf mysql-5.6.13 mysql $ cd mysql $ chown -R mysql:mysql . {% endhighlight %}</p>
 <h4 id="bước-3-khởi-động-mysql-và-import-dữ-liệu">Bước 3: Khởi động mysql và import dữ liệu</h4>
-<p><div>
-  <pre><code class='bash'>$ cp /tmp/my.cnf /usr/local/mysql&lt;/p&gt;
-&lt;h1 id=&quot;データ容量そろえる&quot;&gt;データ容量そろえる&lt;/h1&gt;
-&lt;p&gt;$ cd /dbdata/data $ rm -rf *&lt;/p&gt;
-&lt;h1 id=&quot;起動するためテンポラリデータフォルダを作る&quot;&gt;起動するため、テンポラリデータフォルダを作る&lt;/h1&gt;
-&lt;p&gt;$ cd /usr/local/mysql $ cd data # 空きフォルダか確認 $ ll $ cd .. $ ./scripts/mysql_install_db –user=mysql $ cp support-files/mysql.server /etc/init.d/mysql $ /etc/init.d/mysql start $ mysqladmin -u root password ‘pass’&lt;/p&gt;
-&lt;h1 id=&quot;data-フォルダは-dbdatadataにする&quot;&gt;data フォルダは /dbdata/dataにする&lt;/h1&gt;
-&lt;p&gt;$ mv data data.bk $ ln -sf /dbdata/data data&lt;/p&gt;
-&lt;h1 id=&quot;import-data-file&quot;&gt;import data file&lt;/h1&gt;
-&lt;p&gt;$ mysql -u root -p &amp;lt; バックアップファイル</code></pre>
-</div>
-</p>
+<p>{% highlight bash %} $ cp /tmp/my.cnf /usr/local/mysql</p>
+<h1 id="データ容量そろえる">データ容量そろえる</h1>
+<p>$ cd /dbdata/data $ rm -rf *</p>
+<h1 id="起動するためテンポラリデータフォルダを作る">起動するため、テンポラリデータフォルダを作る</h1>
+<p>$ cd /usr/local/mysql $ cd data # 空きフォルダか確認 $ ll $ cd .. $ ./scripts/mysql_install_db –user=mysql $ cp support-files/mysql.server /etc/init.d/mysql $ /etc/init.d/mysql start $ mysqladmin -u root password ‘pass’</p>
+<h1 id="data-フォルダは-dbdatadataにする">data フォルダは /dbdata/dataにする</h1>
+<p>$ mv data data.bk $ ln -sf /dbdata/data data</p>
+<h1 id="import-data-file">import data file</h1>
+<p>$ mysql -u root -p &lt; バックアップファイル {% endhighlight %}</p>
 <h4 id="bước-4-khởi-động-lại-mysql.">Bước 4: Khởi động lại mysql.</h4>
-<p><div>
-  <pre><code class='bash'>$ /etc/init.d/mysql stop $ /etc/init.d/mysql start</code></pre>
-</div>
-</p>
+<p>{% highlight bash %} $ /etc/init.d/mysql stop $ /etc/init.d/mysql start {% endhighlight %}</p>
 <h4 id="bước-5-cài-đặt-sao-chép-replication">Bước 5: Cài đặt sao chép (replication)</h4>
-<p><div>
-  <pre><code class='bash'>&lt;/p&gt;
-&lt;p&gt;$ mysql -u root -p mysql&amp;gt; show slave status¥G; # replication されてない確認&lt;/p&gt;
-&lt;p&gt;….&lt;/p&gt;
-&lt;p&gt;mysql&amp;gt; change master to master_host=‘master ip’, master_user=‘レプリケーションユーザ名’, master_password=‘パスワード’, master_log_file=‘mysql-bin.000003’, master_log_pos=73; Query OK, 0 rows affected (0.03 sec) mysql&amp;gt; mysql&amp;gt; show slave status¥G *************************** 1. row *************************** Slave_IO_State: Master_Host: master ip Master_User: レプリケーションユーザ名 Master_Port: 3306 Connect_Retry: 60 Master_Log_File: mysql-bin.001378 Read_Master_Log_Pos: 348578503 Relay_Log_File: mysqld-relay-bin.000001 Relay_Log_Pos: 4 Relay_Master_Log_File: mysql-bin.001378 Slave_IO_Running: No Slave_SQL_Running: No Replicate_Do_DB: Replicate_Ignore_DB: Replicate_Do_Table: Replicate_Ignore_Table: Replicate_Wild_Do_Table: Replicate_Wild_Ignore_Table: Last_Errno: 0 Last_Error: Skip_Counter: 0 Exec_Master_Log_Pos: 348578503 Relay_Log_Space: 98 Until_Condition: None Until_Log_File: Until_Log_Pos: 0 Master_SSL_Allowed: No Master_SSL_CA_File: Master_SSL_CA_Path: Master_SSL_Cert: Master_SSL_Cipher: Master_SSL_Key: Seconds_Behind_Master: NULL 1 row in set (0.00 sec)&lt;/p&gt;
-&lt;p&gt;mysql&amp;gt; start slave;</code></pre>
-</div>
-</p>
+<p>{% highlight bash %}</p>
+<p>$ mysql -u root -p mysql&gt; show slave status¥G; # replication されてない確認</p>
+<p>….</p>
+<p>mysql&gt; change master to master_host=‘master ip’, master_user=‘レプリケーションユーザ名’, master_password=‘パスワード’, master_log_file=‘mysql-bin.000003’, master_log_pos=73; Query OK, 0 rows affected (0.03 sec) mysql&gt; mysql&gt; show slave status¥G *************************** 1. row *************************** Slave_IO_State: Master_Host: master ip Master_User: レプリケーションユーザ名 Master_Port: 3306 Connect_Retry: 60 Master_Log_File: mysql-bin.001378 Read_Master_Log_Pos: 348578503 Relay_Log_File: mysqld-relay-bin.000001 Relay_Log_Pos: 4 Relay_Master_Log_File: mysql-bin.001378 Slave_IO_Running: No Slave_SQL_Running: No Replicate_Do_DB: Replicate_Ignore_DB: Replicate_Do_Table: Replicate_Ignore_Table: Replicate_Wild_Do_Table: Replicate_Wild_Ignore_Table: Last_Errno: 0 Last_Error: Skip_Counter: 0 Exec_Master_Log_Pos: 348578503 Relay_Log_Space: 98 Until_Condition: None Until_Log_File: Until_Log_Pos: 0 Master_SSL_Allowed: No Master_SSL_CA_File: Master_SSL_CA_Path: Master_SSL_Cert: Master_SSL_Cipher: Master_SSL_Key: Seconds_Behind_Master: NULL 1 row in set (0.00 sec)</p>
+<p>mysql&gt; start slave; {% endhighlight %}</p>
 <h4 id="bước-6-kiểm-tra-cài-đặt-replication.">Bước 6: Kiểm tra cài đặt replication.</h4>
-<p><div>
-  <pre><code class='bash'>mysql&amp;gt; show slave status¥G *************************** 1. row *************************** Slave_IO_State: Master_Host: master ip Master_User: レプリケーションユーザ名 Master_Port: 3306 Connect_Retry: 60 Master_Log_File: mysql-bin.001378 Read_Master_Log_Pos: 348578503 Relay_Log_File: mysqld-relay-bin.000001 Relay_Log_Pos: 4 Relay_Master_Log_File: mysql-bin.001378 Slave_IO_Running: No Slave_SQL_Running: No Replicate_Do_DB: Replicate_Ignore_DB: Replicate_Do_Table: Replicate_Ignore_Table: Replicate_Wild_Do_Table: Replicate_Wild_Ignore_Table: Last_Errno: 0 Last_Error: Skip_Counter: 0 Exec_Master_Log_Pos: 348578503 Relay_Log_Space: 98 Until_Condition: None Until_Log_File: Until_Log_Pos: 0 Master_SSL_Allowed: No Master_SSL_CA_File: Master_SSL_CA_Path: Master_SSL_Cert: Master_SSL_Cipher: Master_SSL_Key: Seconds_Behind_Master: NULL 1 row in set (0.00 sec)&lt;/p&gt;
-&lt;p&gt;mysql&amp;gt; start slave;</code></pre>
-</div>
-</p>
+<p>{% highlight bash %} mysql&gt; show slave status¥G *************************** 1. row *************************** Slave_IO_State: Master_Host: master ip Master_User: レプリケーションユーザ名 Master_Port: 3306 Connect_Retry: 60 Master_Log_File: mysql-bin.001378 Read_Master_Log_Pos: 348578503 Relay_Log_File: mysqld-relay-bin.000001 Relay_Log_Pos: 4 Relay_Master_Log_File: mysql-bin.001378 Slave_IO_Running: No Slave_SQL_Running: No Replicate_Do_DB: Replicate_Ignore_DB: Replicate_Do_Table: Replicate_Ignore_Table: Replicate_Wild_Do_Table: Replicate_Wild_Ignore_Table: Last_Errno: 0 Last_Error: Skip_Counter: 0 Exec_Master_Log_Pos: 348578503 Relay_Log_Space: 98 Until_Condition: None Until_Log_File: Until_Log_Pos: 0 Master_SSL_Allowed: No Master_SSL_CA_File: Master_SSL_CA_Path: Master_SSL_Cert: Master_SSL_Cipher: Master_SSL_Key: Seconds_Behind_Master: NULL 1 row in set (0.00 sec)</p>
+<p>mysql&gt; start slave; {% endhighlight %}</p>
 <h2 id="các-lỗi-có-thể-có">4. Các lỗi có thể có</h2>
 <p>Nếu làm mọi việc suôn sẻ, ta có thể hoàn thành thao tác nâng cấp ở bước 4. Tuy vậy tuỳ vào đặc tính dữ liệu, mà mọi việc có thể không suôn sẻ như vậy. Trong lần nâng cấp này, mình gặp 1 lỗi sau sau khi khởi động mysql.</p>
-<p><div>
-  <pre><code class='bash'>2013-08-25 11:07:00 19807 [Note] Server socket created on IP: ‘0.0.0.0’. 02:07:00 UTC - mysqld got signal 11 ; This could be because you hit a bug. It is also possible that this binary or one of the libraries it was linked against is corrupt, improperly built, or misconfigured. This error can also be caused by malfunctioning hardware. We will try our best to scrape up some info that will hopefully help diagnose the problem, but since we have already crashed, something is definitely wrong and this may fail.&lt;/p&gt;
-&lt;p&gt;key_buffer_size=134217728 read_buffer_size=2097152 max_used_connections=0 max_threads=100 thread_count=0 connection_count=0 It is possible that mysqld could use up to key_buffer_size + (read_buffer_size + sort_buffer_size)*max_threads = 542029 K bytes of memory Hope that’s ok; if not, decrease some variables in the equation.&lt;/p&gt;
-&lt;p&gt;Thread pointer: 0xe57de70 Attempting backtrace. You can use the following information to find out where mysqld died. If you see no messages after this, something went terribly wrong… stack_bottom = 7fffd70eced8 thread_stack 0x40000 /usr/local/mysql/bin/mysqld(my_print_stacktrace+0x35)[0x8fa385] /usr/local/mysql/bin/mysqld(handle_fatal_signal+0x3e8)[0x66cfd8] /lib64/libpthread.so.0[0x3a9300eb10] /usr/local/mysql/bin/mysqld(_Z9get_fieldP11st_mem_rootP5Field+0x3c)[0x77b16c] /usr/local/mysql/bin/mysqld[0x68c5bc] /usr/local/mysql/bin/mysqld(_Z10acl_reloadP3THD+0x459)[0x68f059] /usr/local/mysql/bin/mysqld(_Z8acl_initb+0x117)[0x6901c7] /usr/local/mysql/bin/mysqld(_Z11mysqld_mainiPPc+0x543)[0x582e13] /lib64/libc.so.6(__libc_start_main+0xf4)[0x3a9241d994] /usr/local/mysql/bin/mysqld(__gxx_personality_v0+0x2e1)[0x5779e9]&lt;/p&gt;
-&lt;p&gt;Trying to get some variables. Some pointers may be invalid and cause the dump to abort. Query (0): is an invalid pointer Connection ID (thread ID): 0 Status: NOT_KILLED&lt;/p&gt;
-&lt;p&gt;The manual page at http://dev.mysql.com/doc/mysql/en/crashing.html contains information that should help you find out what is causing the crash. 130825 11:07:00 mysqld_safe Number of processes running now: 0 130825 11:07:00 mysqld_safe mysqld restarted 2013-08-25 11:07:01 0 [Warning] TIMESTAMP with implicit DEFAULT value is deprecated. Please use –explicit_defaults_for_timestamp server option (see documentation for more details). 2013-08-25 11:07:01 19847 [Note] Plugin ‘FEDERATED’ is disabled. 2013-08-25 11:07:01 19847 [Note] InnoDB: The InnoDB memory heap is disabled 2013-08-25 11:07:01 19847 [Note] InnoDB: Mutexes and rw_locks use GCC atomic builtins 2013-08-25 11:07:01 19847 [Note] InnoDB: Compressed tables use zlib 1.2.3 2013-08-25 11:07:01 19847 [Note] InnoDB: Using Linux native AIO 2013-08-25 11:07:01 19847 [Note] InnoDB: Not using CPU crc32 instructions 2013-08-25 11:07:01 19847 [Note] InnoDB: Initializing buffer pool, size = 512.0M 2013-08-25 11:07:01 19847 [Note] InnoDB: Completed initialization of buffer pool 2013-08-25 11:07:01 19847 [Note] InnoDB: Highest supported file format is Barracuda. 130825 11:07:09 mysqld_safe mysqld from pid file /usr/local/mysql/data/nl-dbdev-slave.pid ended</code></pre>
-</div>
-</p>
+<p>{% highlight bash %} 2013-08-25 11:07:00 19807 [Note] Server socket created on IP: ‘0.0.0.0’. 02:07:00 UTC - mysqld got signal 11 ; This could be because you hit a bug. It is also possible that this binary or one of the libraries it was linked against is corrupt, improperly built, or misconfigured. This error can also be caused by malfunctioning hardware. We will try our best to scrape up some info that will hopefully help diagnose the problem, but since we have already crashed, something is definitely wrong and this may fail.</p>
+<p>key_buffer_size=134217728 read_buffer_size=2097152 max_used_connections=0 max_threads=100 thread_count=0 connection_count=0 It is possible that mysqld could use up to key_buffer_size + (read_buffer_size + sort_buffer_size)*max_threads = 542029 K bytes of memory Hope that’s ok; if not, decrease some variables in the equation.</p>
+<p>Thread pointer: 0xe57de70 Attempting backtrace. You can use the following information to find out where mysqld died. If you see no messages after this, something went terribly wrong… stack_bottom = 7fffd70eced8 thread_stack 0x40000 /usr/local/mysql/bin/mysqld(my_print_stacktrace+0x35)[0x8fa385] /usr/local/mysql/bin/mysqld(handle_fatal_signal+0x3e8)[0x66cfd8] /lib64/libpthread.so.0[0x3a9300eb10] /usr/local/mysql/bin/mysqld(_Z9get_fieldP11st_mem_rootP5Field+0x3c)[0x77b16c] /usr/local/mysql/bin/mysqld[0x68c5bc] /usr/local/mysql/bin/mysqld(_Z10acl_reloadP3THD+0x459)[0x68f059] /usr/local/mysql/bin/mysqld(_Z8acl_initb+0x117)[0x6901c7] /usr/local/mysql/bin/mysqld(_Z11mysqld_mainiPPc+0x543)[0x582e13] /lib64/libc.so.6(__libc_start_main+0xf4)[0x3a9241d994] /usr/local/mysql/bin/mysqld(__gxx_personality_v0+0x2e1)[0x5779e9]</p>
+<p>Trying to get some variables. Some pointers may be invalid and cause the dump to abort. Query (0): is an invalid pointer Connection ID (thread ID): 0 Status: NOT_KILLED</p>
+<p>The manual page at http://dev.mysql.com/doc/mysql/en/crashing.html contains information that should help you find out what is causing the crash. 130825 11:07:00 mysqld_safe Number of processes running now: 0 130825 11:07:00 mysqld_safe mysqld restarted 2013-08-25 11:07:01 0 [Warning] TIMESTAMP with implicit DEFAULT value is deprecated. Please use –explicit_defaults_for_timestamp server option (see documentation for more details). 2013-08-25 11:07:01 19847 [Note] Plugin ‘FEDERATED’ is disabled. 2013-08-25 11:07:01 19847 [Note] InnoDB: The InnoDB memory heap is disabled 2013-08-25 11:07:01 19847 [Note] InnoDB: Mutexes and rw_locks use GCC atomic builtins 2013-08-25 11:07:01 19847 [Note] InnoDB: Compressed tables use zlib 1.2.3 2013-08-25 11:07:01 19847 [Note] InnoDB: Using Linux native AIO 2013-08-25 11:07:01 19847 [Note] InnoDB: Not using CPU crc32 instructions 2013-08-25 11:07:01 19847 [Note] InnoDB: Initializing buffer pool, size = 512.0M 2013-08-25 11:07:01 19847 [Note] InnoDB: Completed initialization of buffer pool 2013-08-25 11:07:01 19847 [Note] InnoDB: Highest supported file format is Barracuda. 130825 11:07:09 mysqld_safe mysqld from pid file /usr/local/mysql/data/nl-dbdev-slave.pid ended {% endhighlight %}</p>
 <p>mysql khởi động gặp bug về bộ nhớ (segmentation fault) và bị kill bởi signal 11. Mysql liên tục khởi động và bị kill.</p>
 <p>Để tránh trường hợp này, sau khi import dữ liệu ta nên chạy mysql_upgrade 1 lần để script này sửa các bảng trong trạng thái lỗi trước khi khởi động lại để tránh lỗi ở trên.</p>
 <h2 id="tổng-kết">5. Tổng kết</h2>
@@ -209,7 +152,7 @@
     <content type="html"><![CDATA[<h1 id="giới-thiệu">Giới thiệu</h1>
 <p>MySQL là một trong những hệ thống cơ sở dữ liệu quan hệ phổ biến số một thế giới, được sử dụng bởi hầu hết các website lớn. Do vậy, việc nắm vững MySQL là yêu cầu không thể thiếu đối với một webmaster.</p>
 <p>Kiến trúc logic của MySQL nhìn tổng quan có thể được mô tả như hình dưới đây</p>
-<p><img src="/images/logical_mysql_architecture.jpeg"></p>
+<p>{% img /images/logical_mysql_architecture.jpeg %}</p>
 <p>Ta có thể thấy MySQL có các component cơ bản như ở dưới đây</p>
 <ul>
 <li>Connection/thread handling</li>
@@ -222,20 +165,11 @@
 <h1 id="storage-engine-máy-lưu-trữ">Storage Engine (Máy lưu trữ)</h1>
 <p>Storage Engine thực chất là cách MySQL lưu trữ dữ liệu trên đĩa cứng. MySQL lưu mỗi database như là một thư mục con nằm dưới thư mục data. Khi một table được tạo ra, MySQL sẽ lưu định nghĩa bảng ở file đuôi .frm và tên trùng với tên của bảng được tạo. Việc quản lý định nghĩa bảng là nhiệm vụ của MySQL server, dù rằng mỗi storage engine sẽ lưu trữ và đánh chỉ mục (index) dữ liệu khác nhau.</p>
 <p>Ví dụ: mình chỉ định –datadir là /usr/local/mysql/data và định nghĩa bảng users trong database tên là test như sau</p>
-<p><div>
-  <pre><code class='bash'>create table users ( id int not null auto_increment, name varchar(30), password varchar(20), primary key(id) );</code></pre>
-</div>
-</p>
+<p>{% highlight bash %} create table users ( id int not null auto_increment, name varchar(30), password varchar(20), primary key(id) ); {% endhighlight %}</p>
 <p>thì trong thư mục /usr/local/mysql/data sẽ có thư mục con là test, và dưới test sẽ có các file</p>
-<p><div>
-  <pre><code class='bash'>-rw-rw—- 1 _mysql wheel 8624 5 7 17:35 users.frm -rw-rw—- 1 _mysql wheel 98304 5 7 17:35 users.ibd</code></pre>
-</div>
-</p>
+<p>{% highlight bash %} -rw-rw—- 1 _mysql wheel 8624 5 7 17:35 users.frm -rw-rw—- 1 _mysql wheel 98304 5 7 17:35 users.ibd {% endhighlight %}</p>
 <p>Để xem loại storage engine của bảng hiện tại, bạn có thể dùng câu lệnh <em>SHOW DATABASE STATUS</em></p>
-<p><div>
-  <pre><code class='bash'>mysql&amp;gt; show table status like ‘users’ ************************** 1. row *************************** Name: users Engine: InnoDB Version: 10 Row_format: Compact Rows: 2 Avg_row_length: 8192 Data_length: 16384 Max_data_length: 0 Index_length: 0 Data_free: 0 Auto_increment: 3 Create_time: 2013-05-07 17:35:09 Update_time: NULL Check_time: NULL Collation: latin1_swedish_ci Checksum: NULL Create_options: Comment: 1 row in set (0.01 sec)</code></pre>
-</div>
-</p>
+<p>{% highlight bash %} mysql&gt; show table status like ‘users’ ************************** 1. row *************************** Name: users Engine: InnoDB Version: 10 Row_format: Compact Rows: 2 Avg_row_length: 8192 Data_length: 16384 Max_data_length: 0 Index_length: 0 Data_free: 0 Auto_increment: 3 Create_time: 2013-05-07 17:35:09 Update_time: NULL Check_time: NULL Collation: latin1_swedish_ci Checksum: NULL Create_options: Comment: 1 row in set (0.01 sec) {% endhighlight %}</p>
 <p>Cụ thể trong trường hợp này: storage engine : innodb loại row : compact Số lượng row dữ liệu : 2 giá trị auto increment tiếp theo: 3 …</p>
 <h2 id="tổng-quan-các-engine">Tổng quan các engine</h2>
 <h3 id="myisam-engine">1. MyISAM engine</h3>

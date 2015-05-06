@@ -4,7 +4,7 @@
   <title><![CDATA[Category: git | Blog kỹ thuật máy tính]]></title>
   <link href="http://git@github.com.github.com/blog/categories/git/atom.xml" rel="self"/>
   <link href="http://git@github.com.github.com/"/>
-  <updated>2015-03-08T14:45:59+09:00</updated>
+  <updated>2015-05-07T01:18:39+09:00</updated>
   <id>http://git@github.com.github.com/</id>
   <author>
     <name><![CDATA[kỹ thuật máy tính]]></name>
@@ -30,59 +30,31 @@
 <p>Trong ví dụ này, chúng ta sẽ bắt buộc mỗi commit message phải có phần mở đầu của message tuân theo một định dạng. Cụ thể mỗi mesage phải có dạng “ref:1234” bởi vì mỗi một commit sẽ ứng với một ticket trong hệ thống.</p>
 <p>Để làm việc này, sẻver sẽ phải kiểm tra tất cả các commit được push để xem string trong commit message có đúng format hay không. Nếu commit message là không đúng format, trả về giá trị khác 0 và reject push.</p>
 <p>Chúng ta sẽ viết một update hook để làm việc này. Chú ý rắng, update hook nhận 3 giá trị đầu vào: tên của branch được update, SHA-1 của commit trước khi được push, và SHA-1 của commit sau khi được push. Các đoạn code dưới đây được minh hoạ bằng ruby, bạn có thể sử dụng ngôn ngữ lập trình khác nếu muốn</p>
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>update </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'> <span class="c1">#!/usr/bin/env ruby&lt;/p&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="vg">$refname</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span> <span class="vg">$oldrev</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="vg">$newrev</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">2</span><span class="o">]&lt;</span><span class="sr">/p&gt;</span>
-</span><span class='line'><span class="sr">&lt;p&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>{% codeblock lang:ruby update %} #!/usr/bin/env ruby</p>
+<p>$refname = ARGV[0] $oldrev = ARGV[1] $newrev = ARGV[2]</p>
+<p>{% endcodeblock %}</p>
 <p>Để lấy các commit từ <code>$oldrev</code> tới <code>$newrev</code>, chúng ta sử dụng lệnh <code>git rev-lít</code>. Lệnh này sẽ trả về danh sách các SHA-1 cho các commit nằm giữa 2 commit mà chúng ta truyền vào</p>
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'> <span class="nv">$ </span>git rev-list 538c33..d14fc7 d14fc7c847ab946ec39590d87783c69b031bdfb7 9f585da4401b0a3999e84113824d15245c13f0be 234071a1be950e2a8d078e6141f5cd20c1e61ad3 dfa04c9ef3d5197182f13fb5b9b1fb7717d2222a 17716ec0f1ff5c77eff40b7fe912f9f6cfd0e475
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>{% codeblock lang:bash %} $ git rev-list 538c33..d14fc7 d14fc7c847ab946ec39590d87783c69b031bdfb7 9f585da4401b0a3999e84113824d15245c13f0be 234071a1be950e2a8d078e6141f5cd20c1e61ad3 dfa04c9ef3d5197182f13fb5b9b1fb7717d2222a 17716ec0f1ff5c77eff40b7fe912f9f6cfd0e475 {% endcodeblock %}</p>
 <p>Sau đó, chúng ta sử dụng lệnh <code>git cat-file</code> đẻ duyệt qua từng commit và lấy nội dụng của commit message.</p>
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'> <span class="nv">$ </span>git cat-file commit ca82a6 tree cfda3bf379e4f8dba8717dee55aab78aef7f4daf parent 085bb3bcb608e1e8451d4b2432f8ecbe6306e7e7 author kiennt &lt;script <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;text/javascript&quot;</span>&gt;
-</span><span class='line'>&lt;!--
-</span><span class='line'><span class="nv">h</span><span class="o">=</span><span class="s1">&#39;&amp;#x67;&amp;#x6d;&amp;#x61;&amp;#x69;&amp;#108;&amp;#46;&amp;#x63;&amp;#x6f;&amp;#x6d;&#39;</span>;<span class="nv">a</span><span class="o">=</span><span class="s1">&#39;&amp;#64;&#39;</span>;<span class="nv">n</span><span class="o">=</span><span class="s1">&#39;&amp;#x6b;&amp;#x69;&amp;#x65;&amp;#110;&amp;#110;&amp;#116;&#39;</span>;<span class="nv">e</span><span class="o">=</span>n+a+h;
-</span><span class='line'>document.write<span class="o">(</span><span class="s1">&#39;&lt;a h&#39;</span>+<span class="s1">&#39;ref&#39;</span>+<span class="s1">&#39;=&quot;ma&#39;</span>+<span class="s1">&#39;ilto&#39;</span>+<span class="s1">&#39;:&#39;</span>+e+<span class="s1">&#39;&quot; clas&#39;</span>+<span class="s1">&#39;s=&quot;em&#39;</span> + <span class="s1">&#39;ail&quot;&gt;&#39;</span>+e+<span class="s1">&#39;&lt;\/&#39;</span>+<span class="s1">&#39;a&#39;</span>+<span class="s1">&#39;&gt;&#39;</span><span class="o">)</span>;
-</span><span class='line'>// --&gt;
-</span><span class='line'>&lt;/script&gt;&lt;noscript&gt;&amp;#x6b;&amp;#x69;&amp;#x65;&amp;#110;&amp;#110;&amp;#116;&amp;#32;&amp;#x61;&amp;#116;&amp;#32;&amp;#x67;&amp;#x6d;&amp;#x61;&amp;#x69;&amp;#108;&amp;#32;&amp;#100;&amp;#x6f;&amp;#116;&amp;#32;&amp;#x63;&amp;#x6f;&amp;#x6d;&lt;/noscript&gt; 1205815931 -0700 committer kiennt &lt;script <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;text/javascript&quot;</span>&gt;
-</span><span class='line'>&lt;!--
-</span><span class='line'><span class="nv">h</span><span class="o">=</span><span class="s1">&#39;&amp;#x67;&amp;#x6d;&amp;#x61;&amp;#x69;&amp;#108;&amp;#46;&amp;#x63;&amp;#x6f;&amp;#x6d;&#39;</span>;<span class="nv">a</span><span class="o">=</span><span class="s1">&#39;&amp;#64;&#39;</span>;<span class="nv">n</span><span class="o">=</span><span class="s1">&#39;&amp;#x73;&amp;#x63;&amp;#104;&amp;#x61;&amp;#x63;&amp;#x6f;&amp;#110;&#39;</span>;<span class="nv">e</span><span class="o">=</span>n+a+h;
-</span><span class='line'>document.write<span class="o">(</span><span class="s1">&#39;&lt;a h&#39;</span>+<span class="s1">&#39;ref&#39;</span>+<span class="s1">&#39;=&quot;ma&#39;</span>+<span class="s1">&#39;ilto&#39;</span>+<span class="s1">&#39;:&#39;</span>+e+<span class="s1">&#39;&quot; clas&#39;</span>+<span class="s1">&#39;s=&quot;em&#39;</span> + <span class="s1">&#39;ail&quot;&gt;&#39;</span>+e+<span class="s1">&#39;&lt;\/&#39;</span>+<span class="s1">&#39;a&#39;</span>+<span class="s1">&#39;&gt;&#39;</span><span class="o">)</span>;
-</span><span class='line'>// --&gt;
-</span><span class='line'>&lt;/script&gt;&lt;noscript&gt;&amp;#x73;&amp;#x63;&amp;#104;&amp;#x61;&amp;#x63;&amp;#x6f;&amp;#110;&amp;#32;&amp;#x61;&amp;#116;&amp;#32;&amp;#x67;&amp;#x6d;&amp;#x61;&amp;#x69;&amp;#108;&amp;#32;&amp;#100;&amp;#x6f;&amp;#116;&amp;#32;&amp;#x63;&amp;#x6f;&amp;#x6d;&lt;/noscript&gt; 1240030591 -0700&lt;/p&gt;
-</span><span class='line'>&lt;p&gt;Add new post about githook
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>{% codeblock lang:bash %} $ git cat-file commit ca82a6 tree cfda3bf379e4f8dba8717dee55aab78aef7f4daf parent 085bb3bcb608e1e8451d4b2432f8ecbe6306e7e7 author kiennt <script type="text/javascript">
+<!--
+h='&#x67;&#x6d;&#x61;&#x69;&#108;&#46;&#x63;&#x6f;&#x6d;';a='&#64;';n='&#x6b;&#x69;&#x65;&#110;&#110;&#116;';e=n+a+h;
+document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'" clas'+'s="em' + 'ail">'+e+'<\/'+'a'+'>');
+// -->
+</script><noscript>&#x6b;&#x69;&#x65;&#110;&#110;&#116;&#32;&#x61;&#116;&#32;&#x67;&#x6d;&#x61;&#x69;&#108;&#32;&#100;&#x6f;&#116;&#32;&#x63;&#x6f;&#x6d;</noscript> 1205815931 -0700 committer kiennt <script type="text/javascript">
+<!--
+h='&#x67;&#x6d;&#x61;&#x69;&#108;&#46;&#x63;&#x6f;&#x6d;';a='&#64;';n='&#x73;&#x63;&#104;&#x61;&#x63;&#x6f;&#110;';e=n+a+h;
+document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'" clas'+'s="em' + 'ail">'+e+'<\/'+'a'+'>');
+// -->
+</script><noscript>&#x73;&#x63;&#104;&#x61;&#x63;&#x6f;&#110;&#32;&#x61;&#116;&#32;&#x67;&#x6d;&#x61;&#x69;&#108;&#32;&#100;&#x6f;&#116;&#32;&#x63;&#x6f;&#x6d;</noscript> 1240030591 -0700</p>
+<p>Add new post about githook {% endcodeblock %}</p>
 <p>Cách đơn giản để lấy commit message từ một commit là khi có SHA-1 , chúng ta xác định dòng blank đầu tiên và lấy tất cả phần đằng sau nó. Chúng ta có thể sử dụng <code>sed</code> để làm điều này</p>
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'> <span class="nv">$ </span>git cat-file commit ca82a6 | sed ‘1,/^<span class="nv">$/</span>d’ Add new post about githook
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>{% codeblock lang:bash %} $ git cat-file commit ca82a6 | sed ‘1,/^$/d’ Add new post about githook {% endcodeblock %}</p>
 <p>Sau đây là toàn bộ đoạn code ruby để hoàn thành tác vụ trên</p>
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>update </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'> <span class="c1">#!/usr/bin/env ruby&lt;/p&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="vg">$refname</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span> <span class="vg">$oldrev</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="vg">$newrev</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span> <span class="vg">$regex</span> <span class="o">=</span> <span class="sr">/[ref: (+)]/</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
-</span><span class='line'><span class="sr">&lt;h1 id=&quot;enforced-custom-commit-message-format&quot;&gt;enforced custom commit message format&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="k">def</span> <span class="nf">check_message_format</span> <span class="n">missed_revs</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">git</span> <span class="n">rev</span><span class="o">-</span><span class="n">list</span> <span class="c1">#{$oldrev}..#{$newrev}&lt;/code&gt;.split(“”) missed_revs.each do |rev| message = &lt;code&gt;git cat-file commit #{rev} | sed &#39;1,/^$/d&#39;&lt;/code&gt; if !$regex.match(message) puts “[POLICY] Your message is not formatted correctly” exit 1 end end end check_message_format </span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>{% codeblock lang:ruby update %} #!/usr/bin/env ruby</p>
+<p>$refname = ARGV[0] $oldrev = ARGV[1] $newrev = ARGV[2] $regex = /[ref: (+)]/</p>
+<h1 id="enforced-custom-commit-message-format">enforced custom commit message format</h1>
+<p>def check_message_format missed_revs = <code>git rev-list #{$oldrev}..#{$newrev}</code>.split(“”) missed_revs.each do |rev| message = <code>git cat-file commit #{rev} | sed '1,/^$/d'</code> if !$regex.match(message) puts “[POLICY] Your message is not formatted correctly” exit 1 end end end check_message_format {% endcodeblock %}</p>
 <h1 id="kết-luận">Kết luận</h1>
 <p>Qua 2 bài viết về githook, bạn đã nắm được phần nào các hooks trong git, và các ứng dụng liên quan đến chúng. Giờ bạn có thể sử dụng githook để tạo nên workflow phù hợp nhất với git cho project của mình</p>
 <h1 id="tham-khảo">Tham khảo</h1>

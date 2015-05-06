@@ -7,8 +7,8 @@
 	<meta name="author" content="kỹ thuật máy tính">
 
 	
-	<meta name="description" content="Jul 28th, 2013 PHP, Reflection Comments Reflection and Reverse Engineer in PHP Giới thiệu Reflection class trong PHP
-Kể từ PHP 5 trở đi, Programmer &hellip;">
+	<meta name="description" content="Aug 2nd, 2013 sercurity,, server Comments Các Lỗi Bảo Mật Khi Xây Dựng Server Login Bằng Facebook Cho Mobile App Mở đầu
+Facebook là mạng xã hội phổ &hellip;">
 	
 
   <!-- http://t.co/dKP3o1e -->
@@ -35,6 +35,16 @@ Kể từ PHP 5 trở đi, Programmer &hellip;">
 
 
 <body>
+	<div class="notif">
+		<p>
+			Cảm ơn bạn đã đọc và ủng hộ blog KTMT ʘ‿ʘ
+			Từ bây giờ chúng tôi sẽ là
+			<a target="_blank" href="/blog/2015/05/06/kipalog-cau-chuyen-ve-viet-va-chia-se/">
+				kipalog.com
+			</a>
+			!
+		</p>
+	</div>
 	<div class="container">
 		<div class="left-col">
 			<div class="intrude-less">
@@ -50,7 +60,7 @@ Kể từ PHP 5 trở đi, Programmer &hellip;">
 </ul>
 </nav>
 <nav class="hint">
-	<p style="color: #FFFFFF; margin-top: 2em;">
+	<p>
 	  Cập nhật thông tin bài viết qua Facebook page hay link RSS dưới đây
 	</p>
 </nav>
@@ -82,6 +92,81 @@ Kể từ PHP 5 trở đi, Programmer &hellip;">
 			<div class="mid-col-container">
 				<div id="content" class="inner">
 <div itemscope itemtype="http://schema.org/Blog">
+
+
+    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="meta">
+		<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-08-02T23:30:00+09:00" data-updated="true" itemprop="datePublished">Aug 2<span>nd</span>, 2013</time></div>
+		<div class="tags">
+
+
+	<a class='category' href='/blog/categories/sercurity/'>sercurity,</a>, <a class='category' href='/blog/categories/server/'>server</a>
+
+
+</div>
+		
+			<span class="comments"><a href="/blog/2013/08/02/cac-loi-bao-mat-can-tranh-khi-xay-dung-server-ho-tro-login-bang-facebook-cho-mobile-app/#disqus_thread">Comments</a></span>
+		
+	</div>
+	<h1 class="title" itemprop="name"><a href="/blog/2013/08/02/cac-loi-bao-mat-can-tranh-khi-xay-dung-server-ho-tro-login-bang-facebook-cho-mobile-app/" itemprop="url">Các Lỗi Bảo Mật Khi Xây Dựng Server Login Bằng Facebook Cho Mobile App</a></h1>
+	<div class="entry-content" itemprop="articleBody">
+		<h1 id="mở-đầu">Mở đầu</h1>
+<p>Facebook là mạng xã hội phổ biến nhất hiện nay. Nếu bạn đọc blog này mà không có tài khoản Facebook, tôi nghi ngờ bạn đến từ Vegeta. Chức năng “Login bằng tài khoản Facebook” là môt trong những chức năng giúp cho người dùng đăng ký vào hệ thống ứng dụng của bạn một cách nhanh chóng. Phần lớn các app mobile đếu support chức năng này.</p>
+<p>Việc cài đặt hỗ trợ chức năng login bằng Facebook trên server tuy khá đơn giản, nhưng rất dễ xảy ra lỗi bảo mật, nếu bạn không chú ý. Bài viết này trình bày một vài lỗi cơ bản hay gặp khi cài đặt trên server cho ứng dụng trên mobile</p>
+<h1 id="luồng-thực-hiện-để-login-bằng-facebook-trên-mobile">Luồng thực hiện để login bằng facebook trên mobile</h1>
+<p>Các bước được thực hiện khi người dùng bấm vào nút “login bằng facebook” trên một ứng dụng mobile. Để phần trình bày bên dưới rõ ràng, tôi sẽ gọi ứng dụng mobile là A, và server của ứng dụng này là server A, ứng dụng trên FB cho app A là FBA</p>
+<ul>
+<li>Ứng dụng mobile A sẽ chuyển sang gọi ứng dụng Facebook để yêu cầu người dùng các quyền để truy cập vào tải khoản của người dùng trên FB</li>
+<li>Sau khi người dùng cho phép ứng dụng mobile A truy cập vào FB, ứng dụng mobile A sẽ gửi request lên FB server để lấy access token</li>
+<li>Server FB trả về access token cho ứng dụng mobile A</li>
+</ul>
+<p>Sau khi có được access token, ứng dụng mobile có thể làm theo 2 cách</p>
+<ul>
+<li><p><strong>Cách 1</strong>: ứng dụng mobile A sử dụng access token để truy cập vào FB API, lấy thông tin của user từ FB như user id, username, email. Và gửi những thông tin này lên cho server A. Dựa vào trường user id hoặc email, server A sẽ tạo mới tài khoản cho user, hoặc merge với một tài khoản có sẵn ở trong server, rồi trả về thông tin tài khoản cho user.</p></li>
+<li><p><strong>Cách 2</strong>: ứng dụng mobile A gửi ngay access token nhận được từ FB lên cho server A. Server A sử dụng access token truy cập vào FB API và check user trình bày ở cách 1.</p></li>
+</ul>
+<p>Cách 1 có ưu điểm hơn so với cách 2 ở chỗ, việc request vào FB API được thực hiện ở phía client do đó server sẽ giảm được tải đi một phần. Cả server và client đều có khả năng lấy được thông tin user trên FB bằng access token, vậy thì sử dụng client để lấy thông tin, server có thể sử dụng tài nguyên để làm việc khác. Hơn nữa nếu để server lấy thông tin user, thời gian để lấy thông tin sẽ phụ thuộc vào tốc độ mạng giữa server A và FB server.</p>
+<p>Mọi lý do đều dẫn đến cách 1 là tốt hơn so với cách 2 về mặt hiệu năng.</p>
+<p>Tuy nhiên, nếu xét về khía cạnh bảo mât, cách 1 lại cưc kỳ nguy hiểm. Vì sao vậy</p>
+<p>Hãy xét một trường hợp thế này:</p>
+<ul>
+<li>User B sử dụng app A và dùng chức năng login bằng FB để đăng nhập. App A cài đặt theo cách 1. Sau khi có access token, app A lấy được FB user id của B là id_B, và email là email_B. App A gửi những thông tin này lên cho server A. Server A nhận thấy hệ thống chưa có user nào có FB ID là id_B, nên tạo mới một account cho B, và trả về thông tin của B.</li>
+<li>Lần tiếp theo user B sử dụng app A để đăng nhập bằng FB, server A sẽ không tạo mới account, mà trả về luôn thông tin của account đã tạo ra ở trên</li>
+<li>Hacker C, bằng cách nào đó biết được URL endpoint của server A phục vụ cho việc đăng nhập bằng FB. Hacker C, truyền lên một thông tin giả với trường FB ID là id_B. Lúc này server B, chỉ kiểm tra FB ID của request là id_B, nên sẽ vẫn coi đây là request của user B và trả về thông tin của tài khoản user B.</li>
+</ul>
+<p>Vậy là C có thể chiếm bất cứ tài khoản FB nào mà C biết FB id (có tới 1 tỉ tải khoản FB đó, nên C hẳn sẽ có rất nhiều thứ để chiếm đây)</p>
+<p>Với cách implement bằng cách 1, server sẽ không thể phân biệt được request nào là request thật của user. Để chắc chắn server khi nhận được access token, phải request tới FB API để kiểm tra xem access token truyền lên có phải là của user mà app A truyền lên hay không. Nói cách khác server vẫn cần request tới FB API. Như vậy việc client gửi request tới FB API để lấy thông tin là cũng không cần thiết.</p>
+<h1 id="liệu-server-sử-dụng-access-token-để-lấy-thông-tin-của-user-trên-fb-đã-là-đủ">Liệu server sử dụng access token để lấy thông tin của user trên FB đã là đủ?</h1>
+<p>Hãy nói tiếp về cách implement thứ 2. Khi server A nhận access token từ app A. Server gửi request tới FB API để lấy thông tin của user như FB ID và email. Sau đó tạo mới hoặc merge với một tài khoản đã có trong hệ thống (trùng FB ID hoặc là trùng email).</p>
+<p>Nhưng như thế đã là đủ?</p>
+<p>Ta lại xét tiếp một tình huống như sau:</p>
+<ul>
+<li>Hacker C tạo ra một FB app mới là FBA’ và bằng cách nào đó lấy được access token của user B khi B sử dụng FBA’.</li>
+<li>Hacker C gửi request tới server A sử dụng access token FBA’.</li>
+<li>Server A dùng FBA’ để lấy thông tin, và nhận thấy thông tin đó là của user B, nên server A trả về thông tin của tài khoản B</li>
+</ul>
+<p>Như vây, hacker C lại chiếm được tài khoản của user B trên hệ thống A bằng cách dùng một access token trên một FB app khác của user B</p>
+<p>Để bảo mật, cách duy nhất là khi server A nhận được access token, server A cần gửi request tới FB API để check xem access token này là từ FB Application nào.</p>
+<h1 id="tổng-kết">Tổng kết</h1>
+<p>Bài viết trình bày 2 lỗi bảo mật hay gặp khi cài đặt hệ thống login bằng facebook trên server cho ứng dụng mobile. Lỗi thứ nhất là sử dụng client để lấy access token, mà không kiểm tra độ chính xác của access token. Lỗi thứ hai là chỉ kiểm tra độ chính xác của access token bằng cách thông tin user, mà không kiểm tra thông tin của app từ access token.</p>
+<p>Nếu bạn đã có một hệ thống login bằng FB, hãy check lại nó. Nếu bạn chưa từng cài đặt hệ thống này thì chúc mừng bạn, bạn đã được cảnh báo !!!</p>
+		
+		
+	</div>
+
+</article>
 
 
     <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -681,49 +766,6 @@ Kể từ PHP 5 trở đi, Programmer &hellip;">
 </div>
 <h1 id="tổng-kết">Tổng kết</h1>
 <p>Bài viết này giới thiệu với các cài đặt và chạy memcached với SASL. Giờ bạn có thể tập trung vào việc code ứng dụng của bạn rồi.</p>
-		
-		
-	</div>
-
-</article>
-
-
-    <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-	<div class="meta">
-		<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-07-24T09:13:00+09:00" data-updated="true" itemprop="datePublished">Jul 24<span>th</span>, 2013</time></div>
-		<div class="tags">
-
-
-	<a class='category' href='/blog/categories/ios/'>iOS</a>
-
-
-</div>
-		
-			<span class="comments"><a href="/blog/2013/07/24/nhung-luu-y-khi-dung-uitableview/#disqus_thread">Comments</a></span>
-		
-	</div>
-	<h1 class="title" itemprop="name"><a href="/blog/2013/07/24/nhung-luu-y-khi-dung-uitableview/" itemprop="url">Những Lưu ý Khi Dùng UITableView</a></h1>
-	<div class="entry-content" itemprop="articleBody">
-		<p>Ở bài viết trước, tôi đã đề cập đến việc custom 1 UITableViewCell. Tuy nhiên, việc sử dụng UITableView cũng còn khá nhiều điều cần phải quan tâm khác. Trong bài viết này, tôi sẽ đề cập đến những vấn đề ấy:</p>
-<h1 id="lưu-ý-khi-dùng-định-danh-cho-uitableviewcell">Lưu ý khi dùng định danh cho UITableViewCell</h1>
-<p>Trong quá trình tạo hiển thị, UITableView sẽ lưu lại các cell bị che khỏi màn hình hiển thị (ko phải render) trong 1 stack. Các Cell này sẽ được sử dụng lại khi mà 1 cell mới xuất hiện trên màn hình. Điều này giúp cải thiện tốc độ load table cell và ko làm tăng thêm bộ nhớ cho chương trình. Khi lấy cell trong stack ra, UITableView sẽ sử dụng định danh đã nói ở trên để lấy được các cell cùng kiểu. Chính vì thế định danh này phải được đặt giống với trường identifier trong file xib. Nếu không, các cell của table sẽ không bao giờ được sử dụng lại. Có thế test điều này trong ví dụ: trường identifier trong file CustomTableCell.xib đặt là “CustomTableCell” và định danh trong code đặt là “Custom”, khi chạy chương trình, điều kiện if (!cell) sẽ luôn luôn xảy ra =&gt; tức là table view sẽ luôn tạo ra cell mới chứ ko sử dụng lại.</p>
-<p><img src="/images/luuYTableView/break_point.png"></p>
-<h1 id="cải-thiện-tốc-load-của-uitableview.">Cải thiện tốc load của UITableView.</h1>
-<p>Không nên sử dụng các hàm vẽ mà phải tính toán nhiều, đặc biệt là các hàm của QuartzCore framework, bởi vì các hàm này thường rất chậm, sẽ làm giảm tốc độ load của các cell.</p>
-<p>Khi sử dụng TableView với các cell phức tạp, mà độ cao của cell phụ thuộc vào các content bên trong nó (VD như các news feeds của Facebook app), để cải thiện tốc độ load các cell này, hãy cùng học tập cách làm của Facebook: Trước hết, khi lấy được danh sách các feed, FB sẽ tính toán sẵn height cho từng cell một và lưu các giá trị này vào database (core data). Sau đó, khi load các cell, height của từng cell sẽ được lấy ra từ database. Điều này làm giảm hiện tượng thắt cổ chai khi mà nếu không tính toán height trước, table view sẽ vừa phải khởi tạo các component vừa phải tính toán chiều cao cho các cell. Đặc biệt là trong trường hợp danh sách các feed được lưu lại trên máy, và lần chạy app tiếp theo sẽ sử dụng lại các feed này =&gt; height cho các cell đã được tính toán từ trước.</p>
-<p>Sử dụng multiple thread để giúp app chạy mượt mà hơn, tránh tình trạng bị treo. VD: main thread chỉ điều chỉnh UI và điều khiển các event tương tác với user. Các tác vụ tính toán nên để ở 1 thread khác, vd như các tác vụ network, JSON parsing, tạo và lưu database.</p>
 		
 		
 	</div>
